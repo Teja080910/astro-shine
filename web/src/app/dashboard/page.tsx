@@ -1,11 +1,26 @@
+'use client';
+
 import { AdminLayout } from '@/components/AdminLayout';
+import { Users, Star, DollarSign, Phone } from 'lucide-react';
+
+function StatCard({ label, value, iconName, color }: { label: string; value: string; iconName: string; color: string }) {
+  const icons: Record<string, any> = { Users, Star, DollarSign, Phone };
+  const Icon = icons[iconName];
+  return (
+    <div className="stat-card">
+      <Icon size={28} color={color} />
+      <p className="text-2xl font-bold text-text-primary mt-2">{value}</p>
+      <p className="text-sm text-text-secondary">{label}</p>
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const stats = [
-    { label: 'Total Users', value: '--', icon: Users, color: '#9333EA' },
-    { label: 'Astrologers', value: '--', icon: Star, color: '#F59E0B' },
-    { label: 'Revenue', value: '--', icon: DollarSign, color: '#22C55E' },
-    { label: 'Active Calls', value: '--', icon: Phone, color: '#F97316' },
+    { label: 'Total Users', value: '--', iconName: 'Users', color: '#9333EA' },
+    { label: 'Astrologers', value: '--', iconName: 'Star', color: '#F59E0B' },
+    { label: 'Revenue', value: '--', iconName: 'DollarSign', color: '#22C55E' },
+    { label: 'Active Calls', value: '--', iconName: 'Phone', color: '#F97316' },
   ];
 
   return (
@@ -21,6 +36,3 @@ export default function DashboardPage() {
     </AdminLayout>
   );
 }
-
-import { Users, Star, DollarSign, Phone } from 'lucide-react';
-import { StatCard } from '@/components/UIComponents';

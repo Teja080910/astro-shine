@@ -1,17 +1,27 @@
 import React from 'react';
+import { View, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { FloatingBottomBar, colors } from '@astro-shine/shared-ui';
-import { useAuth, AppRole } from '../context/AuthContext';
+import { FloatingBottomBar, colors, typography } from '@astro-shine/shared-ui';
+import { useAuth } from '../context/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
 
 import { OnboardingScreen } from '../screens/auth/OnboardingScreen';
 import { LoginScreen, RegisterScreen, OtpLoginScreen } from '../screens/auth/AuthScreens';
 import { UserHomeScreen, AstrologerListScreen, AstrologerDetailScreen, WalletScreen, ChatScreen, KundliScreen, MatchmakingScreen, ShopScreen, ProfileScreen } from '../screens/user/UserScreens';
 import { AstrologerHomeScreen, AstrologerWalletScreen, AstrologerProfileScreen } from '../screens/astrologer/AstrologerScreens';
+import {
+  PanchangScreen, BlogsScreen, NotificationsScreen, EditProfileScreen, SupportScreen,
+  DonationScreen, ReportScreen, MandirPoojaScreen, OrderHistoryScreen,
+  AstrologerRequestsScreen, AstrologerScheduleScreen, AstrologerDocumentsScreen,
+  AstrologerCommissionScreen, AstrologerGoLiveScreen,
+} from '../screens/shared/SharedScreens';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+const headerOpts = (title: string) => ({ headerShown: true, title, headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.white });
 
 function UserTabs() {
   const tabs = [
@@ -47,19 +57,12 @@ function AstrologerTabs() {
       tabBar={(props) => <FloatingBottomBar tabs={tabs} activeTab={props.state.routeNames[props.state.index]} onTabPress={(key) => props.navigation.navigate(key)} />}
     >
       <Tab.Screen name="Home" component={AstrologerHomeScreen} />
-      <Tab.Screen name="Requests" component={PlaceholderScreen} />
+      <Tab.Screen name="Requests" component={AstrologerRequestsScreen} />
       <Tab.Screen name="Wallet" component={AstrologerWalletScreen} />
       <Tab.Screen name="Chat" component={ChatScreen} />
       <Tab.Screen name="Profile" component={AstrologerProfileScreen} />
     </Tab.Navigator>
   );
-}
-
-import { View, Text } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { typography } from '@astro-shine/shared-ui';
-function PlaceholderScreen({ route }: any) {
-  return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}><Ionicons name="construct-outline" size={48} color={colors.textMuted} /><Text style={[typography.pageTitle, { marginTop: 12 }]}>{route?.name || 'Screen'}</Text><Text style={typography.body}>Coming soon</Text></View>;
 }
 
 export function Navigation() {
@@ -82,27 +85,27 @@ export function Navigation() {
           <>
             <Stack.Screen name="Main" component={UserTabs} />
             <Stack.Screen name="AstrologerList" component={AstrologerListScreen} />
-            <Stack.Screen name="AstrologerDetail" component={AstrologerDetailScreen} options={{ headerShown: true, title: 'Astrologer', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.white }} />
-            <Stack.Screen name="Kundli" component={KundliScreen} options={{ headerShown: true, title: 'Kundli', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.white }} />
-            <Stack.Screen name="Matchmaking" component={MatchmakingScreen} options={{ headerShown: true, title: 'Matchmaking', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.white }} />
-            <Stack.Screen name="Panchang" component={PlaceholderScreen} options={{ headerShown: true, title: 'Panchang', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.white }} />
-            <Stack.Screen name="Shop" component={ShopScreen} options={{ headerShown: true, title: 'Shop', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.white }} />
-            <Stack.Screen name="OrderHistory" component={PlaceholderScreen} options={{ headerShown: true, title: 'Orders', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.white }} />
-            <Stack.Screen name="Notifications" component={PlaceholderScreen} options={{ headerShown: true, title: 'Notifications', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.white }} />
-            <Stack.Screen name="Blogs" component={PlaceholderScreen} options={{ headerShown: true, title: 'Blogs', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.white }} />
-            <Stack.Screen name="Support" component={PlaceholderScreen} options={{ headerShown: true, title: 'Support', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.white }} />
-            <Stack.Screen name="EditProfile" component={PlaceholderScreen} options={{ headerShown: true, title: 'Edit Profile', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.white }} />
-            <Stack.Screen name="MandirPooja" component={PlaceholderScreen} options={{ headerShown: true, title: 'Mandir Pooja', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.white }} />
-            <Stack.Screen name="Donation" component={PlaceholderScreen} options={{ headerShown: true, title: 'Donation', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.white }} />
-            <Stack.Screen name="Report" component={PlaceholderScreen} options={{ headerShown: true, title: 'Report', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.white }} />
+            <Stack.Screen name="AstrologerDetail" component={AstrologerDetailScreen} options={headerOpts('Astrologer')} />
+            <Stack.Screen name="Kundli" component={KundliScreen} options={headerOpts('Kundli')} />
+            <Stack.Screen name="Matchmaking" component={MatchmakingScreen} options={headerOpts('Matchmaking')} />
+            <Stack.Screen name="Panchang" component={PanchangScreen} options={headerOpts('Panchang')} />
+            <Stack.Screen name="Shop" component={ShopScreen} options={headerOpts('Shop')} />
+            <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} options={headerOpts('Orders')} />
+            <Stack.Screen name="Notifications" component={NotificationsScreen} options={headerOpts('Notifications')} />
+            <Stack.Screen name="Blogs" component={BlogsScreen} options={headerOpts('Blogs')} />
+            <Stack.Screen name="Support" component={SupportScreen} options={headerOpts('Support')} />
+            <Stack.Screen name="EditProfile" component={EditProfileScreen} options={headerOpts('Edit Profile')} />
+            <Stack.Screen name="MandirPooja" component={MandirPoojaScreen} options={headerOpts('Mandir Pooja')} />
+            <Stack.Screen name="Donation" component={DonationScreen} options={headerOpts('Donation')} />
+            <Stack.Screen name="Report" component={ReportScreen} options={headerOpts('Report')} />
           </>
         ) : (
           <>
             <Stack.Screen name="Main" component={AstrologerTabs} />
-            <Stack.Screen name="Schedule" component={PlaceholderScreen} options={{ headerShown: true, title: 'Schedule', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.white }} />
-            <Stack.Screen name="Documents" component={PlaceholderScreen} options={{ headerShown: true, title: 'Documents', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.white }} />
-            <Stack.Screen name="CommissionLogs" component={PlaceholderScreen} options={{ headerShown: true, title: 'Commissions', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.white }} />
-            <Stack.Screen name="GoLive" component={PlaceholderScreen} options={{ headerShown: true, title: 'Go Live', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.white }} />
+            <Stack.Screen name="Schedule" component={AstrologerScheduleScreen} options={headerOpts('Schedule')} />
+            <Stack.Screen name="Documents" component={AstrologerDocumentsScreen} options={headerOpts('Documents')} />
+            <Stack.Screen name="CommissionLogs" component={AstrologerCommissionScreen} options={headerOpts('Commissions')} />
+            <Stack.Screen name="GoLive" component={AstrologerGoLiveScreen} options={headerOpts('Go Live')} />
           </>
         )}
       </Stack.Navigator>

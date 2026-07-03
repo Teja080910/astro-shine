@@ -1,14 +1,34 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
+import { Table, Badge, GradientButton } from '@/components/UIComponents';
+import type { Report } from '@astro-shine/shared-types';
 
-function Placeholder({ title }: { title: string }) {
-  return <AdminLayout><h1 className="text-3xl font-extrabold text-text-primary mb-4">{title}</h1><div className="glass-card p-8 text-text-secondary">Management panel coming soon.</div></AdminLayout>;
+export default function ReportsPage() {
+  const [data, setData] = useState<Report[]>([]);
+  useEffect(() => { fetch('http://localhost:3067/api/v1/reports').then(r => r.json()).then(setData).catch(() => {}); }, []);
+
+  const resolve = async (id: string) => {
+    await fetch(`http://localhost:3067/api/v1/reports/${id}/resolve`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: 'admin' }) });
+    setData(data.map(r => r.id === id ? { ...r, status: 'reviewed' } : r));
+  };
+
+  return (
+    <AdminLayout>
+      <h1 className="text-3xl font-extrabold text-text-primary mb-6">Reports</h1>
+      <Table headers={['Reporter', 'Reported', 'Reason', 'Status', 'Date', '']}>
+        {data.map(r => (
+          <tr key={r.id} className="border-b border-divider hover:bg-surface-light/50">
+            <td className="px-4 py-3 text-text-primary">{r.reporterRole} ({r.reporterId?.slice(0, 6)}...)</td>
+            <td className="px-4 py-3 text-text-primary">{r.reportedUserId ? `User: ${r.reportedUserId.slice(0, 6)}` : `Astro: ${r.reportedAstrologerId?.slice(0, 6)}`}...</td>
+            <td className="px-4 py-3 text-text-secondary">{r.reason}</td>
+            <td className="px-4 py-3">{r.status === 'reviewed' ? <Badge variant="success">Reviewed</Badge> : <Badge variant="warning">Pending</Badge>}</td>
+            <td className="px-4 py-3 text-text-muted text-sm">{new Date(r.createdAt).toLocaleDateString()}</td>
+            <td className="px-4 py-3">{r.status !== 'reviewed' && <button onClick={() => resolve(r.id)} className="text-primary-light hover:underline text-sm">Resolve</button>}</td>
+          </tr>
+        ))}
+      </Table>
+    </AdminLayout>
+  );
 }
-
-export default function ReportsPage() { return <Placeholder title="Reports" />; }
-export function NotificationsPage() { return <Placeholder title="Notifications" />; }
-export function BlogsPage() { return <Placeholder title="Blogs" />; }
-export function NewsPage() { return <Placeholder title="News" />; }
-export function SettingsPage() { return <Placeholder title="Settings" />; }
-export function ApiKeysPage() { return <Placeholder title="API Keys" />; }
-export function DynamicLinksPage() { return <Placeholder title="Dynamic Links" />; }
-export function WebsiteContentPage() { return <Placeholder title="Website Content" />; }

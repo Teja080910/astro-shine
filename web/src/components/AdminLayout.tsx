@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Star, Receipt, ArrowDownUp, Percent, MessageSquare, AlertTriangle, Bell, Settings, Key, Link2, Globe, FileText, Newspaper } from 'lucide-react';
+import { LayoutDashboard, Users, Star, Receipt, ArrowDownUp, Percent, MessageSquare, AlertTriangle, Bell, Key, Link2, Globe, FileText, Newspaper } from 'lucide-react';
 
 const menuItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -17,7 +17,6 @@ const menuItems = [
   { href: '/notifications', icon: Bell, label: 'Notifications' },
   { href: '/blogs', icon: FileText, label: 'Blogs' },
   { href: '/news', icon: Newspaper, label: 'News' },
-  { href: '/settings', icon: Settings, label: 'Settings' },
   { href: '/api-keys', icon: Key, label: 'API Keys' },
   { href: '/dynamic-links', icon: Link2, label: 'Links' },
   { href: '/website-content', icon: Globe, label: 'Website' },

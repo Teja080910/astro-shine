@@ -11,3 +11,6 @@
 # Project Structure
 - Maintain mobile apps in app/ directory and website in web/ directory. Confidence: 0.55
 
+# Development Scope
+- Only build features and pages that are listed in features.md; remove anything not in the spec. Confidence: 0.65
+

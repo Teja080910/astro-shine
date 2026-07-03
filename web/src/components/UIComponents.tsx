@@ -1,6 +1,11 @@
 'use client';
 
 import React from 'react';
+import { Users, Star, DollarSign, Phone, MessageSquare, AlertTriangle, Bell, Settings, Key, Link2, Globe, FileText, Newspaper, LayoutDashboard, Receipt, ArrowDownUp, Percent } from 'lucide-react';
+
+const iconMap: Record<string, any> = {
+  Users, Star, DollarSign, Phone, MessageSquare, AlertTriangle, Bell, Settings, Key, Link2, Globe, FileText, Newspaper, LayoutDashboard, Receipt, ArrowDownUp, Percent,
+};
 
 export function CustomModal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title?: string; children: React.ReactNode }) {
   if (!open) return null;
@@ -14,7 +19,9 @@ export function CustomModal({ open, onClose, title, children }: { open: boolean;
   );
 }
 
-export function StatCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: any; color: string }) {
+export function StatCard({ label, value, iconName, color }: { label: string; value: string; iconName: string; color: string }) {
+  const Icon = iconMap[iconName];
+  if (!Icon) return null;
   return (
     <div className="stat-card">
       <Icon size={28} color={color} />
@@ -45,11 +52,7 @@ export function Badge({ variant, children }: { variant: 'success' | 'warning' | 
 
 export function GradientButton({ children, onClick, variant, disabled, className }: { children: React.ReactNode; onClick?: () => void; variant?: 'gold' | 'danger'; disabled?: boolean; className?: string }) {
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={`gradient-btn ${variant === 'gold' ? 'btn-gold' : ''} ${variant === 'danger' ? 'btn-danger' : ''} ${className || ''}`}
-    >
+    <button onClick={onClick} disabled={disabled} className={`gradient-btn ${variant === 'gold' ? 'btn-gold' : ''} ${variant === 'danger' ? 'btn-danger' : ''} ${className || ''}`}>
       {children}
     </button>
   );

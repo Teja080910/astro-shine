@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
 import { ScreenWrapper, GlassCard, SectionHeader, SearchBar, GradientButton, CustomModal, Avatar, StarRating, Chip, SkeletonLoader, EmptyState, colors, typography, radii } from '@astro-shine/shared-ui';
 import { api } from '@astro-shine/api-client';
 import type { Astrologer, HoroscopeRecord, ShopProduct, Blog, Transaction, Wallet } from '@astro-shine/shared-types';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../../context/AuthContext';
 
 // User Home Dashboard
 export function UserHomeScreen({ navigation }: any) {
@@ -235,12 +236,9 @@ function Stat({ label, value }: { label: string; value: string }) {
   return <View style={{ alignItems: 'center' }}><Text style={{ fontSize: 18, fontWeight: '700', color: colors.primaryLight }}>{value}</Text><Text style={typography.caption}>{label}</Text></View>;
 }
 
-import { TextInput } from 'react-native';
 function Input({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return <View style={{ marginBottom: 14 }}><Text style={[typography.label, { marginBottom: 6 }]}>{label}</Text><TextInput style={{ backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, color: colors.textPrimary, fontSize: 15 }} value={value} onChangeText={onChange} /></View>;
 }
-
-import { useAuth } from '../../context/AuthContext';
 
 const styles = StyleSheet.create({
   astroCard: { width: 140, marginRight: 12 },
