@@ -4,7 +4,8 @@
 
 | Layer | Technology |
 |---|---|
-| **Mobile Apps** (User, Astrologer, Admin) | React Native (TypeScript) |
+| **Mobile App** (User + Astrologer) | Expo (React Native + React Native Paper MD3) |
+| **Admin Panel** (Web) | Next.js (TypeScript) |
 | **Backend API** | NestJS (TypeScript) |
 | **Database** | PostgreSQL |
 | **Monorepo** | Turborepo |
@@ -92,14 +93,13 @@ Premium, modern, minimal, elegant, trustworthy, calm — spiritual without looki
 astro-shine/
 ├── apps/
 │   ├── api/                    # NestJS backend
-│   ├── app-user/               # React Native - User App
-│   ├── app-astrologer/         # React Native - Astrologer App
-│   └── app-admin/              # React Native - Admin Panel
+│   ├── mobile/                 # Expo - User + Astrologer (role-based routing)
+│   └── admin/                  # Next.js - Admin Panel (web)
 ├── packages/
 │   ├── shared-types/           # TypeScript interfaces/types shared across all apps
 │   ├── shared-ui/              # Reusable UI components (buttons, inputs, modals)
 │   ├── api-client/             # Auto-generated API client / fetch wrappers
-│   └── config/                 # Shared ESLint, TSConfig, Tailwind configs
+│   └── config/                 # Shared ESLint, TSConfig configs
 └── docker-compose.yml          # PostgreSQL + dev services
 ```
 
@@ -139,12 +139,17 @@ astro-shine/
 - Gradient components (LinearGradient wrappers)
 - Animation presets (fade, slide, shared element)
 
-**1.5 React Native Foundation**
-- Scaffold 3 React Native apps (User, Astrologer, Admin)
+**1.5 Expo Mobile Foundation**
+- Scaffold single Expo app with role-based routing (User vs Astrologer)
 - Shared UI component library setup (using design tokens)
 - Navigation structure (React Navigation)
 - Auth flow (login/register screens)
 - Dark/Light mode theming
+
+**1.6 Next.js Admin Foundation**
+- Scaffold Next.js app for Admin Panel
+- Admin-specific layout & navigation
+- Auth flow (admin login)
 
 ---
 
@@ -156,11 +161,11 @@ astro-shine/
 - Astrologer verification flow (document upload, approval)
 - Delete account functionality
 
-**2.2 Mobile**
-- Login/Register screens (all 3 apps)
-- Onboarding/Walkthrough screens (User, Astrologer)
-- Edit Profile screens
-- Astrologer document upload & verification status
+**2.2 Mobile & Admin**
+- Login/Register screens (Mobile + Admin)
+- Onboarding/Walkthrough screens (Mobile - User & Astrologer)
+- Edit Profile screens (Mobile + Admin)
+- Astrologer document upload & verification status (Mobile + Admin)
 - Delete account flow
 
 ---
@@ -175,7 +180,7 @@ astro-shine/
 - Zodiac Sign API
 
 **3.2 Mobile**
-- Home Dashboard (all apps)
+- Home Dashboard (role-based: User vs Astrologer)
 - Kundli input & chart display (User)
 - Matchmaking form & results (User)
 - Daily Horoscope view (User)
@@ -198,9 +203,11 @@ astro-shine/
 - Voice call UI (User & Astrologer)
 - Video call UI (User & Astrologer)
 - Online/Offline toggle (Astrologer)
-- Call/chat history (Admin)
 - Live astrologers list (User)
 - Category-wise astrologer directory (User)
+
+**4.3 Admin (Web)**
+- Call/chat history viewer
 
 ---
 
@@ -220,13 +227,17 @@ astro-shine/
 - Add Funds screen with payment gateway (User)
 - Wallet dashboard (User, Astrologer)
 - Withdraw funds (Astrologer)
-- Transaction history (all apps)
+- Transaction history (Mobile)
 - Order history (User)
 - Commission logs (Astrologer)
 - Send Gifts to astrologers (User)
 - Receive & Redeem Gifts (Astrologer)
 - Donation page (User)
 - Shop Astro Products (User)
+
+**5.3 Admin (Web)**
+- Transaction logs viewer
+- Deposits & withdrawals management
 
 ---
 
@@ -244,7 +255,7 @@ astro-shine/
 - Dynamic page link settings
 - Website content editor API
 
-**6.2 Mobile (Admin App)**
+**6.2 Admin (Web)**
 - Admin Dashboard with stats/charts
 - User management list & detail
 - Astrologer management list & detail
@@ -253,9 +264,7 @@ astro-shine/
 - Payment gateway config
 - Call/chat logs viewer
 - API keys settings
-- Transaction logs viewer
 - Reviews management
-- Deposits & withdrawals management
 - Notification composer
 - News & Blog editor
 - Dynamic link updater
@@ -292,8 +301,8 @@ astro-shine/
 - End-to-end testing
 - Performance optimization
 - App store assets & metadata
-- Play Store build & release (User & Astrologer apps)
-- Admin app release (internal distribution)
+- Play Store build & release (Mobile - User & Astrologer roles)
+- Admin web deployment (Vercel)
 - Documentation
 
 ---
@@ -346,11 +355,13 @@ ChatMessage         Gift                Commission
 
 ## Key Design Decisions
 
-1. **Monorepo with Turborepo** — Shared types, UI components, and configs across all 3 React Native apps + NestJS backend
+1. **Monorepo with Turborepo** — Shared types, UI components, and configs across Expo mobile app + Next.js admin + NestJS backend
 2. **Drizzle ORM** — Type-safe, lightweight, SQL-like query builder with great PostgreSQL support
-3. **React Navigation** — Standard navigation for all 3 React Native apps
-4. **Socket.io** — Real-time chat and online status
-5. **Agora.io** — Voice/video call SDK (battle-tested, good React Native support)
-6. **Stripe/Razorpay** — Payment gateway (choose based on target market)
-7. **JWT + OTP Auth** — Email/password + phone OTP for flexible authentication
-8. **Feature-based NestJS modules** — Each domain (auth, kundli, wallet, etc.) is a self-contained module
+3. **Single Expo app with role-based routing** — User and Astrologer are roles within one mobile app, not separate codebases
+4. **Next.js for Admin Panel** — Web-based dashboard for admin management
+5. **React Navigation** — Navigation for the Expo mobile app
+6. **Socket.io** — Real-time chat and online status
+7. **Agora.io** — Voice/video call SDK (battle-tested, good React Native support)
+8. **Stripe/Razorpay** — Payment gateway (choose based on target market)
+9. **JWT + OTP Auth** — Email/password + phone OTP for flexible authentication
+10. **Feature-based NestJS modules** — Each domain (auth, kundli, wallet, etc.) is a self-contained module

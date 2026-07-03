@@ -4,6 +4,13 @@ node_modules/
 # Build output
 dist/
 *.tsbuildinfo
+.expo/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
 
 # Environment
 .env
@@ -29,3 +36,10 @@ coverage/
 
 # Drizzle
 src/db/migrations/meta/
+
+# Expo / React Native
+web-build/
+*.tsbuildinfo
+
+# Turbo
+.turbo/

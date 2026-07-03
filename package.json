@@ -1,0 +1,20 @@
+{
+  "name": "astro-shine",
+  "private": true,
+  "workspaces": [
+    "app",
+    "web",
+    "packages/*",
+    "server"
+  ],
+  "scripts": {
+    "dev:mobile": "cd app && npx expo start",
+    "dev:admin": "cd web && npm run dev",
+    "dev:api": "cd server && npm run start:dev",
+    "build": "turbo build",
+    "lint": "turbo lint"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0"
+  }
+}
