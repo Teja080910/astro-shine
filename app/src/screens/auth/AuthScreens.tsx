@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, KeyboardAvoidingView, ScrollView, Platform } from 'react-native';
-import { ScreenWrapper, GradientButton, colors, radii, typography } from '@astro-shine/shared-ui';
+import { ScreenWrapper, GradientButton, colors, radii, typography } from '../../shared';
 import { useAuth } from '../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -115,7 +115,7 @@ function Input({ icon, placeholder, value, onChange, secure, keyboardType, right
   );
 }
 
-import { api } from '@astro-shine/api-client';
+import { api } from '../../shared/api-client';
 
 const styles = StyleSheet.create({
   container: { flexGrow: 1, justifyContent: 'center', padding: 24 },

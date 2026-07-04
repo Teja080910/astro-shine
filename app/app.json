@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Astro Shine",
+    "slug": "astro-shine-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#09090B",
+    "splash": {
+      "backgroundColor": "#09090B",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.astroshine.mobile"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#09090B"
+      },
+      "package": "com.astroshine.mobile",
+      "softwareKeyboardLayoutMode": "pan"
+    },
+    "plugins": []
+  }
+}

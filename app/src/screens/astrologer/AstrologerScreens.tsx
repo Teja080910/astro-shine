@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Switch } from 'react-native';
-import { ScreenWrapper, GlassCard, GradientButton, SectionHeader, Avatar, StarRating, Chip, EmptyState, colors, typography, radii } from '@astro-shine/shared-ui';
-import { api } from '@astro-shine/api-client';
-import type { Astrologer, Transaction, CommissionLog } from '@astro-shine/shared-types';
+import { ScreenWrapper, GlassCard, GradientButton, SectionHeader, Avatar, StarRating, Chip, EmptyState, colors, typography, radii } from '../../shared';
+import { api } from '../../shared/api-client';
+import type { Astrologer, Transaction, CommissionLog } from '../../shared/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 

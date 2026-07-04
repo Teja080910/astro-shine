@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet } from 'react-native';
-import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, colors, typography, radii } from '@astro-shine/shared-ui';
-import { api } from '@astro-shine/api-client';
+import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, colors, typography, radii } from '../../shared';
+import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
-import type { Blog, Notification, SupportTicket, NewsItem } from '@astro-shine/shared-types';
+import type { Blog, Notification, SupportTicket, NewsItem } from '../../shared/types';
 
 function SectionTitle({ title }: { title: string }) {
   return <Text style={[typography.pageTitle, { marginBottom: 16 }]}>{title}</Text>;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import { ScreenWrapper, GradientButton, colors, typography } from '@astro-shine/shared-ui';
+import { ScreenWrapper, GradientButton, colors, typography } from '../../shared';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');

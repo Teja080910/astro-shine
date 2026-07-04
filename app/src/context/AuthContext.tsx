@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { api } from '@astro-shine/api-client';
-import type { User, Astrologer } from '@astro-shine/shared-types';
+import { api } from '../shared/api-client';
+import type { User, Astrologer } from '../shared/types';
 
 export type AppRole = 'user' | 'astrologer' | null;
 

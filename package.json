@@ -2,7 +2,6 @@
   "name": "astro-shine",
   "private": true,
   "workspaces": [
-    "app",
     "web",
     "packages/*",
     "server"
