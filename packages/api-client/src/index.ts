@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import type { AuthResponse, LoginRequest, RegisterRequest, User, Astrologer, Admin, KundliRecord, MatchmakingRecord, HoroscopeRecord, PanchangRecord, Wallet, Transaction, WithdrawalRequest, Commission, CommissionLog, CallLog, ChatMessage, Gift, GiftTransaction, Donation, ShopProduct, Order, OrderItem, Blog, NewsItem, Review, Report, Notification, AppSetting, ApiKey, DynamicLink, WebsiteContent, LiveSession, MandirPooja, PoojaBooking, SupportTicket, TicketReply, AppRelease, Video } from '@astro-shine/shared-types';
 
-const BASE_URL = __DEV__ ? 'http://192.168.31.129:3067/api/v1' : 'https://api.astroshine.com/api/v1';
+const BASE_URL = __DEV__ ? 'http://10.19.202.221:3067/api/v1' : 'https://api.astroshine.com/api/v1';
 
 class ApiClient {
   private client: AxiosInstance;

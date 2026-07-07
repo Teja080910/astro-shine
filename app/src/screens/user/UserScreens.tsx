@@ -278,6 +278,7 @@ export function ProfileScreen({ navigation }: any) {
   const items = [
     { icon: 'person-outline', label: 'Edit Profile', route: 'EditProfile' },
     { icon: 'document-text-outline', label: 'Order History', route: 'OrderHistory' },
+    { icon: 'wallet-outline', label: 'Transaction History', route: 'Wallet' },
     { icon: 'notifications-outline', label: 'Notifications', route: 'Notifications' },
     { icon: 'newspaper-outline', label: 'Blogs', route: 'Blogs' },
     { icon: 'help-circle-outline', label: 'Help & Support', route: 'Support' },

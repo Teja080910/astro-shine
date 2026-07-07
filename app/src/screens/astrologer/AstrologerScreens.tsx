@@ -159,6 +159,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
     { icon: 'person-outline', label: 'Edit Profile', route: 'EditProfile' },
     { icon: 'document-attach-outline', label: 'Documents & Verification', route: 'Documents' },
     { icon: 'time-outline', label: 'Schedule', route: 'Schedule' },
+    { icon: 'wallet-outline', label: 'Transaction History', route: 'Wallet' },
     { icon: 'receipt-outline', label: 'Commission Logs', route: 'CommissionLogs' },
     { icon: 'notifications-outline', label: 'Notifications', route: 'Notifications' },
     { icon: 'help-circle-outline', label: 'Help & Support', route: 'Support' },
