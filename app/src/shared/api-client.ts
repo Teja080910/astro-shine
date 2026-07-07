@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import type { AuthResponse, LoginRequest, RegisterRequest, User, Astrologer, Admin, KundliRecord, MatchmakingRecord, HoroscopeRecord, PanchangRecord, Wallet, Transaction, WithdrawalRequest, Commission, CommissionLog, CallLog, ChatMessage, Gift, GiftTransaction, Donation, ShopProduct, Order, OrderItem, Blog, NewsItem, Review, Report, Notification, AppSetting, ApiKey, DynamicLink, WebsiteContent, LiveSession, MandirPooja, PoojaBooking, SupportTicket, TicketReply, AppRelease, Video } from '../shared/types';
 
-const BASE_URL = __DEV__ ? 'http://10.0.2.2:3067/api/v1' : 'https://api.astroshine.com/api/v1';
+const BASE_URL = __DEV__ ? 'http://192.168.31.129:3067/api/v1' : 'https://api.astroshine.com/api/v1';
 
 class ApiClient {
   private client: AxiosInstance;
@@ -36,6 +36,7 @@ class ApiClient {
     get: (id: string) => this.get<User>(`/users/${id}`),
     update: (id: string, d: Partial<User>) => this.put<User>(`/users/${id}`, d),
     delete: (id: string) => this.del(`/users/${id}`),
+    changePassword: (d: any) => this.post<any>('/users/change-password', d),
   };
 
   // Astrologers
@@ -46,6 +47,7 @@ class ApiClient {
     update: (id: string, d: any) => this.put<Astrologer>(`/astrologers/${id}`, d),
     verify: (id: string, status: string, note?: string) => this.post<Astrologer>(`/astrologers/${id}/verify`, { status, note }),
     updateStatus: (id: string, status: string) => this.put<Astrologer>(`/astrologers/${id}/online-status`, { status }),
+    delete: (id: string) => this.del(`/astrologers/${id}`),
   };
 
   // Admins
@@ -53,6 +55,7 @@ class ApiClient {
     list: () => this.get<Admin[]>('/admins'),
     get: (id: string) => this.get<Admin>(`/admins/${id}`),
     create: (d: any) => this.post<Admin>('/admins', d),
+    update: (id: string, d: any) => this.put<Admin>(`/admins/${id}`, d),
   };
 
   // Kundli
@@ -91,6 +94,7 @@ class ApiClient {
   // Transactions
   transactions = {
     list: (walletId?: string) => this.get<Transaction[]>('/transactions', { walletId }),
+    listMy: () => this.get<Transaction[]>('/transactions/my'),
     get: (id: string) => this.get<Transaction>(`/transactions/${id}`),
     create: (d: any) => this.post<Transaction>('/transactions', d),
     updateStatus: (id: string, status: string) => this.put<Transaction>(`/transactions/${id}/status`, { status }),

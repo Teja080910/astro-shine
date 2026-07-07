@@ -9,6 +9,7 @@ export class TransactionsService {
 
   async findAll(limit = 50) { return this.db.query.transactions.findMany({ limit, orderBy: [desc(schema.transactions.createdAt)] }); }
   async findByWalletId(walletId: string) { return this.db.query.transactions.findMany({ where: eq(schema.transactions.walletId, walletId), orderBy: [desc(schema.transactions.createdAt)] }); }
+  async findByUserId(userId: string) { return this.db.query.transactions.findMany({ where: eq(schema.transactions.userId, userId), orderBy: [desc(schema.transactions.createdAt)] }); }
   async findById(id: string) { return this.db.query.transactions.findFirst({ where: eq(schema.transactions.id, id) }); }
 
   async create(data: typeof schema.transactions.$inferInsert) {

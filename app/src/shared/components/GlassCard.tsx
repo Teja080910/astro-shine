@@ -6,7 +6,7 @@ interface Props { children: React.ReactNode; style?: ViewStyle; noPadding?: bool
 
 export function GlassCard({ children, style, noPadding }: Props) {
   return (
-    <View style={[styles.card, shadows.card, !noPadding && styles.padding, style]}>
+    <View style={[styles.card, shadows.card, !noPadding && styles.padding, { backgroundColor: colors.card, borderColor: colors.cardBorder }, style]}>
       {children}
     </View>
   );

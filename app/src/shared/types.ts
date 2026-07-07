@@ -31,6 +31,7 @@ export interface User {
   avatar?: string; gender?: Gender; dateOfBirth?: string;
   authProvider: AuthProvider; isActive: boolean;
   fcmToken?: string; onboardingCompleted: boolean;
+  theme?: string;
   lastLoginAt?: string; createdAt: string; updatedAt: string; deletedAt?: string;
 }
 
@@ -46,6 +47,7 @@ export interface Astrologer {
   verificationDoc?: string[]; verificationNote?: string;
   onlineStatus: OnlineStatus; isActive: boolean;
   fcmToken?: string; onboardingCompleted: boolean;
+  theme?: string;
   lastLoginAt?: string; createdAt: string; updatedAt: string;
 }
 

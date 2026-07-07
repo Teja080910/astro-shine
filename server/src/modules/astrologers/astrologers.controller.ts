@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
 import { AstrologersService } from './astrologers.service';
 
 function stripPassword(u: any) { if (!u) return u; const { password, ...r } = u; return r; }
@@ -28,4 +28,7 @@ export class AstrologersController {
   async onlineStatus(@Param('id') id: string, @Body() body: { status: 'online' | 'offline' | 'busy' }) {
     return stripPassword(await this.service.updateOnlineStatus(id, body.status));
   }
+
+  @Delete(':id')
+  async delete(@Param('id') id: string) { return stripPassword(await this.service.delete(id)); }
 }

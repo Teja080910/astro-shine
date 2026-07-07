@@ -21,7 +21,7 @@ import {
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const headerOpts = (title: string) => ({ headerShown: true, title, headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.white });
+const headerOpts = (title: string) => ({ headerShown: true, title, headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.textPrimary });
 
 function UserTabs() {
   const tabs = [
@@ -106,6 +106,9 @@ export function Navigation() {
             <Stack.Screen name="Documents" component={AstrologerDocumentsScreen} options={headerOpts('Documents')} />
             <Stack.Screen name="CommissionLogs" component={AstrologerCommissionScreen} options={headerOpts('Commissions')} />
             <Stack.Screen name="GoLive" component={AstrologerGoLiveScreen} options={headerOpts('Go Live')} />
+            <Stack.Screen name="EditProfile" component={EditProfileScreen} options={headerOpts('Edit Profile')} />
+            <Stack.Screen name="Support" component={SupportScreen} options={headerOpts('Support')} />
+            <Stack.Screen name="Notifications" component={NotificationsScreen} options={headerOpts('Notifications')} />
           </>
         )}
       </Stack.Navigator>

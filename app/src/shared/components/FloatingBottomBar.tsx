@@ -10,7 +10,7 @@ interface Props { tabs: Tab[]; activeTab: string; onTabPress: (key: string) => v
 export function FloatingBottomBar({ tabs, activeTab, onTabPress }: Props) {
   return (
     <View style={styles.wrapper}>
-      <View style={styles.blur}>
+      <View style={[styles.blur, { backgroundColor: colors.glassBg }]}>
         <View style={styles.container}>
           {tabs.map((tab) => {
             const active = tab.key === activeTab;

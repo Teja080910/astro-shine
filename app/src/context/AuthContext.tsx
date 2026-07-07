@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../shared/api-client';
 import type { User, Astrologer } from '../shared/types';
 
-export type AppRole = 'user' | 'astrologer' | null;
+export type AppRole = 'user' | 'astrologer' | 'admin' | null;
 
 interface AuthState {
   user: User | null;
@@ -18,6 +18,7 @@ interface AuthState {
   loginWithOtp: (phone: string, otp: string, role: AppRole) => Promise<void>;
   logout: () => Promise<void>;
   switchRole: (role: AppRole) => void;
+  updateUser: (u: any) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState>(null!);
@@ -45,19 +46,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const data = { token: t, user: u, astrologer: a, role: r };
     await AsyncStorage.setItem('auth', JSON.stringify(data));
     setToken(t); api.setToken(t);
-    if (u) { setUser(u); setRole('user'); }
+    if (u) { setUser(u); setRole(r || 'user'); }
     if (a) { setAstrologer(a); setRole('astrologer'); }
   };
 
   const loginAsUser = async (email: string, password: string) => {
     const { token, user: u } = await api.auth.login({ email, password });
-    await persist(token, u as User, undefined, 'user');
+    const resolvedRole = ((u as any).role === 'super_admin' || (u as any).role === 'admin') ? 'admin' : ((u as any).role === 'astrologer' ? 'astrologer' : 'user');
+    if (resolvedRole === 'astrologer') {
+      await persist(token, undefined, u as any, 'astrologer');
+    } else {
+      await persist(token, u as User, undefined, resolvedRole as any);
+    }
   };
 
   const loginAsAstrologer = async (email: string, password: string) => {
     const { token, user: u } = await api.auth.login({ email, password });
-    const a = await api.astrologers.list(); // simplified — real impl would fetch astrologer profile
-    await persist(token, undefined, a[0], 'astrologer');
+    await persist(token, undefined, u as any, 'astrologer');
   };
 
   const registerUser = async (name: string, email: string, password: string, phone?: string) => {
@@ -83,8 +88,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const switchRole = (r: AppRole) => setRole(r);
 
+  const updateUser = async (u: any) => {
+    if (role === 'astrologer') {
+      setAstrologer(u);
+    } else {
+      setUser(u);
+    }
+    try {
+      const stored = await AsyncStorage.getItem('auth');
+      if (stored) {
+        const data = JSON.parse(stored);
+        if (role === 'astrologer') {
+          data.astrologer = u;
+        } else {
+          data.user = u;
+        }
+        await AsyncStorage.setItem('auth', JSON.stringify(data));
+      }
+    } catch {}
+  };
+
   return (
-    <AuthContext.Provider value={{ user, astrologer, token, role, loading, loginAsUser, loginAsAstrologer, registerUser, registerAstrologer, loginWithOtp, logout, switchRole }}>
+    <AuthContext.Provider value={{ user, astrologer, token, role, loading, loginAsUser, loginAsAstrologer, registerUser, registerAstrologer, loginWithOtp, logout, switchRole, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
