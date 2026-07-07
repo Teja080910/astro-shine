@@ -5,12 +5,20 @@ import { colors, radii } from '../theme';
 interface Props { label: string; selected?: boolean; onPress?: () => void; color?: string; }
 
 export function Chip({ label, selected, onPress, color }: Props) {
+  const dynamicChipStyle = selected
+    ? { borderColor: colors.primary, backgroundColor: colors.primary + '20' }
+    : { borderColor: colors.cardBorder, backgroundColor: colors.surfaceLight };
+
+  const dynamicLabelStyle = selected
+    ? { color: colors.primaryLight }
+    : { color: colors.textSecondary };
+
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={[styles.chip, selected && styles.selected, color ? { backgroundColor: color + '20', borderColor: color } : null]}
+      style={[styles.chip, dynamicChipStyle, color ? { backgroundColor: color + '20', borderColor: color } : null]}
     >
-      <Text style={[styles.label, selected && styles.selectedLabel, color ? { color } : null]}>{label}</Text>
+      <Text style={[styles.label, dynamicLabelStyle, color ? { color } : null]}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -21,12 +29,8 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: radii.chip,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
-    backgroundColor: colors.surfaceLight,
     marginRight: 8,
     marginBottom: 8,
   },
-  selected: { borderColor: colors.primary, backgroundColor: colors.primary + '20' },
-  label: { fontSize: 13, fontWeight: '500', color: colors.textSecondary },
-  selectedLabel: { color: colors.primaryLight },
+  label: { fontSize: 13, fontWeight: '500' },
 });

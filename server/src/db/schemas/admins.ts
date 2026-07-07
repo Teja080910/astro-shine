@@ -8,7 +8,6 @@ export const admins = pgTable('admins', {
   role: varchar('role', { length: 50 }).notNull().default('admin'),
   avatar: text('avatar'),
   isActive: boolean('is_active').notNull().default(true),
-  theme: varchar('theme', { length: 20 }).notNull().default('dark'),
   lastLoginAt: timestamp('last_login_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),

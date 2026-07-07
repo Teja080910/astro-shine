@@ -31,7 +31,6 @@ async function main() {
       email: adminEmail,
       password: hashedPassword,
       role: 'super_admin',
-      theme: 'dark',
     });
     console.log('✅ Default Admin seeded.');
   } else {
@@ -61,7 +60,6 @@ async function main() {
       verificationStatus: 'approved',
       onlineStatus: 'online',
       onboardingCompleted: true,
-      theme: 'dark',
     });
     console.log('✅ Default Astrologer seeded.');
   } else {
@@ -81,7 +79,6 @@ async function main() {
       phone: '9998887776',
       password: hashedPassword,
       onboardingCompleted: true,
-      theme: 'dark',
     });
     console.log('✅ Default User seeded.');
   } else {

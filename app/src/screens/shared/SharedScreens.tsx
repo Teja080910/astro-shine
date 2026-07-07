@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal } from 'react-native';
 import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, colors, typography, radii } from '../../shared';
 import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
@@ -46,23 +46,37 @@ export function NotificationsScreen({ route }: any) {
 // Edit Profile
 export function EditProfileScreen() {
   const navigation = useNavigation<any>();
-  const { user, updateUser } = useAuth();
-  const [name, setName] = useState(user?.name || '');
-  const [phone, setPhone] = useState(user?.phone || '');
+  const { user, astrologer, role, updateUser } = useAuth();
+  const profile = role === 'astrologer' ? astrologer : user;
+  
+  const [name, setName] = useState(profile?.name || '');
+  const [phone, setPhone] = useState(profile?.phone || '');
+  const [gender, setGender] = useState((profile as any)?.gender || 'male');
+  const [dateOfBirth, setDateOfBirth] = useState((profile as any)?.dateOfBirth ? (profile as any).dateOfBirth.split('T')[0] : '');
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      setName(user.name);
-      setPhone(user.phone || '');
+    if (profile) {
+      setName(profile.name);
+      setPhone(profile.phone || '');
+      setGender((profile as any).gender || 'male');
+      setDateOfBirth((profile as any).dateOfBirth ? (profile as any).dateOfBirth.split('T')[0] : '');
     }
-  }, [user]);
+  }, [profile]);
 
   const handleSave = async () => {
     if (!name.trim()) return;
     setLoading(true);
     try {
-      const updated = await api.users.update(user!.id, { name, phone });
+      let updated;
+      if (role === 'astrologer') {
+        updated = await api.astrologers.update(profile!.id, { name, phone, gender, dateOfBirth });
+      } else if (role === 'admin') {
+        updated = await api.admins.update(profile!.id, { name });
+      } else {
+        updated = await api.users.update(profile!.id, { name, phone, gender, dateOfBirth });
+      }
       await updateUser(updated);
       navigation.goBack();
     } catch (e) {
@@ -75,9 +89,94 @@ export function EditProfileScreen() {
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Edit Profile" />
-      <View style={{ marginBottom: 14 }}><Text style={[typography.label, { marginBottom: 6 }]}>Name</Text><TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Your name" placeholderTextColor={colors.textMuted} /></View>
-      <View style={{ marginBottom: 14 }}><Text style={[typography.label, { marginBottom: 6 }]}>Phone</Text><TextInput style={styles.input} value={phone} onChangeText={setPhone} placeholder="Phone number" placeholderTextColor={colors.textMuted} keyboardType="phone-pad" /></View>
-      <GradientButton title={loading ? 'Saving...' : 'Save Changes'} onPress={handleSave} disabled={loading} />
+      <View style={{ marginBottom: 14 }}>
+        <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Name</Text>
+        <TextInput
+          style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+          value={name}
+          onChangeText={setName}
+          placeholder="Your name"
+          placeholderTextColor={colors.textMuted}
+        />
+      </View>
+      
+      {role !== 'admin' && (
+        <View style={{ marginBottom: 14 }}>
+          <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Phone</Text>
+          <TextInput
+            style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+            value={phone}
+            onChangeText={setPhone}
+            placeholder="Phone number"
+            placeholderTextColor={colors.textMuted}
+            keyboardType="phone-pad"
+          />
+        </View>
+      )}
+
+      {role !== 'admin' && (
+        <>
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Gender</Text>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <TouchableOpacity
+                onPress={() => setGender('male')}
+                style={{
+                  flex: 1,
+                  height: 48,
+                  borderRadius: radii.input,
+                  borderWidth: 1,
+                  borderColor: gender === 'male' ? colors.primary : colors.cardBorder,
+                  backgroundColor: gender === 'male' ? colors.primary + '15' : colors.surfaceLight,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text style={{ color: gender === 'male' ? colors.primaryLight : colors.textPrimary, fontWeight: '600' }}>Male</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setGender('female')}
+                style={{
+                  flex: 1,
+                  height: 48,
+                  borderRadius: radii.input,
+                  borderWidth: 1,
+                  borderColor: gender === 'female' ? colors.primary : colors.cardBorder,
+                  backgroundColor: gender === 'female' ? colors.primary + '15' : colors.surfaceLight,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text style={{ color: gender === 'female' ? colors.primaryLight : colors.textPrimary, fontWeight: '600' }}>Female</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Date of Birth</Text>
+            <TouchableOpacity
+              onPress={() => setShowDatePicker(true)}
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, justifyContent: 'center', paddingHorizontal: 14 }]}
+            >
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={{ color: dateOfBirth ? colors.textPrimary : colors.textMuted, fontSize: 15 }}>
+                  {dateOfBirth || "Select Date of Birth"}
+                </Text>
+                <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          <CalendarPickerModal
+            visible={showDatePicker}
+            value={dateOfBirth}
+            onClose={() => setShowDatePicker(false)}
+            onSelect={setDateOfBirth}
+          />
+        </>
+      )}
+
+      <GradientButton title={loading ? 'Saving...' : 'Save Changes'} onPress={handleSave} disabled={loading} style={{ marginTop: 8 }} />
     </ScreenWrapper>
   );
 }
@@ -111,8 +210,8 @@ export function SupportScreen() {
     <ScreenWrapper scroll>
       <SectionTitle title="Help & Support" />
       <Text style={[typography.body, { marginBottom: 16 }]}>Create a support ticket</Text>
-      <View style={{ marginBottom: 14 }}><TextInput style={styles.input} value={subject} onChangeText={setSubject} placeholder="Subject" placeholderTextColor={colors.textMuted} /></View>
-      <View style={{ marginBottom: 14 }}><TextInput style={[styles.input, { height: 100 }]} value={message} onChangeText={setMessage} placeholder="Describe your issue" placeholderTextColor={colors.textMuted} multiline textAlignVertical="top" /></View>
+      <View style={{ marginBottom: 14 }}><TextInput style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]} value={subject} onChangeText={setSubject} placeholder="Subject" placeholderTextColor={colors.textMuted} /></View>
+      <View style={{ marginBottom: 14 }}><TextInput style={[styles.input, { height: 100, backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]} value={message} onChangeText={setMessage} placeholder="Describe your issue" placeholderTextColor={colors.textMuted} multiline textAlignVertical="top" /></View>
       <GradientButton title={loading ? 'Submitting...' : 'Submit Ticket'} onPress={handleSubmit} disabled={loading} />
       {tickets.length > 0 && <><SectionHeader title="Your Tickets" style={{ marginTop: 20 }} /><FlatList data={tickets} scrollEnabled={false} keyExtractor={t => t.id} renderItem={({ item }) => <GlassCard style={{ marginBottom: 8, padding: 12 }}><Text style={typography.cardTitle}>{item.subject}</Text><Text style={typography.caption}>{item.status.toUpperCase()} - Priority: {item.priority}</Text><Text style={typography.body}>{item.message}</Text></GlassCard>} /></>}
     </ScreenWrapper>
@@ -131,7 +230,7 @@ export function DonationScreen() {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16, justifyContent: 'center' }}>
           {['101', '501', '1100', '2100'].map(a => <Chip key={a} label={`₹${a}`} selected={amount === a} onPress={() => setAmount(a)} />)}
         </View>
-        <View style={{ marginTop: 12, width: '100%' }}><TextInput style={styles.input} value={amount} onChangeText={setAmount} placeholder="Custom amount" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" /></View>
+        <View style={{ marginTop: 12, width: '100%' }}><TextInput style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]} value={amount} onChangeText={setAmount} placeholder="Custom amount" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" /></View>
         <GradientButton title="Donate Now" variant="gold" onPress={() => {}} style={{ marginTop: 12 }} />
       </GlassCard>
     </ScreenWrapper>
@@ -149,7 +248,7 @@ export function ReportScreen({ route, navigation }: any) {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 14 }}>
         {reasons.map(r => <Chip key={r} label={r.replace('_', ' ')} selected={reason === r} onPress={() => setReason(r)} />)}
       </View>
-      <View style={{ marginBottom: 14 }}><TextInput style={[styles.input, { height: 80 }]} value={desc} onChangeText={setDesc} placeholder="Additional details..." placeholderTextColor={colors.textMuted} multiline textAlignVertical="top" /></View>
+      <View style={{ marginBottom: 14 }}><TextInput style={[styles.input, { height: 80, backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]} value={desc} onChangeText={setDesc} placeholder="Additional details..." placeholderTextColor={colors.textMuted} multiline textAlignVertical="top" /></View>
       <GradientButton title="Submit Report" variant="danger" onPress={() => {}} />
     </ScreenWrapper>
   );
@@ -266,6 +365,250 @@ export function AstrologerGoLiveScreen() {
         <GradientButton title="Go Live Now" variant="gold" onPress={() => {}} style={{ marginTop: 16 }} />
       </GlassCard>
     </ScreenWrapper>
+  );
+}
+
+// Privacy Policy Screen
+export function PrivacyPolicyScreen({ navigation }: any) {
+  return (
+    <ScreenWrapper scroll>
+      <SectionTitle title="Privacy Policy" />
+      <GlassCard style={{ marginBottom: 16 }}>
+        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>1. Overview & Commitment</Text>
+        <Text style={[typography.body, { marginBottom: 12 }]}>
+          Astro Shine respects your privacy and is committed to protecting your personal data. This privacy policy explains how we collect, store, share, and protect your personal information when you use our website, mobile application, or online consultation services.
+        </Text>
+
+        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>2. Information We Collect</Text>
+        <Text style={[typography.body, { marginBottom: 12 }]}>
+          • Personal Identification: Name, email address, telephone number, and gender.{"\n"}
+          • Astrological Profile Details: Date, time, and precise city/country of birth. This data is strictly used to compile your natal chart, horoscope calculations, and matching reports.{"\n"}
+          • Wallet & Billing: We record purchase transaction summaries and wallet ledger history. No full credit/debit card numbers or sensitive banking credentials are saved on our servers.
+        </Text>
+
+        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>3. Use of Your Personal Data</Text>
+        <Text style={[typography.body, { marginBottom: 12 }]}>
+          We utilize the collected information to calculate accurate astronomical positions, pair you with suitable consulting astrologers, process your wallet additions, verify your identity during logins, and dispatch push alerts or horoscopes.
+        </Text>
+
+        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>4. Consultation Confidentiality</Text>
+        <Text style={[typography.body, { marginBottom: 12 }]}>
+          Your private text chats and voice calls with astrologers are entirely confidential. They are encrypted and are not shared with any third-party marketing networks or external entities under any circumstances.
+        </Text>
+
+        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>5. Cookies & Session Management</Text>
+        <Text style={[typography.body, { marginBottom: 12 }]}>
+          We use temporary session identifiers and local browser storage to keep you logged in, save your layout settings, and track basic anonymous diagnostics to optimize application performance.
+        </Text>
+
+        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>6. Data Deletion Rights</Text>
+        <Text style={typography.body}>
+          You have the right to request deletion of your account and related data at any time. Simply use the "Delete Account" button on your Profile page or email us at support@astroshine.com.
+        </Text>
+      </GlassCard>
+      <GradientButton title="Back to Dashboard" onPress={() => navigation.navigate('Main')} style={{ marginTop: 12 }} />
+    </ScreenWrapper>
+  );
+}
+
+// Terms & Conditions Screen
+export function TermsConditionsScreen({ navigation }: any) {
+  return (
+    <ScreenWrapper scroll>
+      <SectionTitle title="Terms & Conditions" />
+      <GlassCard style={{ marginBottom: 16 }}>
+        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>1. Acceptance of Terms</Text>
+        <Text style={[typography.body, { marginBottom: 12 }]}>
+          By registering an account, purchasing wallet credits, or using any feature on Astro Shine, you agree to be bound by these Terms & Conditions. If you do not accept these terms, you must immediately deactivate your account and exit our services.
+        </Text>
+
+        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>2. Nature of Astrological Advice</Text>
+        <Text style={[typography.body, { marginBottom: 12 }]}>
+          Astro Shine offers guidance tools based on traditional Vedic astrology, Numerology, and Tarot cards. Predictions, advice, and charts are provided for entertainment and self-reflection purposes only. They do not constitute certified medical, psychiatric, legal, or financial advice.
+        </Text>
+
+        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>3. Wallet Recharge & Fees</Text>
+        <Text style={[typography.body, { marginBottom: 12 }]}>
+          Recharging your account wallet allows you to connect with astrologers. Rates are charged per-minute and are deducted in real-time. Recharge balances are non-refundable. Under rare technical dropouts, you may submit a support ticket within 24 hours to request a credit refund.
+        </Text>
+
+        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>4. Professional Code of Conduct</Text>
+        <Text style={[typography.body, { marginBottom: 12 }]}>
+          Any form of abusive language, harassment, threats, or sharing of personal phone numbers, emails, or payment links during a consultation is strictly forbidden. Violations will result in permanent suspension without a refund.
+        </Text>
+
+        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>5. Limitation of Liability</Text>
+        <Text style={typography.body}>
+          Astro Shine is not liable for any direct, indirect, incidental, or consequential damages resulting from user actions taken based on advice or readings provided by astrologers on the platform.
+        </Text>
+      </GlassCard>
+      <GradientButton title="Back to Dashboard" onPress={() => navigation.navigate('Main')} style={{ marginTop: 12 }} />
+    </ScreenWrapper>
+  );
+}
+
+// About App Screen
+export function AboutAppScreen({ navigation }: any) {
+  return (
+    <ScreenWrapper scroll>
+      <SectionTitle title="About App" />
+      <GlassCard style={{ alignItems: 'center', marginBottom: 16, paddingVertical: 32 }}>
+        <Ionicons name="planet" size={64} color={colors.accentGold} style={{ marginBottom: 16 }} />
+        <Text style={[typography.sectionTitle, { marginBottom: 4 }]}>Astro Shine</Text>
+        <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: 16 }]}>Version 1.0.0 (Release Build)</Text>
+        
+        <Text style={[typography.body, { textAlign: 'center', paddingHorizontal: 16, lineHeight: 22, marginBottom: 16 }]}>
+          Astro Shine is the world's premier platform for spiritual guidance, connecting you directly with Vedic astrologers, Tarot card readers, Numerologists, and Vastu experts.
+        </Text>
+
+        <Text style={[typography.body, { textAlign: 'center', paddingHorizontal: 16, lineHeight: 22 }]}>
+          Our mission is to combine ancient cosmic wisdom with modern mobile technology. Whether you seek answers about career, love, finance, or health, our verified advisors are here to guide you 24/7.
+        </Text>
+
+        <Text style={[typography.caption, { color: colors.textMuted, marginTop: 24 }]}>
+          © 2026 Astro Shine Inc. All rights reserved.
+        </Text>
+      </GlassCard>
+      <GradientButton title="Back to Dashboard" onPress={() => navigation.navigate('Main')} style={{ marginTop: 12 }} />
+    </ScreenWrapper>
+  );
+}
+
+interface CalendarProps {
+  visible: boolean;
+  value: string;
+  onClose: () => void;
+  onSelect: (date: string) => void;
+}
+
+export function CalendarPickerModal({ visible, value, onClose, onSelect }: CalendarProps) {
+  const today = new Date();
+  const initialDate = value ? new Date(value) : today;
+  const [selectedYear, setSelectedYear] = useState(isNaN(initialDate.getTime()) ? today.getFullYear() : initialDate.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(isNaN(initialDate.getTime()) ? today.getMonth() : initialDate.getMonth());
+  const [selectedDay, setSelectedDay] = useState(isNaN(initialDate.getTime()) ? today.getDate() : initialDate.getDate());
+
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const years: number[] = [];
+  for (let y = today.getFullYear(); y >= 1950; y--) {
+    years.push(y);
+  }
+
+  const getDaysInMonth = (month: number, year: number) => {
+    return new Date(year, month + 1, 0).getDate();
+  };
+
+  const daysInMonth = getDaysInMonth(selectedMonth, selectedYear);
+  const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+
+  const handleConfirm = () => {
+    const mm = String(selectedMonth + 1).padStart(2, '0');
+    const dd = String(selectedDay).padStart(2, '0');
+    onSelect(`${selectedYear}-${mm}-${dd}`);
+    onClose();
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <TouchableOpacity activeOpacity={1} onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+        <TouchableOpacity activeOpacity={1} style={{ width: '100%', maxWidth: 340, backgroundColor: colors.surface, borderRadius: radii.card, borderWidth: 1, borderColor: colors.cardBorder, padding: 16 }}>
+          <Text style={[typography.sectionTitle, { textAlign: 'center', marginBottom: 12, color: colors.accentGold }]}>Select Date of Birth</Text>
+
+          <View style={{ backgroundColor: colors.surfaceLight, padding: 10, borderRadius: 8, alignItems: 'center', marginBottom: 16 }}>
+            <Text style={[typography.cardTitle, { color: colors.textPrimary }]}>
+              {selectedDay} {months[selectedMonth]} {selectedYear}
+            </Text>
+          </View>
+
+          <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: 4 }]}>Year</Text>
+          <View style={{ height: 48, marginBottom: 12 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+              {years.map(y => (
+                <TouchableOpacity
+                  key={y}
+                  onPress={() => {
+                    setSelectedYear(y);
+                    const days = getDaysInMonth(selectedMonth, y);
+                    if (selectedDay > days) setSelectedDay(days);
+                  }}
+                  style={{
+                    paddingHorizontal: 12,
+                    height: 38,
+                    borderRadius: 19,
+                    borderWidth: 1,
+                    borderColor: selectedYear === y ? colors.primary : colors.cardBorder,
+                    backgroundColor: selectedYear === y ? colors.primary : colors.surfaceLight,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text style={{ color: selectedYear === y ? colors.white : colors.textPrimary, fontWeight: '600', fontSize: 13 }}>{y}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: 4 }]}>Month</Text>
+          <View style={{ height: 48, marginBottom: 12 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+              {months.map((m, idx) => (
+                <TouchableOpacity
+                  key={m}
+                  onPress={() => {
+                    setSelectedMonth(idx);
+                    const days = getDaysInMonth(idx, selectedYear);
+                    if (selectedDay > days) setSelectedDay(days);
+                  }}
+                  style={{
+                    paddingHorizontal: 12,
+                    height: 38,
+                    borderRadius: 19,
+                    borderWidth: 1,
+                    borderColor: selectedMonth === idx ? colors.primary : colors.cardBorder,
+                    backgroundColor: selectedMonth === idx ? colors.primary : colors.surfaceLight,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text style={{ color: selectedMonth === idx ? colors.white : colors.textPrimary, fontWeight: '600', fontSize: 13 }}>{m.slice(0, 3)}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: 4 }]}>Day</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center', marginBottom: 16 }}>
+            {daysArray.map(d => (
+              <TouchableOpacity
+                key={d}
+                onPress={() => setSelectedDay(d)}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 18,
+                  borderWidth: 1,
+                  borderColor: selectedDay === d ? colors.primary : colors.cardBorder,
+                  backgroundColor: selectedDay === d ? colors.primary : colors.surfaceLight,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ color: selectedDay === d ? colors.white : colors.textPrimary, fontSize: 12, fontWeight: '600' }}>{d}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity onPress={onClose} style={{ flex: 1, height: 44, borderRadius: radii.button, borderWidth: 1, borderColor: colors.cardBorder, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleConfirm} style={{ flex: 1, height: 44, borderRadius: radii.button, backgroundColor: colors.accentGold, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ color: colors.white, fontWeight: '700' }}>Select Date</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
   );
 }
 

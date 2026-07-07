@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api } from '../shared/api-client';
 import type { User, Astrologer } from '../shared/types';
@@ -11,6 +12,8 @@ interface AuthState {
   token: string | null;
   role: AppRole;
   loading: boolean;
+  theme: 'light' | 'dark';
+  setTheme: (t: 'light' | 'dark') => Promise<void>;
   loginAsUser: (email: string, password: string) => Promise<void>;
   loginAsAstrologer: (email: string, password: string) => Promise<void>;
   registerUser: (name: string, email: string, password: string, phone?: string) => Promise<void>;
@@ -28,7 +31,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [astrologer, setAstrologer] = useState<Astrologer | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [role, setRole] = useState<AppRole>(null);
+  const [theme, setThemeVal] = useState<'light' | 'dark'>('dark');
   const [loading, setLoading] = useState(true);
+
+  const systemScheme = useColorScheme();
 
   useEffect(() => {
     (async () => {
@@ -38,9 +44,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const { token: t, user: u, astrologer: a, role: r } = JSON.parse(stored);
           setToken(t); setUser(u); setAstrologer(a); setRole(r); api.setToken(t);
         }
+        const storedTheme = await AsyncStorage.getItem('theme_preference');
+        if (storedTheme === 'light' || storedTheme === 'dark') {
+          setThemeVal(storedTheme);
+        } else if (systemScheme) {
+          setThemeVal(systemScheme);
+        }
       } catch {} finally { setLoading(false); }
     })();
-  }, []);
+  }, [systemScheme]);
+
+  const setTheme = async (t: 'light' | 'dark') => {
+    setThemeVal(t);
+    try {
+      await AsyncStorage.setItem('theme_preference', t);
+    } catch {}
+  };
 
   const persist = async (t: string, u?: User, a?: Astrologer, r?: AppRole) => {
     const data = { token: t, user: u, astrologer: a, role: r };
@@ -109,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, astrologer, token, role, loading, loginAsUser, loginAsAstrologer, registerUser, registerAstrologer, loginWithOtp, logout, switchRole, updateUser }}>
+    <AuthContext.Provider value={{ user, astrologer, token, role, theme, setTheme, loading, loginAsUser, loginAsAstrologer, registerUser, registerAstrologer, loginWithOtp, logout, switchRole, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

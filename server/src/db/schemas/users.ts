@@ -16,7 +16,6 @@ export const users = pgTable('users', {
   isActive: boolean('is_active').notNull().default(true),
   lastLoginAt: timestamp('last_login_at'),
   onboardingCompleted: boolean('onboarding_completed').notNull().default(false),
-  theme: varchar('theme', { length: 20 }).notNull().default('dark'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
   deletedAt: timestamp('deleted_at'),

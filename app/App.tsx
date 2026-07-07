@@ -6,15 +6,12 @@ import { Navigation } from './src/navigation/Navigation';
 import { darkTheme, lightTheme, setThemeState } from './src/shared';
 
 function ThemeWrapper({ children }: { children: React.ReactNode }) {
-  const { user, astrologer, role } = useAuth();
-  const profile = role === 'astrologer' ? astrologer : user;
-  const themeMode = (profile?.theme === 'light') ? 'light' : 'dark';
+  const { theme } = useAuth();
 
-  useEffect(() => {
-    setThemeState(themeMode);
-  }, [themeMode]);
+  // Set the theme state synchronously during render to guarantee correct values!
+  setThemeState(theme);
 
-  const activeTheme = themeMode === 'light' ? lightTheme : darkTheme;
+  const activeTheme = theme === 'light' ? lightTheme : darkTheme;
 
   return (
     <PaperProvider theme={activeTheme}>
@@ -23,12 +20,16 @@ function ThemeWrapper({ children }: { children: React.ReactNode }) {
   );
 }
 
+function NavigationContent() {
+  return <Navigation />;
+}
+
 export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
         <ThemeWrapper>
-          <Navigation />
+          <NavigationContent />
         </ThemeWrapper>
       </AuthProvider>
     </SafeAreaProvider>

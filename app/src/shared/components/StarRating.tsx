@@ -17,13 +17,13 @@ export function StarRating({ rating, size = 16, showNumber, reviewCount }: Props
           style={{ marginRight: 2 }}
         />
       ))}
-      {showNumber && <Text style={[styles.text, { fontSize: size - 2 }]}>{rating.toFixed(1)}</Text>}
-      {reviewCount !== undefined && <Text style={[styles.text, { fontSize: size - 2 }]}>({reviewCount})</Text>}
+      {showNumber && <Text style={[styles.text, { color: colors.textSecondary, fontSize: size - 2 }]}>{rating.toFixed(1)}</Text>}
+      {reviewCount !== undefined && <Text style={[styles.text, { color: colors.textSecondary, fontSize: size - 2 }]}>({reviewCount})</Text>}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  text: { color: colors.textSecondary, marginLeft: 4 },
+  text: { marginLeft: 4 },
 });

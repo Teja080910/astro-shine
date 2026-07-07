@@ -30,7 +30,6 @@ export const astrologers = pgTable('astrologers', {
   fcmToken: text('fcm_token'),
   lastLoginAt: timestamp('last_login_at'),
   onboardingCompleted: boolean('onboarding_completed').notNull().default(false),
-  theme: varchar('theme', { length: 20 }).notNull().default('dark'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
   deletedAt: timestamp('deleted_at'),

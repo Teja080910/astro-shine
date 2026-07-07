@@ -1,49 +1,90 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Switch, TextInput, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Switch, TextInput, Alert, ScrollView } from 'react-native';
 import { ScreenWrapper, GlassCard, GradientButton, SectionHeader, Avatar, StarRating, Chip, EmptyState, CustomModal, colors, typography, radii } from '../../shared';
 import { api } from '../../shared/api-client';
 import type { Astrologer, Transaction, CommissionLog } from '../../shared/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 
-export function AstrologerHomeScreen() {
-  const { astrologer } = useAuth();
+export function AstrologerHomeScreen({ navigation }: any) {
+  const { astrologer, user, role } = useAuth();
   const [isOnline, setIsOnline] = useState(astrologer?.onlineStatus === 'online');
   const [stats, setStats] = useState({ todayEarnings: '₹0', totalCalls: '0', rating: '0', pendingReq: '0' });
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => { if (astrologer?.id) api.astrologers.get(astrologer.id).then(a => { setIsOnline(a.onlineStatus === 'online'); }); }, []);
 
   const toggleOnline = async (v: boolean) => { setIsOnline(v); if (astrologer?.id) await api.astrologers.updateStatus(astrologer.id, v ? 'online' : 'offline'); };
 
-  const statItems = [
+  const statItems = role === 'admin' ? [
+    { label: 'Total Users', value: '120', icon: 'people-outline', color: colors.primaryLight },
+    { label: 'Active Astrologers', value: '8', icon: 'star-outline', color: colors.accentGold },
+    { label: 'Total Revenue', value: '₹45,200', icon: 'cash-outline', color: colors.success },
+  ] : [
     { label: 'Today Earnings', value: stats.todayEarnings, icon: 'cash-outline', color: colors.success },
     { label: 'Total Calls', value: stats.totalCalls, icon: 'call-outline', color: colors.primaryLight },
     { label: 'Rating', value: astrologer?.rating || '0', icon: 'star-outline', color: colors.accentGold },
   ];
 
   return (
-    <ScreenWrapper scroll>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <View>
-          <Text style={typography.pageTitle}>Dashboard</Text>
-          <Text style={typography.body}>{astrologer?.name || 'Astrologer'}</Text>
+    <ScreenWrapper style={{ position: 'relative', zIndex: 1 }}>
+      <ScrollView contentContainerStyle={{ padding: 16 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={typography.pageTitle}>{role === 'admin' ? 'Admin Panel' : 'Dashboard'}</Text>
+            <Text style={typography.body}>{role === 'admin' ? user?.name : (astrologer?.name || 'Astrologer')}</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            {role !== 'admin' && (
+              <View style={{ alignItems: 'center' }}>
+                <Text style={typography.caption}>{isOnline ? 'Online' : 'Offline'}</Text>
+                <Switch value={isOnline} onValueChange={toggleOnline} trackColor={{ false: colors.textMuted, true: colors.success }} thumbColor={colors.white} />
+              </View>
+            )}
+            <TouchableOpacity onPress={() => setMenuOpen(true)} style={{ padding: 8 }}>
+              <Ionicons name="menu-outline" size={32} color={colors.textPrimary} />
+            </TouchableOpacity>
+          </View>
         </View>
-        <View style={{ alignItems: 'center' }}>
-          <Text style={typography.caption}>{isOnline ? 'Online' : 'Offline'}</Text>
-          <Switch value={isOnline} onValueChange={toggleOnline} trackColor={{ false: colors.textMuted, true: colors.success }} thumbColor={colors.white} />
+
+        <View style={styles.statsGrid}>
+          {statItems.map(s => (
+            <GlassCard key={s.label} style={styles.stat}><Ionicons name={s.icon as any} size={28} color={s.color} /><Text style={[typography.cardTitle, { marginTop: 8 }]}>{s.value}</Text><Text style={typography.caption}>{s.label}</Text></GlassCard>
+          ))}
         </View>
-      </View>
 
-      <View style={styles.statsGrid}>
-        {statItems.map(s => (
-          <GlassCard key={s.label} style={styles.stat}><Ionicons name={s.icon as any} size={28} color={s.color} /><Text style={[typography.cardTitle, { marginTop: 8 }]}>{s.value}</Text><Text style={typography.caption}>{s.label}</Text></GlassCard>
-        ))}
-      </View>
+        <SectionHeader title="Quick Actions" />
+        <View style={{ gap: 8, marginTop: 8 }}>
+          <GradientButton title={role === 'admin' ? "Manage Users" : "Go Live"} variant="gold" onPress={() => {}} />
+        </View>
+      </ScrollView>
 
-      <SectionHeader title="Quick Actions" />
-      <View style={{ gap: 8, marginTop: 8 }}>
-        <GradientButton title="Go Live" variant="gold" onPress={() => {}} />
-      </View>
+      {menuOpen && (
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={() => setMenuOpen(false)}
+        >
+          <View style={[styles.dropdownContainer, { backgroundColor: colors.surface, borderColor: colors.divider }]}>
+            <TouchableOpacity onPress={() => { setMenuOpen(false); navigation.navigate('PrivacyPolicy'); }} style={[styles.dropdownItem, { borderBottomColor: colors.divider }]}>
+              <Ionicons name="document-text-outline" size={18} color={colors.textSecondary} />
+              <Text style={[typography.body, { marginLeft: 10, color: colors.textPrimary }]}>Privacy Policy</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { setMenuOpen(false); navigation.navigate('TermsConditions'); }} style={[styles.dropdownItem, { borderBottomColor: colors.divider }]}>
+              <Ionicons name="shield-checkmark-outline" size={18} color={colors.textSecondary} />
+              <Text style={[typography.body, { marginLeft: 10, color: colors.textPrimary }]}>Terms & Conditions</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { setMenuOpen(false); navigation.navigate('AboutApp'); }} style={[styles.dropdownItem, { borderBottomColor: colors.divider }]}>
+              <Ionicons name="information-circle-outline" size={18} color={colors.textSecondary} />
+              <Text style={[typography.body, { marginLeft: 10, color: colors.textPrimary }]}>About App</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { setMenuOpen(false); navigation.navigate('Support'); }} style={[styles.dropdownItem, { borderBottomWidth: 0 }]}>
+              <Ionicons name="help-circle-outline" size={18} color={colors.textSecondary} />
+              <Text style={[typography.body, { marginLeft: 10, color: colors.textPrimary }]}>Help & Support</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      )}
     </ScreenWrapper>
   );
 }
@@ -99,7 +140,7 @@ function PasswordInput({ label, value, onChange, placeholder }: { label: string;
 }
 
 export function AstrologerProfileScreen({ navigation }: any) {
-  const { astrologer, user, role, logout, updateUser } = useAuth();
+  const { astrologer, user, role, logout, updateUser, theme, setTheme } = useAuth();
   const [pwOpen, setPwOpen] = useState(false);
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
@@ -124,16 +165,9 @@ export function AstrologerProfileScreen({ navigation }: any) {
   ];
 
   const toggleTheme = async (val: boolean) => {
-    if (!profile) return;
     const newTheme = val ? 'dark' : 'light';
     try {
-      let updated;
-      if (role === 'admin') {
-        updated = await api.admins.update(profile.id, { theme: newTheme });
-      } else {
-        updated = await api.astrologers.update(profile.id, { theme: newTheme });
-      }
-      await updateUser(updated);
+      await setTheme(newTheme);
     } catch (e) {
       console.log(e);
     }
@@ -141,11 +175,11 @@ export function AstrologerProfileScreen({ navigation }: any) {
 
   const handlePasswordChange = async () => {
     if (!currentPw || !newPw || !confirmPw) {
-      setPwError('Please fill all fields');
+      setPwError('Please fill in all password fields.');
       return;
     }
     if (newPw !== confirmPw) {
-      setPwError('New passwords do not match');
+      setPwError('New password and confirm password do not match.');
       return;
     }
     setPwLoading(true);
@@ -153,49 +187,55 @@ export function AstrologerProfileScreen({ navigation }: any) {
     setPwSuccess('');
     try {
       await api.users.changePassword({ currentPassword: currentPw, newPassword: newPw });
-      setPwSuccess('Password changed successfully');
+      setPwSuccess('Password changed successfully!');
       setCurrentPw('');
       setNewPw('');
       setConfirmPw('');
-      setTimeout(() => {
-        setPwOpen(false);
-        setPwSuccess('');
-      }, 1500);
-    } catch (e: any) {
-      setPwError(e?.response?.data?.message || 'Failed to change password');
+      setTimeout(() => setPwOpen(false), 1500);
+    } catch (err: any) {
+      setPwError(err.response?.data?.message || 'Failed to change password. Make sure current password is correct.');
     } finally {
       setPwLoading(false);
     }
   };
 
   const handleDeleteAccount = () => {
+    if (!profile) return;
     Alert.alert(
-      'Delete Account',
-      'Are you sure you want to permanently delete your account? This action cannot be undone.',
+      "Delete Account",
+      "Are you sure you want to delete your account? This action is permanent and cannot be undone.",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Delete',
-          style: 'destructive',
+          text: "Delete",
+          style: "destructive",
           onPress: async () => {
-            if (!astrologer) return;
             try {
-              await api.astrologers.delete(astrologer.id);
+              await api.astrologers.delete(profile.id);
               await logout();
-            } catch (e) {
-              Alert.alert('Error', 'Failed to delete account');
+            } catch (err) {
+              Alert.alert("Error", "Failed to delete account. Please try again.");
             }
-          },
-        },
+          }
+        }
       ]
     );
   };
 
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
   return (
     <ScreenWrapper scroll>
-      <View style={{ alignItems: 'center', marginTop: 16 }}>
-        <Avatar size={80} online={role !== 'admin'} /><Text style={[typography.pageTitle, { marginTop: 12 }]}>{profile?.name}</Text><Text style={typography.body}>{role === 'admin' ? 'Admin' : (profile as any)?.specialization?.join(', ') || 'Astrologer'}</Text>
+      <View style={{ alignItems: 'center', marginVertical: 24 }}>
+        <Avatar size={80} uri={profile?.avatar} />
+        <Text style={[typography.sectionTitle, { marginTop: 12 }]}>{profile?.name}</Text>
+        <Text style={[typography.caption, { color: colors.textSecondary }]}>
+          {role === 'admin' ? 'Admin' : ((profile as any)?.specialization?.join(', ') || 'Astrologer')}
+        </Text>
       </View>
+
       <GlassCard style={{ marginTop: 24 }}>
         {items.map((item, i) => (
           <TouchableOpacity key={item.label} onPress={() => navigation.navigate(item.route)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.divider }}>
@@ -207,7 +247,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.divider }}>
           <Ionicons name="moon-outline" size={22} color={colors.textSecondary} />
           <Text style={[typography.body, { flex: 1, marginLeft: 12 }]}>Dark Mode</Text>
-          <Switch value={profile?.theme === 'dark'} onValueChange={toggleTheme} trackColor={{ false: '#767577', true: colors.primary }} thumbColor={profile?.theme === 'dark' ? colors.accentGold : '#f4f3f4'} />
+          <Switch value={theme === 'dark'} onValueChange={toggleTheme} trackColor={{ false: '#767577', true: colors.primary }} thumbColor={theme === 'dark' ? colors.accentGold : '#f4f3f4'} />
         </View>
 
         {/* Change Password Item */}
@@ -242,4 +282,6 @@ export function AstrologerProfileScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 20 },
   stat: { width: '30%', alignItems: 'center', padding: 14 },
+  dropdownContainer: { position: 'absolute', top: 55, right: 16, width: 190, borderRadius: 12, borderWidth: 1, paddingVertical: 4, zIndex: 2000 },
+  dropdownItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
 });
