@@ -34,6 +34,7 @@ import { SupportTicketsModule } from './modules/support-tickets/support-tickets.
 import { AppReleasesModule } from './modules/app-releases/app-releases.module';
 import { VideosModule } from './modules/videos/videos.module';
 import { FileUploadModule } from './modules/file-upload/file-upload.module';
+import { EmailModule } from './modules/email/email.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -74,6 +75,7 @@ import { AppService } from './app.service';
     AppReleasesModule,
     VideosModule,
     FileUploadModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,45 +1,64 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { AdminsService } from '../admin/admins.service';
 import { AstrologersService } from '../astrologers/astrologers.service';
+import { EmailService } from '../email/email.service';
 import * as crypto from 'crypto';
 import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class AuthService {
   private readonly jwtSecret: string;
-  private readonly jwtExpiresIn: number;
+  private readonly otpStore: Map<string, { otp: string; expiresAt: number }> = new Map();
 
   constructor(
     private configService: ConfigService,
     private usersService: UsersService,
     private adminsService: AdminsService,
     private astrologersService: AstrologersService,
+    private emailService: EmailService,
   ) {
     this.jwtSecret = this.configService.get<string>('JWT_SECRET', 'default-secret');
-    this.jwtExpiresIn = 604800; // 7 days in seconds
   }
 
-  async sendOtp(phone: string): Promise<{ otp: string }> {
+  async sendEmailOtp(email: string): Promise<{ message: string }> {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    // TODO: Integrate with SMS provider to send OTP
-    console.log(`[DEV] OTP for ${phone}: ${otp}`);
-    return { otp };
+    this.otpStore.set(`email:${email}`, { otp, expiresAt: Date.now() + 600000 });
+    await this.emailService.sendOtpEmail(email, otp);
+    return { message: 'OTP sent to email' };
   }
 
-  async verifyOtp(phone: string, otp: string): Promise<{ token: string; user: any }> {
-    // TODO: Validate OTP against stored/cached OTP
-    const isValidDevOtp = otp === '000000' || otp === '123456';
-    if (!isValidDevOtp) {
-      throw new UnauthorizedException('Invalid OTP');
+  async verifyEmailOtp(email: string, otp: string): Promise<{ token: string; user: any }> {
+    const stored = this.otpStore.get(`email:${email}`);
+    if (!stored || stored.otp !== otp || stored.expiresAt < Date.now()) {
+      throw new UnauthorizedException('Invalid or expired OTP');
     }
 
-    let user = await this.usersService.findByPhone(phone);
+    this.otpStore.delete(`email:${email}`);
+
+    let user = await this.usersService.findByEmail(email);
     if (user && (!user.isActive || user.deletedAt)) {
       throw new UnauthorizedException('Account has been deleted or deactivated');
     }
 
+    if (!user) {
+      user = await this.usersService.create({
+        email,
+        name: email.split('@')[0],
+      });
+    }
+
+    const token = this.generateToken(user.id, 'user');
+    const { password: _, ...safeUser } = user;
+    return { token, user: safeUser };
+  }
+
+  async loginWithPhone(phone: string): Promise<{ token: string; user: any }> {
+    let user = await this.usersService.findByPhone(phone);
+    if (user && (!user.isActive || user.deletedAt)) {
+      throw new UnauthorizedException('Account has been deleted or deactivated');
+    }
     if (!user) {
       user = await this.usersService.create({
         email: `${phone}@phone.astroshine.com`,
@@ -47,8 +66,7 @@ export class AuthService {
         name: `User ${phone.slice(-4)}`,
       });
     }
-
-    const token = this.generateToken(user.id);
+    const token = this.generateToken(user.id, 'user');
     const { password: _, ...safeUser } = user;
     return { token, user: safeUser };
   }
@@ -57,7 +75,6 @@ export class AuthService {
     let user: any = null;
     let role = 'user';
 
-    // 1. Check Users
     const regularUser = await this.usersService.findByEmail(email);
     if (regularUser && regularUser.isActive && !regularUser.deletedAt && regularUser.password) {
       const isValid = await this.verifyPassword(password, regularUser.password);
@@ -67,7 +84,6 @@ export class AuthService {
       }
     }
 
-    // 2. Check Admins if not found
     if (!user) {
       const adminUser = await this.adminsService.findByEmail(email);
       if (adminUser && adminUser.isActive !== false && adminUser.password) {
@@ -79,7 +95,6 @@ export class AuthService {
       }
     }
 
-    // 3. Check Astrologers if not found
     if (!user) {
       const astrologerUser = await this.astrologersService.findByEmail(email);
       if (astrologerUser && astrologerUser.isActive !== false && astrologerUser.password) {
@@ -96,7 +111,7 @@ export class AuthService {
     }
 
     const { password: _, ...safeUser } = user;
-    const token = this.generateToken(user.id);
+    const token = this.generateToken(user.id, role);
     return { token, user: { ...safeUser, role } };
   }
 
@@ -108,7 +123,7 @@ export class AuthService {
   }): Promise<{ token: string; user: any }> {
     const existing = await this.usersService.findByEmail(data.email);
     if (existing) {
-      throw new UnauthorizedException('Email already registered');
+      throw new BadRequestException('Email already registered');
     }
 
     const hashedPassword = await this.hashPassword(data.password);
@@ -117,23 +132,25 @@ export class AuthService {
       password: hashedPassword,
     });
 
+    await this.emailService.sendWelcomeEmail(data.email, data.name);
+
     const { password: _, ...safeUser } = user;
-    const token = this.generateToken(user.id);
+    const token = this.generateToken(user.id, 'user');
     return { token, user: safeUser };
   }
 
-  async validateToken(token: string): Promise<{ userId: string }> {
+  async validateToken(token: string): Promise<{ userId: string; role: string }> {
     try {
-      const payload = jwt.verify(token, this.jwtSecret) as { sub: string };
-      return { userId: payload.sub };
+      const payload = jwt.verify(token, this.jwtSecret) as { sub: string; role: string };
+      return { userId: payload.sub, role: payload.role };
     } catch {
       throw new UnauthorizedException('Invalid or expired token');
     }
   }
 
-  private generateToken(userId: string): string {
-    return jwt.sign({ sub: userId }, this.jwtSecret, {
-      expiresIn: 604800, // 7 days in seconds
+  private generateToken(userId: string, role: string): string {
+    return jwt.sign({ sub: userId, role }, this.jwtSecret, {
+      expiresIn: 604800,
     });
   }
 

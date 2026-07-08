@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, KeyboardAvoidingView, ScrollView, Platform, Image } from 'react-native';
 import { ScreenWrapper, GradientButton, colors, radii, typography } from '../../shared';
 import { useAuth } from '../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../shared/api-client';
+import { OTPWidget } from '../../shared/msg91-otp-widget';
 
 export function LoginScreen({ navigation }: any) {
   const { loginAsUser, theme, setTheme } = useAuth();
@@ -57,7 +58,10 @@ export function LoginScreen({ navigation }: any) {
 }
 
 export function RegisterScreen({ navigation }: any) {
-  const { registerUser, theme, setTheme } = useAuth();
+  const { registerUser, registerAstrologer, theme, setTheme } = useAuth();
+  const [step, setStep] = useState<0 | 1>(0);
+  const [selectedRole, setSelectedRole] = useState<'user' | 'astrologer'>('user');
+  const [verMode, setVerMode] = useState<'email' | 'phone'>('email');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -66,10 +70,192 @@ export function RegisterScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!name || !email || !password) { setError('Required fields missing'); return; }
+    if (!name || !email || !phone || !password) {
+      setError('Please fill in all mandatory fields');
+      return;
+    }
+
     setLoading(true); setError('');
-    try { await registerUser(name, email, password, phone || undefined); } catch (e: any) { setError(e?.response?.data?.message || 'Failed'); }
-    finally { setLoading(false); }
+    try {
+      if (selectedRole === 'astrologer') {
+        await registerAstrologer(name, email, password, phone);
+      } else {
+        await registerUser(name, email, password, phone);
+      }
+    } catch (e: any) {
+      setError(e?.response?.data?.message || 'Registration failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isDark = theme === 'dark';
+  const logoOpacity = isDark ? 0.18 : 0.14;
+
+  return (
+    <ScreenWrapper edges={['top', 'bottom']} noPadding backgroundColor="#09090B">
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+        <TouchableOpacity style={[styles.themeToggle, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder }]} onPress={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+          <Ionicons name={theme === 'dark' ? 'sunny-outline' : 'moon-outline'} size={22} color={colors.textPrimary} />
+        </TouchableOpacity>
+        <Image source={require('../../../assets/logo.jpg')} style={[styles.backgroundImage, { opacity: logoOpacity }]} resizeMode="cover" />
+        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          
+          {step === 0 ? (
+            // STEP 0: Role Selection Cards
+            <>
+              <View style={styles.header}>
+                <Image source={require('../../../assets/logo.jpg')} style={styles.headerLogo} resizeMode="contain" />
+                <Text style={[typography.hero, styles.headerTitle]}>Join Us</Text>
+                <Text style={[typography.body, styles.headerSub]}>Select how you want to join our cosmic community</Text>
+              </View>
+
+              <View style={styles.selectionContainer}>
+                <TouchableOpacity 
+                  style={[styles.roleCard, { backgroundColor: colors.glassBg, borderColor: colors.cardBorder }]}
+                  onPress={() => { setSelectedRole('user'); setStep(1); setError(''); }}
+                >
+                  <View style={[styles.roleCardIconContainer, { backgroundColor: colors.surfaceLight }]}>
+                    <Ionicons name="person-outline" size={32} color={colors.primaryLight} />
+                  </View>
+                  <Text style={[typography.cardTitle, styles.roleCardTitle, { color: colors.textPrimary }]}>Join as a User</Text>
+                  <Text style={[typography.body, styles.roleCardDesc, { color: colors.textMuted }]}>Get personalized astrology insights and chat with verified experts</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={[styles.roleCard, { backgroundColor: colors.glassBg, borderColor: colors.cardBorder }]}
+                  onPress={() => { setSelectedRole('astrologer'); setStep(1); setError(''); }}
+                >
+                  <View style={[styles.roleCardIconContainer, { backgroundColor: colors.surfaceLight }]}>
+                    <Ionicons name="star-outline" size={32} color={colors.accentGold} />
+                  </View>
+                  <Text style={[typography.cardTitle, styles.roleCardTitle, { color: colors.textPrimary }]}>Join as an Astrologer</Text>
+                  <Text style={[typography.body, styles.roleCardDesc, { color: colors.textMuted }]}>Share your wisdom, consult clients, and manage your consultations</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : (
+            // STEP 1: Registration Form
+            <>
+              <View style={styles.header}>
+                <Image source={require('../../../assets/logo.jpg')} style={styles.headerLogo} resizeMode="contain" />
+                <Text style={[typography.hero, styles.headerTitle]}>{selectedRole === 'user' ? 'User Signup' : 'Astrologer Signup'}</Text>
+                <Text style={[typography.body, styles.headerSub]}>{selectedRole === 'user' ? 'Begin your spiritual journey' : 'Register your advisor account'}</Text>
+              </View>
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+
+              <TouchableOpacity style={styles.backToRoleButton} onPress={() => setStep(0)}>
+                <Ionicons name="arrow-back-outline" size={16} color="#B6B6C2" style={{ marginRight: 6 }} />
+                <Text style={styles.backToRoleText}>Change Role Selection</Text>
+              </TouchableOpacity>
+
+              <View style={[styles.formCard, { backgroundColor: colors.glassBg, borderColor: colors.cardBorder }]}>
+                <Input icon="person-outline" placeholder="Full Name" value={name} onChange={setName} />
+                <Input icon="mail-outline" placeholder="Email Address" value={email} onChange={setEmail} keyboardType="email-address" />
+                <Input icon="call-outline" placeholder="Phone Number" value={phone} onChange={setPhone} keyboardType="phone-pad" />
+                <Input icon="lock-closed-outline" placeholder="Password" value={password} onChange={setPassword} secure />
+
+                {/* Verification Choice Selector */}
+                <Text style={[styles.verLabel, { color: colors.textPrimary }]}>Verify Account Via:</Text>
+                <View style={[styles.roleContainer, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, marginBottom: 16 }]}>
+                  <TouchableOpacity 
+                    style={[styles.roleButton, verMode === 'email' && styles.roleButtonActive]} 
+                    onPress={() => { setVerMode('email'); setError(''); }}
+                  >
+                    <Ionicons 
+                      name="mail-outline" 
+                      size={16} 
+                      color={verMode === 'email' ? '#FFFFFF' : colors.textMuted} 
+                      style={{ marginRight: 6 }} 
+                    />
+                    <Text style={[styles.roleText, { color: verMode === 'email' ? '#FFFFFF' : colors.textMuted }]}>Email</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.roleButton, verMode === 'phone' && styles.roleButtonActive]} 
+                    onPress={() => { setVerMode('phone'); setError(''); }}
+                  >
+                    <Ionicons 
+                      name="call-outline" 
+                      size={16} 
+                      color={verMode === 'phone' ? '#FFFFFF' : colors.textMuted} 
+                      style={{ marginRight: 6 }} 
+                    />
+                    <Text style={[styles.roleText, { color: verMode === 'phone' ? '#FFFFFF' : colors.textMuted }]}>Phone OTP</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <GradientButton title={loading ? 'Creating...' : 'Create Account'} onPress={handleRegister} disabled={loading} />
+              </View>
+            </>
+          )}
+
+          <TouchableOpacity style={styles.link} onPress={() => navigation.goBack()}>
+            <Text style={styles.linkTextStatic}>Already have an account? <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>Sign In</Text></Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ScreenWrapper>
+  );
+}
+
+export function OtpLoginScreen({ navigation }: any) {
+  const { loginWithOtp, theme, setTheme } = useAuth();
+  const [verType, setVerType] = useState<'phone' | 'email'>('phone');
+  const [identifier, setIdentifier] = useState('');
+  const [otp, setOtp] = useState('');
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [reqId, setReqId] = useState('');
+
+  useEffect(() => {
+    OTPWidget.initializeWidget(
+      process.env.EXPO_PUBLIC_MSG91_WIDGET_ID || '',
+      process.env.EXPO_PUBLIC_MSG91_TOKEN_AUTH || '',
+    );
+  }, []);
+
+  const sendOtp = async () => {
+    if (!identifier) return;
+    setError('');
+    setSending(true);
+    try {
+      if (verType === 'email') {
+        await api.auth.sendEmailOtp(identifier);
+      } else {
+        const res = await OTPWidget.sendOTP({ identifier: `91${identifier.replace(/\D/g, '')}` });
+        if (!res?.message) throw new Error('Failed to send OTP');
+        setReqId(res.message);
+      }
+      setSent(true);
+    } catch (e: any) {
+      setError(e?.message || 'Failed to send OTP');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const verify = async () => {
+    if (!identifier || !otp) return;
+    setLoading(true);
+    setError('');
+    try {
+      if (verType === 'email') {
+        await loginWithOtp(identifier, otp, 'user', 'email');
+      } else {
+        const res = await OTPWidget.verifyOTP({ reqId, otp });
+        if (res.type === 'success') {
+          await loginWithOtp(identifier, otp, 'user', 'phone');
+        } else {
+          throw new Error(res.message || 'Invalid OTP');
+        }
+      }
+    } catch (e: any) {
+      setError(e?.message || 'Invalid OTP');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const isDark = theme === 'dark';
@@ -85,61 +271,52 @@ export function RegisterScreen({ navigation }: any) {
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <Image source={require('../../../assets/logo.jpg')} style={styles.headerLogo} resizeMode="contain" />
-            <Text style={[typography.hero, styles.headerTitle]}>Join Us</Text>
-            <Text style={[typography.body, styles.headerSub]}>Begin your spiritual journey</Text>
-          </View>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-          
-          <View style={[styles.formCard, { backgroundColor: colors.glassBg, borderColor: colors.cardBorder }]}>
-            <Input icon="person-outline" placeholder="Full Name" value={name} onChange={setName} />
-            <Input icon="mail-outline" placeholder="Email" value={email} onChange={setEmail} keyboardType="email-address" />
-            <Input icon="call-outline" placeholder="Phone (optional)" value={phone} onChange={setPhone} keyboardType="phone-pad" />
-            <Input icon="lock-closed-outline" placeholder="Password" value={password} onChange={setPassword} secure />
-            <GradientButton title={loading ? 'Creating...' : 'Create Account'} onPress={handleRegister} disabled={loading} />
-          </View>
-
-          <TouchableOpacity style={styles.link} onPress={() => navigation.goBack()}>
-            <Text style={styles.linkTextStatic}>Already have an account? <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>Sign In</Text></Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </ScreenWrapper>
-  );
-}
-
-export function OtpLoginScreen({ navigation }: any) {
-  const { loginWithOtp, theme, setTheme } = useAuth();
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const sendOtp = async () => { if (!phone) return; try { await api.auth.sendOtp(phone); setSent(true); } catch { setError('Failed'); } };
-  const verify = async () => { setLoading(true); try { await loginWithOtp(phone, otp, 'user'); } catch { setError('Invalid OTP'); } finally { setLoading(false); } };
-
-  const isDark = theme === 'dark';
-  const logoOpacity = isDark ? 0.18 : 0.14;
-
-  return (
-    <ScreenWrapper edges={['top', 'bottom']} noPadding backgroundColor="#09090B">
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <TouchableOpacity style={[styles.themeToggle, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder }]} onPress={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-          <Ionicons name={theme === 'dark' ? 'sunny-outline' : 'moon-outline'} size={22} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Image source={require('../../../assets/logo.jpg')} style={[styles.backgroundImage, { opacity: logoOpacity }]} resizeMode="cover" />
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          <View style={styles.header}>
-            <Image source={require('../../../assets/logo.jpg')} style={styles.headerLogo} resizeMode="contain" />
             <Text style={[typography.hero, styles.headerTitle]}>OTP Login</Text>
-            <Text style={[typography.body, styles.headerSub]}>{sent ? `Enter code sent to ${phone}` : 'Enter phone number'}</Text>
+            <Text style={[typography.body, styles.headerSub]}>{sent ? `Enter code sent to ${identifier}` : `Enter your ${verType === 'email' ? 'email address' : 'phone number'}`}</Text>
           </View>
           {error ? <Text style={styles.error}>{error}</Text> : null}
           
           <View style={[styles.formCard, { backgroundColor: colors.glassBg, borderColor: colors.cardBorder }]}>
-            <Input icon="call-outline" placeholder="Phone" value={phone} onChange={setPhone} keyboardType="phone-pad" editable={!sent} />
+            {/* Verification Type Switcher */}
+            <View style={[styles.roleContainer, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder }]}>
+              <TouchableOpacity 
+                style={[styles.roleButton, verType === 'phone' && styles.roleButtonActive]} 
+                onPress={() => { setVerType('phone'); setSent(false); setIdentifier(''); setOtp(''); setError(''); }}
+                disabled={sent}
+              >
+                <Ionicons 
+                  name="call-outline" 
+                  size={16} 
+                  color={verType === 'phone' ? '#FFFFFF' : colors.textMuted} 
+                  style={{ marginRight: 6 }} 
+                />
+                <Text style={[styles.roleText, { color: verType === 'phone' ? '#FFFFFF' : colors.textMuted }]}>Phone</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.roleButton, verType === 'email' && styles.roleButtonActive]} 
+                onPress={() => { setVerType('email'); setSent(false); setIdentifier(''); setOtp(''); setError(''); }}
+                disabled={sent}
+              >
+                <Ionicons 
+                  name="mail-outline" 
+                  size={16} 
+                  color={verType === 'email' ? '#FFFFFF' : colors.textMuted} 
+                  style={{ marginRight: 6 }} 
+                />
+                <Text style={[styles.roleText, { color: verType === 'email' ? '#FFFFFF' : colors.textMuted }]}>Email</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Input 
+              icon={verType === 'email' ? 'mail-outline' : 'call-outline'} 
+              placeholder={verType === 'email' ? 'Email Address' : 'Phone Number'} 
+              value={identifier} 
+              onChange={setIdentifier} 
+              keyboardType={verType === 'email' ? 'email-address' : 'phone-pad'} 
+              editable={!sent} 
+            />
             {!sent ? (
-              <GradientButton title="Send OTP" onPress={sendOtp} />
+              <GradientButton title={sending ? 'Sending...' : 'Send OTP'} onPress={sendOtp} disabled={sending} />
             ) : (
               <>
                 <Input icon="key-outline" placeholder="OTP Code" value={otp} onChange={setOtp} keyboardType="number-pad" />
@@ -228,5 +405,79 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+  },
+  roleContainer: {
+    flexDirection: 'row',
+    borderRadius: radii.input,
+    padding: 4,
+    marginBottom: 16,
+    borderWidth: 1,
+  },
+  roleButton: {
+    flex: 1,
+    flexDirection: 'row',
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: radii.input - 4,
+  },
+  roleButtonActive: {
+    backgroundColor: colors.primary,
+  },
+  roleText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  selectionContainer: {
+    width: '100%',
+    gap: 16,
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  roleCard: {
+    borderRadius: radii.card,
+    borderWidth: 1,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  roleCardIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  roleCardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  roleCardDesc: {
+    textAlign: 'center',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  backToRoleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+    alignSelf: 'flex-start',
+  },
+  backToRoleText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#B6B6C2',
+  },
+  verLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    marginTop: 4,
   },
 });

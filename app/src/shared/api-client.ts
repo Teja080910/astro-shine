@@ -1,7 +1,7 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
-import type { AuthResponse, LoginRequest, RegisterRequest, User, Astrologer, Admin, KundliRecord, MatchmakingRecord, HoroscopeRecord, PanchangRecord, Wallet, Transaction, WithdrawalRequest, Commission, CommissionLog, CallLog, ChatMessage, Gift, GiftTransaction, Donation, ShopProduct, Order, OrderItem, Blog, NewsItem, Review, Report, Notification, AppSetting, ApiKey, DynamicLink, WebsiteContent, LiveSession, MandirPooja, PoojaBooking, SupportTicket, TicketReply, AppRelease, Video } from '../shared/types';
+import axios, { AxiosInstance } from 'axios';
+import type { Admin, ApiKey, AppRelease, AppSetting, Astrologer, AuthResponse, Blog, CallLog, ChatMessage, Commission, CommissionLog, Donation, DynamicLink, Gift, GiftTransaction, HoroscopeRecord, KundliRecord, LiveSession, LoginRequest, MandirPooja, MatchmakingRecord, NewsItem, Notification, Order, OrderItem, PanchangRecord, PoojaBooking, RegisterRequest, Report, Review, ShopProduct, SupportTicket, TicketReply, Transaction, User, Video, Wallet, WebsiteContent, WithdrawalRequest } from '../shared/types';
 
-const BASE_URL = __DEV__ ? 'http://10.19.202.221:3067/api/v1' : 'https://api.astroshine.com/api/v1';
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.0.113:3067/api/v1';
 
 class ApiClient {
   private client: AxiosInstance;
@@ -26,8 +26,9 @@ class ApiClient {
   auth = {
     register: (d: RegisterRequest) => this.post<AuthResponse>('/auth/register', d),
     login: (d: LoginRequest) => this.post<AuthResponse>('/auth/login', d),
-    sendOtp: (phone: string) => this.post<{ otp: string }>('/auth/send-otp', { phone }),
-    verifyOtp: (phone: string, otp: string) => this.post<AuthResponse>('/auth/verify-otp', { phone, otp }),
+    phoneLogin: (phone: string) => this.post<AuthResponse>('/auth/phone-login', { phone }),
+    sendEmailOtp: (email: string) => this.post<{ message: string }>('/auth/send-email-otp', { email }),
+    verifyEmailOtp: (email: string, otp: string) => this.post<AuthResponse>('/auth/verify-email-otp', { email, otp }),
   };
 
   // Users

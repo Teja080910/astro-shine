@@ -28,7 +28,7 @@ interface AuthState {
     password: string,
     phone?: string,
   ) => Promise<void>;
-  loginWithOtp: (phone: string, otp: string, role: AppRole) => Promise<void>;
+  loginWithOtp: (identifier: string, otp: string, role: AppRole, type?: 'phone' | 'email') => Promise<void>;
   logout: () => Promise<void>;
   switchRole: (role: AppRole) => void;
   updateUser: (u: any) => Promise<void>;
@@ -149,8 +149,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await persist(token, undefined, a, "astrologer");
   };
 
-  const loginWithOtp = async (phone: string, otp: string, role: AppRole) => {
-    const { token, user: u } = await api.auth.verifyOtp(phone, otp);
+  const loginWithOtp = async (identifier: string, otp: string, role: AppRole, type: 'phone' | 'email' = 'phone') => {
+    const { token, user: u } = type === 'email'
+      ? await api.auth.verifyEmailOtp(identifier, otp)
+      : await api.auth.phoneLogin(identifier);
     await persist(token, u as User, undefined, role);
   };
 
