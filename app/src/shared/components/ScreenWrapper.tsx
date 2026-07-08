@@ -10,9 +10,10 @@ interface Props {
   style?: ViewStyle;
   noPadding?: boolean;
   edges?: ('top' | 'bottom' | 'left' | 'right')[];
+  backgroundColor?: string;
 }
 
-export function ScreenWrapper({ children, scroll, style, noPadding, edges = ['top'] }: Props) {
+export function ScreenWrapper({ children, scroll, style, noPadding, edges = ['top'], backgroundColor }: Props) {
   const { theme } = useAuth();
   const content = (
     <View style={[!noPadding && styles.padding, { flex: 1 }, style]}>
@@ -20,11 +21,12 @@ export function ScreenWrapper({ children, scroll, style, noPadding, edges = ['to
     </View>
   );
 
-  const isDark = theme === 'dark';
+  const bg = backgroundColor || colors.background;
+  const isDarkBar = backgroundColor ? true : (theme === 'dark');
 
   return (
-    <SafeAreaView edges={edges} style={[styles.container, { backgroundColor: colors.background }]}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
+    <SafeAreaView edges={edges} style={[styles.container, { backgroundColor: bg }]}>
+      <StatusBar barStyle={isDarkBar ? "light-content" : "dark-content"} backgroundColor={bg} />
       {scroll ? (
         <ScrollView
           style={{ flex: 1 }}
