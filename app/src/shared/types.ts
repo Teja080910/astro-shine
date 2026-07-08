@@ -265,3 +265,40 @@ export interface Video {
 // ============ API Response ============
 export interface ApiError { statusCode: number; message: string; timestamp: string; path: string; }
 export interface PaginatedResponse<T> { data: T[]; total: number; page: number; limit: number; }
+
+// ============ Conversations ============
+export interface Conversation {
+  id: string;
+  participantOneId: string;
+  participantOneRole: UserRole;
+  participantTwoId: string;
+  participantTwoRole: UserRole;
+  lastMessageAt?: string;
+  lastMessagePreview?: string;
+  participantId: string;
+  participantRole: UserRole;
+  participantName: string;
+  unreadCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConversationMessage {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  senderRole: UserRole;
+  type: MessageType;
+  content?: string;
+  mediaUrl?: string;
+  isDelivered: boolean;
+  isRead: boolean;
+  readAt?: string;
+  createdAt: string;
+}
+
+export interface PaginatedMessages {
+  data: ConversationMessage[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
