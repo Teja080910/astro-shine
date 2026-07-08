@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
+import { api } from '@/lib/api';
 import type { User } from '@astro-shine/shared-types';
 
 export default function UsersPage() {
@@ -10,7 +11,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<User | null>(null);
 
-  useEffect(() => { fetch('http://localhost:3067/api/v1/users').then(r => r.json()).then(setUsers).finally(() => setLoading(false)); }, []);
+  useEffect(() => { api.get<User[]>('/users').then(setUsers).finally(() => setLoading(false)); }, []);
 
   return (
     <AdminLayout>

@@ -30,11 +30,25 @@ psql -U postgres -c "CREATE DATABASE astro_shine;"
 ```
 
 ### 3. Configure environment
-Copy `.env` and adjust values if needed:
+
+Each project has its own `.env` file. Copy the example files and adjust values:
+
+**Server** (`server/.env`):
 ```env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/astro_shine
 JWT_SECRET=your-super-secret-jwt-key-change-in-production
 PORT=3000
+```
+
+**Mobile App** (`app/.env`):
+```env
+EXPO_PUBLIC_API_URL=http://10.229.125.238:3000
+EXPO_PUBLIC_SOCKET_PATH=/ws
+```
+
+**Web Admin** (`web/.env`):
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3067
 ```
 
 ### 4. Run migrations

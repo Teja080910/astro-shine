@@ -2,10 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { io, Socket } from 'socket.io-client';
 import { api } from '../shared/api-client';
 import type { Conversation, ConversationMessage } from '../shared/types';
+import { config } from '../config';
 import { useAuth } from './AuthContext';
-
-const BASE_URL = __DEV__ ? 'http://10.229.125.238:3000' : 'http://31.97.222.250:5321';
-const SOCKET_URL = BASE_URL;
 
 interface ChatState {
   connected: boolean;
@@ -64,8 +62,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const socket = io(SOCKET_URL, {
-      path: '/ws',
+    const socket = io(config.socketUrl, {
+      path: config.socketPath,
       query: { token },
       transports: ['websocket', 'polling'],
       reconnection: true,

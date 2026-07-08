@@ -3,22 +3,23 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { GradientButton, CustomModal } from '@/components/UIComponents';
+import { api } from '@/lib/api';
 import type { ApiKey } from '@astro-shine/shared-types';
 
 export default function ApiKeysPage() {
   const [data, setData] = useState<ApiKey[]>([]);
   const [editing, setEditing] = useState<Partial<ApiKey> | null>(null);
 
-  useEffect(() => { fetch('http://localhost:3067/api/v1/api-keys').then(r => r.json()).then(setData).catch(() => {}); }, []);
+  useEffect(() => { api.get<ApiKey[]>('/api-keys').then(setData).catch(() => {}); }, []);
 
   const save = async () => {
     if (editing?.id) {
-      await fetch(`http://localhost:3067/api/v1/api-keys/${editing.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editing) });
+      await api.put<any>(`/api-keys/${editing.id}`, editing);
     } else {
-      await fetch('http://localhost:3067/api/v1/api-keys', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editing) });
+      await api.post<any>('/api-keys', editing);
     }
     setEditing(null);
-    fetch('http://localhost:3067/api/v1/api-keys').then(r => r.json()).then(setData);
+    api.get<ApiKey[]>('/api-keys').then(setData);
   };
 
   const maskKey = (key: string) => key ? key.slice(0, 6) + '...' + key.slice(-4) : '';
