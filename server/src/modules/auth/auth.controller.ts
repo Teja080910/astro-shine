@@ -15,6 +15,11 @@ export class AuthController {
     return this.authService.verifyEmailOtp(body.email, body.otp);
   }
 
+  @Post('check-phone')
+  async checkPhone(@Body('phone') phone: string) {
+    return this.authService.checkPhone(phone);
+  }
+
   @Post('phone-login')
   async phoneLogin(@Body('phone') phone: string) {
     return this.authService.loginWithPhone(phone);

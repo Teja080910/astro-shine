@@ -23,6 +23,13 @@ export class AuthService {
   }
 
   async sendEmailOtp(email: string): Promise<{ message: string }> {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      throw new UnauthorizedException('USER_NOT_FOUND');
+    }
+    if (!user.isActive || user.deletedAt) {
+      throw new UnauthorizedException('Account has been deleted or deactivated');
+    }
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     this.otpStore.set(`email:${email}`, { otp, expiresAt: Date.now() + 600000 });
     await this.emailService.sendOtpEmail(email, otp);
@@ -37,16 +44,12 @@ export class AuthService {
 
     this.otpStore.delete(`email:${email}`);
 
-    let user = await this.usersService.findByEmail(email);
-    if (user && (!user.isActive || user.deletedAt)) {
-      throw new UnauthorizedException('Account has been deleted or deactivated');
-    }
-
+    const user = await this.usersService.findByEmail(email);
     if (!user) {
-      user = await this.usersService.create({
-        email,
-        name: email.split('@')[0],
-      });
+      throw new UnauthorizedException('USER_NOT_FOUND');
+    }
+    if (!user.isActive || user.deletedAt) {
+      throw new UnauthorizedException('Account has been deleted or deactivated');
     }
 
     const token = this.generateToken(user.id, 'user');
@@ -54,17 +57,18 @@ export class AuthService {
     return { token, user: safeUser };
   }
 
+  async checkPhone(phone: string): Promise<{ exists: boolean }> {
+    const user = await this.usersService.findByPhone(phone);
+    return { exists: !!user };
+  }
+
   async loginWithPhone(phone: string): Promise<{ token: string; user: any }> {
-    let user = await this.usersService.findByPhone(phone);
-    if (user && (!user.isActive || user.deletedAt)) {
-      throw new UnauthorizedException('Account has been deleted or deactivated');
-    }
+    const user = await this.usersService.findByPhone(phone);
     if (!user) {
-      user = await this.usersService.create({
-        email: `${phone}@phone.astroshine.com`,
-        phone,
-        name: `User ${phone.slice(-4)}`,
-      });
+      throw new UnauthorizedException('USER_NOT_FOUND');
+    }
+    if (!user.isActive || user.deletedAt) {
+      throw new UnauthorizedException('Account has been deleted or deactivated');
     }
     const token = this.generateToken(user.id, 'user');
     const { password: _, ...safeUser } = user;

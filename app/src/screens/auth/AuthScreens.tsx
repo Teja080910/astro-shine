@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, KeyboardAvoidingView, ScrollView, Platform, Image } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, KeyboardAvoidingView, ScrollView, Platform, Image, Modal } from 'react-native';
 import { ScreenWrapper, GradientButton, colors, radii, typography } from '../../shared';
 import { useAuth } from '../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -208,6 +208,7 @@ export function OtpLoginScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [reqId, setReqId] = useState('');
+  const [showRegisterPrompt, setShowRegisterPrompt] = useState(false);
 
   useEffect(() => {
     OTPWidget.initializeWidget(
@@ -222,8 +223,21 @@ export function OtpLoginScreen({ navigation }: any) {
     setSending(true);
     try {
       if (verType === 'email') {
-        await api.auth.sendEmailOtp(identifier);
+        try {
+          await api.auth.sendEmailOtp(identifier);
+        } catch (e: any) {
+          if (e?.response?.data?.message === 'USER_NOT_FOUND') {
+            setShowRegisterPrompt(true);
+            return;
+          }
+          throw e;
+        }
       } else {
+        const { exists } = await api.auth.checkPhone(identifier.replace(/\D/g, ''));
+        if (!exists) {
+          setShowRegisterPrompt(true);
+          return;
+        }
         const res = await OTPWidget.sendOTP({ identifier: `91${identifier.replace(/\D/g, '')}` });
         if (!res?.message) throw new Error('Failed to send OTP');
         setReqId(res.message);
@@ -242,11 +256,27 @@ export function OtpLoginScreen({ navigation }: any) {
     setError('');
     try {
       if (verType === 'email') {
-        await loginWithOtp(identifier, otp, 'user', 'email');
+        try {
+          await loginWithOtp(identifier, otp, 'user', 'email');
+        } catch (e: any) {
+          if (e?.response?.data?.message === 'USER_NOT_FOUND') {
+            setShowRegisterPrompt(true);
+          } else {
+            throw e;
+          }
+        }
       } else {
         const res = await OTPWidget.verifyOTP({ reqId, otp });
         if (res.type === 'success') {
-          await loginWithOtp(identifier, otp, 'user', 'phone');
+          try {
+            await loginWithOtp(identifier, otp, 'user', 'phone');
+          } catch (e: any) {
+            if (e?.response?.data?.message === 'USER_NOT_FOUND') {
+              setShowRegisterPrompt(true);
+            } else {
+              throw e;
+            }
+          }
         } else {
           throw new Error(res.message || 'Invalid OTP');
         }
@@ -331,6 +361,20 @@ export function OtpLoginScreen({ navigation }: any) {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal visible={showRegisterPrompt} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
+            <Ionicons name="person-outline" size={48} color={colors.primaryLight} />
+            <Text style={[typography.sectionTitle, { marginTop: 16, textAlign: 'center' }]}>User Not Found</Text>
+            <Text style={[typography.body, { marginTop: 8, textAlign: 'center' }]}>No account found with this {verType === 'email' ? 'email' : 'number'}. Please register first.</Text>
+            <GradientButton title="Go to Register" onPress={() => { setShowRegisterPrompt(false); navigation.navigate('Register'); }} />
+            <TouchableOpacity onPress={() => setShowRegisterPrompt(false)}>
+              <Text style={[typography.body, { marginTop: 12, color: colors.textMuted }]}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScreenWrapper>
   );
 }
@@ -479,5 +523,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 8,
     marginTop: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 340,
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 32,
+    alignItems: 'center',
   },
 });
