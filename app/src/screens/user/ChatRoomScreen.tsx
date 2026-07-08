@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { View, Text, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { ScreenWrapper, colors, radii, typography } from '../../shared';
 import { ChatBubble } from '../../shared/components/ChatBubble';
@@ -7,6 +7,34 @@ import { Avatar } from '../../shared/components/Avatar';
 import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+
+function formatDateHeader(dateStr: string): string {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const msgDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffDays = Math.round((today.getTime() - msgDate.getTime()) / 86400000);
+
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return d.toLocaleDateString([], { weekday: 'long' });
+  return d.toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function sameDay(a: string, b: string): boolean {
+  const da = new Date(a);
+  const db = new Date(b);
+  return da.getFullYear() === db.getFullYear() &&
+    da.getMonth() === db.getMonth() &&
+    da.getDate() === db.getDate();
+}
+
+function isConsecutive(prev: any, curr: any): boolean {
+  if (!prev) return false;
+  if (prev.senderId !== curr.senderId) return false;
+  const diff = new Date(curr.createdAt).getTime() - new Date(prev.createdAt).getTime();
+  return diff < 60000;
+}
 
 export function ChatRoomScreen({ route, navigation }: any) {
   const { conversationId, participantId, participantRole, participantName } = route.params;
@@ -77,21 +105,35 @@ export function ChatRoomScreen({ route, navigation }: any) {
     }
   }, [hasMore, loading]);
 
-  const renderItem = useCallback(({ item }: any) => (
-    <ChatBubble
-      message={item.content || ''}
-      isOwn={item.senderId === currentUserId}
-      timestamp={item.createdAt}
-      isDelivered={item.isDelivered}
-      isRead={item.isRead}
-    />
-  ), [currentUserId]);
+  const renderItem = useCallback(({ item, index }: any) => {
+    const prev = index > 0 ? messages[index - 1] : null;
+    const showDateHeader = !prev || !sameDay(prev.createdAt, item.createdAt);
+    const grouped = isConsecutive(prev, item);
+
+    return (
+      <View>
+        {showDateHeader && (
+          <View style={styles.dateHeader}>
+            <Text style={styles.dateHeaderText}>{formatDateHeader(item.createdAt)}</Text>
+          </View>
+        )}
+        <ChatBubble
+          message={item.content || ''}
+          isOwn={item.senderId === currentUserId}
+          timestamp={item.createdAt}
+          isDelivered={item.isDelivered}
+          isRead={item.isRead}
+          grouped={grouped}
+        />
+      </View>
+    );
+  }, [currentUserId, messages]);
 
   return (
     <ScreenWrapper noPadding>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         <FlatList
@@ -138,6 +180,16 @@ const headerStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
   list: { padding: 16, paddingBottom: 8 },
+  dateHeader: { alignItems: 'center', marginVertical: 12 },
+  dateHeaderText: {
+    fontSize: 12,
+    color: colors.textMuted,
+    backgroundColor: colors.surfaceLight,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
   inputBar: {
     flexDirection: 'row',
     alignItems: 'flex-end',
