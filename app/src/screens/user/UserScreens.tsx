@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Switch, Alert, Modal, ScrollView } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Switch, Alert, Modal, ScrollView, Image } from 'react-native';
 import { ScreenWrapper, GlassCard, SectionHeader, SearchBar, GradientButton, CustomModal, Avatar, StarRating, Chip, SkeletonLoader, EmptyState, colors, typography, radii } from '../../shared';
 import { api } from '../../shared/api-client';
 import type { Astrologer, HoroscopeRecord, ShopProduct, Blog, Transaction, Wallet } from '../../shared/types';
@@ -9,6 +9,7 @@ import { useChat } from '../../context/ChatContext';
 
 // User Home Dashboard
 export function UserHomeScreen({ navigation }: any) {
+  const { theme } = useAuth();
   const [astrologers, setAstrologers] = useState<Astrologer[]>([]);
   const [horoscope, setHoroscope] = useState<HoroscopeRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,8 +24,8 @@ export function UserHomeScreen({ navigation }: any) {
       <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <View style={{ flex: 1 }}>
-            <Text style={[typography.pageTitle, { marginBottom: 4 }]}>Namaste ✨</Text>
-            <Text style={typography.body}>Discover what the stars hold for you</Text>
+            <Text style={[typography.pageTitle, { marginBottom: 4, color: colors.textPrimary }]}>Namaste ✨</Text>
+            <Text style={[typography.body, { color: colors.textSecondary }]}>Discover what the stars hold for you</Text>
           </View>
           <TouchableOpacity onPress={() => setMenuOpen(true)} style={{ padding: 8 }}>
             <Ionicons name="menu-outline" size={32} color={colors.textPrimary} />
@@ -95,18 +96,39 @@ export function UserHomeScreen({ navigation }: any) {
 export function AstrologerListScreen({ navigation }: any) {
   const [data, setData] = useState<Astrologer[]>([]);
   const [search, setSearch] = useState('');
+  const [selectedCat, setSelectedCat] = useState('All');
   const cats = ['All', 'Vedic', 'Tarot', 'Numerology', 'Palmistry', 'Vastu'];
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { api.astrologers.list().then(setData).finally(() => setLoading(false)); }, []);
-  const filtered = data.filter(a => !search || a.name.toLowerCase().includes(search.toLowerCase()) || a.specialization?.some(s => s.toLowerCase().includes(search.toLowerCase())));
+  
+  const filtered = data.filter(a => {
+    const matchesSearch = !search || a.name.toLowerCase().includes(search.toLowerCase()) || a.specialization?.some(s => s.toLowerCase().includes(search.toLowerCase()));
+    const matchesCategory = selectedCat === 'All' || a.specialization?.some(s => s.toLowerCase() === selectedCat.toLowerCase());
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <ScreenWrapper noPadding>
-      <View style={{ padding: 16, paddingBottom: 0 }}><Text style={typography.pageTitle}>Astrologers</Text></View>
+      <View style={{ padding: 16, paddingBottom: 0 }}><Text style={[typography.pageTitle, { color: colors.textPrimary }]}>Astrologers</Text></View>
       <SearchBar value={search} onChangeText={setSearch} />
-      <FlatList horizontal showsHorizontalScrollIndicator={false} data={cats} style={{ paddingLeft: 16, marginBottom: 8 }} renderItem={({ item }) => <Chip label={item} selected={item === 'All'} />} keyExtractor={(c) => c} />
-      <FlatList data={filtered} keyExtractor={(a) => a.id} contentContainerStyle={{ padding: 16 }}
+      <FlatList 
+        horizontal 
+        showsHorizontalScrollIndicator={false} 
+        data={cats} 
+        style={{ height: 44, flexGrow: 0, marginBottom: 8 }} 
+        contentContainerStyle={{ paddingHorizontal: 16 }} 
+        renderItem={({ item }) => (
+          <Chip 
+            label={item} 
+            selected={item === selectedCat} 
+            onPress={() => setSelectedCat(item)} 
+            style={{ marginBottom: 0 }}
+          />
+        )} 
+        keyExtractor={(c) => c} 
+      />
+      <FlatList data={filtered} keyExtractor={(a) => a.id} contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
         ListEmptyComponent={<EmptyState icon={<Ionicons name="people-outline" size={48} color={colors.textMuted} />} title="No astrologers" />}
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.id })} style={{ marginBottom: 12 }}>
@@ -134,7 +156,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
 
   return (
     <ScreenWrapper scroll>
-      <View style={styles.header}><Avatar size={80} online={astro.onlineStatus === 'online'} /><Text style={[typography.pageTitle, { marginTop: 12 }]}>{astro.name}</Text><StarRating rating={parseFloat(astro.rating)} size={16} reviewCount={astro.totalReviews} /><Text style={[typography.body, { marginTop: 8 }]}>{astro.bio || 'Experienced astrologer'}</Text></View>
+      <View style={styles.header}><Avatar size={80} online={astro.onlineStatus === 'online'} /><Text style={[typography.pageTitle, { marginTop: 12, color: colors.textPrimary }]}>{astro.name}</Text><StarRating rating={parseFloat(astro.rating)} size={16} reviewCount={astro.totalReviews} /><Text style={[typography.body, { marginTop: 8, color: colors.textSecondary }]}>{astro.bio || 'Experienced astrologer'}</Text></View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 16, backgroundColor: colors.surfaceLight, borderRadius: radii.card, marginTop: 16 }}>
         <Stat label="Experience" value={`${astro.experience}y`} /><Stat label="Calls" value={`${astro.totalCalls}`} /><Stat label="Price" value={`₹${astro.pricePerMin}/min`} />
       </View>
@@ -195,8 +217,8 @@ export function KundliScreen() {
   const [form, setForm] = useState({ name: '', dob: '', tob: '', place: '' });
   return (
     <ScreenWrapper scroll>
-      <Text style={typography.pageTitle}>Kundli</Text>
-      <Text style={[typography.body, { marginBottom: 20 }]}>Enter birth details for chart calculation</Text>
+      <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>Kundli</Text>
+      <Text style={[typography.body, { marginBottom: 20, color: colors.textSecondary }]}>Enter birth details for chart calculation</Text>
       {['name', 'dob', 'tob', 'place'].map((f) => <Input key={f} label={f} value={(form as any)[f]} onChange={(v: string) => setForm({ ...form, [f]: v })} />)}
       <GradientButton title="Generate Kundli" onPress={() => {}} />
     </ScreenWrapper>
@@ -209,10 +231,10 @@ export function MatchmakingScreen() {
   const [p2, setP2] = useState({ name: '', dob: '', tob: '', place: '' });
   return (
     <ScreenWrapper scroll>
-      <Text style={typography.pageTitle}>Matchmaking</Text>
-      <Text style={[typography.sectionTitle, { marginTop: 16 }]}>Person 1</Text>
+      <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>Matchmaking</Text>
+      <Text style={[typography.sectionTitle, { marginTop: 16, color: colors.textPrimary }]}>Person 1</Text>
       {['name', 'dob', 'tob', 'place'].map((f) => <Input key={'p1' + f} label={f} value={(p1 as any)[f]} onChange={(v: string) => setP1({ ...p1, [f]: v })} />)}
-      <Text style={[typography.sectionTitle, { marginTop: 16 }]}>Person 2</Text>
+      <Text style={[typography.sectionTitle, { marginTop: 16, color: colors.textPrimary }]}>Person 2</Text>
       {['name', 'dob', 'tob', 'place'].map((f) => <Input key={'p2' + f} label={f} value={(p2 as any)[f]} onChange={(v: string) => setP2({ ...p2, [f]: v })} />)}
       <GradientButton title="Check Compatibility" onPress={() => {}} />
     </ScreenWrapper>
@@ -228,7 +250,7 @@ export function ShopScreen() {
   if (loading) return <ScreenWrapper scroll><SkeletonLoader height={180} /></ScreenWrapper>;
   return (
     <ScreenWrapper scroll>
-      <Text style={typography.pageTitle}>Astro Shop</Text>
+      <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>Astro Shop</Text>
       <FlatList data={products} numColumns={2} keyExtractor={(p) => p.id} scrollEnabled={false}
         renderItem={({ item }) => (
           <TouchableOpacity style={{ flex: 0.5, margin: 6 }}>
@@ -357,36 +379,45 @@ export function ProfileScreen({ navigation }: any) {
     <ScreenWrapper scroll>
       <View style={{ alignItems: 'center', marginVertical: 24 }}>
         <Avatar size={80} uri={user?.avatar} />
-        <Text style={[typography.sectionTitle, { marginTop: 12 }]}>{user?.name}</Text>
+        <Text style={[typography.sectionTitle, { marginTop: 12, color: colors.textPrimary }]}>{user?.name}</Text>
         <Text style={[typography.caption, { color: colors.textSecondary }]}>{user?.email}</Text>
       </View>
 
-      <GlassCard style={{ marginTop: 24 }}>
+      <GlassCard style={{ marginTop: 24, backgroundColor: colors.glassBg, borderColor: colors.cardBorder }}>
         {items.map((item, i) => (
           <TouchableOpacity key={item.label} onPress={() => navigation.navigate(item.route)} style={[styles.menuItem, styles.border, { borderBottomColor: colors.divider }]}>
-            <Ionicons name={item.icon as any} size={22} color={colors.textSecondary} /><Text style={[typography.body, { flex: 1, marginLeft: 12 }]}>{item.label}</Text><Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            <Ionicons name={item.icon as any} size={22} color={colors.textSecondary} />
+            <Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.textPrimary }]}>{item.label}</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </TouchableOpacity>
         ))}
 
         {/* Dark Mode Toggle Item */}
         <View style={[styles.menuItem, styles.border, { paddingVertical: 8, borderBottomColor: colors.divider }]}>
           <Ionicons name="moon-outline" size={22} color={colors.textSecondary} />
-          <Text style={[typography.body, { flex: 1, marginLeft: 12 }]}>Dark Mode</Text>
+          <Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.textPrimary }]}>Dark Mode</Text>
           <Switch value={theme === 'dark'} onValueChange={toggleTheme} trackColor={{ false: '#767577', true: colors.primary }} thumbColor={theme === 'dark' ? colors.accentGold : '#f4f3f4'} />
         </View>
 
         {/* Change Password Item */}
         <TouchableOpacity onPress={() => setPwOpen(true)} style={[styles.menuItem, styles.border, { borderBottomColor: colors.divider }]}>
-          <Ionicons name="key-outline" size={22} color={colors.textSecondary} /><Text style={[typography.body, { flex: 1, marginLeft: 12 }]}>Change Password</Text><Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          <Ionicons name="key-outline" size={22} color={colors.textSecondary} />
+          <Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.textPrimary }]}>Change Password</Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
         </TouchableOpacity>
 
         {/* Delete Account Item */}
         <TouchableOpacity onPress={handleDeleteAccount} style={[styles.menuItem, { borderBottomWidth: 0 }]}>
-          <Ionicons name="trash-outline" size={22} color={colors.danger} /><Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.danger }]}>Delete Account</Text><Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          <Ionicons name="trash-outline" size={22} color={colors.danger} />
+          <Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.danger }]}>Delete Account</Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
         </TouchableOpacity>
       </GlassCard>
 
-      <TouchableOpacity style={styles.logout} onPress={logout}><Ionicons name="log-out-outline" size={22} color={colors.danger} /><Text style={{ color: colors.danger, fontSize: 16, fontWeight: '600', marginLeft: 8 }}>Logout</Text></TouchableOpacity>
+      <TouchableOpacity style={styles.logout} onPress={logout}>
+        <Ionicons name="log-out-outline" size={22} color={colors.danger} />
+        <Text style={{ color: colors.danger, fontSize: 16, fontWeight: '600', marginLeft: 8 }}>Logout</Text>
+      </TouchableOpacity>
 
       <CustomModal visible={pwOpen} onClose={() => setPwOpen(false)} title="Change Password">
         <View style={{ paddingHorizontal: 24, paddingBottom: 20 }}>

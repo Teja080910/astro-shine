@@ -25,17 +25,16 @@ export function LoginScreen({ navigation }: any) {
   const logoOpacity = isDark ? 0.18 : 0.14;
 
   return (
-    <ScreenWrapper edges={['top', 'bottom']} noPadding backgroundColor="#09090B">
+    <ScreenWrapper edges={['top', 'bottom']} noPadding>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <TouchableOpacity style={[styles.themeToggle, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder }]} onPress={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
           <Ionicons name={theme === 'dark' ? 'sunny-outline' : 'moon-outline'} size={22} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Image source={require('../../../assets/logo.jpg')} style={[styles.backgroundImage, { opacity: logoOpacity }]} resizeMode="cover" />
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <Image source={require('../../../assets/logo.jpg')} style={styles.headerLogo} resizeMode="contain" />
-            <Text style={[typography.hero, styles.headerTitle]}>Welcome Back</Text>
-            <Text style={[typography.body, styles.headerSub]}>Sign in to continue your cosmic journey</Text>
+            <Text style={[typography.hero, { color: colors.textPrimary }]}>Welcome Back</Text>
+            <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>Sign in to continue your cosmic journey</Text>
           </View>
           {error ? <Text style={styles.error}>{error}</Text> : null}
           
@@ -46,10 +45,10 @@ export function LoginScreen({ navigation }: any) {
           </View>
 
           <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.linkTextStatic}>Don't have an account? <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>Register</Text></Text>
+            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Don't have an account? <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>Register</Text></Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('OtpLogin')}>
-            <Text style={styles.linkTextStatic}>Login with OTP</Text>
+            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Login with OTP</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -93,12 +92,11 @@ export function RegisterScreen({ navigation }: any) {
   const logoOpacity = isDark ? 0.18 : 0.14;
 
   return (
-    <ScreenWrapper edges={['top', 'bottom']} noPadding backgroundColor="#09090B">
+    <ScreenWrapper edges={['top', 'bottom']} noPadding>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <TouchableOpacity style={[styles.themeToggle, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder }]} onPress={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
           <Ionicons name={theme === 'dark' ? 'sunny-outline' : 'moon-outline'} size={22} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Image source={require('../../../assets/logo.jpg')} style={[styles.backgroundImage, { opacity: logoOpacity }]} resizeMode="cover" />
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           
           {step === 0 ? (
@@ -106,8 +104,8 @@ export function RegisterScreen({ navigation }: any) {
             <>
               <View style={styles.header}>
                 <Image source={require('../../../assets/logo.jpg')} style={styles.headerLogo} resizeMode="contain" />
-                <Text style={[typography.hero, styles.headerTitle]}>Join Us</Text>
-                <Text style={[typography.body, styles.headerSub]}>Select how you want to join our cosmic community</Text>
+                <Text style={[typography.hero, { color: colors.textPrimary }]}>Join Us</Text>
+                <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>Select how you want to join our cosmic community</Text>
               </View>
 
               <View style={styles.selectionContainer}>
@@ -139,14 +137,14 @@ export function RegisterScreen({ navigation }: any) {
             <>
               <View style={styles.header}>
                 <Image source={require('../../../assets/logo.jpg')} style={styles.headerLogo} resizeMode="contain" />
-                <Text style={[typography.hero, styles.headerTitle]}>{selectedRole === 'user' ? 'User Signup' : 'Astrologer Signup'}</Text>
-                <Text style={[typography.body, styles.headerSub]}>{selectedRole === 'user' ? 'Begin your spiritual journey' : 'Register your advisor account'}</Text>
+                <Text style={[typography.hero, { color: colors.textPrimary }]}>{selectedRole === 'user' ? 'User Signup' : 'Astrologer Signup'}</Text>
+                <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{selectedRole === 'user' ? 'Begin your spiritual journey' : 'Register your advisor account'}</Text>
               </View>
               {error ? <Text style={styles.error}>{error}</Text> : null}
 
               <TouchableOpacity style={styles.backToRoleButton} onPress={() => setStep(0)}>
-                <Ionicons name="arrow-back-outline" size={16} color="#B6B6C2" style={{ marginRight: 6 }} />
-                <Text style={styles.backToRoleText}>Change Role Selection</Text>
+                <Ionicons name="arrow-back-outline" size={16} color={colors.textSecondary} style={{ marginRight: 6 }} />
+                <Text style={[styles.backToRoleText, { color: colors.textSecondary }]}>Change Role Selection</Text>
               </TouchableOpacity>
 
               <View style={[styles.formCard, { backgroundColor: colors.glassBg, borderColor: colors.cardBorder }]}>
@@ -190,7 +188,7 @@ export function RegisterScreen({ navigation }: any) {
           )}
 
           <TouchableOpacity style={styles.link} onPress={() => navigation.goBack()}>
-            <Text style={styles.linkTextStatic}>Already have an account? <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>Sign In</Text></Text>
+            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Already have an account? <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>Sign In</Text></Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -292,17 +290,16 @@ export function OtpLoginScreen({ navigation }: any) {
   const logoOpacity = isDark ? 0.18 : 0.14;
 
   return (
-    <ScreenWrapper edges={['top', 'bottom']} noPadding backgroundColor="#09090B">
+    <ScreenWrapper edges={['top', 'bottom']} noPadding>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <TouchableOpacity style={[styles.themeToggle, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder }]} onPress={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
           <Ionicons name={theme === 'dark' ? 'sunny-outline' : 'moon-outline'} size={22} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Image source={require('../../../assets/logo.jpg')} style={[styles.backgroundImage, { opacity: logoOpacity }]} resizeMode="cover" />
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <Image source={require('../../../assets/logo.jpg')} style={styles.headerLogo} resizeMode="contain" />
-            <Text style={[typography.hero, styles.headerTitle]}>OTP Login</Text>
-            <Text style={[typography.body, styles.headerSub]}>{sent ? `Enter code sent to ${identifier}` : `Enter your ${verType === 'email' ? 'email address' : 'phone number'}`}</Text>
+            <Text style={[typography.hero, { color: colors.textPrimary }]}>OTP Login</Text>
+            <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{sent ? `Enter code sent to ${identifier}` : `Enter your ${verType === 'email' ? 'email address' : 'phone number'}`}</Text>
           </View>
           {error ? <Text style={styles.error}>{error}</Text> : null}
           
@@ -357,7 +354,7 @@ export function OtpLoginScreen({ navigation }: any) {
           </View>
 
           <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.linkTextStatic}>Back to <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>Login</Text></Text>
+            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Back to <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>Login</Text></Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>

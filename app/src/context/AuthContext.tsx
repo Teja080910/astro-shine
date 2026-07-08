@@ -100,16 +100,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginAsUser = async (email: string, password: string) => {
     const { token, user: u } = await api.auth.login({ email, password });
-    const resolvedRole =
-      (u as any).role === "super_admin" || (u as any).role === "admin"
-        ? "admin"
-        : (u as any).role === "astrologer"
-          ? "astrologer"
-          : "user";
+    const resolvedRole: AppRole =
+      (u as any).role === "astrologer" ? "astrologer" : "user";
     if (resolvedRole === "astrologer") {
       await persist(token, undefined, u as any, "astrologer");
     } else {
-      await persist(token, u as User, undefined, resolvedRole as any);
+      await persist(token, u as User, undefined, "user");
     }
   };
 

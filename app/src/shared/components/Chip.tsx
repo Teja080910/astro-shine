@@ -1,13 +1,20 @@
 import React from 'react';
 import { TouchableOpacity, Text, View, StyleSheet } from 'react-native';
 import { colors, radii } from '../theme';
+import { useAuth } from '../../context/AuthContext';
 
-interface Props { label: string; selected?: boolean; onPress?: () => void; color?: string; }
+interface Props { label: string; selected?: boolean; onPress?: () => void; color?: string; style?: any; }
 
-export function Chip({ label, selected, onPress, color }: Props) {
+export function Chip({ label, selected, onPress, color, style }: Props) {
+  const { theme } = useAuth();
+  const isDark = theme === 'dark';
+
   const dynamicChipStyle = selected
     ? { borderColor: colors.primary, backgroundColor: colors.primary + '20' }
-    : { borderColor: colors.cardBorder, backgroundColor: colors.surfaceLight };
+    : { 
+        borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', 
+        backgroundColor: isDark ? '#1E293B' : '#E2E8F0' 
+      };
 
   const dynamicLabelStyle = selected
     ? { color: colors.primaryLight }
@@ -16,7 +23,7 @@ export function Chip({ label, selected, onPress, color }: Props) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={[styles.chip, dynamicChipStyle, color ? { backgroundColor: color + '20', borderColor: color } : null]}
+      style={[styles.chip, dynamicChipStyle, color ? { backgroundColor: color + '20', borderColor: color } : null, style]}
     >
       <Text style={[styles.label, dynamicLabelStyle, color ? { color } : null]}>{label}</Text>
     </TouchableOpacity>

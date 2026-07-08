@@ -35,7 +35,7 @@ export function CustomModal({ visible, onClose, children, title, dismissable = t
           <Pressable onPress={(e) => e.stopPropagation()}>
             <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
               <View style={styles.handle} />
-              {title ? <Text style={[typography.sectionTitle, { paddingHorizontal: 24, marginBottom: 16 }]}>{title}</Text> : null}
+              {title ? <Text style={[typography.sectionTitle, { paddingHorizontal: 24, marginBottom: 16, color: colors.textPrimary }]}>{title}</Text> : null}
               {children}
             </ScrollView>
           </Pressable>

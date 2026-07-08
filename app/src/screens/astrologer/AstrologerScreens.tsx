@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Switch, TextInput, Alert, ScrollView } from 'react-native';
-import { ScreenWrapper, GlassCard, GradientButton, SectionHeader, Avatar, StarRating, Chip, EmptyState, CustomModal, colors, typography, radii } from '../../shared';
-import { api } from '../../shared/api-client';
-import type { Astrologer, Transaction, CommissionLog } from '../../shared/types';
 import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
+import { Avatar, CustomModal, GlassCard, GradientButton, ScreenWrapper, SectionHeader, colors, radii, typography } from '../../shared';
+import { api } from '../../shared/api-client';
+import type { Transaction } from '../../shared/types';
 
 export function AstrologerHomeScreen({ navigation }: any) {
   const { astrologer, user, role } = useAuth();
@@ -16,11 +16,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
 
   const toggleOnline = async (v: boolean) => { setIsOnline(v); if (astrologer?.id) await api.astrologers.updateStatus(astrologer.id, v ? 'online' : 'offline'); };
 
-  const statItems = role === 'admin' ? [
-    { label: 'Total Users', value: '120', icon: 'people-outline', color: colors.primaryLight },
-    { label: 'Active Astrologers', value: '8', icon: 'star-outline', color: colors.accentGold },
-    { label: 'Total Revenue', value: '₹45,200', icon: 'cash-outline', color: colors.success },
-  ] : [
+  const statItems = [
     { label: 'Today Earnings', value: stats.todayEarnings, icon: 'cash-outline', color: colors.success },
     { label: 'Total Calls', value: stats.totalCalls, icon: 'call-outline', color: colors.primaryLight },
     { label: 'Rating', value: astrologer?.rating || '0', icon: 'star-outline', color: colors.accentGold },
@@ -31,13 +27,13 @@ export function AstrologerHomeScreen({ navigation }: any) {
       <ScrollView contentContainerStyle={{ padding: 16 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <View style={{ flex: 1 }}>
-            <Text style={typography.pageTitle}>{role === 'admin' ? 'Admin Panel' : 'Dashboard'}</Text>
-            <Text style={typography.body}>{role === 'admin' ? user?.name : (astrologer?.name || 'Astrologer')}</Text>
+            <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>Dashboard</Text>
+            <Text style={[typography.body, { color: colors.textSecondary }]}>{astrologer?.name || 'Astrologer'}</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            {role !== 'admin' && (
+            {true && (
               <View style={{ alignItems: 'center' }}>
-                <Text style={typography.caption}>{isOnline ? 'Online' : 'Offline'}</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>{isOnline ? 'Online' : 'Offline'}</Text>
                 <Switch value={isOnline} onValueChange={toggleOnline} trackColor={{ false: colors.textMuted, true: colors.success }} thumbColor={colors.white} />
               </View>
             )}
@@ -55,7 +51,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
 
         <SectionHeader title="Quick Actions" />
         <View style={{ gap: 8, marginTop: 8 }}>
-          <GradientButton title={role === 'admin' ? "Manage Users" : "Go Live"} variant="gold" onPress={() => {}} />
+          <GradientButton title="Go Live" variant="gold" onPress={() => {}} />
         </View>
       </ScrollView>
 
@@ -149,13 +145,9 @@ export function AstrologerProfileScreen({ navigation }: any) {
   const [pwSuccess, setPwSuccess] = useState('');
   const [pwLoading, setPwLoading] = useState(false);
 
-  const profile = role === 'admin' ? user : astrologer;
+  const profile = astrologer;
 
-  const items = role === 'admin' ? [
-    { icon: 'person-outline', label: 'Edit Profile', route: 'EditProfile' },
-    { icon: 'notifications-outline', label: 'Notifications', route: 'Notifications' },
-    { icon: 'help-circle-outline', label: 'Help & Support', route: 'Support' },
-  ] : [
+  const items = [
     { icon: 'person-outline', label: 'Edit Profile', route: 'EditProfile' },
     { icon: 'document-attach-outline', label: 'Documents & Verification', route: 'Documents' },
     { icon: 'time-outline', label: 'Schedule', route: 'Schedule' },
@@ -231,40 +223,49 @@ export function AstrologerProfileScreen({ navigation }: any) {
     <ScreenWrapper scroll>
       <View style={{ alignItems: 'center', marginVertical: 24 }}>
         <Avatar size={80} uri={profile?.avatar} />
-        <Text style={[typography.sectionTitle, { marginTop: 12 }]}>{profile?.name}</Text>
+        <Text style={[typography.sectionTitle, { marginTop: 12, color: colors.textPrimary }]}>{profile?.name}</Text>
         <Text style={[typography.caption, { color: colors.textSecondary }]}>
           {role === 'admin' ? 'Admin' : ((profile as any)?.specialization?.join(', ') || 'Astrologer')}
         </Text>
       </View>
 
-      <GlassCard style={{ marginTop: 24 }}>
+      <GlassCard style={{ marginTop: 24, backgroundColor: colors.glassBg, borderColor: colors.cardBorder }}>
         {items.map((item, i) => (
           <TouchableOpacity key={item.label} onPress={() => navigation.navigate(item.route)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.divider }}>
-            <Ionicons name={item.icon as any} size={22} color={colors.textSecondary} /><Text style={[typography.body, { flex: 1, marginLeft: 12 }]}>{item.label}</Text><Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            <Ionicons name={item.icon as any} size={22} color={colors.textSecondary} />
+            <Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.textPrimary }]}>{item.label}</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </TouchableOpacity>
         ))}
 
         {/* Dark Mode Toggle Item */}
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.divider }}>
           <Ionicons name="moon-outline" size={22} color={colors.textSecondary} />
-          <Text style={[typography.body, { flex: 1, marginLeft: 12 }]}>Dark Mode</Text>
+          <Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.textPrimary }]}>Dark Mode</Text>
           <Switch value={theme === 'dark'} onValueChange={toggleTheme} trackColor={{ false: '#767577', true: colors.primary }} thumbColor={theme === 'dark' ? colors.accentGold : '#f4f3f4'} />
         </View>
 
         {/* Change Password Item */}
-        <TouchableOpacity onPress={() => setPwOpen(true)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: role === 'admin' ? 0 : 1, borderBottomColor: colors.divider }}>
-          <Ionicons name="key-outline" size={22} color={colors.textSecondary} /><Text style={[typography.body, { flex: 1, marginLeft: 12 }]}>Change Password</Text><Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+        <TouchableOpacity onPress={() => setPwOpen(true)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.divider }}>
+          <Ionicons name="key-outline" size={22} color={colors.textSecondary} />
+          <Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.textPrimary }]}>Change Password</Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
         </TouchableOpacity>
 
         {/* Delete Account Item */}
-        {role !== 'admin' && (
+        {true && (
           <TouchableOpacity onPress={handleDeleteAccount} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }}>
-            <Ionicons name="trash-outline" size={22} color={colors.danger} /><Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.danger }]}>Delete Account</Text><Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            <Ionicons name="trash-outline" size={22} color={colors.danger} />
+            <Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.danger }]}>Delete Account</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </TouchableOpacity>
         )}
       </GlassCard>
       
-      <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 32, padding: 16, marginBottom: 100 }} onPress={logout}><Ionicons name="log-out-outline" size={22} color={colors.danger} /><Text style={{ color: colors.danger, fontSize: 16, fontWeight: '600', marginLeft: 8 }}>Logout</Text></TouchableOpacity>
+      <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 32, padding: 16, marginBottom: 100 }} onPress={logout}>
+        <Ionicons name="log-out-outline" size={22} color={colors.danger} />
+        <Text style={{ color: colors.danger, fontSize: 16, fontWeight: '600', marginLeft: 8 }}>Logout</Text>
+      </TouchableOpacity>
 
       <CustomModal visible={pwOpen} onClose={() => setPwOpen(false)} title="Change Password">
         <View style={{ paddingHorizontal: 24, paddingBottom: 20 }}>

@@ -7,7 +7,7 @@ interface Props { title: string; onSeeAll?: () => void; style?: ViewStyle; }
 export function SectionHeader({ title, onSeeAll, style }: Props) {
   return (
     <View style={[styles.container, style]}>
-      <Text style={typography.sectionTitle}>{title}</Text>
+      <Text style={[typography.sectionTitle, { color: colors.textPrimary }]}>{title}</Text>
       {onSeeAll && (
         <TouchableOpacity onPress={onSeeAll}>
           <Text style={styles.seeAll}>See All</Text>
