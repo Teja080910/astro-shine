@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge } from '@/components/UIComponents';
+import { api } from '@/lib/api';
 import type { Transaction } from '@astro-shine/shared-types';
 
 export default function TransactionsPage() {
   const [data, setData] = useState<Transaction[]>([]);
-  useEffect(() => { fetch('http://localhost:3067/api/v1/transactions').then(r => r.json()).then(setData); }, []);
+  useEffect(() => { api.get<Transaction[]>('/transactions').then(setData); }, []);
 
   return (
     <AdminLayout>

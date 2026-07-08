@@ -3,14 +3,15 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton } from '@/components/UIComponents';
+import { api } from '@/lib/api';
 import type { Report } from '@astro-shine/shared-types';
 
 export default function ReportsPage() {
   const [data, setData] = useState<Report[]>([]);
-  useEffect(() => { fetch('http://localhost:3067/api/v1/reports').then(r => r.json()).then(setData).catch(() => {}); }, []);
+  useEffect(() => { api.get<Report[]>('/reports').then(setData).catch(() => {}); }, []);
 
   const resolve = async (id: string) => {
-    await fetch(`http://localhost:3067/api/v1/reports/${id}/resolve`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: 'admin' }) });
+    await api.put<any>(`/reports/${id}/resolve`, { adminId: 'admin' });
     setData(data.map(r => r.id === id ? { ...r, status: 'reviewed' } : r));
   };
 

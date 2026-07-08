@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { GradientButton, CustomModal } from '@/components/UIComponents';
+import { api } from '@/lib/api';
 import type { NewsItem } from '@astro-shine/shared-types';
 
 export default function NewsPage() {
@@ -10,11 +11,11 @@ export default function NewsPage() {
   const [editing, setEditing] = useState<NewsItem | null>(null);
   const [form, setForm] = useState({ title: '', content: '', image: '' });
 
-  useEffect(() => { fetch('http://localhost:3067/api/v1/news/admin').then(r => r.json()).then(setData).catch(() => {}); }, []);
+  useEffect(() => { api.get<NewsItem[]>('/news/admin').then(setData).catch(() => {}); }, []);
 
   const save = async () => {
-    if (editing?.id) { await fetch(`http://localhost:3067/api/v1/news/${editing.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) }); }
-    else { await fetch('http://localhost:3067/api/v1/news', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) }); }
+    if (editing?.id) { await api.put<any>(`/news/${editing.id}`, form); }
+    else { await api.post<any>('/news', form); }
     setEditing(null);
     setForm({ title: '', content: '', image: '' });
   };

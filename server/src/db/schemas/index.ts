@@ -35,3 +35,5 @@ export { supportTickets } from './support-tickets';
 export { ticketReplies } from './ticket-replies';
 export { appReleases } from './app-releases';
 export { videos } from './videos';
+export { conversations } from './conversations';
+export { conversationMessages } from './conversation-messages';

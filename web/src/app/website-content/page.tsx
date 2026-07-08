@@ -3,20 +3,21 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { GradientButton, CustomModal } from '@/components/UIComponents';
+import { api } from '@/lib/api';
 import type { WebsiteContent } from '@astro-shine/shared-types';
 
 export default function WebsiteContentPage() {
   const [data, setData] = useState<WebsiteContent[]>([]);
   const [editing, setEditing] = useState<{ section: string; content: string }>({ section: '', content: '' });
 
-  useEffect(() => { fetch('http://localhost:3067/api/v1/website-content/admin').then(r => r.json()).then(setData).catch(() => {}); }, []);
+  useEffect(() => { api.get<WebsiteContent[]>('/website-content/admin').then(setData).catch(() => {}); }, []);
 
   const save = async () => {
     let parsed: any = editing.content;
     try { parsed = JSON.parse(editing.content); } catch {}
-    await fetch(`http://localhost:3067/api/v1/website-content/section/${editing.section}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: parsed }) });
+    await api.post<any>(`/website-content/section/${editing.section}`, { content: parsed });
     setEditing({ section: '', content: '' });
-    fetch('http://localhost:3067/api/v1/website-content/admin').then(r => r.json()).then(setData);
+    api.get<WebsiteContent[]>('/website-content/admin').then(setData);
   };
 
   return (

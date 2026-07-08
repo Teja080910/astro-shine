@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { ChatProvider } from './src/context/ChatContext';
 import { Navigation } from './src/navigation/Navigation';
 import { darkTheme, lightTheme, setThemeState } from './src/shared';
 
@@ -28,9 +29,11 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <ThemeWrapper>
-          <NavigationContent />
-        </ThemeWrapper>
+        <ChatProvider>
+          <ThemeWrapper>
+            <NavigationContent />
+          </ThemeWrapper>
+        </ChatProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

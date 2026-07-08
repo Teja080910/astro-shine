@@ -3,17 +3,17 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
+import { api } from '@/lib/api';
 import type { WithdrawalRequest } from '@astro-shine/shared-types';
 
 export default function WithdrawalsPage() {
   const [data, setData] = useState<WithdrawalRequest[]>([]);
   const [selected, setSelected] = useState<WithdrawalRequest | null>(null);
 
-  useEffect(() => { fetch('http://localhost:3067/api/v1/withdrawals').then(r => r.json()).then(setData); }, []);
+  useEffect(() => { api.get<WithdrawalRequest[]>('/withdrawals').then(setData); }, []);
 
   const handleAction = async (id: string, action: 'approve' | 'reject') => {
-    const url = `http://localhost:3067/api/v1/withdrawals/${id}/${action === 'approve' ? 'approve' : 'reject'}`;
-    await fetch(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ adminId: 'system' }) });
+    await api.put<any>(`/withdrawals/${id}/${action === 'approve' ? 'approve' : 'reject'}`, { adminId: 'system' });
     setData(data.map(w => w.id === id ? { ...w, status: action === 'approve' ? 'approved' : 'rejected' } : w));
     setSelected(null);
   };

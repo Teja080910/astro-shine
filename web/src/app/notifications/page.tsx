@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { GradientButton, CustomModal } from '@/components/UIComponents';
+import { api } from '@/lib/api';
 import type { Notification } from '@astro-shine/shared-types';
 
 export default function NotificationsPage() {
@@ -10,10 +11,10 @@ export default function NotificationsPage() {
   const [composing, setComposing] = useState(false);
   const [form, setForm] = useState({ title: '', body: '', type: 'system' });
 
-  useEffect(() => { fetch('http://localhost:3067/api/v1/notifications').then(r => r.json()).then(setData).catch(() => {}); }, []);
+  useEffect(() => { api.get<Notification[]>('/notifications').then(setData).catch(() => {}); }, []);
 
   const sendNotification = async () => {
-    await fetch('http://localhost:3067/api/v1/notifications', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+    await api.post<any>('/notifications', form);
     setComposing(false);
     setForm({ title: '', body: '', type: 'system' });
   };

@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, CustomModal, GradientButton } from '@/components/UIComponents';
+import { api } from '@/lib/api';
 import type { Commission } from '@astro-shine/shared-types';
 
 export default function CommissionsPage() {
   const [data, setData] = useState<Commission[]>([]);
   const [selected, setSelected] = useState<Commission | null>(null);
 
-  useEffect(() => { fetch('http://localhost:3067/api/v1/commissions').then(r => r.json()).then(setData).catch(() => {}); }, []);
+  useEffect(() => { api.get<Commission[]>('/commissions').then(setData).catch(() => {}); }, []);
 
   return (
     <AdminLayout>
