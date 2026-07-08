@@ -1,5 +1,4 @@
-// Theme
-export { colors, radii, spacing, shadows, typography, darkTheme, lightTheme } from './theme';
+export { colors, radii, spacing, shadows, typography, darkTheme, lightTheme, setThemeState, getCurrentTheme } from './theme';
 
 // Components
 export { GlassCard } from './components/GlassCard';

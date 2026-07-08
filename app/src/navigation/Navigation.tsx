@@ -16,14 +16,16 @@ import {
   DonationScreen, ReportScreen, MandirPoojaScreen, OrderHistoryScreen,
   AstrologerRequestsScreen, AstrologerScheduleScreen, AstrologerDocumentsScreen,
   AstrologerCommissionScreen, AstrologerGoLiveScreen,
+  PrivacyPolicyScreen, TermsConditionsScreen, AboutAppScreen,
 } from '../screens/shared/SharedScreens';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const headerOpts = (title: string) => ({ headerShown: true, title, headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.white });
+const headerOpts = (title: string) => ({ headerShown: true, title, headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.textPrimary });
 
 function UserTabs() {
+  const { theme } = useAuth();
   const tabs = [
     { key: 'Home', icon: 'home-outline', label: 'Home' },
     { key: 'Astrologers', icon: 'people-outline', label: 'Astrologers' },
@@ -45,6 +47,7 @@ function UserTabs() {
 }
 
 function AstrologerTabs() {
+  const { theme } = useAuth();
   const tabs = [
     { key: 'Home', icon: 'home-outline', label: 'Home' },
     { key: 'Requests', icon: 'people-outline', label: 'Requests' },
@@ -66,7 +69,7 @@ function AstrologerTabs() {
 }
 
 export function Navigation() {
-  const { role, loading } = useAuth();
+  const { role, loading, theme } = useAuth();
   if (loading) return null;
 
   const screenOptions = { headerShown: false, contentStyle: { backgroundColor: colors.background } };
@@ -98,6 +101,9 @@ export function Navigation() {
             <Stack.Screen name="MandirPooja" component={MandirPoojaScreen} options={headerOpts('Mandir Pooja')} />
             <Stack.Screen name="Donation" component={DonationScreen} options={headerOpts('Donation')} />
             <Stack.Screen name="Report" component={ReportScreen} options={headerOpts('Report')} />
+            <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={headerOpts('Privacy Policy')} />
+            <Stack.Screen name="TermsConditions" component={TermsConditionsScreen} options={headerOpts('Terms & Conditions')} />
+            <Stack.Screen name="AboutApp" component={AboutAppScreen} options={headerOpts('About App')} />
           </>
         ) : (
           <>
@@ -106,6 +112,12 @@ export function Navigation() {
             <Stack.Screen name="Documents" component={AstrologerDocumentsScreen} options={headerOpts('Documents')} />
             <Stack.Screen name="CommissionLogs" component={AstrologerCommissionScreen} options={headerOpts('Commissions')} />
             <Stack.Screen name="GoLive" component={AstrologerGoLiveScreen} options={headerOpts('Go Live')} />
+            <Stack.Screen name="EditProfile" component={EditProfileScreen} options={headerOpts('Edit Profile')} />
+            <Stack.Screen name="Support" component={SupportScreen} options={headerOpts('Support')} />
+            <Stack.Screen name="Notifications" component={NotificationsScreen} options={headerOpts('Notifications')} />
+            <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={headerOpts('Privacy Policy')} />
+            <Stack.Screen name="TermsConditions" component={TermsConditionsScreen} options={headerOpts('Terms & Conditions')} />
+            <Stack.Screen name="AboutApp" component={AboutAppScreen} options={headerOpts('About App')} />
           </>
         )}
       </Stack.Navigator>

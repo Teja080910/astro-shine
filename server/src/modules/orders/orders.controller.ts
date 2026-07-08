@@ -1,9 +1,17 @@
-import { Controller, Get, Post, Put, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { OrdersService } from './orders.service';
+import { AuthGuard } from '../../common/guards/auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @Controller('orders')
 export class OrdersController {
   constructor(private readonly service: OrdersService) {}
+
+  @Get('my')
+  @UseGuards(AuthGuard)
+  async findMyOrders(@CurrentUser() userId: string) {
+    return this.service.findByUserId(userId);
+  }
 
   @Get()
   async findAll(@Query('userId') userId?: string) {

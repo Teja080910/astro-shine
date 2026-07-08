@@ -14,4 +14,10 @@ export class AdminsService {
   async create(data: typeof schema.admins.$inferInsert) {
     const [r] = await this.db.insert(schema.admins).values(data).returning(); return r;
   }
+
+  async update(id: string, data: Partial<typeof schema.admins.$inferInsert>) {
+    const [r] = await this.db.update(schema.admins)
+      .set({ ...data, updatedAt: new Date() }).where(eq(schema.admins.id, id)).returning();
+    return r;
+  }
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Switch, Alert, Modal, ScrollView } from 'react-native';
 import { ScreenWrapper, GlassCard, SectionHeader, SearchBar, GradientButton, CustomModal, Avatar, StarRating, Chip, SkeletonLoader, EmptyState, colors, typography, radii } from '../../shared';
 import { api } from '../../shared/api-client';
 import type { Astrologer, HoroscopeRecord, ShopProduct, Blog, Transaction, Wallet } from '../../shared/types';
@@ -11,43 +11,80 @@ export function UserHomeScreen({ navigation }: any) {
   const [astrologers, setAstrologers] = useState<Astrologer[]>([]);
   const [horoscope, setHoroscope] = useState<HoroscopeRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => { (async () => { try { const [a, h] = await Promise.all([api.astrologers.list(), api.horoscope.bySign('aries')]); setAstrologers(a.slice(0, 5)); setHoroscope(h); } catch {} finally { setLoading(false); } })(); }, []);
 
   if (loading) return <ScreenWrapper scroll><SkeletonLoader height={200} /><View style={{ height: 20 }} /><SkeletonLoader height={120} /><View style={{ height: 20 }} /><SkeletonLoader height={120} /></ScreenWrapper>;
 
   return (
-    <ScreenWrapper scroll>
-      <Text style={[typography.pageTitle, { marginBottom: 4 }]}>Namaste ✨</Text>
-      <Text style={typography.body}>Discover what the stars hold for you</Text>
-
-      <SectionHeader title="Live Astrologers" onSeeAll={() => navigation.navigate('AstrologerList')} />
-      <FlatList horizontal showsHorizontalScrollIndicator={false} data={astrologers} keyExtractor={(a) => a.id}
-        renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.id })} style={styles.astroCard}>
-            <GlassCard style={styles.astroInner}>
-              <Avatar size={56} online={item.onlineStatus === 'online'} />
-              <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
-              <StarRating rating={parseFloat(item.rating)} size={12} />
-              <Text style={typography.caption}>{item.specialization?.[0] || 'Astrologer'}</Text>
-              <Text style={typography.price}>₹{item.pricePerMin}/min</Text>
-            </GlassCard>
+    <ScreenWrapper style={{ position: 'relative', zIndex: 1 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.pageTitle, { marginBottom: 4 }]}>Namaste ✨</Text>
+            <Text style={typography.body}>Discover what the stars hold for you</Text>
+          </View>
+          <TouchableOpacity onPress={() => setMenuOpen(true)} style={{ padding: 8 }}>
+            <Ionicons name="menu-outline" size={32} color={colors.textPrimary} />
           </TouchableOpacity>
-        )} style={{ marginLeft: 8 }} />
+        </View>
 
-      <SectionHeader title="Quick Actions" />
-      <View style={styles.quickActions}>
-        <QuickAction icon="planet" label="Kundli" onPress={() => navigation.navigate('Kundli')} />
-        <QuickAction icon="heart" label="Matchmaking" onPress={() => navigation.navigate('Matchmaking')} />
-        <QuickAction icon="calendar" label="Panchang" onPress={() => navigation.navigate('Panchang')} />
-        <QuickAction icon="pricetags" label="Shop" onPress={() => navigation.navigate('Shop')} />
-      </View>
+        <SectionHeader title="Live Astrologers" onSeeAll={() => navigation.navigate('AstrologerList')} />
+        <FlatList horizontal showsHorizontalScrollIndicator={false} data={astrologers} keyExtractor={(a) => a.id}
+          renderItem={({ item }) => (
+            <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.id })} style={styles.astroCard}>
+              <GlassCard style={styles.astroInner}>
+                <Avatar size={56} online={item.onlineStatus === 'online'} />
+                <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
+                <StarRating rating={parseFloat(item.rating)} size={12} />
+                <Text style={typography.caption}>{item.specialization?.[0] || 'Astrologer'}</Text>
+                <Text style={typography.price}>₹{item.pricePerMin}/min</Text>
+              </GlassCard>
+            </TouchableOpacity>
+          )} style={{ marginLeft: 8 }} />
 
-      {horoscope.length > 0 && (
-        <>
-          <SectionHeader title="Today's Horoscope" />
-          <GlassCard><Text style={typography.cardTitle}>♈ Aries</Text><Text style={[typography.body, { marginTop: 8 }]}>{horoscope[0]?.prediction?.slice(0, 150)}...</Text></GlassCard>
-        </>
+        <SectionHeader title="Quick Actions" />
+        <View style={styles.quickActions}>
+          <QuickAction icon="planet" label="Kundli" onPress={() => navigation.navigate('Kundli')} />
+          <QuickAction icon="heart" label="Matchmaking" onPress={() => navigation.navigate('Matchmaking')} />
+          <QuickAction icon="calendar" label="Panchang" onPress={() => navigation.navigate('Panchang')} />
+          <QuickAction icon="pricetags" label="Shop" onPress={() => navigation.navigate('Shop')} />
+        </View>
+
+        {horoscope.length > 0 && (
+          <>
+            <SectionHeader title="Today's Horoscope" />
+            <GlassCard><Text style={typography.cardTitle}>♈ Aries</Text><Text style={[typography.body, { marginTop: 8 }]}>{horoscope[0]?.prediction?.slice(0, 150)}...</Text></GlassCard>
+          </>
+        )}
+      </ScrollView>
+
+      {menuOpen && (
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={() => setMenuOpen(false)}
+        >
+          <View style={[styles.dropdownContainer, { backgroundColor: colors.surface, borderColor: colors.divider }]}>
+            <TouchableOpacity onPress={() => { setMenuOpen(false); navigation.navigate('PrivacyPolicy'); }} style={[styles.dropdownItem, { borderBottomColor: colors.divider }]}>
+              <Ionicons name="document-text-outline" size={18} color={colors.textSecondary} />
+              <Text style={[typography.body, { marginLeft: 10, color: colors.textPrimary }]}>Privacy Policy</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { setMenuOpen(false); navigation.navigate('TermsConditions'); }} style={[styles.dropdownItem, { borderBottomColor: colors.divider }]}>
+              <Ionicons name="shield-checkmark-outline" size={18} color={colors.textSecondary} />
+              <Text style={[typography.body, { marginLeft: 10, color: colors.textPrimary }]}>Terms & Conditions</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { setMenuOpen(false); navigation.navigate('AboutApp'); }} style={[styles.dropdownItem, { borderBottomColor: colors.divider }]}>
+              <Ionicons name="information-circle-outline" size={18} color={colors.textSecondary} />
+              <Text style={[typography.body, { marginLeft: 10, color: colors.textPrimary }]}>About App</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { setMenuOpen(false); navigation.navigate('Support'); }} style={[styles.dropdownItem, { borderBottomWidth: 0 }]}>
+              <Ionicons name="help-circle-outline" size={18} color={colors.textSecondary} />
+              <Text style={[typography.body, { marginLeft: 10, color: colors.textPrimary }]}>Help & Support</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
       )}
     </ScreenWrapper>
   );
@@ -112,7 +149,7 @@ export function WalletScreen() {
   const [amount, setAmount] = useState('');
   const [showAdd, setShowAdd] = useState(false);
 
-  const load = async () => { const w = await api.wallet.get(); setWallet(w); const t = await api.transactions.list(w.id); setTxns(t); };
+  const load = async () => { const w = await api.wallet.get(); setWallet(w); const t = await api.transactions.listMy(); setTxns(t); };
   useEffect(() => { load(); }, []);
 
   return (
@@ -202,28 +239,158 @@ export function ShopScreen() {
   );
 }
 
+function PasswordInput({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder: string }) {
+  const [show, setShow] = useState(false);
+  return (
+    <View style={{ marginBottom: 14 }}>
+      <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>{label}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48 }}>
+        <TextInput
+          style={{ flex: 1, color: colors.textPrimary, fontSize: 15, paddingRight: 8 }}
+          value={value}
+          onChangeText={onChange}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textMuted}
+          secureTextEntry={!show}
+        />
+        <Ionicons
+          name={show ? 'eye-off-outline' : 'eye-outline'}
+          size={20}
+          color={colors.textMuted}
+          onPress={() => setShow(!show)}
+        />
+      </View>
+    </View>
+  );
+}
+
 // Profile
 export function ProfileScreen({ navigation }: any) {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser, theme, setTheme } = useAuth();
+  const [pwOpen, setPwOpen] = useState(false);
+  const [currentPw, setCurrentPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [pwError, setPwError] = useState('');
+  const [pwSuccess, setPwSuccess] = useState('');
+  const [pwLoading, setPwLoading] = useState(false);
+
   const items = [
     { icon: 'person-outline', label: 'Edit Profile', route: 'EditProfile' },
     { icon: 'document-text-outline', label: 'Order History', route: 'OrderHistory' },
+    { icon: 'wallet-outline', label: 'Transaction History', route: 'Wallet' },
     { icon: 'notifications-outline', label: 'Notifications', route: 'Notifications' },
     { icon: 'newspaper-outline', label: 'Blogs', route: 'Blogs' },
     { icon: 'help-circle-outline', label: 'Help & Support', route: 'Support' },
   ];
 
+  const toggleTheme = async (val: boolean) => {
+    const newTheme = val ? 'dark' : 'light';
+    try {
+      await setTheme(newTheme);
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (!currentPw || !newPw || !confirmPw) {
+      setPwError('Please fill in all password fields.');
+      return;
+    }
+    if (newPw !== confirmPw) {
+      setPwError('New password and confirm password do not match.');
+      return;
+    }
+    setPwLoading(true);
+    setPwError('');
+    setPwSuccess('');
+    try {
+      await api.users.changePassword({ currentPassword: currentPw, newPassword: newPw });
+      setPwSuccess('Password changed successfully!');
+      setCurrentPw('');
+      setNewPw('');
+      setConfirmPw('');
+      setTimeout(() => setPwOpen(false), 1500);
+    } catch (err: any) {
+      setPwError(err.response?.data?.message || 'Failed to change password. Make sure current password is correct.');
+    } finally {
+      setPwLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    if (!user) return;
+    Alert.alert(
+      "Delete Account",
+      "Are you sure you want to delete your account? This action is permanent and cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await api.users.delete(user.id);
+              await logout();
+            } catch (err) {
+              Alert.alert("Error", "Failed to delete account. Please try again.");
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
   return (
     <ScreenWrapper scroll>
-      <View style={styles.header}><Avatar size={80} /><Text style={[typography.pageTitle, { marginTop: 12 }]}>{user?.name}</Text><Text style={typography.body}>{user?.email}</Text></View>
+      <View style={{ alignItems: 'center', marginVertical: 24 }}>
+        <Avatar size={80} uri={user?.avatar} />
+        <Text style={[typography.sectionTitle, { marginTop: 12 }]}>{user?.name}</Text>
+        <Text style={[typography.caption, { color: colors.textSecondary }]}>{user?.email}</Text>
+      </View>
+
       <GlassCard style={{ marginTop: 24 }}>
         {items.map((item, i) => (
-          <TouchableOpacity key={item.label} onPress={() => navigation.navigate(item.route)} style={[styles.menuItem, i < items.length - 1 && styles.border]}>
+          <TouchableOpacity key={item.label} onPress={() => navigation.navigate(item.route)} style={[styles.menuItem, styles.border, { borderBottomColor: colors.divider }]}>
             <Ionicons name={item.icon as any} size={22} color={colors.textSecondary} /><Text style={[typography.body, { flex: 1, marginLeft: 12 }]}>{item.label}</Text><Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </TouchableOpacity>
         ))}
+
+        {/* Dark Mode Toggle Item */}
+        <View style={[styles.menuItem, styles.border, { paddingVertical: 8, borderBottomColor: colors.divider }]}>
+          <Ionicons name="moon-outline" size={22} color={colors.textSecondary} />
+          <Text style={[typography.body, { flex: 1, marginLeft: 12 }]}>Dark Mode</Text>
+          <Switch value={theme === 'dark'} onValueChange={toggleTheme} trackColor={{ false: '#767577', true: colors.primary }} thumbColor={theme === 'dark' ? colors.accentGold : '#f4f3f4'} />
+        </View>
+
+        {/* Change Password Item */}
+        <TouchableOpacity onPress={() => setPwOpen(true)} style={[styles.menuItem, styles.border, { borderBottomColor: colors.divider }]}>
+          <Ionicons name="key-outline" size={22} color={colors.textSecondary} /><Text style={[typography.body, { flex: 1, marginLeft: 12 }]}>Change Password</Text><Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+        </TouchableOpacity>
+
+        {/* Delete Account Item */}
+        <TouchableOpacity onPress={handleDeleteAccount} style={[styles.menuItem, { borderBottomWidth: 0 }]}>
+          <Ionicons name="trash-outline" size={22} color={colors.danger} /><Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.danger }]}>Delete Account</Text><Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+        </TouchableOpacity>
       </GlassCard>
+
       <TouchableOpacity style={styles.logout} onPress={logout}><Ionicons name="log-out-outline" size={22} color={colors.danger} /><Text style={{ color: colors.danger, fontSize: 16, fontWeight: '600', marginLeft: 8 }}>Logout</Text></TouchableOpacity>
+
+      <CustomModal visible={pwOpen} onClose={() => setPwOpen(false)} title="Change Password">
+        <View style={{ paddingHorizontal: 24, paddingBottom: 20 }}>
+          {pwError ? <Text style={{ color: colors.danger, fontSize: 14, marginBottom: 10 }}>{pwError}</Text> : null}
+          {pwSuccess ? <Text style={{ color: '#22c55e', fontSize: 14, marginBottom: 10 }}>{pwSuccess}</Text> : null}
+          <PasswordInput label="Current Password" value={currentPw} onChange={setCurrentPw} placeholder="Enter current password" />
+          <PasswordInput label="New Password" value={newPw} onChange={setNewPw} placeholder="Enter new password" />
+          <PasswordInput label="Confirm New Password" value={confirmPw} onChange={setConfirmPw} placeholder="Confirm new password" />
+          <GradientButton title={pwLoading ? 'Changing...' : 'Change Password'} onPress={handlePasswordChange} disabled={pwLoading} style={{ marginTop: 8 }} />
+        </View>
+      </CustomModal>
     </ScreenWrapper>
   );
 }
@@ -236,8 +403,8 @@ function Stat({ label, value }: { label: string; value: string }) {
   return <View style={{ alignItems: 'center' }}><Text style={{ fontSize: 18, fontWeight: '700', color: colors.primaryLight }}>{value}</Text><Text style={typography.caption}>{label}</Text></View>;
 }
 
-function Input({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  return <View style={{ marginBottom: 14 }}><Text style={[typography.label, { marginBottom: 6 }]}>{label}</Text><TextInput style={{ backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, color: colors.textPrimary, fontSize: 15 }} value={value} onChangeText={onChange} /></View>;
+function Input({ label, value, onChange, ...rest }: { label: string; value: string; onChange: (v: string) => void; [key: string]: any }) {
+  return <View style={{ marginBottom: 14 }}><Text style={[typography.label, { marginBottom: 6 }]}>{label}</Text><TextInput style={{ backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, color: colors.textPrimary, fontSize: 15 }} value={value} onChangeText={onChange} {...rest} /></View>;
 }
 
 const styles = StyleSheet.create({
@@ -251,4 +418,6 @@ const styles = StyleSheet.create({
   menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
   border: { borderBottomWidth: 1, borderBottomColor: colors.divider },
   logout: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 32, padding: 16 },
+  dropdownContainer: { position: 'absolute', top: 55, right: 16, width: 190, borderRadius: 12, borderWidth: 1, paddingVertical: 4, zIndex: 2000 },
+  dropdownItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
 });

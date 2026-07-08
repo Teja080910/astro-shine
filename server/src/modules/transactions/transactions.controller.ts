@@ -1,9 +1,17 @@
-import { Controller, Get, Post, Param, Body, Query, Put } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Query, Put, UseGuards } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
+import { AuthGuard } from '../../common/guards/auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @Controller('transactions')
 export class TransactionsController {
   constructor(private readonly service: TransactionsService) {}
+
+  @Get('my')
+  @UseGuards(AuthGuard)
+  async findMyTransactions(@CurrentUser() userId: string) {
+    return this.service.findByUserId(userId);
+  }
 
   @Get()
   async findAll(@Query('walletId') walletId?: string) {

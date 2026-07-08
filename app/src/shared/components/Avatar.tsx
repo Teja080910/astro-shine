@@ -24,12 +24,12 @@ export function Avatar({ uri, size = 48, online, onPress, name }: Props) {
     <TouchableOpacity onPress={onPress} disabled={!onPress} style={{ position: 'relative' }}>
       {content}
       {online !== undefined && (
-        <View style={[styles.dot, { backgroundColor: online ? colors.success : colors.textMuted }]} />
+        <View style={[styles.dot, { backgroundColor: online ? colors.success : colors.textMuted, borderColor: colors.background }]} />
       )}
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  dot: { position: 'absolute', bottom: 0, right: 0, width: 14, height: 14, borderRadius: 7, borderWidth: 2, borderColor: colors.background },
+  dot: { position: 'absolute', bottom: 0, right: 0, width: 14, height: 14, borderRadius: 7, borderWidth: 2 },
 });

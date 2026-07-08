@@ -1,5 +1,13 @@
 import { MD3DarkTheme, MD3LightTheme, configureFonts } from 'react-native-paper';
 
+let activeTheme = 'dark';
+
+export const setThemeState = (theme: 'light' | 'dark') => {
+  activeTheme = theme;
+};
+
+export const getCurrentTheme = () => activeTheme;
+
 export const colors = {
   primary: '#6D28D9',
   primaryLight: '#9333EA',
@@ -9,22 +17,23 @@ export const colors = {
   success: '#22C55E',
   warning: '#F97316',
   danger: '#EF4444',
-  background: '#09090B',
-  surface: '#111827',
-  surfaceLight: '#1F2937',
-  card: 'rgba(255,255,255,0.08)',
-  cardBorder: 'rgba(255,255,255,0.12)',
-  textPrimary: '#FFFFFF',
-  textSecondary: '#B6B6C2',
-  textMuted: '#71717A',
-  divider: 'rgba(255,255,255,0.08)',
-  glassBg: 'rgba(17, 24, 39, 0.7)',
+  white: '#FFFFFF',
+  black: '#000000',
+
+  get background() { return activeTheme === 'dark' ? '#09090B' : '#FAFAFA'; },
+  get surface() { return activeTheme === 'dark' ? '#111827' : '#FFFFFF'; },
+  get surfaceLight() { return activeTheme === 'dark' ? '#1F2937' : '#F3F4F6'; },
+  get card() { return activeTheme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'; },
+  get cardBorder() { return activeTheme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)'; },
+  get textPrimary() { return activeTheme === 'dark' ? '#FFFFFF' : '#111827'; },
+  get textSecondary() { return activeTheme === 'dark' ? '#B6B6C2' : '#4B5563'; },
+  get textMuted() { return activeTheme === 'dark' ? '#71717A' : '#9CA3AF'; },
+  get divider() { return activeTheme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'; },
+  get glassBg() { return activeTheme === 'dark' ? 'rgba(17, 24, 39, 0.7)' : 'rgba(255, 255, 255, 0.8)'; },
   gradientStart: '#6D28D9',
   gradientMid: '#9333EA',
   gradientEnd: '#A855F7',
   overlay: 'rgba(0,0,0,0.6)',
-  white: '#FFFFFF',
-  black: '#000000',
 };
 
 export const radii = {
@@ -48,38 +57,20 @@ export const spacing = {
 };
 
 export const shadows = {
-  card: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  button: {
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  floating: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    elevation: 12,
-  },
+  card: {},
+  button: {},
+  floating: {},
 };
 
 export const typography = {
-  hero: { fontSize: 36, fontWeight: '800' as const, letterSpacing: -0.5, color: colors.textPrimary },
-  pageTitle: { fontSize: 28, fontWeight: '700' as const, letterSpacing: -0.3, color: colors.textPrimary },
-  sectionTitle: { fontSize: 20, fontWeight: '600' as const, color: colors.textPrimary },
-  cardTitle: { fontSize: 16, fontWeight: '600' as const, color: colors.textPrimary },
-  body: { fontSize: 14, fontWeight: '400' as const, color: colors.textSecondary, lineHeight: 20 },
-  caption: { fontSize: 12, fontWeight: '400' as const, color: colors.textMuted },
+  get hero() { return { fontSize: 36, fontWeight: '800' as const, letterSpacing: -0.5, color: colors.textPrimary }; },
+  get pageTitle() { return { fontSize: 28, fontWeight: '700' as const, letterSpacing: -0.3, color: colors.textPrimary }; },
+  get sectionTitle() { return { fontSize: 20, fontWeight: '600' as const, color: colors.textPrimary }; },
+  get cardTitle() { return { fontSize: 16, fontWeight: '600' as const, color: colors.textPrimary }; },
+  get body() { return { fontSize: 14, fontWeight: '400' as const, color: colors.textSecondary, lineHeight: 20 }; },
+  get caption() { return { fontSize: 12, fontWeight: '400' as const, color: colors.textMuted }; },
   price: { fontSize: 18, fontWeight: '700' as const, color: colors.accentGold },
-  label: { fontSize: 13, fontWeight: '500' as const, color: colors.textSecondary },
+  get label() { return { fontSize: 13, fontWeight: '500' as const, color: colors.textSecondary }; },
 };
 
 export const darkTheme = {

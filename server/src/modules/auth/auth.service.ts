@@ -1,6 +1,8 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
+import { AdminsService } from '../admin/admins.service';
+import { AstrologersService } from '../astrologers/astrologers.service';
 import * as crypto from 'crypto';
 import * as jwt from 'jsonwebtoken';
 
@@ -12,6 +14,8 @@ export class AuthService {
   constructor(
     private configService: ConfigService,
     private usersService: UsersService,
+    private adminsService: AdminsService,
+    private astrologersService: AstrologersService,
   ) {
     this.jwtSecret = this.configService.get<string>('JWT_SECRET', 'default-secret');
     this.jwtExpiresIn = 604800; // 7 days in seconds
@@ -32,6 +36,10 @@ export class AuthService {
     }
 
     let user = await this.usersService.findByPhone(phone);
+    if (user && (!user.isActive || user.deletedAt)) {
+      throw new UnauthorizedException('Account has been deleted or deactivated');
+    }
+
     if (!user) {
       user = await this.usersService.create({
         email: `${phone}@phone.astroshine.com`,
@@ -46,19 +54,50 @@ export class AuthService {
   }
 
   async loginWithEmail(email: string, password: string): Promise<{ token: string; user: any }> {
-    const user = await this.usersService.findByEmail(email);
-    if (!user || !user.password) {
-      throw new UnauthorizedException('Invalid credentials');
+    let user: any = null;
+    let role = 'user';
+
+    // 1. Check Users
+    const regularUser = await this.usersService.findByEmail(email);
+    if (regularUser && regularUser.isActive && !regularUser.deletedAt && regularUser.password) {
+      const isValid = await this.verifyPassword(password, regularUser.password);
+      if (isValid) {
+        user = regularUser;
+        role = 'user';
+      }
     }
 
-    const isValid = await this.verifyPassword(password, user.password);
-    if (!isValid) {
+    // 2. Check Admins if not found
+    if (!user) {
+      const adminUser = await this.adminsService.findByEmail(email);
+      if (adminUser && adminUser.isActive !== false && adminUser.password) {
+        const isValid = await this.verifyPassword(password, adminUser.password);
+        if (isValid) {
+          user = adminUser;
+          role = adminUser.role || 'admin';
+        }
+      }
+    }
+
+    // 3. Check Astrologers if not found
+    if (!user) {
+      const astrologerUser = await this.astrologersService.findByEmail(email);
+      if (astrologerUser && astrologerUser.isActive !== false && astrologerUser.password) {
+        const isValid = await this.verifyPassword(password, astrologerUser.password);
+        if (isValid) {
+          user = astrologerUser;
+          role = 'astrologer';
+        }
+      }
+    }
+
+    if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const { password: _, ...safeUser } = user;
     const token = this.generateToken(user.id);
-    return { token, user: safeUser };
+    return { token, user: { ...safeUser, role } };
   }
 
   async registerWithEmail(data: {

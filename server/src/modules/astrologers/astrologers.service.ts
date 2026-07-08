@@ -35,4 +35,10 @@ export class AstrologersService {
   async updateOnlineStatus(id: string, onlineStatus: 'online' | 'offline' | 'busy') {
     return this.update(id, { onlineStatus } as any);
   }
+
+  async delete(id: string) {
+    const [result] = await this.db.update(schema.astrologers)
+      .set({ isActive: false }).where(eq(schema.astrologers.id, id)).returning();
+    return result;
+  }
 }

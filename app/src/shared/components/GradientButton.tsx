@@ -23,7 +23,7 @@ export function GradientButton({ title, onPress, style, disabled, small, variant
   return (
     <TouchableOpacity onPress={onPress} disabled={disabled} activeOpacity={0.8} style={[styles.wrapper, small && styles.small, style]}>
       <LinearGradient
-        colors={gradients[variant]}
+        colors={gradients[variant] as any}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={[styles.button, small && styles.smallButton, shadows.button, disabled && styles.disabled]}
