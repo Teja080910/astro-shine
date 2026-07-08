@@ -3,22 +3,23 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { GradientButton, CustomModal } from '@/components/UIComponents';
+import { api } from '@/lib/api';
 import type { DynamicLink } from '@astro-shine/shared-types';
 
 export default function DynamicLinksPage() {
   const [data, setData] = useState<DynamicLink[]>([]);
   const [editing, setEditing] = useState<Partial<DynamicLink> | null>(null);
 
-  useEffect(() => { fetch('http://localhost:3067/api/v1/dynamic-links/admin').then(r => r.json()).then(setData).catch(() => {}); }, []);
+  useEffect(() => { api.get<DynamicLink[]>('/dynamic-links/admin').then(setData).catch(() => {}); }, []);
 
   const save = async () => {
     if (editing?.id) {
-      await fetch(`http://localhost:3067/api/v1/dynamic-links/${editing.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editing) });
+      await api.put<any>(`/dynamic-links/${editing.id}`, editing);
     } else {
-      await fetch('http://localhost:3067/api/v1/dynamic-links', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editing) });
+      await api.post<any>('/dynamic-links', editing);
     }
     setEditing(null);
-    fetch('http://localhost:3067/api/v1/dynamic-links/admin').then(r => r.json()).then(setData);
+    api.get<DynamicLink[]>('/dynamic-links/admin').then(setData);
   };
 
   return (

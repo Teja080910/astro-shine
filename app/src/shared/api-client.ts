@@ -1,7 +1,8 @@
 import axios, { AxiosInstance } from 'axios';
-import type { Admin, ApiKey, AppRelease, AppSetting, Astrologer, AuthResponse, Blog, CallLog, ChatMessage, Commission, CommissionLog, Donation, DynamicLink, Gift, GiftTransaction, HoroscopeRecord, KundliRecord, LiveSession, LoginRequest, MandirPooja, MatchmakingRecord, NewsItem, Notification, Order, OrderItem, PanchangRecord, PoojaBooking, RegisterRequest, Report, Review, ShopProduct, SupportTicket, TicketReply, Transaction, User, Video, Wallet, WebsiteContent, WithdrawalRequest } from '../shared/types';
+import type { AuthResponse, LoginRequest, RegisterRequest, User, Astrologer, Admin, KundliRecord, MatchmakingRecord, HoroscopeRecord, PanchangRecord, Wallet, Transaction, WithdrawalRequest, Commission, CommissionLog, CallLog, ChatMessage, Gift, GiftTransaction, Donation, ShopProduct, Order, OrderItem, Blog, NewsItem, Review, Report, Notification, AppSetting, ApiKey, DynamicLink, WebsiteContent, LiveSession, MandirPooja, PoojaBooking, SupportTicket, TicketReply, AppRelease, Video, Conversation, ConversationMessage, PaginatedMessages } from '../shared/types';
+import { config } from '../config';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.0.113:3067/api/v1';
+const BASE_URL = config.apiBaseUrl;
 
 class ApiClient {
   private client: AxiosInstance;
@@ -286,6 +287,20 @@ class ApiClient {
     get: (id: string) => this.get<Video>(`/videos/${id}`),
     create: (d: any) => this.post<Video>('/videos', d),
     update: (id: string, d: any) => this.put<Video>(`/videos/${id}`, d),
+  };
+
+  // Conversations
+  conversations = {
+    list: () => this.get<{ data: Conversation[] }>('/conversations'),
+    get: (id: string) => this.get<Conversation>(`/conversations/${id}`),
+    create: (participantId: string, participantRole: string) =>
+      this.post<Conversation>('/conversations', { participantId, participantRole }),
+    getMessages: (id: string, cursor?: string, limit = 20) =>
+      this.get<PaginatedMessages>(`/conversations/${id}/messages`, { cursor, limit }),
+    sendMessage: (id: string, content: string, type = 'text') =>
+      this.post<ConversationMessage>(`/conversations/${id}/messages`, { content, type }),
+    markAsRead: (id: string) => this.put<{ unreadCount: number }>(`/conversations/${id}/read`),
+    delete: (id: string) => this.del(`/conversations/${id}`),
   };
 }
 

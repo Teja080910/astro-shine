@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { GradientButton, CustomModal } from '@/components/UIComponents';
+import { api } from '@/lib/api';
 import type { Blog } from '@astro-shine/shared-types';
 
 export default function BlogsPage() {
@@ -10,12 +11,12 @@ export default function BlogsPage() {
   const [editing, setEditing] = useState<Blog | null>(null);
   const [form, setForm] = useState({ title: '', slug: '', content: '', status: 'draft' as string, tags: '' });
 
-  useEffect(() => { fetch('http://localhost:3067/api/v1/blogs').then(r => r.json()).then(setData).catch(() => {}); }, []);
+  useEffect(() => { api.get<Blog[]>('/blogs').then(setData).catch(() => {}); }, []);
 
   const save = async () => {
     const payload = { ...form, tags: form.tags.split(',').map(t => t.trim()).filter(Boolean) };
-    if (editing?.id) { await fetch(`http://localhost:3067/api/v1/blogs/${editing.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); }
-    else { await fetch('http://localhost:3067/api/v1/blogs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); }
+    if (editing?.id) { await api.put<any>(`/blogs/${editing.id}`, payload); }
+    else { await api.post<any>('/blogs', payload); }
     setEditing(null);
     setForm({ title: '', slug: '', content: '', status: 'draft', tags: '' });
   };

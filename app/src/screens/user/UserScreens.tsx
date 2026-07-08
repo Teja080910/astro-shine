@@ -5,6 +5,7 @@ import { api } from '../../shared/api-client';
 import type { Astrologer, HoroscopeRecord, ShopProduct, Blog, Transaction, Wallet } from '../../shared/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
+import { useChat } from '../../context/ChatContext';
 
 // User Home Dashboard
 export function UserHomeScreen({ navigation }: any) {
@@ -121,9 +122,15 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
   const { id } = route.params;
   const [astro, setAstro] = useState<Astrologer | null>(null);
   const [showCall, setShowCall] = useState(false);
+  const { openConversation } = useChat();
 
   useEffect(() => { api.astrologers.get(id).then(setAstro); }, []);
   if (!astro) return <ScreenWrapper><Text style={typography.body}>Loading...</Text></ScreenWrapper>;
+
+  const handleChat = async () => {
+    const convId = await openConversation(id, 'astrologer');
+    navigation.navigate('ChatRoom', { conversationId: convId, participantId: id, participantRole: 'astrologer' });
+  };
 
   return (
     <ScreenWrapper scroll>
@@ -132,7 +139,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
         <Stat label="Experience" value={`${astro.experience}y`} /><Stat label="Calls" value={`${astro.totalCalls}`} /><Stat label="Price" value={`₹${astro.pricePerMin}/min`} />
       </View>
       <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
-        <View style={{ flex: 1 }}><GradientButton title="Chat" onPress={() => navigation.navigate('Chat', { astrologerId: id })} /></View>
+        <View style={{ flex: 1 }}><GradientButton title="Chat" onPress={handleChat} /></View>
         <View style={{ flex: 1 }}><GradientButton title="Call" variant="gold" onPress={() => setShowCall(true)} /></View>
       </View>
       <CustomModal visible={showCall} onClose={() => setShowCall(false)}>
@@ -417,7 +424,7 @@ const styles = StyleSheet.create({
   balance: { fontSize: 42, fontWeight: '800', color: colors.accentGold, marginTop: 4 },
   menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
   border: { borderBottomWidth: 1, borderBottomColor: colors.divider },
-  logout: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 32, padding: 16 },
+  logout: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 32, padding: 16, marginBottom: 100 },
   dropdownContainer: { position: 'absolute', top: 55, right: 16, width: 190, borderRadius: 12, borderWidth: 1, paddingVertical: 4, zIndex: 2000 },
   dropdownItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
 });

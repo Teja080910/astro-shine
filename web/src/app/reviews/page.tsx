@@ -3,15 +3,16 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
+import { api } from '@/lib/api';
 import type { Review } from '@astro-shine/shared-types';
 
 export default function ReviewsPage() {
   const [data, setData] = useState<Review[]>([]);
 
-  useEffect(() => { fetch('http://localhost:3067/api/v1/reviews').then(r => r.json()).then(setData).catch(() => {}); }, []);
+  useEffect(() => { api.get<Review[]>('/reviews').then(setData).catch(() => {}); }, []);
 
   const toggleVisibility = async (id: string, visible: boolean) => {
-    await fetch(`http://localhost:3067/api/v1/reviews/${id}/visibility`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isVisible: visible }) });
+    await api.put<any>(`/reviews/${id}/visibility`, { isVisible: visible });
     setData(data.map(r => r.id === id ? { ...r, isVisible: visible } : r));
   };
 

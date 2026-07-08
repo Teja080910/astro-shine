@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
+import { api } from '@/lib/api';
 import type { Astrologer } from '@astro-shine/shared-types';
 
 export default function AstrologersPage() {
@@ -10,10 +11,10 @@ export default function AstrologersPage() {
   const [loading, setLoading] = useState(true);
   const [verify, setVerify] = useState<Astrologer | null>(null);
 
-  useEffect(() => { fetch('http://localhost:3067/api/v1/astrologers').then(r => r.json()).then(setData).finally(() => setLoading(false)); }, []);
+  useEffect(() => { api.get<Astrologer[]>('/astrologers').then(setData).finally(() => setLoading(false)); }, []);
 
   const handleVerify = async (id: string, status: 'approved' | 'rejected') => {
-    await fetch(`http://localhost:3067/api/v1/astrologers/${id}/verify`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) });
+    await api.post<any>(`/astrologers/${id}/verify`, { status });
     setData(data.map(a => a.id === id ? { ...a, verificationStatus: status } : a));
     setVerify(null);
   };

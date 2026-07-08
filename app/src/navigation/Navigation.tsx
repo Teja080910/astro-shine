@@ -10,6 +10,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { OnboardingScreen } from '../screens/auth/OnboardingScreen';
 import { LoginScreen, RegisterScreen, OtpLoginScreen } from '../screens/auth/AuthScreens';
 import { UserHomeScreen, AstrologerListScreen, AstrologerDetailScreen, WalletScreen, ChatScreen, KundliScreen, MatchmakingScreen, ShopScreen, ProfileScreen } from '../screens/user/UserScreens';
+import { ChatListScreen } from '../screens/user/ChatListScreen';
+import { ChatRoomScreen } from '../screens/user/ChatRoomScreen';
 import { AstrologerHomeScreen, AstrologerWalletScreen, AstrologerProfileScreen } from '../screens/astrologer/AstrologerScreens';
 import {
   PanchangScreen, BlogsScreen, NotificationsScreen, EditProfileScreen, SupportScreen,
@@ -40,7 +42,7 @@ function UserTabs() {
       <Tab.Screen name="Home" component={UserHomeScreen} />
       <Tab.Screen name="Astrologers" component={AstrologerListScreen} />
       <Tab.Screen name="Wallet" component={WalletScreen} />
-      <Tab.Screen name="Chat" component={ChatScreen} />
+      <Tab.Screen name="Chat" component={ChatListScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
@@ -62,7 +64,7 @@ function AstrologerTabs() {
       <Tab.Screen name="Home" component={AstrologerHomeScreen} />
       <Tab.Screen name="Requests" component={AstrologerRequestsScreen} />
       <Tab.Screen name="Wallet" component={AstrologerWalletScreen} />
-      <Tab.Screen name="Chat" component={ChatScreen} />
+      <Tab.Screen name="Chat" component={ChatListScreen} />
       <Tab.Screen name="Profile" component={AstrologerProfileScreen} />
     </Tab.Navigator>
   );
@@ -104,6 +106,7 @@ export function Navigation() {
             <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={headerOpts('Privacy Policy')} />
             <Stack.Screen name="TermsConditions" component={TermsConditionsScreen} options={headerOpts('Terms & Conditions')} />
             <Stack.Screen name="AboutApp" component={AboutAppScreen} options={headerOpts('About App')} />
+            <Stack.Screen name="ChatRoom" component={ChatRoomScreen} options={headerOpts('Chat')} />
           </>
         ) : (
           <>
@@ -118,6 +121,7 @@ export function Navigation() {
             <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={headerOpts('Privacy Policy')} />
             <Stack.Screen name="TermsConditions" component={TermsConditionsScreen} options={headerOpts('Terms & Conditions')} />
             <Stack.Screen name="AboutApp" component={AboutAppScreen} options={headerOpts('About App')} />
+            <Stack.Screen name="ChatRoom" component={ChatRoomScreen} options={headerOpts('Chat')} />
           </>
         )}
       </Stack.Navigator>
