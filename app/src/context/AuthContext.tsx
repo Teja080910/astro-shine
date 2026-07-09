@@ -4,7 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { api } from "../shared/api-client";
 import type { User, Astrologer } from "../shared/types";
 
-export type AppRole = "user" | "astrologer" | null;
+export type AppRole = "user" | "astrologer" | "admin" | null;
 
 interface AuthState {
   user: User | null;

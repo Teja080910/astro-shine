@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, KeyboardAvoidingView, ScrollView, Platform, Image, Modal } from 'react-native';
-import { ScreenWrapper, GradientButton, colors, radii, typography } from '../../shared';
+import { ScreenWrapper, GradientButton } from '../../shared';
+import { colors, radii, typography, shadows } from '../../shared/theme';
 import { useAuth } from '../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../shared/api-client';
 import { OTPWidget } from '../../shared/msg91-otp-widget';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export function LoginScreen({ navigation }: any) {
   const { loginAsUser, theme, setTheme } = useAuth();
@@ -32,23 +34,34 @@ export function LoginScreen({ navigation }: any) {
         </TouchableOpacity>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <Image source={require('../../../assets/logo_clean.jpg')} style={styles.headerLogo} resizeMode="contain" />
+            <Image source={require('../../../assets/logo_clean.png')} style={styles.headerLogo} resizeMode="contain" />
             <Text style={[typography.hero, { color: colors.textPrimary }]}>Welcome Back</Text>
             <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>Sign in to continue your cosmic journey</Text>
           </View>
           {error ? <Text style={styles.error}>{error}</Text> : null}
           
-          <View style={[styles.formCard, { backgroundColor: colors.glassBg, borderColor: colors.inputBorder }]}>
+          <View style={[styles.formCard, { backgroundColor: colors.glassBg, borderColor: colors.inputBorder }, shadows.card]}>
             <Input icon="mail-outline" placeholder="Email" value={email} onChange={setEmail} keyboardType="email-address" />
             <Input icon="lock-closed-outline" placeholder="Password" value={password} onChange={setPassword} secure={!showPw} right={<Ionicons name={showPw ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textMuted} onPress={() => setShowPw(!showPw)} />} />
             <GradientButton title={loading ? 'Signing in...' : 'Sign In'} onPress={handleLogin} disabled={loading} />
+            
+            <View style={styles.orDivider}>
+              <View style={[styles.dividerLine, { backgroundColor: colors.inputBorder }]} />
+              <Text style={[styles.orText, { color: colors.textMuted }]}>OR</Text>
+              <View style={[styles.dividerLine, { backgroundColor: colors.inputBorder }]} />
+            </View>
+
+            <TouchableOpacity 
+              style={[styles.otpLoginButton, { borderColor: colors.primary }]} 
+              onPress={() => navigation.navigate('OtpLogin')}
+            >
+              <Ionicons name="key-outline" size={18} color={colors.primary} style={{ marginRight: 8 }} />
+              <Text style={[styles.otpLoginButtonText, { color: colors.primary }]}>Login with OTP</Text>
+            </TouchableOpacity>
           </View>
 
           <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('Register')}>
             <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Don't have an account? <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>Register</Text></Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('OtpLogin')}>
-            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Login with OTP</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -103,14 +116,14 @@ export function RegisterScreen({ navigation }: any) {
             // STEP 0: Role Selection Cards
             <>
               <View style={styles.header}>
-                <Image source={require('../../../assets/logo_clean.jpg')} style={styles.headerLogo} resizeMode="contain" />
+                <Image source={require('../../../assets/logo_clean.png')} style={styles.headerLogo} resizeMode="contain" />
                 <Text style={[typography.hero, { color: colors.textPrimary }]}>Join Us</Text>
                 <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>Select how you want to join our cosmic community</Text>
               </View>
 
               <View style={styles.selectionContainer}>
                 <TouchableOpacity 
-                  style={[styles.roleCard, { backgroundColor: colors.glassBg, borderColor: colors.inputBorder }]}
+                  style={[styles.roleCard, { backgroundColor: colors.glassBg, borderColor: colors.inputBorder }, shadows.card]}
                   onPress={() => { setSelectedRole('user'); setStep(1); setError(''); }}
                 >
                   <View style={[styles.roleCardIconContainer, { backgroundColor: colors.surfaceLight }]}>
@@ -121,7 +134,7 @@ export function RegisterScreen({ navigation }: any) {
                 </TouchableOpacity>
 
                 <TouchableOpacity 
-                  style={[styles.roleCard, { backgroundColor: colors.glassBg, borderColor: colors.inputBorder }]}
+                  style={[styles.roleCard, { backgroundColor: colors.glassBg, borderColor: colors.inputBorder }, shadows.card]}
                   onPress={() => { setSelectedRole('astrologer'); setStep(1); setError(''); }}
                 >
                   <View style={[styles.roleCardIconContainer, { backgroundColor: colors.surfaceLight }]}>
@@ -136,7 +149,7 @@ export function RegisterScreen({ navigation }: any) {
             // STEP 1: Registration Form
             <>
               <View style={styles.header}>
-                <Image source={require('../../../assets/logo_clean.jpg')} style={styles.headerLogo} resizeMode="contain" />
+                <Image source={require('../../../assets/logo_clean.png')} style={styles.headerLogo} resizeMode="contain" />
                 <Text style={[typography.hero, { color: colors.textPrimary }]}>{selectedRole === 'user' ? 'User Signup' : 'Astrologer Signup'}</Text>
                 <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{selectedRole === 'user' ? 'Begin your spiritual journey' : 'Register your advisor account'}</Text>
               </View>
@@ -147,7 +160,7 @@ export function RegisterScreen({ navigation }: any) {
                 <Text style={[styles.backToRoleText, { color: colors.textSecondary }]}>Change Role Selection</Text>
               </TouchableOpacity>
 
-              <View style={[styles.formCard, { backgroundColor: colors.glassBg, borderColor: colors.inputBorder }]}>
+              <View style={[styles.formCard, { backgroundColor: colors.glassBg, borderColor: colors.inputBorder }, shadows.card]}>
                 <Input icon="person-outline" placeholder="Full Name" value={name} onChange={setName} />
                 <Input icon="mail-outline" placeholder="Email Address" value={email} onChange={setEmail} keyboardType="email-address" />
                 <Input icon="call-outline" placeholder="Phone Number" value={phone} onChange={setPhone} keyboardType="phone-pad" />
@@ -297,40 +310,71 @@ export function OtpLoginScreen({ navigation }: any) {
         </TouchableOpacity>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <Image source={require('../../../assets/logo_clean.jpg')} style={styles.headerLogo} resizeMode="contain" />
+            <Image source={require('../../../assets/logo_clean.png')} style={styles.headerLogo} resizeMode="contain" />
             <Text style={[typography.hero, { color: colors.textPrimary }]}>OTP Login</Text>
-            <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{sent ? `Enter code sent to ${identifier}` : `Enter your ${verType === 'email' ? 'email address' : 'phone number'}`}</Text>
+            {sent ? (
+              <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', lineHeight: 22 }]}>
+                Enter code sent to{'\n'}
+                <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>{identifier}</Text>
+              </Text>
+            ) : (
+              <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>
+                Enter your {verType === 'email' ? 'email address' : 'phone number'}
+              </Text>
+            )}
           </View>
           {error ? <Text style={styles.error}>{error}</Text> : null}
           
-          <View style={[styles.formCard, { backgroundColor: colors.glassBg, borderColor: colors.inputBorder }]}>
+          <View style={[styles.formCard, { backgroundColor: colors.glassBg, borderColor: colors.inputBorder, position: 'relative' }, shadows.card]}>
             {/* Verification Type Switcher */}
             <View style={[styles.roleContainer, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder }]}>
               <TouchableOpacity 
-                style={[styles.roleButton, verType === 'phone' && styles.roleButtonActive]} 
+                style={styles.roleButton} 
                 onPress={() => { setVerType('phone'); setSent(false); setIdentifier(''); setOtp(''); setError(''); }}
                 disabled={sent}
               >
-                <Ionicons 
-                  name="call-outline" 
-                  size={16} 
-                  color={verType === 'phone' ? '#FFFFFF' : colors.textMuted} 
-                  style={{ marginRight: 6 }} 
-                />
-                <Text style={[styles.roleText, { color: verType === 'phone' ? '#FFFFFF' : colors.textMuted }]}>Phone</Text>
+                {verType === 'phone' ? (
+                  <View style={[{ flex: 1, width: '100%', height: '100%' }, shadows.button]}>
+                    <LinearGradient
+                      colors={[colors.gradientStart, colors.gradientMid]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.roleButtonActiveGradient}
+                    >
+                      <Ionicons name="call-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                      <Text style={[styles.roleText, { color: '#FFFFFF' }]}>Phone</Text>
+                    </LinearGradient>
+                  </View>
+                ) : (
+                  <View style={styles.roleButtonInactive}>
+                    <Ionicons name="call-outline" size={16} color={colors.textMuted} style={{ marginRight: 6 }} />
+                    <Text style={[styles.roleText, { color: colors.textMuted }]}>Phone</Text>
+                  </View>
+                )}
               </TouchableOpacity>
               <TouchableOpacity 
-                style={[styles.roleButton, verType === 'email' && styles.roleButtonActive]} 
+                style={styles.roleButton} 
                 onPress={() => { setVerType('email'); setSent(false); setIdentifier(''); setOtp(''); setError(''); }}
                 disabled={sent}
               >
-                <Ionicons 
-                  name="mail-outline" 
-                  size={16} 
-                  color={verType === 'email' ? '#FFFFFF' : colors.textMuted} 
-                  style={{ marginRight: 6 }} 
-                />
-                <Text style={[styles.roleText, { color: verType === 'email' ? '#FFFFFF' : colors.textMuted }]}>Email</Text>
+                {verType === 'email' ? (
+                  <View style={[{ flex: 1, width: '100%', height: '100%' }, shadows.button]}>
+                    <LinearGradient
+                      colors={[colors.gradientStart, colors.gradientMid]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.roleButtonActiveGradient}
+                    >
+                      <Ionicons name="mail-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                      <Text style={[styles.roleText, { color: '#FFFFFF' }]}>Email</Text>
+                    </LinearGradient>
+                  </View>
+                ) : (
+                  <View style={styles.roleButtonInactive}>
+                    <Ionicons name="mail-outline" size={16} color={colors.textMuted} style={{ marginRight: 6 }} />
+                    <Text style={[styles.roleText, { color: colors.textMuted }]}>Email</Text>
+                  </View>
+                )}
               </TouchableOpacity>
             </View>
 
@@ -351,6 +395,14 @@ export function OtpLoginScreen({ navigation }: any) {
                 <Text style={styles.resend} onPress={sendOtp}>Resend OTP</Text>
               </>
             )}
+
+            {/* Floating reload button overlapping the bottom right corner */}
+            <TouchableOpacity 
+              style={[styles.refreshButton, shadows.floating]} 
+              onPress={() => { setSent(false); setIdentifier(''); setOtp(''); setError(''); }}
+            >
+              <Ionicons name="refresh-outline" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
           </View>
 
           <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('Login')}>
@@ -409,7 +461,7 @@ const styles = StyleSheet.create({
     zIndex: -1,
   },
   header: { alignItems: 'center', marginBottom: 24 },
-  headerLogo: { width: 100, height: 100, marginBottom: 8, borderRadius: 12 },
+  headerLogo: { width: 280, height: 203, marginBottom: 8 },
   headerTitle: { color: '#FFFFFF' },
   headerSub: { color: '#B6B6C2' },
   error: { color: colors.danger, textAlign: 'center', marginBottom: 16, fontSize: 14 },
@@ -420,7 +472,65 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 20,
   },
+  roleButtonActiveGradient: {
+    flex: 1,
+    flexDirection: 'row',
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: radii.input - 4,
+  },
+  roleButtonInactive: {
+    flex: 1,
+    flexDirection: 'row',
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: radii.input - 4,
+  },
+  refreshButton: {
+    position: 'absolute',
+    bottom: -22,
+    right: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#0F172A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 100,
+  },
   inputContainer: { flexDirection: 'row', alignItems: 'center', borderRadius: radii.input, borderWidth: 1, paddingHorizontal: 14, height: 52, marginBottom: 14 },
+  orDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 14,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  orText: {
+    marginHorizontal: 12,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  otpLoginButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: 52,
+    borderRadius: radii.button,
+    borderWidth: 1.5,
+  },
+  otpLoginButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
   input: { flex: 1, fontSize: 15 },
   link: { alignItems: 'center', marginTop: 16 },
   linkTextStatic: { fontSize: 14, color: '#B6B6C2' },

@@ -24,7 +24,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
 
   return (
     <ScreenWrapper style={{ position: 'relative', zIndex: 1 }}>
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 120 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <View style={{ flex: 1 }}>
             <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>Dashboard</Text>

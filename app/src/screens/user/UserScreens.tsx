@@ -98,7 +98,7 @@ export function UserHomeScreen({ navigation }: any) {
 
   return (
     <ScreenWrapper style={{ position: 'relative', zIndex: 1 }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
           <View style={{ flex: 1 }}>
             <Text style={[typography.pageTitle, { marginBottom: 4, color: colors.textPrimary }]}>Namaste ✨</Text>

@@ -20,9 +20,9 @@ export const colors = {
   white: '#FFFFFF',
   black: '#000000',
 
-  get background() { return activeTheme === 'dark' ? '#09090B' : '#FAFAFA'; },
+  get background() { return activeTheme === 'dark' ? '#09090B' : '#FCFAF2'; },
   get surface() { return activeTheme === 'dark' ? '#111827' : '#FFFFFF'; },
-  get surfaceLight() { return activeTheme === 'dark' ? '#1F2937' : '#F3F4F6'; },
+  get surfaceLight() { return activeTheme === 'dark' ? '#1F2937' : '#F8F9FA'; },
   get card() { return activeTheme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)'; },
   get cardBorder() { return activeTheme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'; },
   get textPrimary() { return activeTheme === 'dark' ? '#FFFFFF' : '#0F172A'; },
@@ -30,7 +30,7 @@ export const colors = {
   get textMuted() { return activeTheme === 'dark' ? '#71717A' : '#5E6E82'; },
   get divider() { return activeTheme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'; },
   get inputBorder() { return activeTheme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)'; },
-  get glassBg() { return activeTheme === 'dark' ? 'rgba(17, 24, 39, 0.45)' : 'rgba(255, 255, 255, 0.45)'; },
+  get glassBg() { return activeTheme === 'dark' ? 'rgba(17, 24, 39, 0.45)' : 'rgba(255, 255, 255, 0.9)'; },
   gradientStart: '#6D28D9',
   gradientMid: '#9333EA',
   gradientEnd: '#A855F7',
@@ -58,9 +58,33 @@ export const spacing = {
 };
 
 export const shadows = {
-  card: {},
-  button: {},
-  floating: {},
+  get card() {
+    return activeTheme === 'dark' ? {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.05,
+      shadowRadius: 16,
+      elevation: 4,
+    } : {};
+  },
+  get button() {
+    return activeTheme === 'dark' ? {
+      shadowColor: '#6D28D9',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 3,
+    } : {};
+  },
+  get floating() {
+    return activeTheme === 'dark' ? {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 10,
+      elevation: 5,
+    } : {};
+  },
 };
 
 export const typography = {
