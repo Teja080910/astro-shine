@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Animated, StyleSheet } from 'react-native';
+import { View, Animated, StyleSheet } from 'react-native';
 import { colors } from '../theme';
 
 export function TypingIndicator() {
@@ -31,7 +31,6 @@ export function TypingIndicator() {
 
   const dotStyle = (dot: Animated.Value) => ({
     opacity: dot.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }),
-    transform: [{ scale: dot.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1.2] }) }],
   });
 
   return (
@@ -46,21 +45,21 @@ export function TypingIndicator() {
 }
 
 const styles = StyleSheet.create({
-  container: { alignSelf: 'flex-start', marginVertical: 4 },
+  container: { alignSelf: 'flex-start', marginVertical: 2, marginLeft: 8 },
   bubble: {
     flexDirection: 'row',
     backgroundColor: colors.surfaceLight,
-    borderRadius: 16,
-    borderBottomLeftRadius: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderRadius: 12,
+    borderBottomLeftRadius: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
   },
   dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: colors.textMuted,
   },
 });

@@ -37,7 +37,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const payload = await this.authService.validateToken(token);
       client.data.userId = payload.userId;
-      client.data.role = 'user';
+      client.data.role = payload.role || 'user';
 
       console.log(`[WS] Authenticated - userId: ${payload.userId}, socketId: ${client.id}`);
 

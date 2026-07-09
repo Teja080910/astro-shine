@@ -12,7 +12,7 @@ import { LoginScreen, RegisterScreen, OtpLoginScreen } from '../screens/auth/Aut
 import { UserHomeScreen, AstrologerListScreen, AstrologerDetailScreen, WalletScreen, ChatScreen, KundliScreen, MatchmakingScreen, ShopScreen, ProfileScreen } from '../screens/user/UserScreens';
 import { ChatListScreen } from '../screens/user/ChatListScreen';
 import { ChatRoomScreen } from '../screens/user/ChatRoomScreen';
-import { AstrologerHomeScreen, AstrologerWalletScreen, AstrologerProfileScreen } from '../screens/astrologer/AstrologerScreens';
+import { AstrologerHomeScreen, AstrologerWalletScreen, AstrologerProfileScreen, AstrologerWithdrawalScreen, AstrologerReviewsScreen, AstrologerNotificationsScreen, AstrologerConsultationScreen } from '../screens/astrologer/AstrologerScreens';
 import {
   PanchangScreen, BlogsScreen, NotificationsScreen, EditProfileScreen, SupportScreen,
   DonationScreen, ReportScreen, MandirPoojaScreen, OrderHistoryScreen, VideosScreen,
@@ -118,11 +118,14 @@ export function Navigation() {
             <Stack.Screen name="GoLive" component={AstrologerGoLiveScreen} options={headerOpts('Go Live')} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} options={headerOpts('Edit Profile')} />
             <Stack.Screen name="Support" component={SupportScreen} options={headerOpts('Support')} />
-            <Stack.Screen name="Notifications" component={NotificationsScreen} options={headerOpts('Notifications')} />
+            <Stack.Screen name="Notifications" component={AstrologerNotificationsScreen} options={headerOpts('Notifications')} />
             <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={headerOpts('Privacy Policy')} />
             <Stack.Screen name="TermsConditions" component={TermsConditionsScreen} options={headerOpts('Terms & Conditions')} />
             <Stack.Screen name="AboutApp" component={AboutAppScreen} options={headerOpts('About App')} />
             <Stack.Screen name="ChatRoom" component={ChatRoomScreen} options={headerOpts('Chat')} />
+            <Stack.Screen name="Withdrawals" component={AstrologerWithdrawalScreen} options={headerOpts('Withdrawals')} />
+            <Stack.Screen name="Reviews" component={AstrologerReviewsScreen} options={headerOpts('Ratings & Reviews')} />
+            <Stack.Screen name="Consultations" component={AstrologerConsultationScreen} options={headerOpts('Consultation History')} />
           </>
         )}
       </Stack.Navigator>

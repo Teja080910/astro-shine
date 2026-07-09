@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal } from 'react-native';
-import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, colors, typography, radii } from '../../shared';
+import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, colors, typography, radii } from '../../shared';
 import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
 import type { Blog, Notification, SupportTicket, NewsItem, Video } from '../../shared/types';
@@ -349,12 +349,76 @@ export function AstrologerRequestsScreen() {
 
 // Astrologer: Schedule
 export function AstrologerScheduleScreen() {
+  const { astrologer } = useAuth();
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const [schedules, setSchedules] = useState<Record<number, { startTime: string; endTime: string; isAvailable: boolean }>>({});
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!astrologer?.id) return;
+    api.schedule.byAstrologer(astrologer.id).then((data: any[]) => {
+      const map: Record<number, any> = {};
+      data.forEach(s => { map[s.dayOfWeek] = { startTime: s.startTime.slice(0, 5), endTime: s.endTime.slice(0, 5), isAvailable: s.isAvailable }; });
+      setSchedules(map);
+    }).catch(() => {});
+  }, [astrologer?.id]);
+
+  const updateDay = (day: number, field: string, value: string | boolean) => {
+    setSchedules(prev => ({ ...prev, [day]: { ...prev[day] || { startTime: '09:00', endTime: '18:00', isAvailable: true }, [field]: value } }));
+  };
+
+  const saveAll = async () => {
+    if (!astrologer?.id) return;
+    setLoading(true);
+    try {
+      const bulk = Object.entries(schedules).map(([day, s]) => ({
+        dayOfWeek: Number(day), startTime: s.startTime, endTime: s.endTime, isAvailable: s.isAvailable,
+      }));
+      await api.schedule.bulkUpsert(astrologer.id, bulk);
+      Alert.alert('Saved', 'Schedule updated successfully');
+    } catch { Alert.alert('Error', 'Failed to save schedule'); }
+    finally { setLoading(false); }
+  };
+
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Availability Schedule" />
-      {days.map((d, i) => <GlassCard key={d} style={{ marginBottom: 8, padding: 12 }}><View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}><Text style={typography.cardTitle}>{d}</Text><View style={{ flexDirection: 'row', gap: 8 }}><TextInput style={[styles.input, { width: 100 }]} placeholder="09:00" placeholderTextColor={colors.textMuted} /><Text style={typography.caption}>to</Text><TextInput style={[styles.input, { width: 100 }]} placeholder="18:00" placeholderTextColor={colors.textMuted} /></View></View></GlassCard>)}
-      <GradientButton title="Save Schedule" onPress={() => {}} style={{ marginTop: 16 }} />
+      <Text style={[typography.body, { marginBottom: 16, paddingHorizontal: 4 }]}>Set your weekly availability for consultations</Text>
+      {days.map((d, i) => {
+        const s = schedules[i];
+        return (
+          <GlassCard key={d} style={{ marginBottom: 8, padding: 12 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Toggle
+                  value={s?.isAvailable ?? true}
+                  onValueChange={(v) => updateDay(i, 'isAvailable', v)}
+                  trackColor={{ false: colors.textMuted, true: colors.success }}
+                />
+                <Text style={[typography.cardTitle, { opacity: s?.isAvailable === false ? 0.4 : 1 }]}>{d}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center', opacity: s?.isAvailable === false ? 0.4 : 1 }}>
+                <TextInput
+                  style={[styles.input, { width: 80, height: 40, textAlign: 'center' }]}
+                  value={s?.startTime || '09:00'}
+                  onChangeText={(v) => updateDay(i, 'startTime', v)}
+                  placeholder="09:00"
+                  placeholderTextColor={colors.textMuted}
+                />
+                <Text style={typography.caption}>to</Text>
+                <TextInput
+                  style={[styles.input, { width: 80, height: 40, textAlign: 'center' }]}
+                  value={s?.endTime || '18:00'}
+                  onChangeText={(v) => updateDay(i, 'endTime', v)}
+                  placeholder="18:00"
+                  placeholderTextColor={colors.textMuted}
+                />
+              </View>
+            </View>
+          </GlassCard>
+        );
+      })}
+      <GradientButton title={loading ? 'Saving...' : 'Save Schedule'} onPress={saveAll} disabled={loading} style={{ marginTop: 16 }} />
     </ScreenWrapper>
   );
 }

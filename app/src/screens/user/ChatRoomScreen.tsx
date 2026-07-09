@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { View, Text, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, Keyboard } from 'react-native';
 import { ScreenWrapper, colors, radii, typography } from '../../shared';
 import { ChatBubble } from '../../shared/components/ChatBubble';
 import { TypingIndicator } from '../../shared/components/TypingIndicator';
@@ -46,6 +46,15 @@ export function ChatRoomScreen({ route, navigation }: any) {
   const typing = typingUsers[conversationId];
   const isOnline = onlineUsers[participantId] ?? false;
   const joinedRef = useRef(false);
+  const userScrolledUp = useRef(false);
+  const prevMsgCount = useRef(0);
+
+  useEffect(() => {
+    if (messages.length > prevMsgCount.current && !userScrolledUp.current) {
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 50);
+    }
+    prevMsgCount.current = messages.length;
+  }, [messages.length]);
 
   useEffect(() => {
     setActiveConversation({ id: conversationId } as any);
@@ -88,6 +97,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
     sendMessage(conversationId, input.trim());
     setInput('');
     stopTyping(conversationId);
+    Keyboard.dismiss();
   }, [input, conversationId]);
 
   const handleChangeText = useCallback((text: string) => {
@@ -100,7 +110,10 @@ export function ChatRoomScreen({ route, navigation }: any) {
   }, [conversationId]);
 
   const handleScroll = useCallback((event: any) => {
-    if (event.nativeEvent.contentOffset.y < 50 && hasMore && !loading) {
+    const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
+    const isNearBottom = contentOffset.y + layoutMeasurement.height >= contentSize.height - 50;
+    userScrolledUp.current = !isNearBottom;
+    if (contentOffset.y < 50 && hasMore && !loading) {
       loadMoreMessages();
     }
   }, [hasMore, loading]);
@@ -114,7 +127,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
       <View>
         {showDateHeader && (
           <View style={styles.dateHeader}>
-            <Text style={styles.dateHeaderText}>{formatDateHeader(item.createdAt)}</Text>
+            <Text style={[styles.dateHeaderText, { color: colors.textMuted, backgroundColor: colors.surfaceLight }]}>{formatDateHeader(item.createdAt)}</Text>
           </View>
         )}
         <ChatBubble
@@ -131,11 +144,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
 
   return (
     <ScreenWrapper noPadding>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-      >
+      <View style={{ flex: 1 }}>
         <FlatList
           ref={flatListRef}
           data={messages}
@@ -143,29 +152,41 @@ export function ChatRoomScreen({ route, navigation }: any) {
           renderItem={renderItem}
           onScroll={handleScroll}
           scrollEventThrottle={100}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
           contentContainerStyle={styles.list}
           ListFooterComponent={typing ? <TypingIndicator /> : null}
+          onContentSizeChange={() => {}}
+          onScrollEndDrag={() => {
+            setTimeout(() => {
+              if (!userScrolledUp.current) {
+                flatListRef.current?.scrollToEnd({ animated: true });
+              }
+            }, 100);
+          }}
         />
-        <View style={[styles.inputBar, { borderTopColor: colors.divider, backgroundColor: colors.background }]}>
-          <TextInput
-            style={[styles.input, { backgroundColor: colors.surfaceLight, color: colors.textPrimary }]}
-            placeholder="Type a message..."
-            placeholderTextColor={colors.textMuted}
-            value={input}
-            onChangeText={handleChangeText}
-            multiline
-            maxLength={1000}
-          />
-          <TouchableOpacity
-            style={[styles.sendButton, !input.trim() && styles.sendButtonDisabled]}
-            onPress={handleSend}
-            disabled={!input.trim()}
-          >
-            <Ionicons name="send" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+        >
+          <View style={[styles.inputBar, { borderTopColor: colors.divider, backgroundColor: colors.background }]}>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, color: colors.textPrimary }]}
+              placeholder="Type a message..."
+              placeholderTextColor={colors.textMuted}
+              value={input}
+              onChangeText={handleChangeText}
+              multiline
+              maxLength={1000}
+            />
+            <TouchableOpacity
+              style={[styles.sendButton, !input.trim() && styles.sendButtonDisabled]}
+              onPress={handleSend}
+              disabled={!input.trim()}
+            >
+              <Ionicons name="send" size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
     </ScreenWrapper>
   );
 }
@@ -183,8 +204,6 @@ const styles = StyleSheet.create({
   dateHeader: { alignItems: 'center', marginVertical: 12 },
   dateHeaderText: {
     fontSize: 12,
-    color: colors.textMuted,
-    backgroundColor: colors.surfaceLight,
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 10,
@@ -197,17 +216,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingBottom: 80,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.divider,
-    backgroundColor: colors.background,
   },
   input: {
     flex: 1,
-    backgroundColor: colors.surfaceLight,
     borderRadius: radii.input,
     paddingHorizontal: 14,
     paddingVertical: 10,
     fontSize: 15,
-    color: colors.textPrimary,
     maxHeight: 100,
     marginRight: 8,
   },

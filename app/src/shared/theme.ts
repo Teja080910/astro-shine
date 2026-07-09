@@ -29,7 +29,7 @@ export const colors = {
   get textSecondary() { return activeTheme === 'dark' ? '#B6B6C2' : '#334155'; },
   get textMuted() { return activeTheme === 'dark' ? '#71717A' : '#5E6E82'; },
   get divider() { return activeTheme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'; },
-  get glassBg() { return activeTheme === 'dark' ? 'rgba(17, 24, 39, 0.45)' : 'rgba(255, 255, 255, 0.45)'; },
+  get glassBg() { return activeTheme === 'dark' ? 'rgba(17, 24, 39, 0.45)' : 'rgba(255, 255, 255, 0.9)'; },
   gradientStart: '#6D28D9',
   gradientMid: '#9333EA',
   gradientEnd: '#A855F7',

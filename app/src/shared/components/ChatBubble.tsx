@@ -27,7 +27,7 @@ export function ChatBubble({ message, isOwn, timestamp, isDelivered, isRead, gro
           <View style={styles.meta}>
             <Text style={[styles.time, { color: isOwn ? 'rgba(255,255,255,0.7)' : colors.textMuted }]}>{time}</Text>
             {isOwn && (
-              <Text style={[styles.tick, { color: isRead ? '#60A5FA' : 'rgba(255,255,255,0.5)' }]}>
+              <Text style={[styles.tick, { color: isRead ? '#93C5FD' : isDelivered ? '#E2E8F0' : '#94A3B8' }]}>
                 {isRead ? '✓✓' : isDelivered ? '✓✓' : '✓'}
               </Text>
             )}

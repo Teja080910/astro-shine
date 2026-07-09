@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Switch, Alert, Modal, ScrollView, Image } from 'react-native';
-import { ScreenWrapper, GlassCard, SectionHeader, SearchBar, GradientButton, CustomModal, Avatar, StarRating, Chip, SkeletonLoader, EmptyState, colors, typography, radii } from '../../shared';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Alert, Modal, ScrollView, Image } from 'react-native';
+import { ScreenWrapper, GlassCard, SectionHeader, SearchBar, GradientButton, CustomModal, Avatar, StarRating, Chip, SkeletonLoader, EmptyState, Toggle, colors, typography, radii } from '../../shared';
 import { api } from '../../shared/api-client';
 import type { Astrologer, HoroscopeRecord, ShopProduct, Blog, Transaction, Wallet, Video, MandirPooja, Notification } from '../../shared/types';
 import { Ionicons } from '@expo/vector-icons';
@@ -633,7 +633,7 @@ export function ProfileScreen({ navigation }: any) {
         <View style={[styles.menuItem, styles.border, { paddingVertical: 8, borderBottomColor: colors.divider }]}>
           <Ionicons name="moon-outline" size={22} color={colors.textSecondary} />
           <Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.textPrimary }]}>Dark Mode</Text>
-          <Switch value={theme === 'dark'} onValueChange={toggleTheme} trackColor={{ false: '#767577', true: colors.primary }} thumbColor={theme === 'dark' ? colors.accentGold : '#f4f3f4'} />
+          <Toggle value={theme === 'dark'} onValueChange={toggleTheme} trackColor={{ false: '#767577', true: colors.primary }} />
         </View>
 
         {/* Change Password Item */}
