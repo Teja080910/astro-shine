@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Alert, Modal, ScrollView, Image, RefreshControl } from 'react-native';
-import { useIsFocused } from '@react-navigation/native';
-import { ScreenWrapper, GlassCard, SectionHeader, SearchBar, GradientButton, CustomModal, Avatar, StarRating, Chip, SkeletonLoader, EmptyState, Toggle, ConfirmDialog, colors, typography, radii } from '../../shared';
-import { api } from '../../shared/api-client';
-import type { Astrologer, HoroscopeRecord, ShopProduct, Blog, Transaction, Wallet, Video, MandirPooja, Notification } from '../../shared/types';
 import { Ionicons } from '@expo/vector-icons';
+import { useIsFocused } from '@react-navigation/native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Alert, FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-import { useChat } from '../../context/ChatContext';
 import { useCall } from '../../context/CallContext';
+import { useChat } from '../../context/ChatContext';
+import { Avatar, Chip, ConfirmDialog, CustomModal, EmptyState, GlassCard, GradientButton, ScreenWrapper, SearchBar, SectionHeader, SkeletonLoader, StarRating, Toggle, colors, radii, typography } from '../../shared';
+import { api } from '../../shared/api-client';
+import type { Astrologer, Blog, HoroscopeRecord, MandirPooja, Notification, ShopProduct, Transaction, Video, Wallet } from '../../shared/types';
 
 const ZODIAC_SIGNS = [
   { sign: 'aries', emoji: '♈', label: 'Aries' },
@@ -34,7 +34,7 @@ function getAstrologerOnlineStatus(astro: Astrologer, astrologerStatuses: Record
 
 // User Home Dashboard
 export function UserHomeScreen({ navigation }: any) {
-  const { user } = useAuth();
+  const { user, theme, setTheme } = useAuth();
   const { astrologerStatuses, horoscopeVersion } = useChat();
   const isFocused = useIsFocused();
   const [astrologers, setAstrologers] = useState<Astrologer[]>([]);
@@ -119,6 +119,9 @@ export function UserHomeScreen({ navigation }: any) {
             <Text style={[typography.body, { color: colors.textSecondary }]}>{user?.name || 'User'}</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TouchableOpacity onPress={() => setTheme(theme === 'dark' ? 'light' : 'dark')} style={{ padding: 8 }}>
+              <Ionicons name={theme === 'dark' ? 'sunny-outline' : 'moon-outline'} size={28} color={colors.textPrimary} />
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ padding: 8, position: 'relative' }}>
               <Ionicons name="notifications-outline" size={28} color={colors.textPrimary} />
               {unreadCount > 0 && (

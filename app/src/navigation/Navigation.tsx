@@ -1,32 +1,57 @@
-import React from 'react';
-import { View, Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { FloatingBottomBar, colors, typography } from '../shared';
+import React from 'react';
+import { TouchableOpacity } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { Ionicons } from '@expo/vector-icons';
+import { FloatingBottomBar, colors } from '../shared';
 
+import { AstrologerConsultationScreen, AstrologerHomeScreen, AstrologerNotificationsScreen, AstrologerProfileScreen, AstrologerReviewsScreen, AstrologerWalletScreen, AstrologerWithdrawalScreen } from '../screens/astrologer/AstrologerScreens';
+import { LoginScreen, OtpLoginScreen, RegisterScreen } from '../screens/auth/AuthScreens';
 import { OnboardingScreen } from '../screens/auth/OnboardingScreen';
-import { LoginScreen, RegisterScreen, OtpLoginScreen } from '../screens/auth/AuthScreens';
-import { UserHomeScreen, AstrologerListScreen, AstrologerDetailScreen, WalletScreen, ChatScreen, KundliScreen, MatchmakingScreen, ShopScreen, ProfileScreen } from '../screens/user/UserScreens';
+import {
+  AboutAppScreen,
+  AstrologerCommissionScreen,
+  AstrologerDocumentsScreen,
+  AstrologerGoLiveScreen,
+  AstrologerRequestsScreen, AstrologerScheduleScreen,
+  BlogsScreen,
+  DonationScreen,
+  EditProfileScreen,
+  MandirPoojaScreen,
+  NotificationsScreen,
+  OrderHistoryScreen,
+  PanchangScreen,
+  PrivacyPolicyScreen,
+  ReportScreen,
+  SupportScreen,
+  TermsConditionsScreen,
+  VideosScreen,
+} from '../screens/shared/SharedScreens';
 import { ChatListScreen } from '../screens/user/ChatListScreen';
 import { ChatRoomScreen } from '../screens/user/ChatRoomScreen';
-import { AstrologerHomeScreen, AstrologerWalletScreen, AstrologerProfileScreen, AstrologerWithdrawalScreen, AstrologerReviewsScreen, AstrologerNotificationsScreen, AstrologerConsultationScreen } from '../screens/astrologer/AstrologerScreens';
-import {
-  PanchangScreen, BlogsScreen, NotificationsScreen, EditProfileScreen, SupportScreen,
-  DonationScreen, ReportScreen, MandirPoojaScreen, OrderHistoryScreen, VideosScreen,
-  AstrologerRequestsScreen, AstrologerScheduleScreen, AstrologerDocumentsScreen,
-  AstrologerCommissionScreen, AstrologerGoLiveScreen,
-  PrivacyPolicyScreen, TermsConditionsScreen, AboutAppScreen,
-} from '../screens/shared/SharedScreens';
-import { IncomingCallScreen } from '../screens/shared/IncomingCallScreen';
-import { ActiveCallScreen } from '../screens/shared/ActiveCallScreen';
+import { AstrologerDetailScreen, AstrologerListScreen, KundliScreen, MatchmakingScreen, ProfileScreen, ShopScreen, UserHomeScreen, WalletScreen } from '../screens/user/UserScreens';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const headerOpts = (title: string) => ({ headerShown: true, title, headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.textPrimary });
+function ThemeToggle() {
+  const { theme, setTheme } = useAuth();
+  return (
+    <TouchableOpacity onPress={() => setTheme(theme === 'dark' ? 'light' : 'dark')} style={{ paddingHorizontal: 12 }}>
+      <Ionicons name={theme === 'dark' ? 'sunny-outline' : 'moon-outline'} size={22} color={colors.textPrimary} />
+    </TouchableOpacity>
+  );
+}
+
+const headerOpts = (title: string) => ({
+  headerShown: true,
+  title,
+  headerStyle: { backgroundColor: colors.background },
+  headerTintColor: colors.textPrimary,
+  headerRight: () => <ThemeToggle />
+});
 
 function UserTabs() {
   const { theme } = useAuth();

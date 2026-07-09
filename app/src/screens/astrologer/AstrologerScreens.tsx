@@ -1,15 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState, useCallback } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, RefreshControl } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Alert, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
-import { Avatar, CustomModal, GlassCard, GradientButton, ScreenWrapper, SectionHeader, EmptyState, Chip, StarRating, Toggle, ConfirmDialog, colors, radii, typography } from '../../shared';
+import { Avatar, Chip, ConfirmDialog, CustomModal, EmptyState, GlassCard, GradientButton, ScreenWrapper, SectionHeader, StarRating, Toggle, colors, radii, typography } from '../../shared';
 import { api } from '../../shared/api-client';
-import type { Transaction, Review, CallLog, Notification, WithdrawalRequest } from '../../shared/types';
+import type { CallLog, Notification, Review, Transaction, WithdrawalRequest } from '../../shared/types';
 
 export function AstrologerHomeScreen({ navigation }: any) {
-  const { astrologer } = useAuth();
+  const { astrologer, theme, setTheme } = useAuth();
   const { astrologerStatuses, statsVersion } = useChat();
   const isFocused = useIsFocused();
   const [isOnline, setIsOnline] = useState(astrologer?.onlineStatus === 'online');
@@ -75,6 +75,9 @@ export function AstrologerHomeScreen({ navigation }: any) {
               <Text style={[typography.caption, { color: colors.textSecondary }]}>{isOnline ? 'Online' : 'Offline'}</Text>
               <Toggle value={isOnline} onValueChange={toggleOnline} trackColor={{ false: colors.textMuted, true: colors.success }} />
             </View>
+            <TouchableOpacity onPress={() => setTheme(theme === 'dark' ? 'light' : 'dark')} style={{ padding: 8 }}>
+              <Ionicons name={theme === 'dark' ? 'sunny-outline' : 'moon-outline'} size={28} color={colors.textPrimary} />
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => setMenuOpen(true)} style={{ padding: 8 }}>
               <Ionicons name="menu-outline" size={32} color={colors.textPrimary} />
             </TouchableOpacity>
