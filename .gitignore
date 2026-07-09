@@ -44,3 +44,22 @@ web-build/
 # Turbo
 .turbo/
 .next/
+
+# Android
+*.apk
+*.aab
+android/app/build/
+android/build/
+android/.gradle/
+android/.kotlin/
+android/.cxx/
+android/local.properties
+android/app/*.keystore
+android/app/*.jks
+android/captures/
+*.hprof
+
+# Keystore (sensitive)
+*.keystore
+release.keystore
+upload-keystore.jks
