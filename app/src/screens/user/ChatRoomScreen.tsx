@@ -7,6 +7,7 @@ import { Avatar } from '../../shared/components/Avatar';
 import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 function formatDateHeader(dateStr: string): string {
   const d = new Date(dateStr);
@@ -48,6 +49,28 @@ export function ChatRoomScreen({ route, navigation }: any) {
   const joinedRef = useRef(false);
   const userScrolledUp = useRef(false);
   const prevMsgCount = useRef(0);
+  const insets = useSafeAreaInsets();
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    
+    const showSubscription = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+      setKeyboardVisible(true);
+    });
+    const hideSubscription = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+      setKeyboardVisible(false);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     if (messages.length > prevMsgCount.current && !userScrolledUp.current) {
@@ -167,7 +190,16 @@ export function ChatRoomScreen({ route, navigation }: any) {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
         >
-          <View style={[styles.inputBar, { borderTopColor: colors.divider, backgroundColor: colors.background }]}>
+          <View style={[
+            styles.inputBar, 
+            { 
+              borderTopColor: colors.divider, 
+              backgroundColor: colors.background,
+              paddingBottom: keyboardVisible 
+                ? (Platform.OS === 'android' ? keyboardHeight + insets.bottom + 12 : 10) 
+                : Math.max(insets.bottom, 20)
+            }
+          ]}>
             <TextInput
               style={[styles.input, { backgroundColor: colors.surfaceLight, color: colors.textPrimary }]}
               placeholder="Type a message..."
@@ -214,7 +246,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    paddingBottom: 80,
+    paddingBottom: 10,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   input: {
