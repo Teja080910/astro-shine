@@ -79,6 +79,7 @@ class ApiClient {
   // Horoscope
   horoscope = {
     bySign: (sign: string, date?: string) => this.get<HoroscopeRecord[]>('/horoscope', { sign, date }),
+    today: (sign: string) => this.get<HoroscopeRecord>('/horoscope', { sign, date: new Date().toISOString().split('T')[0] }),
     create: (d: any) => this.post<HoroscopeRecord>('/horoscope', d),
   };
 

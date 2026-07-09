@@ -29,7 +29,7 @@ const ASTRO_CATEGORIES = ['All', 'Vedic', 'Tarot', 'Numerology', 'Palmistry', 'V
 // User Home Dashboard
 export function UserHomeScreen({ navigation }: any) {
   const { user } = useAuth();
-  const { astrologerStatuses } = useChat();
+  const { astrologerStatuses, horoscopeVersion } = useChat();
   const isFocused = useIsFocused();
   const [astrologers, setAstrologers] = useState<Astrologer[]>([]);
   const [horoscope, setHoroscope] = useState<HoroscopeRecord[]>([]);
@@ -44,32 +44,34 @@ export function UserHomeScreen({ navigation }: any) {
   const [menuOpen, setMenuOpen] = useState(false);
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
+  const todayStr = new Date().toISOString().split('T')[0];
+
   const loadData = useCallback(async () => {
     try {
       const [a, h, v, b, p, n] = await Promise.all([
         api.astrologers.list(),
-        api.horoscope.bySign(selectedSign),
+        api.horoscope.bySign(selectedSign, todayStr),
         api.videos.list(),
         api.blogs.list(),
         api.mandirPooja.list(),
         api.notifications.list({ userId: user?.id }),
       ]);
       setAstrologers(a);
-      setHoroscope(h);
+      setHoroscope(Array.isArray(h) ? h : [h]);
       setVideos(v);
       setBlogs(b);
       setPoojas(p);
       setNotifications(n);
     } catch {} finally { setLoading(false); }
-  }, [user?.id, selectedSign]);
+  }, [user?.id, selectedSign, todayStr, horoscopeVersion]);
 
   useEffect(() => { if (isFocused) loadData(); }, [isFocused, loadData]);
 
   const fetchHoroscope = async (sign: string) => {
     setHoroscopeLoading(true);
     try {
-      const h = await api.horoscope.bySign(sign);
-      setHoroscope(h);
+      const h = await api.horoscope.bySign(sign, todayStr);
+      setHoroscope(Array.isArray(h) ? h : [h]);
     } catch {} finally { setHoroscopeLoading(false); }
   };
 

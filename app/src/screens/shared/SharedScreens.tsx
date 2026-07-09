@@ -4,17 +4,79 @@ import { useIsFocused } from '@react-navigation/native';
 import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, colors, typography, radii } from '../../shared';
 import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
-import type { Blog, Notification, SupportTicket, NewsItem, Video } from '../../shared/types';
+import type { Blog, Notification, SupportTicket, NewsItem, Video, PanchangRecord } from '../../shared/types';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
+import { useChat } from '../../context/ChatContext';
 
 function SectionTitle({ title }: { title: string }) {
   return <Text style={[typography.pageTitle, { marginBottom: 16 }]}>{title}</Text>;
 }
 
+function to12h(t: string): string {
+  if (!t) return '';
+  const [h, m] = t.split(':');
+  const hour = parseInt(h);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const display = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${display}:${m} ${ampm}`;
+}
+
 // Panchang
 export function PanchangScreen() {
-  return <ScreenWrapper scroll><SectionTitle title="Panchang" /><GlassCard><Text style={typography.body}>Daily panchang calendar with tithi, nakshatra, yoga, karana, sunrise/sunset timings.</Text></GlassCard></ScreenWrapper>;
+  const { panchangVersion } = useChat();
+  const [data, setData] = useState<PanchangRecord | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    api.panchang.byDate(today).then(setData).catch(() => {}).finally(() => setLoading(false));
+  }, [panchangVersion]);
+
+  if (loading) return <ScreenWrapper scroll><SectionTitle title="Panchang" /><GlassCard><Text style={typography.body}>Loading...</Text></GlassCard></ScreenWrapper>;
+
+  return (
+    <ScreenWrapper scroll>
+      <SectionTitle title="Panchang" />
+      {data ? (
+        <>
+          <Text style={[typography.caption, { marginBottom: 16, color: colors.textSecondary }]}>
+            {new Date(data.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+          </Text>
+          <GlassCard style={{ padding: 16 }}>
+            <Row icon="water" label="Tithi" value={data.tithi} />
+            <Row icon="star" label="Nakshatra" value={data.nakshatra} />
+            <Row icon="leaf" label="Yoga" value={data.yoga} />
+            <Row icon="time" label="Karana" value={data.karana} />
+          </GlassCard>
+          <GlassCard style={{ padding: 16, marginTop: 12 }}>
+            <Row icon="sunny" label="Sunrise" value={data.sunrise ? to12h(data.sunrise) : undefined} />
+            <Row icon="moon" label="Sunset" value={data.sunset ? to12h(data.sunset) : undefined} />
+            <Row icon="moon" label="Moonrise" value={data.moonrise ? to12h(data.moonrise) : undefined} />
+            <Row icon="moon" label="Moonset" value={data.moonset ? to12h(data.moonset) : undefined} />
+          </GlassCard>
+          {data.rahuKaal && (
+            <GlassCard style={{ padding: 16, marginTop: 12 }}>
+              <Row icon="alert-circle" label="Rahu Kaal" value={`${to12h(data.rahuKaal.start)} - ${to12h(data.rahuKaal.end)}`} />
+            </GlassCard>
+          )}
+        </>
+      ) : (
+        <GlassCard><Text style={[typography.body, { textAlign: 'center', marginVertical: 16 }]}>No panchang data available for today</Text></GlassCard>
+      )}
+    </ScreenWrapper>
+  );
+}
+
+function Row({ icon, label, value }: { icon: string; label: string; value?: string }) {
+  if (!value) return null;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.cardBorder }}>
+      <Ionicons name={icon as any} size={18} color={colors.accentGold} style={{ marginRight: 10 }} />
+      <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>{label}</Text>
+      <Text style={[typography.body, { fontWeight: '600', color: colors.textPrimary }]}>{value}</Text>
+    </View>
+  );
 }
 
 // Videos

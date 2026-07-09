@@ -39,6 +39,7 @@ import { ConversationsModule } from './modules/conversations/conversations.modul
 import { ScheduleModule } from './modules/schedule/schedule.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { RealtimeService } from './common/realtime.service';
 
 @Module({
   imports: [
@@ -82,6 +83,6 @@ import { AppService } from './app.service';
     ScheduleModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, RealtimeService],
 })
 export class AppModule {}
