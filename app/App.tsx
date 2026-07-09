@@ -1,19 +1,19 @@
 import React, { useEffect } from 'react';
+import { View } from 'react-native';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { ChatProvider } from './src/context/ChatContext';
+import { CallProvider, useCall } from './src/context/CallContext';
 import { Navigation } from './src/navigation/Navigation';
+import { IncomingCallScreen } from './src/screens/shared/IncomingCallScreen';
+import { ActiveCallScreen } from './src/screens/shared/ActiveCallScreen';
 import { darkTheme, lightTheme, setThemeState } from './src/shared';
 
 function ThemeWrapper({ children }: { children: React.ReactNode }) {
   const { theme } = useAuth();
-
-  // Set the theme state synchronously during render to guarantee correct values!
   setThemeState(theme);
-
   const activeTheme = theme === 'light' ? lightTheme : darkTheme;
-
   return (
     <PaperProvider theme={activeTheme}>
       {children}
@@ -21,8 +21,16 @@ function ThemeWrapper({ children }: { children: React.ReactNode }) {
   );
 }
 
-function NavigationContent() {
-  return <Navigation />;
+function AppContent() {
+  const { incomingCall, callState } = useCall();
+  const showActive = callState === 'calling' || callState === 'active' || callState === 'ended';
+  return (
+    <View style={{ flex: 1 }}>
+      <Navigation />
+      {incomingCall && <IncomingCallScreen />}
+      {showActive && <ActiveCallScreen />}
+    </View>
+  );
 }
 
 export default function App() {
@@ -30,9 +38,11 @@ export default function App() {
     <SafeAreaProvider>
       <AuthProvider>
         <ChatProvider>
-          <ThemeWrapper>
-            <NavigationContent />
-          </ThemeWrapper>
+          <CallProvider>
+            <ThemeWrapper>
+              <AppContent />
+            </ThemeWrapper>
+          </CallProvider>
         </ChatProvider>
       </AuthProvider>
     </SafeAreaProvider>

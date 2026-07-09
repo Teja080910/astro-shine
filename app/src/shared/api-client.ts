@@ -79,6 +79,7 @@ class ApiClient {
   // Horoscope
   horoscope = {
     bySign: (sign: string, date?: string) => this.get<HoroscopeRecord[]>('/horoscope', { sign, date }),
+    today: (sign: string) => this.get<HoroscopeRecord>('/horoscope', { sign, date: new Date().toISOString().split('T')[0] }),
     create: (d: any) => this.post<HoroscopeRecord>('/horoscope', d),
   };
 
@@ -287,6 +288,13 @@ class ApiClient {
     get: (id: string) => this.get<Video>(`/videos/${id}`),
     create: (d: any) => this.post<Video>('/videos', d),
     update: (id: string, d: any) => this.put<Video>(`/videos/${id}`, d),
+  };
+
+  // Schedule
+  schedule = {
+    byAstrologer: (astrologerId: string) => this.get<any[]>(`/schedule/${astrologerId}`),
+    upsert: (astrologerId: string, d: any) => this.post<any>(`/schedule/${astrologerId}`, d),
+    bulkUpsert: (astrologerId: string, schedules: any[]) => this.put<any>(`/schedule/${astrologerId}/bulk`, { schedules }),
   };
 
   // Conversations

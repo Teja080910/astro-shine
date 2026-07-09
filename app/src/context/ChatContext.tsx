@@ -15,6 +15,10 @@ interface ChatState {
   unreadCounts: Record<string, number>;
   loading: boolean;
   hasMore: boolean;
+  astrologerStatuses: Record<string, 'online' | 'offline' | 'busy'>;
+  horoscopeVersion: number;
+  panchangVersion: number;
+  statsVersion: number;
   loadConversations: () => Promise<void>;
   openConversation: (participantId: string, participantRole: string) => Promise<string>;
   setActiveConversation: (conv: Conversation | null) => void;
@@ -32,6 +36,7 @@ const ChatContext = createContext<ChatState>(null!);
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const { token, user, astrologer } = useAuth();
   const currentUserId = user?.id || astrologer?.id || '';
+  const currentRole = user ? 'user' : astrologer ? 'astrologer' : 'user';
   const socketRef = useRef<Socket | null>(null);
   const userIdRef = useRef(currentUserId);
   useEffect(() => { userIdRef.current = currentUserId; }, [currentUserId]);
@@ -42,6 +47,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [onlineUsers, setOnlineUsers] = useState<Record<string, boolean>>({});
   const [typingUsers, setTypingUsers] = useState<Record<string, string | null>>({});
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [astrologerStatuses, setAstrologerStatuses] = useState<Record<string, 'online' | 'offline' | 'busy'>>({});
+  const [horoscopeVersion, setHoroscopeVersion] = useState(0);
+  const [panchangVersion, setPanchangVersion] = useState(0);
+  const [statsVersion, setStatsVersion] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const cursorRef = useRef<string | null>(null);
@@ -158,6 +167,22 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setOnlineUsers((prev) => ({ ...prev, [data.userId]: false }));
     });
 
+    socket.on('astrologer:status-changed', (data: { astrologerId: string; onlineStatus: 'online' | 'offline' | 'busy' }) => {
+      setAstrologerStatuses((prev) => ({ ...prev, [data.astrologerId]: data.onlineStatus }));
+    });
+
+    socket.on('horoscope:updated', () => {
+      setHoroscopeVersion(v => v + 1);
+    });
+
+    socket.on('panchang:updated', () => {
+      setPanchangVersion(v => v + 1);
+    });
+
+    socket.on('astrologer:stats-updated', () => {
+      setStatsVersion(v => v + 1);
+    });
+
     socketRef.current = socket;
 
     return () => {
@@ -225,11 +250,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     if (!content.trim()) return;
     const socket = socketRef.current;
     const uid = userIdRef.current;
+    const role = currentRole;
     const optimistic: ConversationMessage = {
       id: `temp-${Date.now()}`,
       conversationId,
       senderId: uid,
-      senderRole: 'user',
+      senderRole: role as any,
       type: 'text',
       content,
       isDelivered: false,
@@ -243,7 +269,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       const msg = await api.conversations.sendMessage(conversationId, content);
       setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? msg : m)));
     }
-  }, []);
+  }, [currentRole]);
 
   const startTyping = useCallback((conversationId: string) => {
     const socket = socketRef.current;
@@ -296,6 +322,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         onlineUsers,
         typingUsers,
         unreadCounts,
+        astrologerStatuses,
+        horoscopeVersion,
+        panchangVersion,
+        statsVersion,
         loading,
         hasMore,
         loadConversations,

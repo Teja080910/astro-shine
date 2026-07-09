@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Switch, Alert, Modal, ScrollView, Image } from 'react-native';
-import { ScreenWrapper, GlassCard, SectionHeader, SearchBar, GradientButton, CustomModal, Avatar, StarRating, Chip, SkeletonLoader, EmptyState, colors, typography, radii } from '../../shared';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Alert, Modal, ScrollView, Image, RefreshControl } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
+import { ScreenWrapper, GlassCard, SectionHeader, SearchBar, GradientButton, CustomModal, Avatar, StarRating, Chip, SkeletonLoader, EmptyState, Toggle, ConfirmDialog, colors, typography, radii } from '../../shared';
 import { api } from '../../shared/api-client';
 import type { Astrologer, HoroscopeRecord, ShopProduct, Blog, Transaction, Wallet, Video, MandirPooja, Notification } from '../../shared/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
+import { useCall } from '../../context/CallContext';
 
 const ZODIAC_SIGNS = [
   { sign: 'aries', emoji: '♈', label: 'Aries' },
@@ -24,9 +26,17 @@ const ZODIAC_SIGNS = [
 
 const ASTRO_CATEGORIES = ['All', 'Vedic', 'Tarot', 'Numerology', 'Palmistry', 'Vastu'];
 
+function getAstrologerOnlineStatus(astro: Astrologer, astrologerStatuses: Record<string, 'online' | 'offline' | 'busy'>) {
+  const wsStatus = astrologerStatuses[astro.id];
+  if (wsStatus) return wsStatus === 'online';
+  return astro.onlineStatus === 'online';
+}
+
 // User Home Dashboard
 export function UserHomeScreen({ navigation }: any) {
   const { user } = useAuth();
+  const { astrologerStatuses, horoscopeVersion } = useChat();
+  const isFocused = useIsFocused();
   const [astrologers, setAstrologers] = useState<Astrologer[]>([]);
   const [horoscope, setHoroscope] = useState<HoroscopeRecord[]>([]);
   const [videos, setVideos] = useState<Video[]>([]);
@@ -40,32 +50,34 @@ export function UserHomeScreen({ navigation }: any) {
   const [menuOpen, setMenuOpen] = useState(false);
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const [a, h, v, b, p, n] = await Promise.all([
-          api.astrologers.list(),
-          api.horoscope.bySign('aries'),
-          api.videos.list(),
-          api.blogs.list(),
-          api.mandirPooja.list(),
-          api.notifications.list({ userId: user?.id }),
-        ]);
-        setAstrologers(a);
-        setHoroscope(h);
-        setVideos(v);
-        setBlogs(b);
-        setPoojas(p);
-        setNotifications(n);
-      } catch {} finally { setLoading(false); }
-    })();
-  }, []);
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const loadData = useCallback(async () => {
+    try {
+      const [a, h, v, b, p, n] = await Promise.all([
+        api.astrologers.list(),
+        api.horoscope.bySign(selectedSign, todayStr),
+        api.videos.list(),
+        api.blogs.list(),
+        api.mandirPooja.list(),
+        api.notifications.list({ userId: user?.id }),
+      ]);
+      setAstrologers(a);
+      setHoroscope(Array.isArray(h) ? h : [h]);
+      setVideos(v);
+      setBlogs(b);
+      setPoojas(p);
+      setNotifications(n);
+    } catch {} finally { setLoading(false); }
+  }, [user?.id, selectedSign, todayStr, horoscopeVersion]);
+
+  useEffect(() => { if (isFocused) loadData(); }, [isFocused, loadData]);
 
   const fetchHoroscope = async (sign: string) => {
     setHoroscopeLoading(true);
     try {
-      const h = await api.horoscope.bySign(sign);
-      setHoroscope(h);
+      const h = await api.horoscope.bySign(sign, todayStr);
+      setHoroscope(Array.isArray(h) ? h : [h]);
     } catch {} finally { setHoroscopeLoading(false); }
   };
 
@@ -101,15 +113,17 @@ export function UserHomeScreen({ navigation }: any) {
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
           <View style={{ flex: 1 }}>
-            <Text style={[typography.pageTitle, { marginBottom: 4, color: colors.textPrimary }]}>Namaste ✨</Text>
-            <Text style={[typography.body, { color: colors.textSecondary }]}>Discover what the stars hold for you</Text>
+            <Text style={[typography.pageTitle, { marginBottom: 4, color: colors.textPrimary }]}>
+              <Ionicons name="sunny" size={24} color={colors.accentGold} /> Namaste
+            </Text>
+            <Text style={[typography.body, { color: colors.textSecondary }]}>{user?.name || 'User'}</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ padding: 8, position: 'relative' }}>
               <Ionicons name="notifications-outline" size={28} color={colors.textPrimary} />
               {unreadCount > 0 && (
                 <View style={styles.notifBadge}>
-                  <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                  <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -175,13 +189,13 @@ export function UserHomeScreen({ navigation }: any) {
 
         <View style={{ height: 24 }} />
 
-        <SectionHeader title="Live Astrologers" onSeeAll={() => navigation.navigate('AstrologerList')} />
+        <SectionHeader title="Live Astrologers" onSeeAll={() => navigation.navigate('AstrologerList', { onlyLive: true })} />
         {astrologers.length > 0 ? (
-          <FlatList horizontal showsHorizontalScrollIndicator={false} data={astrologers.slice(0, 6)} keyExtractor={(a) => a.id}
+          <FlatList horizontal showsHorizontalScrollIndicator={false} data={astrologers.filter(a => getAstrologerOnlineStatus(a, astrologerStatuses)).slice(0, 6)} keyExtractor={(a) => a.id}
             renderItem={({ item }) => (
               <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.id })} style={styles.astroCard}>
                 <GlassCard style={styles.astroInner}>
-                  <Avatar size={56} online={item.onlineStatus === 'online'} />
+                  <Avatar size={56} online={getAstrologerOnlineStatus(item, astrologerStatuses)} />
                   <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
                   <StarRating rating={parseFloat(item.rating)} size={12} />
                   <Text style={typography.caption}>{item.specialization?.[0] || 'Astrologer'}</Text>
@@ -206,7 +220,7 @@ export function UserHomeScreen({ navigation }: any) {
             renderItem={({ item }) => (
               <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.id })} style={styles.astroCard}>
                 <GlassCard style={styles.astroInner}>
-                  <Avatar size={56} online={item.onlineStatus === 'online'} />
+                  <Avatar size={56} online={getAstrologerOnlineStatus(item, astrologerStatuses)} />
                   <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
                   <StarRating rating={parseFloat(item.rating)} size={12} />
                   <Text style={typography.caption}>{item.specialization?.[0] || 'Astrologer'}</Text>
@@ -330,24 +344,28 @@ export function UserHomeScreen({ navigation }: any) {
 }
 
 // Astrologers List
-export function AstrologerListScreen({ navigation }: any) {
+export function AstrologerListScreen({ route, navigation }: any) {
+  const { astrologerStatuses } = useChat();
+  const isFocused = useIsFocused();
   const [data, setData] = useState<Astrologer[]>([]);
   const [search, setSearch] = useState('');
   const [selectedCat, setSelectedCat] = useState('All');
   const cats = ['All', 'Vedic', 'Tarot', 'Numerology', 'Palmistry', 'Vastu'];
   const [loading, setLoading] = useState(true);
+  const onlyLive = route?.params?.onlyLive ?? false;
 
-  useEffect(() => { api.astrologers.list().then(setData).finally(() => setLoading(false)); }, []);
+  useEffect(() => { if (isFocused) api.astrologers.list().then(setData).finally(() => setLoading(false)); }, [isFocused]);
   
   const filtered = data.filter(a => {
     const matchesSearch = !search || a.name.toLowerCase().includes(search.toLowerCase()) || a.specialization?.some(s => s.toLowerCase().includes(search.toLowerCase()));
     const matchesCategory = selectedCat === 'All' || a.specialization?.some(s => s.toLowerCase() === selectedCat.toLowerCase());
-    return matchesSearch && matchesCategory;
+    const matchesLive = !onlyLive || getAstrologerOnlineStatus(a, astrologerStatuses);
+    return matchesSearch && matchesCategory && matchesLive;
   });
 
   return (
     <ScreenWrapper noPadding>
-      <View style={{ padding: 16, paddingBottom: 0 }}><Text style={[typography.pageTitle, { color: colors.textPrimary }]}>Astrologers</Text></View>
+      <View style={{ padding: 16, paddingBottom: 0 }}><Text style={[typography.pageTitle, { color: colors.textPrimary }]}>{onlyLive ? 'Live Astrologers' : 'Astrologers'}</Text></View>
       <SearchBar value={search} onChangeText={setSearch} />
       <FlatList 
         horizontal 
@@ -369,7 +387,21 @@ export function AstrologerListScreen({ navigation }: any) {
         ListEmptyComponent={<EmptyState icon={<Ionicons name="people-outline" size={48} color={colors.textMuted} />} title="No astrologers" />}
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.id })} style={{ marginBottom: 12 }}>
-            <GlassCard><View style={styles.row}><Avatar size={56} online={item.onlineStatus === 'online'} /><View style={{ flex: 1, marginLeft: 12 }}><Text style={typography.cardTitle}>{item.name}</Text><StarRating rating={parseFloat(item.rating)} size={12} reviewCount={item.totalReviews} /><View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 }}>{item.specialization?.slice(0, 2).map((s) => <Chip key={s} label={s} />)}</View></View><View style={{ alignItems: 'flex-end' }}><Text style={typography.price}>₹{item.pricePerMin}/min</Text></View></View></GlassCard>
+            <GlassCard>
+              <View style={styles.row}>
+                <Avatar size={56} online={getAstrologerOnlineStatus(item, astrologerStatuses)} />
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
+                  <StarRating rating={parseFloat(item.rating)} size={12} reviewCount={item.totalReviews} />
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4, gap: 4 }}>
+                    {item.specialization?.slice(0, 2).map((s) => <Chip key={s} label={s} />)}
+                  </View>
+                </View>
+                <View style={{ alignItems: 'flex-end', marginLeft: 8 }}>
+                  <Text style={typography.price}>₹{item.pricePerMin}/min</Text>
+                </View>
+              </View>
+            </GlassCard>
           </TouchableOpacity>
         )} />
     </ScreenWrapper>
@@ -379,44 +411,131 @@ export function AstrologerListScreen({ navigation }: any) {
 // Astrologer Detail
 export function AstrologerDetailScreen({ route, navigation }: any) {
   const { id } = route.params;
+  const isFocused = useIsFocused();
   const [astro, setAstro] = useState<Astrologer | null>(null);
-  const [showCall, setShowCall] = useState(false);
   const { openConversation } = useChat();
+  const { astrologerStatuses } = useChat();
+  const { initiateCall } = useCall();
+  const [offlineDialogVisible, setOfflineDialogVisible] = useState(false);
 
-  useEffect(() => { api.astrologers.get(id).then(setAstro); }, []);
+  useEffect(() => { if (isFocused) api.astrologers.get(id).then(setAstro); }, [id, isFocused]);
   if (!astro) return <ScreenWrapper><Text style={typography.body}>Loading...</Text></ScreenWrapper>;
 
+  const isVerified = astro.verificationStatus === 'approved';
+  const isOnline = getAstrologerOnlineStatus(astro, astrologerStatuses);
+
   const handleChat = async () => {
+    if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified. Please choose a verified astrologer.'); return; }
     const convId = await openConversation(id, 'astrologer');
-    navigation.navigate('ChatRoom', { conversationId: convId, participantId: id, participantRole: 'astrologer' });
+    navigation.navigate('ChatRoom', { conversationId: convId, participantId: id, participantRole: 'astrologer', participantName: astro.name });
+  };
+
+  const handleAudioCall = () => {
+    if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified.'); return; }
+    if (!isOnline) { setOfflineDialogVisible(true); return; }
+    initiateCall(id, astro.name, 'audio');
+  };
+
+  const handleVideoCall = () => {
+    if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified.'); return; }
+    if (!isOnline) { setOfflineDialogVisible(true); return; }
+    initiateCall(id, astro.name, 'video');
   };
 
   return (
     <ScreenWrapper scroll>
-      <View style={styles.header}><Avatar size={80} online={astro.onlineStatus === 'online'} /><Text style={[typography.pageTitle, { marginTop: 12, color: colors.textPrimary }]}>{astro.name}</Text><StarRating rating={parseFloat(astro.rating)} size={16} reviewCount={astro.totalReviews} /><Text style={[typography.body, { marginTop: 8, color: colors.textSecondary }]}>{astro.bio || 'Experienced astrologer'}</Text></View>
+      <View style={styles.header}>
+        <Avatar size={80} online={isOnline} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 }}>
+          <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>{astro.name}</Text>
+          {isVerified && <Ionicons name="checkmark-circle" size={20} color={colors.primaryLight} />}
+        </View>
+        {isOnline ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success }} />
+            <Text style={[typography.caption, { color: colors.success }]}>Online</Text>
+          </View>
+        ) : (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.textMuted }} />
+            <Text style={[typography.caption, { color: colors.textMuted }]}>Offline</Text>
+          </View>
+        )}
+        <Text style={[typography.body, { marginTop: 8, color: colors.textSecondary }]}>{astro.bio || 'Experienced astrologer'}</Text>
+        {!isVerified && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8, backgroundColor: colors.warning + '20', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8 }}>
+            <Ionicons name="warning-outline" size={14} color={colors.warning} />
+            <Text style={[typography.caption, { color: colors.warning }]}>Verification Pending</Text>
+          </View>
+        )}
+      </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 16, backgroundColor: colors.surfaceLight, borderRadius: radii.card, marginTop: 16 }}>
         <Stat label="Experience" value={`${astro.experience}y`} /><Stat label="Calls" value={`${astro.totalCalls}`} /><Stat label="Price" value={`₹${astro.pricePerMin}/min`} />
       </View>
+
+      <GlassCard style={{ marginTop: 16, padding: 16 }}>
+        <Text style={[typography.sectionTitle, { marginBottom: 12 }]}>Details</Text>
+        {astro.specialization?.length > 0 && (
+          <View style={{ marginBottom: 10 }}>
+            <Text style={[typography.label, { color: colors.textSecondary, marginBottom: 4 }]}>Specialization</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+              {astro.specialization.map(s => <Chip key={s} label={s} />)}
+            </View>
+          </View>
+        )}
+        {astro.languages?.length > 0 && (
+          <View style={{ marginBottom: 10 }}>
+            <Text style={[typography.label, { color: colors.textSecondary, marginBottom: 4 }]}>Languages</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+              {astro.languages.map(l => <Chip key={l} label={l} />)}
+            </View>
+          </View>
+        )}
+        {astro.skills?.length > 0 && (
+          <View style={{ marginBottom: 10 }}>
+            <Text style={[typography.label, { color: colors.textSecondary, marginBottom: 4 }]}>Skills</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+              {astro.skills.map(s => <Chip key={s} label={s} />)}
+            </View>
+          </View>
+        )}
+      </GlassCard>
+
       <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
         <View style={{ flex: 1 }}><GradientButton title="Chat" onPress={handleChat} /></View>
-        <View style={{ flex: 1 }}><GradientButton title="Call" variant="gold" onPress={() => setShowCall(true)} /></View>
+        <View style={{ flex: 1 }}><GradientButton title="Audio Call" variant="gold" onPress={handleAudioCall} /></View>
       </View>
-      <CustomModal visible={showCall} onClose={() => setShowCall(false)}>
-        <View style={{ padding: 24, alignItems: 'center', gap: 16 }}><Ionicons name="call" size={48} color={colors.success} /><Text style={typography.pageTitle}>Start Call</Text><Text style={typography.body}>Audio call with {astro.name} at ₹{astro.pricePerMin}/min</Text><GradientButton title="Connect Now" onPress={() => { setShowCall(false); }} /></View>
-      </CustomModal>
+      <View style={{ marginTop: 10 }}>
+        <GradientButton title="Video Call" variant="gold" onPress={handleVideoCall} />
+      </View>
+      <ConfirmDialog
+        visible={offlineDialogVisible}
+        title="Astrologer Offline"
+        subtitle={`${astro.name} is currently offline. Please try again later.`}
+        icon={<Ionicons name="cloud-offline-outline" size={48} color={colors.danger} />}
+        actions={[
+          {
+            label: 'OK',
+            onPress: () => setOfflineDialogVisible(false),
+            variant: 'primary',
+          },
+        ]}
+        onClose={() => setOfflineDialogVisible(false)}
+      />
     </ScreenWrapper>
   );
 }
 
 // Wallet
 export function WalletScreen() {
+  const isFocused = useIsFocused();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [txns, setTxns] = useState<Transaction[]>([]);
   const [amount, setAmount] = useState('');
   const [showAdd, setShowAdd] = useState(false);
 
-  const load = async () => { const w = await api.wallet.get(); setWallet(w); const t = await api.transactions.listMy(); setTxns(t); };
-  useEffect(() => { load(); }, []);
+  const load = useCallback(async () => { const w = await api.wallet.get(); setWallet(w); const t = await api.transactions.listMy(); setTxns(t); }, []);
+  useEffect(() => { if (isFocused) load(); }, [isFocused, load]);
 
   return (
     <ScreenWrapper scroll>
@@ -480,9 +599,10 @@ export function MatchmakingScreen() {
 
 // Shop
 export function ShopScreen() {
+  const isFocused = useIsFocused();
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [loading, setLoading] = useState(true);
-  useEffect(() => { api.shop.list().then(setProducts).finally(() => setLoading(false)); }, []);
+  useEffect(() => { if (isFocused) { api.shop.list().then(setProducts).finally(() => setLoading(false)); } }, [isFocused]);
 
   if (loading) return <ScreenWrapper scroll><SkeletonLoader height={180} /></ScreenWrapper>;
   return (
@@ -534,6 +654,7 @@ function PasswordInput({ label, value, onChange, placeholder }: { label: string;
 export function ProfileScreen({ navigation }: any) {
   const { user, logout, updateUser, theme, setTheme } = useAuth();
   const [pwOpen, setPwOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
@@ -586,26 +707,7 @@ export function ProfileScreen({ navigation }: any) {
   };
 
   const handleDeleteAccount = () => {
-    if (!user) return;
-    Alert.alert(
-      "Delete Account",
-      "Are you sure you want to delete your account? This action is permanent and cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await api.users.delete(user.id);
-              await logout();
-            } catch (err) {
-              Alert.alert("Error", "Failed to delete account. Please try again.");
-            }
-          }
-        }
-      ]
-    );
+    setDeleteOpen(true);
   };
 
   const [showCurrent, setShowCurrent] = useState(false);
@@ -633,7 +735,7 @@ export function ProfileScreen({ navigation }: any) {
         <View style={[styles.menuItem, styles.border, { paddingVertical: 8, borderBottomColor: colors.divider }]}>
           <Ionicons name="moon-outline" size={22} color={colors.textSecondary} />
           <Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.textPrimary }]}>Dark Mode</Text>
-          <Switch value={theme === 'dark'} onValueChange={toggleTheme} trackColor={{ false: '#767577', true: colors.primary }} thumbColor={theme === 'dark' ? colors.accentGold : '#f4f3f4'} />
+          <Toggle value={theme === 'dark'} onValueChange={toggleTheme} trackColor={{ false: '#767577', true: colors.primary }} />
         </View>
 
         {/* Change Password Item */}
@@ -666,6 +768,20 @@ export function ProfileScreen({ navigation }: any) {
           <GradientButton title={pwLoading ? 'Changing...' : 'Change Password'} onPress={handlePasswordChange} disabled={pwLoading} style={{ marginTop: 8 }} />
         </View>
       </CustomModal>
+
+      <ConfirmDialog
+        visible={deleteOpen}
+        title="Delete Account"
+        subtitle="Are you sure you want to delete your account? This action is permanent and cannot be undone."
+        actions={[
+          { label: 'Cancel', variant: 'secondary', onPress: () => setDeleteOpen(false) },
+          { label: 'Delete', variant: 'danger', onPress: async () => {
+            setDeleteOpen(false);
+            try { await api.users.delete(user!.id); await logout(); } catch {}
+          }},
+        ]}
+        onClose={() => setDeleteOpen(false)}
+      />
     </ScreenWrapper>
   );
 }

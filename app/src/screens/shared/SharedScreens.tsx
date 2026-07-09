@@ -1,25 +1,89 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal } from 'react-native';
-import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, colors, typography, radii } from '../../shared';
+import { useIsFocused } from '@react-navigation/native';
+import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, colors, typography, radii } from '../../shared';
 import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
-import type { Blog, Notification, SupportTicket, NewsItem, Video } from '../../shared/types';
+import type { Blog, Notification, SupportTicket, NewsItem, Video, PanchangRecord } from '../../shared/types';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
+import { useChat } from '../../context/ChatContext';
 
 function SectionTitle({ title }: { title: string }) {
   return <Text style={[typography.pageTitle, { marginBottom: 16 }]}>{title}</Text>;
 }
 
+function to12h(t: string): string {
+  if (!t) return '';
+  const [h, m] = t.split(':');
+  const hour = parseInt(h);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const display = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${display}:${m} ${ampm}`;
+}
+
 // Panchang
 export function PanchangScreen() {
-  return <ScreenWrapper scroll><SectionTitle title="Panchang" /><GlassCard><Text style={typography.body}>Daily panchang calendar with tithi, nakshatra, yoga, karana, sunrise/sunset timings.</Text></GlassCard></ScreenWrapper>;
+  const { panchangVersion } = useChat();
+  const [data, setData] = useState<PanchangRecord | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    api.panchang.byDate(today).then(setData).catch(() => {}).finally(() => setLoading(false));
+  }, [panchangVersion]);
+
+  if (loading) return <ScreenWrapper scroll><SectionTitle title="Panchang" /><GlassCard><Text style={typography.body}>Loading...</Text></GlassCard></ScreenWrapper>;
+
+  return (
+    <ScreenWrapper scroll>
+      <SectionTitle title="Panchang" />
+      {data ? (
+        <>
+          <Text style={[typography.caption, { marginBottom: 16, color: colors.textSecondary }]}>
+            {new Date(data.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+          </Text>
+          <GlassCard style={{ padding: 16 }}>
+            <Row icon="water" label="Tithi" value={data.tithi} />
+            <Row icon="star" label="Nakshatra" value={data.nakshatra} />
+            <Row icon="leaf" label="Yoga" value={data.yoga} />
+            <Row icon="time" label="Karana" value={data.karana} />
+          </GlassCard>
+          <GlassCard style={{ padding: 16, marginTop: 12 }}>
+            <Row icon="sunny" label="Sunrise" value={data.sunrise ? to12h(data.sunrise) : undefined} />
+            <Row icon="moon" label="Sunset" value={data.sunset ? to12h(data.sunset) : undefined} />
+            <Row icon="moon" label="Moonrise" value={data.moonrise ? to12h(data.moonrise) : undefined} />
+            <Row icon="moon" label="Moonset" value={data.moonset ? to12h(data.moonset) : undefined} />
+          </GlassCard>
+          {data.rahuKaal && (
+            <GlassCard style={{ padding: 16, marginTop: 12 }}>
+              <Row icon="alert-circle" label="Rahu Kaal" value={`${to12h(data.rahuKaal.start)} - ${to12h(data.rahuKaal.end)}`} />
+            </GlassCard>
+          )}
+        </>
+      ) : (
+        <GlassCard><Text style={[typography.body, { textAlign: 'center', marginVertical: 16 }]}>No panchang data available for today</Text></GlassCard>
+      )}
+    </ScreenWrapper>
+  );
+}
+
+function Row({ icon, label, value }: { icon: string; label: string; value?: string }) {
+  if (!value) return null;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.cardBorder }}>
+      <Ionicons name={icon as any} size={18} color={colors.accentGold} style={{ marginRight: 10 }} />
+      <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>{label}</Text>
+      <Text style={[typography.body, { fontWeight: '600', color: colors.textPrimary }]}>{value}</Text>
+    </View>
+  );
 }
 
 // Videos
 export function VideosScreen() {
+  const isFocused = useIsFocused();
   const [videos, setVideos] = useState<Video[]>([]);
-  useEffect(() => { api.videos.list().then(setVideos).catch(() => {}); }, []);
+  useEffect(() => { if (isFocused) api.videos.list().then(setVideos).catch(() => {}); }, [isFocused]);
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Videos" />
@@ -49,8 +113,9 @@ export function VideosScreen() {
 
 // Blogs with data
 export function BlogsScreen() {
+  const isFocused = useIsFocused();
   const [blogs, setBlogs] = useState<Blog[]>([]);
-  useEffect(() => { api.blogs.list().then(setBlogs).catch(() => {}); }, []);
+  useEffect(() => { if (isFocused) api.blogs.list().then(setBlogs).catch(() => {}); }, [isFocused]);
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Blogs" />
@@ -62,14 +127,45 @@ export function BlogsScreen() {
 
 // Notifications with data
 export function NotificationsScreen({ route }: any) {
+  const isFocused = useIsFocused();
+  const { user, astrologer } = useAuth();
   const [notifs, setNotifs] = useState<Notification[]>([]);
-  const userId = route?.params?.userId;
-  useEffect(() => { api.notifications.list({ userId }).then(setNotifs).catch(() => {}); }, []);
+
+  useEffect(() => {
+    if (!isFocused) return;
+    const uid = route?.params?.userId || user?.id || astrologer?.id;
+    if (uid) api.notifications.list({ userId: uid }).then(setNotifs).catch(() => {});
+  }, [isFocused, route?.params?.userId, user?.id, astrologer?.id]);
+
+  const markRead = async (id: string) => {
+    try { await api.notifications.markRead(id); setNotifs(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n)); } catch {}
+  };
+
   return (
-    <ScreenWrapper scroll>
-      <SectionTitle title="Notifications" />
-      {notifs.length === 0 ? <EmptyState icon={<Ionicons name="notifications-outline" size={48} color={colors.textMuted} />} title="No notifications" /> :
-        notifs.map(n => <GlassCard key={n.id} style={{ marginBottom: 8, padding: 12, opacity: n.isRead ? 0.6 : 1 }}><Text style={typography.cardTitle}>{n.title}</Text><Text style={typography.body}>{n.body}</Text><Text style={typography.caption}>{new Date(n.createdAt).toLocaleDateString()}</Text></GlassCard>)}
+    <ScreenWrapper>
+      <ScrollView contentContainerStyle={{ padding: 16 }}>
+        {notifs.length === 0 ? (
+          <EmptyState icon={<Ionicons name="notifications-outline" size={48} color={colors.textMuted} />} title="No notifications" subtitle="You're all caught up!" />
+        ) : (
+          notifs.map(n => (
+            <TouchableOpacity key={n.id} onPress={() => !n.isRead && markRead(n.id)}>
+              <GlassCard style={{ marginBottom: 8, padding: 14, opacity: n.isRead ? 0.85 : 1 }}>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: n.isRead ? colors.surfaceLight : colors.primary + '20', alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name={n.type === 'system' ? 'settings-outline' : n.type === 'promotional' ? 'megaphone-outline' : 'cash-outline'} size={20} color={n.isRead ? colors.textMuted : colors.primaryLight} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.cardTitle, { fontSize: 14 }]}>{n.title}</Text>
+                    <Text style={[typography.body, { fontSize: 13, marginTop: 2 }]}>{n.body}</Text>
+                    <Text style={[typography.caption, { marginTop: 4 }]}>{new Date(n.createdAt).toLocaleDateString()}</Text>
+                  </View>
+                  {!n.isRead && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primaryLight, marginTop: 4 }} />}
+                </View>
+              </GlassCard>
+            </TouchableOpacity>
+          ))
+        )}
+      </ScrollView>
     </ScreenWrapper>
   );
 }
@@ -87,12 +183,28 @@ export function EditProfileScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Astrologer-specific fields
+  const [bio, setBio] = useState((profile as any)?.bio || '');
+  const [experience, setExperience] = useState(String((profile as any)?.experience || ''));
+  const [specialization, setSpecialization] = useState(((profile as any)?.specialization || []).join(', '));
+  const [languages, setLanguages] = useState(((profile as any)?.languages || []).join(', '));
+  const [skills, setSkills] = useState(((profile as any)?.skills || []).join(', '));
+  const [pricePerMin, setPricePerMin] = useState((profile as any)?.pricePerMin || '');
+
   useEffect(() => {
     if (profile) {
       setName(profile.name);
       setPhone(profile.phone || '');
       setGender((profile as any).gender || 'male');
       setDateOfBirth((profile as any).dateOfBirth ? (profile as any).dateOfBirth.split('T')[0] : '');
+      if (role === 'astrologer') {
+        setBio((profile as any).bio || '');
+        setExperience(String((profile as any).experience || ''));
+        setSpecialization(((profile as any).specialization || []).join(', '));
+        setLanguages(((profile as any).languages || []).join(', '));
+        setSkills(((profile as any).skills || []).join(', '));
+        setPricePerMin((profile as any).pricePerMin || '');
+      }
     }
   }, [profile]);
 
@@ -102,7 +214,15 @@ export function EditProfileScreen() {
     try {
       let updated;
       if (role === 'astrologer') {
-        updated = await api.astrologers.update(profile!.id, { name, phone, gender, dateOfBirth });
+        updated = await api.astrologers.update(profile!.id, {
+          name, phone, gender, dateOfBirth,
+          bio,
+          experience: parseInt(experience) || 0,
+          specialization: specialization.split(',').map(s => s.trim()).filter(Boolean),
+          languages: languages.split(',').map(s => s.trim()).filter(Boolean),
+          skills: skills.split(',').map(s => s.trim()).filter(Boolean),
+          pricePerMin,
+        });
       } else if (role === 'admin') {
         updated = await api.admins.update(profile!.id, { name });
       } else {
@@ -198,12 +318,86 @@ export function EditProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          <CalendarPickerModal
+          <DatePicker
             visible={showDatePicker}
             value={dateOfBirth}
             onClose={() => setShowDatePicker(false)}
             onSelect={setDateOfBirth}
           />
+        </>
+      )}
+
+      {role === 'astrologer' && (
+        <>
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Bio</Text>
+            <TextInput
+              style={[styles.input, { height: 80, backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={bio}
+              onChangeText={setBio}
+              placeholder="Tell clients about yourself"
+              placeholderTextColor={colors.textMuted}
+              multiline
+              textAlignVertical="top"
+            />
+          </View>
+
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Experience (years)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={experience}
+              onChangeText={setExperience}
+              placeholder="e.g. 10"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="number-pad"
+            />
+          </View>
+
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Specialization (comma separated)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={specialization}
+              onChangeText={setSpecialization}
+              placeholder="e.g. Vedic, Tarot, Numerology"
+              placeholderTextColor={colors.textMuted}
+            />
+          </View>
+
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Languages (comma separated)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={languages}
+              onChangeText={setLanguages}
+              placeholder="e.g. Hindi, English, Tamil"
+              placeholderTextColor={colors.textMuted}
+            />
+          </View>
+
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Skills (comma separated)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={skills}
+              onChangeText={setSkills}
+              placeholder="e.g. Birth Chart, Predictions, Remedies"
+              placeholderTextColor={colors.textMuted}
+            />
+          </View>
+
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Price per minute (₹)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={pricePerMin}
+              onChangeText={setPricePerMin}
+              placeholder="e.g. 15"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="decimal-pad"
+            />
+          </View>
         </>
       )}
 
@@ -214,12 +408,13 @@ export function EditProfileScreen() {
 
 // Support
 export function SupportScreen() {
+  const isFocused = useIsFocused();
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { api.support.tickets().then(setTickets).catch(() => {}); }, []);
+  useEffect(() => { if (isFocused) api.support.tickets().then(setTickets).catch(() => {}); }, [isFocused]);
 
   const handleSubmit = async () => {
     if (!subject.trim() || !message.trim()) return;
@@ -302,15 +497,18 @@ export function MandirPoojaScreen() {
 
 // Order History
 export function OrderHistoryScreen() {
+  const isFocused = useIsFocused();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.orders.list()
-      .then(setOrders)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+    if (isFocused) {
+      api.orders.list()
+        .then(setOrders)
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    }
+  }, [isFocused]);
 
   return (
     <ScreenWrapper scroll>
@@ -349,12 +547,70 @@ export function AstrologerRequestsScreen() {
 
 // Astrologer: Schedule
 export function AstrologerScheduleScreen() {
+  const { astrologer } = useAuth();
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const [schedules, setSchedules] = useState<Record<number, { startTime: string; endTime: string; isAvailable: boolean }>>({});
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!astrologer?.id) return;
+    api.schedule.byAstrologer(astrologer.id).then((data: any[]) => {
+      const map: Record<number, any> = {};
+      data.forEach(s => { map[s.dayOfWeek] = { startTime: s.startTime.slice(0, 5), endTime: s.endTime.slice(0, 5), isAvailable: s.isAvailable }; });
+      setSchedules(map);
+    }).catch(() => {});
+  }, [astrologer?.id]);
+
+  const updateDay = (day: number, field: string, value: string | boolean) => {
+    setSchedules(prev => ({ ...prev, [day]: { ...prev[day] || { startTime: '09:00', endTime: '18:00', isAvailable: true }, [field]: value } }));
+  };
+
+  const saveAll = async () => {
+    if (!astrologer?.id) return;
+    setLoading(true);
+    try {
+      const bulk = Object.entries(schedules).map(([day, s]) => ({
+        dayOfWeek: Number(day), startTime: s.startTime, endTime: s.endTime, isAvailable: s.isAvailable,
+      }));
+      await api.schedule.bulkUpsert(astrologer.id, bulk);
+      Alert.alert('Saved', 'Schedule updated successfully');
+    } catch { Alert.alert('Error', 'Failed to save schedule'); }
+    finally { setLoading(false); }
+  };
+
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Availability Schedule" />
-      {days.map((d, i) => <GlassCard key={d} style={{ marginBottom: 8, padding: 12 }}><View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}><Text style={typography.cardTitle}>{d}</Text><View style={{ flexDirection: 'row', gap: 8 }}><TextInput style={[styles.input, { width: 100 }]} placeholder="09:00" placeholderTextColor={colors.textMuted} /><Text style={typography.caption}>to</Text><TextInput style={[styles.input, { width: 100 }]} placeholder="18:00" placeholderTextColor={colors.textMuted} /></View></View></GlassCard>)}
-      <GradientButton title="Save Schedule" onPress={() => {}} style={{ marginTop: 16 }} />
+      <Text style={[typography.body, { marginBottom: 16, paddingHorizontal: 4 }]}>Set your weekly availability for consultations</Text>
+      {days.map((d, i) => {
+        const s = schedules[i];
+        return (
+          <GlassCard key={d} style={{ marginBottom: 8, padding: 12 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Toggle
+                  value={s?.isAvailable ?? true}
+                  onValueChange={(v) => updateDay(i, 'isAvailable', v)}
+                  trackColor={{ false: colors.textMuted, true: colors.success }}
+                />
+                <Text style={[typography.cardTitle, { opacity: s?.isAvailable === false ? 0.4 : 1 }]}>{d}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center', opacity: s?.isAvailable === false ? 0.4 : 1 }}>
+                <TimePicker
+                  value={s?.startTime || '09:00'}
+                  onChange={(v) => updateDay(i, 'startTime', v)}
+                />
+                <Text style={typography.caption}>to</Text>
+                <TimePicker
+                  value={s?.endTime || '18:00'}
+                  onChange={(v) => updateDay(i, 'endTime', v)}
+                />
+              </View>
+            </View>
+          </GlassCard>
+        );
+      })}
+      <GradientButton title={loading ? 'Saving...' : 'Save Schedule'} onPress={saveAll} disabled={loading} style={{ marginTop: 16 }} />
     </ScreenWrapper>
   );
 }
@@ -502,144 +758,6 @@ export function AboutAppScreen({ navigation }: any) {
       </GlassCard>
       <GradientButton title="Back to Dashboard" onPress={() => navigation.navigate('Main')} style={{ marginTop: 12 }} />
     </ScreenWrapper>
-  );
-}
-
-interface CalendarProps {
-  visible: boolean;
-  value: string;
-  onClose: () => void;
-  onSelect: (date: string) => void;
-}
-
-export function CalendarPickerModal({ visible, value, onClose, onSelect }: CalendarProps) {
-  const today = new Date();
-  const initialDate = value ? new Date(value) : today;
-  const [selectedYear, setSelectedYear] = useState(isNaN(initialDate.getTime()) ? today.getFullYear() : initialDate.getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(isNaN(initialDate.getTime()) ? today.getMonth() : initialDate.getMonth());
-  const [selectedDay, setSelectedDay] = useState(isNaN(initialDate.getTime()) ? today.getDate() : initialDate.getDate());
-
-  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  const years: number[] = [];
-  for (let y = today.getFullYear(); y >= 1950; y--) {
-    years.push(y);
-  }
-
-  const getDaysInMonth = (month: number, year: number) => {
-    return new Date(year, month + 1, 0).getDate();
-  };
-
-  const daysInMonth = getDaysInMonth(selectedMonth, selectedYear);
-  const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-
-  const handleConfirm = () => {
-    const mm = String(selectedMonth + 1).padStart(2, '0');
-    const dd = String(selectedDay).padStart(2, '0');
-    onSelect(`${selectedYear}-${mm}-${dd}`);
-    onClose();
-  };
-
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <TouchableOpacity activeOpacity={1} onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-        <TouchableOpacity activeOpacity={1} style={{ width: '100%', maxWidth: 340, backgroundColor: colors.surface, borderRadius: radii.card, borderWidth: 1, borderColor: colors.cardBorder, padding: 16 }}>
-          <Text style={[typography.sectionTitle, { textAlign: 'center', marginBottom: 12, color: colors.accentGold }]}>Select Date of Birth</Text>
-
-          <View style={{ backgroundColor: colors.surfaceLight, padding: 10, borderRadius: 8, alignItems: 'center', marginBottom: 16 }}>
-            <Text style={[typography.cardTitle, { color: colors.textPrimary }]}>
-              {selectedDay} {months[selectedMonth]} {selectedYear}
-            </Text>
-          </View>
-
-          <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: 4 }]}>Year</Text>
-          <View style={{ height: 48, marginBottom: 12 }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-              {years.map(y => (
-                <TouchableOpacity
-                  key={y}
-                  onPress={() => {
-                    setSelectedYear(y);
-                    const days = getDaysInMonth(selectedMonth, y);
-                    if (selectedDay > days) setSelectedDay(days);
-                  }}
-                  style={{
-                    paddingHorizontal: 12,
-                    height: 38,
-                    borderRadius: 19,
-                    borderWidth: 1,
-                    borderColor: selectedYear === y ? colors.primary : colors.cardBorder,
-                    backgroundColor: selectedYear === y ? colors.primary : colors.surfaceLight,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text style={{ color: selectedYear === y ? colors.white : colors.textPrimary, fontWeight: '600', fontSize: 13 }}>{y}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-
-          <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: 4 }]}>Month</Text>
-          <View style={{ height: 48, marginBottom: 12 }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-              {months.map((m, idx) => (
-                <TouchableOpacity
-                  key={m}
-                  onPress={() => {
-                    setSelectedMonth(idx);
-                    const days = getDaysInMonth(idx, selectedYear);
-                    if (selectedDay > days) setSelectedDay(days);
-                  }}
-                  style={{
-                    paddingHorizontal: 12,
-                    height: 38,
-                    borderRadius: 19,
-                    borderWidth: 1,
-                    borderColor: selectedMonth === idx ? colors.primary : colors.cardBorder,
-                    backgroundColor: selectedMonth === idx ? colors.primary : colors.surfaceLight,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text style={{ color: selectedMonth === idx ? colors.white : colors.textPrimary, fontWeight: '600', fontSize: 13 }}>{m.slice(0, 3)}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-
-          <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: 4 }]}>Day</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center', marginBottom: 16 }}>
-            {daysArray.map(d => (
-              <TouchableOpacity
-                key={d}
-                onPress={() => setSelectedDay(d)}
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 18,
-                  borderWidth: 1,
-                  borderColor: selectedDay === d ? colors.primary : colors.cardBorder,
-                  backgroundColor: selectedDay === d ? colors.primary : colors.surfaceLight,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ color: selectedDay === d ? colors.white : colors.textPrimary, fontSize: 12, fontWeight: '600' }}>{d}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <TouchableOpacity onPress={onClose} style={{ flex: 1, height: 44, borderRadius: radii.button, borderWidth: 1, borderColor: colors.cardBorder, justifyContent: 'center', alignItems: 'center' }}>
-              <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleConfirm} style={{ flex: 1, height: 44, borderRadius: radii.button, backgroundColor: colors.accentGold, justifyContent: 'center', alignItems: 'center' }}>
-              <Text style={{ color: colors.white, fontWeight: '700' }}>Select Date</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </TouchableOpacity>
-    </Modal>
   );
 }
 

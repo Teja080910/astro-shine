@@ -8,7 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
 export function ChatListScreen({ navigation }: any) {
-  const { conversations, loadConversations, onlineUsers, unreadCounts } = useChat();
+  const { conversations, loadConversations, onlineUsers, unreadCounts, astrologerStatuses } = useChat();
   const { user } = useAuth();
   const isFocused = useIsFocused();
 
@@ -27,13 +27,15 @@ export function ChatListScreen({ navigation }: any) {
   };
 
   const renderItem = useCallback(({ item }: any) => {
-    const isOnline = onlineUsers[item.participantId] ?? false;
+    const isOnline = item.participantRole === 'astrologer'
+      ? astrologerStatuses[item.participantId] === 'online'
+      : onlineUsers[item.participantId] ?? false;
     const unread = unreadCounts[item.id] ?? 0;
 
     return (
       <TouchableOpacity
         style={[styles.item, { borderBottomColor: colors.divider }]}
-        onPress={() => navigation.navigate('ChatRoom', { conversationId: item.id, participantId: item.participantId, participantRole: item.participantRole })}
+        onPress={() => navigation.navigate('ChatRoom', { conversationId: item.id, participantId: item.participantId, participantRole: item.participantRole, participantName: item.participantName })}
       >
         <View style={styles.avatarContainer}>
           <Avatar size={52} online={isOnline} />
@@ -47,14 +49,14 @@ export function ChatListScreen({ navigation }: any) {
             <Text style={[typography.body, { flex: 1 }]} numberOfLines={1}>{item.lastMessagePreview || 'No messages yet'}</Text>
             {unread > 0 && (
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unread > 9 ? '9+' : unread}</Text>
+                <Text style={styles.badgeText}>{unread > 99 ? '99+' : unread}</Text>
               </View>
             )}
           </View>
         </View>
       </TouchableOpacity>
     );
-  }, [onlineUsers, unreadCounts, user]);
+  }, [onlineUsers, unreadCounts, user, astrologerStatuses]);
 
   return (
     <ScreenWrapper>
@@ -62,7 +64,7 @@ export function ChatListScreen({ navigation }: any) {
         <Text style={typography.pageTitle}>Messages</Text>
       </View>
       <FlatList
-        data={conversations}
+        data={[...conversations].sort((a, b) => new Date(b.lastMessageAt || b.createdAt).getTime() - new Date(a.lastMessageAt || a.createdAt).getTime())}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         refreshControl={<RefreshControl refreshing={false} onRefresh={loadConversations} tintColor={colors.primary} />}

@@ -19,6 +19,12 @@ export class UsersService {
     });
   }
 
+  async findAstrologerById(id: string) {
+    return this.db.query.astrologers.findFirst({
+      where: eq(schema.astrologers.id, id),
+    });
+  }
+
   async findByEmail(email: string) {
     return this.db.query.users.findFirst({
       where: eq(schema.users.email, email),

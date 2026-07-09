@@ -4,18 +4,25 @@ import {
   SubscribeMessage,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { AuthService } from '../auth/auth.service';
 import { ConversationsService } from './conversations.service';
+import { CallsService } from '../calls/calls.service';
+import { UsersService } from '../users/users.service';
+import { ConfigService } from '@nestjs/config';
+import { RtcTokenBuilder, RtcRole } from 'agora-access-token';
+import { RealtimeService } from '../../common/realtime.service';
+import { AstrologersService } from '../astrologers/astrologers.service';
 
 @WebSocketGateway({
   cors: { origin: '*', credentials: true },
   path: '/ws',
 })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
 
   private onlineUsers = new Map<string, { userId: string; role: string; socketId: string }>();
@@ -23,7 +30,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly authService: AuthService,
     private readonly conversationsService: ConversationsService,
+    private readonly callsService: CallsService,
+    private readonly usersService: UsersService,
+    private readonly configService: ConfigService,
+    private readonly realtime: RealtimeService,
+    private readonly astrologersService: AstrologersService,
   ) {}
+
+  afterInit() {
+    this.realtime.setServer(this.server);
+  }
 
   async handleConnection(client: Socket) {
     const token = client.handshake.query.token as string;
@@ -37,7 +53,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     try {
       const payload = await this.authService.validateToken(token);
       client.data.userId = payload.userId;
-      client.data.role = 'user';
+      client.data.role = payload.role || 'user';
 
       console.log(`[WS] Authenticated - userId: ${payload.userId}, socketId: ${client.id}`);
 
@@ -78,13 +94,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  handleDisconnect(client: Socket) {
+  async handleDisconnect(client: Socket) {
     const userId = client.data.userId;
-    console.log(`[WS] Disconnect - socketId: ${client.id}, userId: ${userId}`);
+    const role = client.data.role;
+    console.log(`[WS] Disconnect - socketId: ${client.id}, userId: ${userId}, role: ${role}`);
     if (userId) {
       this.onlineUsers.delete(userId);
       console.log(`[WS] Online users map after disconnect:`, Object.fromEntries(this.onlineUsers));
-      client.broadcast.emit('user:offline', { userId, role: client.data.role });
+      client.broadcast.emit('user:offline', { userId, role });
+
+      if (role === 'astrologer') {
+        try {
+          await this.astrologersService.updateOnlineStatus(userId, 'offline');
+        } catch (e: any) {
+          console.error('[WS] Failed to update astrologer offline status on disconnect:', e.message);
+        }
+      }
     }
   }
 
@@ -206,6 +231,101 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       conversationId: data.conversationId,
       userId: client.data.userId,
     });
+  }
+
+  // ─── Call Signaling ───
+
+  @SubscribeMessage('call:initiate')
+  async handleCallInitiate(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { astrologerId: string; type: 'audio' | 'video' },
+  ) {
+    const { userId, role } = client.data;
+    const channelName = `call_${userId}_${data.astrologerId}_${Date.now()}`;
+    const appId = this.configService.get<string>('AGORA_APP_ID', '');
+    const appCert = this.configService.get<string>('AGORA_APP_CERTIFICATE', '');
+    const uid = Math.floor(Math.random() * 100000);
+    let token = '';
+    if (appId && appCert) {
+      token = RtcTokenBuilder.buildTokenWithUid(appId, appCert, channelName, uid, RtcRole.PUBLISHER, Math.floor(Date.now() / 1000) + 3600);
+    }
+    const callLog = await this.callsService.create({
+      astrologerId: data.astrologerId,
+      userId,
+      type: data.type,
+      status: 'initiated',
+      agoraChannel: channelName,
+      agoraToken: token,
+      ratePerMin: '0',
+    });
+    const caller = await this.usersService.findById(userId);
+    const callerName = caller?.name || 'User';
+    const astrologerSocket = this.findSocketByUserId(data.astrologerId);
+    if (astrologerSocket) {
+      astrologerSocket.emit('call:incoming', {
+        callId: callLog.id,
+        callerId: userId,
+        callerRole: role,
+        callerName,
+        type: data.type,
+        channel: channelName,
+        token,
+        uid,
+      });
+    }
+    client.emit('call:initiated', { callId: callLog.id, channel: channelName, token, uid });
+  }
+
+  @SubscribeMessage('call:accept')
+  async handleCallAccept(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { callId: string },
+  ) {
+    const call = await this.callsService.findById(data.callId);
+    if (!call) return;
+    await this.callsService.updateStatus(data.callId, 'ongoing');
+    await this.callsService.updateStartedAt(data.callId);
+    const callerSocket = this.findSocketByUserId(call.userId);
+    if (callerSocket) {
+      callerSocket.emit('call:accepted', { callId: data.callId, channel: call.agoraChannel, token: call.agoraToken });
+    }
+  }
+
+  @SubscribeMessage('call:reject')
+  async handleCallReject(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { callId: string },
+  ) {
+    await this.callsService.updateStatus(data.callId, 'cancelled');
+    const call = await this.callsService.findById(data.callId);
+    if (!call) return;
+    const callerSocket = this.findSocketByUserId(call.userId);
+    if (callerSocket) {
+      callerSocket.emit('call:rejected', { callId: data.callId });
+    }
+  }
+
+  @SubscribeMessage('call:end')
+  async handleCallEnd(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { callId: string },
+  ) {
+    const call = await this.callsService.findById(data.callId);
+    if (!call) return;
+    if (call.status === 'initiated') {
+      await this.callsService.updateStatus(data.callId, 'missed');
+      const otherUserId = call.userId === client.data.userId ? call.astrologerId : call.userId;
+      const otherSocket = this.findSocketByUserId(otherUserId);
+      if (otherSocket) otherSocket.emit('call:missed', { callId: data.callId });
+      client.emit('call:missed', { callId: data.callId });
+      return;
+    }
+    const endedCall = await this.callsService.endCall(data.callId);
+    if (!endedCall) return;
+    const otherUserId = call.userId === client.data.userId ? call.astrologerId : call.userId;
+    const otherSocket = this.findSocketByUserId(otherUserId);
+    if (otherSocket) otherSocket.emit('call:ended', { callId: data.callId, duration: endedCall.duration });
+    client.emit('call:ended', { callId: data.callId, duration: endedCall.duration });
   }
 
   private findOtherSocket(conversationId: string, userId: string) {

@@ -20,8 +20,13 @@
         "backgroundColor": "#09090B"
       },
       "package": "com.astroshine.mobile",
-      "softwareKeyboardLayoutMode": "pan"
+      "softwareKeyboardLayoutMode": "resize"
     },
-    "plugins": []
+    "plugins": [],
+    "extra": {
+      "eas": {
+        "projectId": "2718ae98-737a-4e1f-a144-bc7caaf39d26"
+      }
+    }
   }
 }
