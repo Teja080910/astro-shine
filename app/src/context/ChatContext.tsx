@@ -18,6 +18,7 @@ interface ChatState {
   astrologerStatuses: Record<string, 'online' | 'offline' | 'busy'>;
   horoscopeVersion: number;
   panchangVersion: number;
+  statsVersion: number;
   loadConversations: () => Promise<void>;
   openConversation: (participantId: string, participantRole: string) => Promise<string>;
   setActiveConversation: (conv: Conversation | null) => void;
@@ -49,6 +50,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [astrologerStatuses, setAstrologerStatuses] = useState<Record<string, 'online' | 'offline' | 'busy'>>({});
   const [horoscopeVersion, setHoroscopeVersion] = useState(0);
   const [panchangVersion, setPanchangVersion] = useState(0);
+  const [statsVersion, setStatsVersion] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const cursorRef = useRef<string | null>(null);
@@ -175,6 +177,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
     socket.on('panchang:updated', () => {
       setPanchangVersion(v => v + 1);
+    });
+
+    socket.on('astrologer:stats-updated', () => {
+      setStatsVersion(v => v + 1);
     });
 
     socketRef.current = socket;
@@ -319,6 +325,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         astrologerStatuses,
         horoscopeVersion,
         panchangVersion,
+        statsVersion,
         loading,
         hasMore,
         loadConversations,

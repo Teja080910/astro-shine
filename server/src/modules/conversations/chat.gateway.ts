@@ -4,6 +4,7 @@ import {
   SubscribeMessage,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  OnGatewayInit,
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
@@ -14,12 +15,13 @@ import { CallsService } from '../calls/calls.service';
 import { UsersService } from '../users/users.service';
 import { ConfigService } from '@nestjs/config';
 import { RtcTokenBuilder, RtcRole } from 'agora-access-token';
+import { RealtimeService } from '../../common/realtime.service';
 
 @WebSocketGateway({
   cors: { origin: '*', credentials: true },
   path: '/ws',
 })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
 
   private onlineUsers = new Map<string, { userId: string; role: string; socketId: string }>();
@@ -30,7 +32,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly callsService: CallsService,
     private readonly usersService: UsersService,
     private readonly configService: ConfigService,
+    private readonly realtime: RealtimeService,
   ) {}
+
+  afterInit() {
+    this.realtime.setServer(this.server);
+  }
 
   async handleConnection(client: Socket) {
     const token = client.handshake.query.token as string;
@@ -57,8 +64,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       console.log(`[WS] Online users map:`, Object.fromEntries(this.onlineUsers));
 
       client.broadcast.emit('user:online', { userId: payload.userId, role: 'user' });
-      client.broadcast.emit('astrologer:status-changed', { astrologerId: payload.userId, onlineStatus: 'online' });
-      client.broadcast.emit('astrologer:status-changed', { astrologerId: payload.userId, onlineStatus: 'online' });
 
       const convs = await this.conversationsService.findByUser(payload.userId);
       console.log(`[WS] Auto-joining ${convs.length} rooms for userId: ${payload.userId}`);
@@ -94,7 +99,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.onlineUsers.delete(userId);
       console.log(`[WS] Online users map after disconnect:`, Object.fromEntries(this.onlineUsers));
       client.broadcast.emit('user:offline', { userId, role: client.data.role });
-      client.broadcast.emit('astrologer:status-changed', { astrologerId: userId, onlineStatus: 'offline' });
     }
   }
 

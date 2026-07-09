@@ -10,7 +10,7 @@ import type { Transaction, Review, CallLog, Notification, WithdrawalRequest } fr
 
 export function AstrologerHomeScreen({ navigation }: any) {
   const { astrologer } = useAuth();
-  const { astrologerStatuses } = useChat();
+  const { astrologerStatuses, statsVersion } = useChat();
   const isFocused = useIsFocused();
   const [isOnline, setIsOnline] = useState(astrologer?.onlineStatus === 'online');
   const [stats, setStats] = useState({ todayEarnings: '₹0', totalCalls: '0', rating: '0', totalEarnings: '₹0' });
@@ -36,7 +36,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
       });
       setRecentTxns(txns.slice(0, 5));
     } catch {}
-  }, [astrologer?.id]);
+  }, [astrologer?.id, statsVersion]);
 
   useEffect(() => { if (isFocused) loadData(); }, [isFocused, loadData]);
 
@@ -65,7 +65,9 @@ export function AstrologerHomeScreen({ navigation }: any) {
       <ScrollView contentContainerStyle={{ padding: 16 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <View style={{ flex: 1 }}>
-            <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>Dashboard</Text>
+            <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>
+              <Ionicons name="sunny" size={24} color={colors.accentGold} /> Namaste
+            </Text>
             <Text style={[typography.body, { color: colors.textSecondary }]}>{astrologer?.name || 'Astrologer'}</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>

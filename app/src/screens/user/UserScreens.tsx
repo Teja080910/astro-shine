@@ -107,8 +107,10 @@ export function UserHomeScreen({ navigation }: any) {
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
           <View style={{ flex: 1 }}>
-            <Text style={[typography.pageTitle, { marginBottom: 4, color: colors.textPrimary }]}>Namaste ✨</Text>
-            <Text style={[typography.body, { color: colors.textSecondary }]}>Discover what the stars hold for you</Text>
+            <Text style={[typography.pageTitle, { marginBottom: 4, color: colors.textPrimary }]}>
+              <Ionicons name="sunny" size={24} color={colors.accentGold} /> Namaste
+            </Text>
+            <Text style={[typography.body, { color: colors.textSecondary }]}>{user?.name || 'User'}</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ padding: 8, position: 'relative' }}>
@@ -183,11 +185,11 @@ export function UserHomeScreen({ navigation }: any) {
 
         <SectionHeader title="Live Astrologers" onSeeAll={() => navigation.navigate('AstrologerList')} />
         {astrologers.length > 0 ? (
-          <FlatList horizontal showsHorizontalScrollIndicator={false} data={astrologers.slice(0, 6)} keyExtractor={(a) => a.id}
+          <FlatList horizontal showsHorizontalScrollIndicator={false} data={astrologers.filter(a => astrologerStatuses[a.id] === 'online').slice(0, 6)} keyExtractor={(a) => a.id}
             renderItem={({ item }) => (
               <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.id })} style={styles.astroCard}>
                 <GlassCard style={styles.astroInner}>
-                  <Avatar size={56} online={item.onlineStatus === 'online'} />
+                  <Avatar size={56} online={astrologerStatuses[item.id] === 'online'} />
                   <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
                   <StarRating rating={parseFloat(item.rating)} size={12} />
                   <Text style={typography.caption}>{item.specialization?.[0] || 'Astrologer'}</Text>
@@ -212,7 +214,7 @@ export function UserHomeScreen({ navigation }: any) {
             renderItem={({ item }) => (
               <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.id })} style={styles.astroCard}>
                 <GlassCard style={styles.astroInner}>
-                  <Avatar size={56} online={item.onlineStatus === 'online'} />
+                  <Avatar size={56} online={astrologerStatuses[item.id] === 'online'} />
                   <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
                   <StarRating rating={parseFloat(item.rating)} size={12} />
                   <Text style={typography.caption}>{item.specialization?.[0] || 'Astrologer'}</Text>
@@ -417,7 +419,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
   if (!astro) return <ScreenWrapper><Text style={typography.body}>Loading...</Text></ScreenWrapper>;
 
   const isVerified = astro.verificationStatus === 'approved';
-  const isOnline = astrologerStatuses[astro.id] === 'online' || astro.onlineStatus === 'online';
+  const isOnline = astrologerStatuses[astro.id] === 'online';
 
   const handleChat = async () => {
     if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified. Please choose a verified astrologer.'); return; }
@@ -427,11 +429,13 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
 
   const handleAudioCall = () => {
     if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified.'); return; }
+    if (!isOnline) { Alert.alert('Offline', 'Astrologer is currently offline. Please try again later.'); return; }
     initiateCall(id, astro.name, 'audio');
   };
 
   const handleVideoCall = () => {
     if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified.'); return; }
+    if (!isOnline) { Alert.alert('Offline', 'Astrologer is currently offline. Please try again later.'); return; }
     initiateCall(id, astro.name, 'video');
   };
 
@@ -443,7 +447,17 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
           <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>{astro.name}</Text>
           {isVerified && <Ionicons name="checkmark-circle" size={20} color={colors.primaryLight} />}
         </View>
-        <StarRating rating={parseFloat(astro.rating)} size={16} reviewCount={astro.totalReviews} />
+        {isOnline ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success }} />
+            <Text style={[typography.caption, { color: colors.success }]}>Online</Text>
+          </View>
+        ) : (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.textMuted }} />
+            <Text style={[typography.caption, { color: colors.textMuted }]}>Offline</Text>
+          </View>
+        )}
         <Text style={[typography.body, { marginTop: 8, color: colors.textSecondary }]}>{astro.bio || 'Experienced astrologer'}</Text>
         {!isVerified && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8, backgroundColor: colors.warning + '20', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8 }}>
@@ -482,12 +496,6 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
             </View>
           </View>
         )}
-        <View style={{ flexDirection: 'row', gap: 16 }}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.label, { color: colors.textSecondary }]}>Rating</Text>
-            <Text style={[typography.cardTitle]}>{astro.rating || '0'}</Text>
-          </View>
-        </View>
       </GlassCard>
 
       <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>

@@ -2,10 +2,14 @@ import { Injectable, Inject } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
 import { eq } from 'drizzle-orm';
+import { RealtimeService } from '../../common/realtime.service';
 
 @Injectable()
 export class AstrologersService {
-  constructor(@Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>) {}
+  constructor(
+    @Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>,
+    private readonly realtime: RealtimeService,
+  ) {}
 
   async findAll() { return this.db.query.astrologers.findMany(); }
 
@@ -33,7 +37,9 @@ export class AstrologersService {
   }
 
   async updateOnlineStatus(id: string, onlineStatus: 'online' | 'offline' | 'busy') {
-    return this.update(id, { onlineStatus } as any);
+    const result = await this.update(id, { onlineStatus } as any);
+    this.realtime.broadcast('astrologer:status-changed', { astrologerId: id, onlineStatus });
+    return result;
   }
 
   async delete(id: string) {
