@@ -392,7 +392,12 @@ export function OtpLoginScreen({ navigation }: any) {
               <>
                 <Input icon="key-outline" placeholder="OTP Code" value={otp} onChange={setOtp} keyboardType="number-pad" />
                 <GradientButton title={loading ? 'Verifying...' : 'Verify & Login'} onPress={verify} disabled={loading} />
-                <Text style={styles.resend} onPress={sendOtp}>Resend OTP</Text>
+                <Text 
+                  style={[styles.resend, sending && { opacity: 0.5 }]} 
+                  onPress={sending ? undefined : sendOtp}
+                >
+                  {sending ? 'Resending OTP...' : 'Resend OTP'}
+                </Text>
               </>
             )}
 
