@@ -453,6 +453,41 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
       <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 16, backgroundColor: colors.surfaceLight, borderRadius: radii.card, marginTop: 16 }}>
         <Stat label="Experience" value={`${astro.experience}y`} /><Stat label="Calls" value={`${astro.totalCalls}`} /><Stat label="Price" value={`₹${astro.pricePerMin}/min`} />
       </View>
+
+      <GlassCard style={{ marginTop: 16, padding: 16 }}>
+        <Text style={[typography.sectionTitle, { marginBottom: 12 }]}>Details</Text>
+        {astro.specialization?.length > 0 && (
+          <View style={{ marginBottom: 10 }}>
+            <Text style={[typography.label, { color: colors.textSecondary, marginBottom: 4 }]}>Specialization</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+              {astro.specialization.map(s => <Chip key={s} label={s} />)}
+            </View>
+          </View>
+        )}
+        {astro.languages?.length > 0 && (
+          <View style={{ marginBottom: 10 }}>
+            <Text style={[typography.label, { color: colors.textSecondary, marginBottom: 4 }]}>Languages</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+              {astro.languages.map(l => <Chip key={l} label={l} />)}
+            </View>
+          </View>
+        )}
+        {astro.skills?.length > 0 && (
+          <View style={{ marginBottom: 10 }}>
+            <Text style={[typography.label, { color: colors.textSecondary, marginBottom: 4 }]}>Skills</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+              {astro.skills.map(s => <Chip key={s} label={s} />)}
+            </View>
+          </View>
+        )}
+        <View style={{ flexDirection: 'row', gap: 16 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.label, { color: colors.textSecondary }]}>Rating</Text>
+            <Text style={[typography.cardTitle]}>{astro.rating || '0'}</Text>
+          </View>
+        </View>
+      </GlassCard>
+
       <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
         <View style={{ flex: 1 }}><GradientButton title="Chat" onPress={handleChat} /></View>
         <View style={{ flex: 1 }}><GradientButton title="Audio Call" variant="gold" onPress={handleAudioCall} /></View>

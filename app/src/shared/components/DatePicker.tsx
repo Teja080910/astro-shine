@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView } from 'react-native';
 import { colors, radii, typography } from '../theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +20,7 @@ export function DatePicker({ visible, value, onClose, onSelect }: Props) {
   const [month, setMonth] = useState(isNaN(initial.getTime()) ? today.getMonth() : initial.getMonth());
   const [day, setDay] = useState(isNaN(initial.getTime()) ? today.getDate() : initial.getDate());
   const [view, setView] = useState<'calendar' | 'years'>('calendar');
+  const dayScrollRef = useRef<ScrollView>(null);
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayOfWeek = new Date(year, month, 1).getDay();
@@ -27,6 +28,16 @@ export function DatePicker({ visible, value, onClose, onSelect }: Props) {
 
   const years: number[] = [];
   for (let y = today.getFullYear(); y >= 1950; y--) years.push(y);
+
+  useEffect(() => {
+    if (visible && view === 'calendar') {
+      setTimeout(() => {
+        const row = Math.floor((day + firstDayOfWeek - 1) / 7);
+        const centerOffset = row * 48 - (200 - 44) / 2;
+        dayScrollRef.current?.scrollTo({ y: Math.max(0, centerOffset), animated: true });
+      }, 200);
+    }
+  }, [visible, view, day, month, year]);
 
   const handlePrevMonth = () => {
     if (month === 0) { setMonth(11); setYear(y => y - 1); }
@@ -89,17 +100,19 @@ export function DatePicker({ visible, value, onClose, onSelect }: Props) {
                 ))}
               </View>
 
-              <View style={styles.daysGrid}>
-                {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-                  <View key={`empty-${i}`} style={styles.dayCell} />
-                ))}
-                {days.map(d => (
-                  <TouchableOpacity key={d} onPress={() => setDay(d)}
-                    style={[styles.dayCell, styles.dayBtn, { backgroundColor: d === day ? colors.primary : 'transparent' }]}>
-                    <Text style={[styles.dayText, { color: d === day ? colors.white : colors.textPrimary }]}>{d}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+              <ScrollView ref={dayScrollRef} style={{ maxHeight: 200 }} showsVerticalScrollIndicator={false}>
+                <View style={styles.daysGrid}>
+                  {Array.from({ length: firstDayOfWeek }).map((_, i) => (
+                    <View key={`empty-${i}`} style={styles.dayCell} />
+                  ))}
+                  {days.map(d => (
+                    <TouchableOpacity key={d} onPress={() => setDay(d)}
+                      style={[styles.dayCell, styles.dayBtn, { backgroundColor: d === day ? colors.primary : 'transparent' }]}>
+                      <Text style={[styles.dayText, { color: d === day ? colors.white : colors.textPrimary }]}>{d}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ScrollView>
 
               <View style={styles.actions}>
                 <TouchableOpacity onPress={onClose} style={[styles.actionBtn, { borderColor: colors.cardBorder, borderWidth: 1 }]}>
@@ -126,8 +139,8 @@ const styles = StyleSheet.create({
   weekRow: { flexDirection: 'row', marginBottom: 4 },
   weekDay: { width: '14.28%', textAlign: 'center', fontSize: 12, fontWeight: '600', paddingVertical: 4 },
   daysGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-  dayCell: { width: '14.28%', aspectRatio: 1, justifyContent: 'center', alignItems: 'center' },
-  dayBtn: { borderRadius: 20 },
+  dayCell: { width: '14.28%', height: 44, justifyContent: 'center', alignItems: 'center' },
+  dayBtn: { borderRadius: 22 },
   dayText: { fontSize: 14, fontWeight: '500' },
   actions: { flexDirection: 'row', gap: 8, marginTop: 12 },
   actionBtn: { flex: 1, height: 44, borderRadius: radii.button, justifyContent: 'center', alignItems: 'center' },
