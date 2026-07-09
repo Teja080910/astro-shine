@@ -32,7 +32,7 @@ export function LoginScreen({ navigation }: any) {
         </TouchableOpacity>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <Image source={require('../../../assets/logo.jpg')} style={styles.headerLogo} resizeMode="contain" />
+            <Image source={require('../../../assets/logo_clean.jpg')} style={styles.headerLogo} resizeMode="contain" />
             <Text style={[typography.hero, { color: colors.textPrimary }]}>Welcome Back</Text>
             <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>Sign in to continue your cosmic journey</Text>
           </View>
@@ -103,7 +103,7 @@ export function RegisterScreen({ navigation }: any) {
             // STEP 0: Role Selection Cards
             <>
               <View style={styles.header}>
-                <Image source={require('../../../assets/logo.jpg')} style={styles.headerLogo} resizeMode="contain" />
+                <Image source={require('../../../assets/logo_clean.jpg')} style={styles.headerLogo} resizeMode="contain" />
                 <Text style={[typography.hero, { color: colors.textPrimary }]}>Join Us</Text>
                 <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>Select how you want to join our cosmic community</Text>
               </View>
@@ -136,7 +136,7 @@ export function RegisterScreen({ navigation }: any) {
             // STEP 1: Registration Form
             <>
               <View style={styles.header}>
-                <Image source={require('../../../assets/logo.jpg')} style={styles.headerLogo} resizeMode="contain" />
+                <Image source={require('../../../assets/logo_clean.jpg')} style={styles.headerLogo} resizeMode="contain" />
                 <Text style={[typography.hero, { color: colors.textPrimary }]}>{selectedRole === 'user' ? 'User Signup' : 'Astrologer Signup'}</Text>
                 <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{selectedRole === 'user' ? 'Begin your spiritual journey' : 'Register your advisor account'}</Text>
               </View>
@@ -297,7 +297,7 @@ export function OtpLoginScreen({ navigation }: any) {
         </TouchableOpacity>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <Image source={require('../../../assets/logo.jpg')} style={styles.headerLogo} resizeMode="contain" />
+            <Image source={require('../../../assets/logo_clean.jpg')} style={styles.headerLogo} resizeMode="contain" />
             <Text style={[typography.hero, { color: colors.textPrimary }]}>OTP Login</Text>
             <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{sent ? `Enter code sent to ${identifier}` : `Enter your ${verType === 'email' ? 'email address' : 'phone number'}`}</Text>
           </View>
