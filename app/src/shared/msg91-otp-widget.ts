@@ -20,7 +20,12 @@ async function post<T = any>(path: string, body: Record<string, unknown>): Promi
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  return response.json() as Promise<T>;
+  const data = await response.json() as any;
+  console.log(`[MSG91] ${path} status:`, response.status, 'response:', JSON.stringify(data));
+  if (!response.ok) {
+    throw new Error(data?.message || `MSG91 API error: ${response.status}`);
+  }
+  return data as T;
 }
 
 export class OTPWidget {
