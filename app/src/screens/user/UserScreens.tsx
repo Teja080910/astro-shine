@@ -416,6 +416,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
   const { openConversation } = useChat();
   const { astrologerStatuses } = useChat();
   const { initiateCall } = useCall();
+  const [offlineDialogVisible, setOfflineDialogVisible] = useState(false);
 
   useEffect(() => { if (isFocused) api.astrologers.get(id).then(setAstro); }, [id, isFocused]);
   if (!astro) return <ScreenWrapper><Text style={typography.body}>Loading...</Text></ScreenWrapper>;
@@ -431,13 +432,13 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
 
   const handleAudioCall = () => {
     if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified.'); return; }
-    if (!isOnline) { Alert.alert('Offline', 'Astrologer is currently offline. Please try again later.'); return; }
+    if (!isOnline) { setOfflineDialogVisible(true); return; }
     initiateCall(id, astro.name, 'audio');
   };
 
   const handleVideoCall = () => {
     if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified.'); return; }
-    if (!isOnline) { Alert.alert('Offline', 'Astrologer is currently offline. Please try again later.'); return; }
+    if (!isOnline) { setOfflineDialogVisible(true); return; }
     initiateCall(id, astro.name, 'video');
   };
 
@@ -507,6 +508,20 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
       <View style={{ marginTop: 10 }}>
         <GradientButton title="Video Call" variant="gold" onPress={handleVideoCall} />
       </View>
+      <ConfirmDialog
+        visible={offlineDialogVisible}
+        title="Astrologer Offline"
+        subtitle={`${astro.name} is currently offline. Please try again later.`}
+        icon={<Ionicons name="cloud-offline-outline" size={48} color={colors.danger} />}
+        actions={[
+          {
+            label: 'OK',
+            onPress: () => setOfflineDialogVisible(false),
+            variant: 'primary',
+          },
+        ]}
+        onClose={() => setOfflineDialogVisible(false)}
+      />
     </ScreenWrapper>
   );
 }

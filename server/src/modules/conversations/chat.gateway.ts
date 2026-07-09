@@ -16,6 +16,7 @@ import { UsersService } from '../users/users.service';
 import { ConfigService } from '@nestjs/config';
 import { RtcTokenBuilder, RtcRole } from 'agora-access-token';
 import { RealtimeService } from '../../common/realtime.service';
+import { AstrologersService } from '../astrologers/astrologers.service';
 
 @WebSocketGateway({
   cors: { origin: '*', credentials: true },
@@ -33,6 +34,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     private readonly usersService: UsersService,
     private readonly configService: ConfigService,
     private readonly realtime: RealtimeService,
+    private readonly astrologersService: AstrologersService,
   ) {}
 
   afterInit() {
@@ -92,13 +94,22 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     }
   }
 
-  handleDisconnect(client: Socket) {
+  async handleDisconnect(client: Socket) {
     const userId = client.data.userId;
-    console.log(`[WS] Disconnect - socketId: ${client.id}, userId: ${userId}`);
+    const role = client.data.role;
+    console.log(`[WS] Disconnect - socketId: ${client.id}, userId: ${userId}, role: ${role}`);
     if (userId) {
       this.onlineUsers.delete(userId);
       console.log(`[WS] Online users map after disconnect:`, Object.fromEntries(this.onlineUsers));
-      client.broadcast.emit('user:offline', { userId, role: client.data.role });
+      client.broadcast.emit('user:offline', { userId, role });
+
+      if (role === 'astrologer') {
+        try {
+          await this.astrologersService.updateOnlineStatus(userId, 'offline');
+        } catch (e: any) {
+          console.error('[WS] Failed to update astrologer offline status on disconnect:', e.message);
+        }
+      }
     }
   }
 
