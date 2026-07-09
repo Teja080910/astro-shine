@@ -24,19 +24,17 @@ export function ChatBubble({ message, isOwn, timestamp, isDelivered, isRead, gro
         { backgroundColor: isOwn ? colors.primary : colors.surfaceLight },
       ]}>
         <Text style={[styles.text, { color: isOwn ? '#FFFFFF' : colors.textPrimary }]}>{message}</Text>
-        {!grouped && (
-          <View style={styles.meta}>
-            <Text style={[styles.time, { color: isOwn ? 'rgba(255,255,255,0.7)' : colors.textMuted }]}>{time}</Text>
-            {isOwn && (
-              <Ionicons 
-                name={isRead || isDelivered ? "checkmark-done" : "checkmark"} 
-                size={16} 
-                color={isRead ? '#38BDF8' : '#E2E8F0'} 
-                style={{ marginLeft: 3 }}
-              />
-            )}
-          </View>
-        )}
+        <View style={styles.meta}>
+          <Text style={[styles.time, { color: isOwn ? 'rgba(255,255,255,0.7)' : colors.textMuted }]}>{time}</Text>
+          {isOwn && (
+            <Ionicons 
+              name={isRead || isDelivered ? "checkmark-done" : "checkmark"} 
+              size={16} 
+              color={isRead ? '#38BDF8' : '#E2E8F0'} 
+              style={{ marginLeft: 3 }}
+            />
+          )}
+        </View>
       </View>
     </View>
   );

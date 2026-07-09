@@ -110,6 +110,15 @@ export function ChatRoomScreen({ route, navigation }: any) {
   }, [conversationId]);
 
   useEffect(() => {
+    if (messages.length > 0) {
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg.senderId !== currentUserId && !lastMsg.isRead) {
+        markAsRead(conversationId);
+      }
+    }
+  }, [messages.length, conversationId, currentUserId, markAsRead]);
+
+  useEffect(() => {
     if (connected) {
       joinRoom(conversationId);
     } else {
