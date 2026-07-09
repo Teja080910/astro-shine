@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors } from '../theme';
+import { Ionicons } from '@expo/vector-icons';
 
 interface Props {
   message: string;
@@ -27,9 +28,12 @@ export function ChatBubble({ message, isOwn, timestamp, isDelivered, isRead, gro
           <View style={styles.meta}>
             <Text style={[styles.time, { color: isOwn ? 'rgba(255,255,255,0.7)' : colors.textMuted }]}>{time}</Text>
             {isOwn && (
-              <Text style={[styles.tick, { color: isRead ? '#60A5FA' : 'rgba(255,255,255,0.5)' }]}>
-                {isRead ? '✓✓' : isDelivered ? '✓✓' : '✓'}
-              </Text>
+              <Ionicons 
+                name={isRead || isDelivered ? "checkmark-done" : "checkmark"} 
+                size={16} 
+                color={isRead ? '#38BDF8' : '#E2E8F0'} 
+                style={{ marginLeft: 3 }}
+              />
             )}
           </View>
         )}

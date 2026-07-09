@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal } from 'react-native';
-import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, colors, typography, radii } from '../../shared';
+import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, colors, typography, radii } from '../../shared';
 import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
-import type { Blog, Notification, SupportTicket, NewsItem } from '../../shared/types';
+import type { Blog, Notification, SupportTicket, NewsItem, Video } from '../../shared/types';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 
@@ -14,6 +14,37 @@ function SectionTitle({ title }: { title: string }) {
 // Panchang
 export function PanchangScreen() {
   return <ScreenWrapper scroll><SectionTitle title="Panchang" /><GlassCard><Text style={typography.body}>Daily panchang calendar with tithi, nakshatra, yoga, karana, sunrise/sunset timings.</Text></GlassCard></ScreenWrapper>;
+}
+
+// Videos
+export function VideosScreen() {
+  const [videos, setVideos] = useState<Video[]>([]);
+  useEffect(() => { api.videos.list().then(setVideos).catch(() => {}); }, []);
+  return (
+    <ScreenWrapper scroll>
+      <SectionTitle title="Videos" />
+      {videos.length === 0 ? <EmptyState icon={<Ionicons name="videocam-outline" size={48} color={colors.textMuted} />} title="No videos yet" /> :
+        videos.map(v => (
+          <TouchableOpacity key={v.id} style={{ marginBottom: 12 }}>
+            <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
+              <View style={{ height: 180, backgroundColor: colors.surfaceLight, alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primary + '40', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="play" size={28} color={colors.white} style={{ marginLeft: 4 }} />
+                </View>
+              </View>
+              <View style={{ padding: 16 }}>
+                <Text style={typography.cardTitle}>{v.title}</Text>
+                {v.description ? <Text style={[typography.body, { marginTop: 4 }]} numberOfLines={2}>{v.description}</Text> : null}
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
+                  {v.category && <Text style={[typography.caption, { color: colors.primaryLight }]}>{v.category}</Text>}
+                  {v.duration && <Text style={typography.caption}>{Math.floor(v.duration / 60)}:{String(v.duration % 60).padStart(2, '0')}</Text>}
+                </View>
+              </View>
+            </GlassCard>
+          </TouchableOpacity>
+        ))}
+    </ScreenWrapper>
+  );
 }
 
 // Blogs with data
@@ -56,12 +87,28 @@ export function EditProfileScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Astrologer-specific fields
+  const [bio, setBio] = useState((profile as any)?.bio || '');
+  const [experience, setExperience] = useState(String((profile as any)?.experience || ''));
+  const [specialization, setSpecialization] = useState(((profile as any)?.specialization || []).join(', '));
+  const [languages, setLanguages] = useState(((profile as any)?.languages || []).join(', '));
+  const [skills, setSkills] = useState(((profile as any)?.skills || []).join(', '));
+  const [pricePerMin, setPricePerMin] = useState((profile as any)?.pricePerMin || '');
+
   useEffect(() => {
     if (profile) {
       setName(profile.name);
       setPhone(profile.phone || '');
       setGender((profile as any).gender || 'male');
       setDateOfBirth((profile as any).dateOfBirth ? (profile as any).dateOfBirth.split('T')[0] : '');
+      if (role === 'astrologer') {
+        setBio((profile as any).bio || '');
+        setExperience(String((profile as any).experience || ''));
+        setSpecialization(((profile as any).specialization || []).join(', '));
+        setLanguages(((profile as any).languages || []).join(', '));
+        setSkills(((profile as any).skills || []).join(', '));
+        setPricePerMin((profile as any).pricePerMin || '');
+      }
     }
   }, [profile]);
 
@@ -71,7 +118,15 @@ export function EditProfileScreen() {
     try {
       let updated;
       if (role === 'astrologer') {
-        updated = await api.astrologers.update(profile!.id, { name, phone, gender, dateOfBirth });
+        updated = await api.astrologers.update(profile!.id, {
+          name, phone, gender, dateOfBirth,
+          bio,
+          experience: parseInt(experience) || 0,
+          specialization: specialization.split(',').map(s => s.trim()).filter(Boolean),
+          languages: languages.split(',').map(s => s.trim()).filter(Boolean),
+          skills: skills.split(',').map(s => s.trim()).filter(Boolean),
+          pricePerMin,
+        });
       } else if (role === 'admin') {
         updated = await api.admins.update(profile!.id, { name });
       } else {
@@ -173,6 +228,80 @@ export function EditProfileScreen() {
             onClose={() => setShowDatePicker(false)}
             onSelect={setDateOfBirth}
           />
+        </>
+      )}
+
+      {role === 'astrologer' && (
+        <>
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Bio</Text>
+            <TextInput
+              style={[styles.input, { height: 80, backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={bio}
+              onChangeText={setBio}
+              placeholder="Tell clients about yourself"
+              placeholderTextColor={colors.textMuted}
+              multiline
+              textAlignVertical="top"
+            />
+          </View>
+
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Experience (years)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={experience}
+              onChangeText={setExperience}
+              placeholder="e.g. 10"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="number-pad"
+            />
+          </View>
+
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Specialization (comma separated)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={specialization}
+              onChangeText={setSpecialization}
+              placeholder="e.g. Vedic, Tarot, Numerology"
+              placeholderTextColor={colors.textMuted}
+            />
+          </View>
+
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Languages (comma separated)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={languages}
+              onChangeText={setLanguages}
+              placeholder="e.g. Hindi, English, Tamil"
+              placeholderTextColor={colors.textMuted}
+            />
+          </View>
+
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Skills (comma separated)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={skills}
+              onChangeText={setSkills}
+              placeholder="e.g. Birth Chart, Predictions, Remedies"
+              placeholderTextColor={colors.textMuted}
+            />
+          </View>
+
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Price per minute (₹)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={pricePerMin}
+              onChangeText={setPricePerMin}
+              placeholder="e.g. 15"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="decimal-pad"
+            />
+          </View>
         </>
       )}
 
@@ -318,12 +447,76 @@ export function AstrologerRequestsScreen() {
 
 // Astrologer: Schedule
 export function AstrologerScheduleScreen() {
+  const { astrologer } = useAuth();
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const [schedules, setSchedules] = useState<Record<number, { startTime: string; endTime: string; isAvailable: boolean }>>({});
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!astrologer?.id) return;
+    api.schedule.byAstrologer(astrologer.id).then((data: any[]) => {
+      const map: Record<number, any> = {};
+      data.forEach(s => { map[s.dayOfWeek] = { startTime: s.startTime.slice(0, 5), endTime: s.endTime.slice(0, 5), isAvailable: s.isAvailable }; });
+      setSchedules(map);
+    }).catch(() => {});
+  }, [astrologer?.id]);
+
+  const updateDay = (day: number, field: string, value: string | boolean) => {
+    setSchedules(prev => ({ ...prev, [day]: { ...prev[day] || { startTime: '09:00', endTime: '18:00', isAvailable: true }, [field]: value } }));
+  };
+
+  const saveAll = async () => {
+    if (!astrologer?.id) return;
+    setLoading(true);
+    try {
+      const bulk = Object.entries(schedules).map(([day, s]) => ({
+        dayOfWeek: Number(day), startTime: s.startTime, endTime: s.endTime, isAvailable: s.isAvailable,
+      }));
+      await api.schedule.bulkUpsert(astrologer.id, bulk);
+      Alert.alert('Saved', 'Schedule updated successfully');
+    } catch { Alert.alert('Error', 'Failed to save schedule'); }
+    finally { setLoading(false); }
+  };
+
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Availability Schedule" />
-      {days.map((d, i) => <GlassCard key={d} style={{ marginBottom: 8, padding: 12 }}><View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}><Text style={typography.cardTitle}>{d}</Text><View style={{ flexDirection: 'row', gap: 8 }}><TextInput style={[styles.input, { width: 100 }]} placeholder="09:00" placeholderTextColor={colors.textMuted} /><Text style={typography.caption}>to</Text><TextInput style={[styles.input, { width: 100 }]} placeholder="18:00" placeholderTextColor={colors.textMuted} /></View></View></GlassCard>)}
-      <GradientButton title="Save Schedule" onPress={() => {}} style={{ marginTop: 16 }} />
+      <Text style={[typography.body, { marginBottom: 16, paddingHorizontal: 4 }]}>Set your weekly availability for consultations</Text>
+      {days.map((d, i) => {
+        const s = schedules[i];
+        return (
+          <GlassCard key={d} style={{ marginBottom: 8, padding: 12 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Toggle
+                  value={s?.isAvailable ?? true}
+                  onValueChange={(v) => updateDay(i, 'isAvailable', v)}
+                  trackColor={{ false: colors.textMuted, true: colors.success }}
+                />
+                <Text style={[typography.cardTitle, { opacity: s?.isAvailable === false ? 0.4 : 1 }]}>{d}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center', opacity: s?.isAvailable === false ? 0.4 : 1 }}>
+                <TextInput
+                  style={[styles.input, { width: 80, height: 40, textAlign: 'center' }]}
+                  value={s?.startTime || '09:00'}
+                  onChangeText={(v) => updateDay(i, 'startTime', v)}
+                  placeholder="09:00"
+                  placeholderTextColor={colors.textMuted}
+                />
+                <Text style={typography.caption}>to</Text>
+                <TextInput
+                  style={[styles.input, { width: 80, height: 40, textAlign: 'center' }]}
+                  value={s?.endTime || '18:00'}
+                  onChangeText={(v) => updateDay(i, 'endTime', v)}
+                  placeholder="18:00"
+                  placeholderTextColor={colors.textMuted}
+                />
+              </View>
+            </View>
+          </GlassCard>
+        );
+      })}
+      <GradientButton title={loading ? 'Saving...' : 'Save Schedule'} onPress={saveAll} disabled={loading} style={{ marginTop: 16 }} />
     </ScreenWrapper>
   );
 }

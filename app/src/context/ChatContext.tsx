@@ -32,6 +32,7 @@ const ChatContext = createContext<ChatState>(null!);
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const { token, user, astrologer } = useAuth();
   const currentUserId = user?.id || astrologer?.id || '';
+  const currentRole = user ? 'user' : astrologer ? 'astrologer' : 'user';
   const socketRef = useRef<Socket | null>(null);
   const userIdRef = useRef(currentUserId);
   useEffect(() => { userIdRef.current = currentUserId; }, [currentUserId]);
@@ -225,11 +226,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     if (!content.trim()) return;
     const socket = socketRef.current;
     const uid = userIdRef.current;
+    const role = currentRole;
     const optimistic: ConversationMessage = {
       id: `temp-${Date.now()}`,
       conversationId,
       senderId: uid,
-      senderRole: 'user',
+      senderRole: role as any,
       type: 'text',
       content,
       isDelivered: false,
@@ -243,7 +245,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       const msg = await api.conversations.sendMessage(conversationId, content);
       setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? msg : m)));
     }
-  }, []);
+  }, [currentRole]);
 
   const startTyping = useCallback((conversationId: string) => {
     const socket = socketRef.current;

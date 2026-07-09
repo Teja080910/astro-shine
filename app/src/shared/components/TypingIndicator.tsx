@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Animated, StyleSheet } from 'react-native';
+import { View, Animated, StyleSheet } from 'react-native';
 import { colors } from '../theme';
 
 export function TypingIndicator() {
@@ -31,36 +31,33 @@ export function TypingIndicator() {
 
   const dotStyle = (dot: Animated.Value) => ({
     opacity: dot.interpolate({ inputRange: [0, 1], outputRange: [0.3, 1] }),
-    transform: [{ scale: dot.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1.2] }) }],
   });
 
   return (
-    <View style={styles.container}>
-      <View style={styles.bubble}>
-        <Animated.View style={[styles.dot, dotStyle(dot1)]} />
-        <Animated.View style={[styles.dot, dotStyle(dot2)]} />
-        <Animated.View style={[styles.dot, dotStyle(dot3)]} />
+    <View style={[styles.container]}>
+      <View style={[styles.bubble, { backgroundColor: colors.surfaceLight }]}>
+        <Animated.View style={[styles.dot, { backgroundColor: colors.textMuted }, dotStyle(dot1)]} />
+        <Animated.View style={[styles.dot, { backgroundColor: colors.textMuted }, dotStyle(dot2)]} />
+        <Animated.View style={[styles.dot, { backgroundColor: colors.textMuted }, dotStyle(dot3)]} />
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { alignSelf: 'flex-start', marginVertical: 4 },
+  container: { alignSelf: 'flex-start', marginVertical: 2, marginLeft: 8 },
   bubble: {
     flexDirection: 'row',
-    backgroundColor: colors.surfaceLight,
-    borderRadius: 16,
-    borderBottomLeftRadius: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderRadius: 12,
+    borderBottomLeftRadius: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
   },
   dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.textMuted,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
 });

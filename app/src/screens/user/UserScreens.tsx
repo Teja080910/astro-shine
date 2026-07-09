@@ -1,65 +1,303 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Switch, Alert, Modal, ScrollView, Image } from 'react-native';
-import { ScreenWrapper, GlassCard, SectionHeader, SearchBar, GradientButton, CustomModal, Avatar, StarRating, Chip, SkeletonLoader, EmptyState, colors, typography, radii } from '../../shared';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Alert, Modal, ScrollView, Image } from 'react-native';
+import { ScreenWrapper, GlassCard, SectionHeader, SearchBar, GradientButton, CustomModal, Avatar, StarRating, Chip, SkeletonLoader, EmptyState, Toggle, colors, typography, radii } from '../../shared';
 import { api } from '../../shared/api-client';
-import type { Astrologer, HoroscopeRecord, ShopProduct, Blog, Transaction, Wallet } from '../../shared/types';
+import type { Astrologer, HoroscopeRecord, ShopProduct, Blog, Transaction, Wallet, Video, MandirPooja, Notification } from '../../shared/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
+import { useCall } from '../../context/CallContext';
+
+const ZODIAC_SIGNS = [
+  { sign: 'aries', emoji: '♈', label: 'Aries' },
+  { sign: 'taurus', emoji: '♉', label: 'Taurus' },
+  { sign: 'gemini', emoji: '♊', label: 'Gemini' },
+  { sign: 'cancer', emoji: '♋', label: 'Cancer' },
+  { sign: 'leo', emoji: '♌', label: 'Leo' },
+  { sign: 'virgo', emoji: '♍', label: 'Virgo' },
+  { sign: 'libra', emoji: '♎', label: 'Libra' },
+  { sign: 'scorpio', emoji: '♏', label: 'Scorpio' },
+  { sign: 'sagittarius', emoji: '♐', label: 'Sagittarius' },
+  { sign: 'capricorn', emoji: '♑', label: 'Capricorn' },
+  { sign: 'aquarius', emoji: '♒', label: 'Aquarius' },
+  { sign: 'pisces', emoji: '♓', label: 'Pisces' },
+];
+
+const ASTRO_CATEGORIES = ['All', 'Vedic', 'Tarot', 'Numerology', 'Palmistry', 'Vastu'];
 
 // User Home Dashboard
 export function UserHomeScreen({ navigation }: any) {
-  const { theme } = useAuth();
+  const { user } = useAuth();
   const [astrologers, setAstrologers] = useState<Astrologer[]>([]);
   const [horoscope, setHoroscope] = useState<HoroscopeRecord[]>([]);
+  const [videos, setVideos] = useState<Video[]>([]);
+  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [poojas, setPoojas] = useState<MandirPooja[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [selectedSign, setSelectedSign] = useState('aries');
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [loading, setLoading] = useState(true);
+  const [horoscopeLoading, setHoroscopeLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  useEffect(() => { (async () => { try { const [a, h] = await Promise.all([api.astrologers.list(), api.horoscope.bySign('aries')]); setAstrologers(a.slice(0, 5)); setHoroscope(h); } catch {} finally { setLoading(false); } })(); }, []);
+  useEffect(() => {
+    (async () => {
+      try {
+        const [a, h, v, b, p, n] = await Promise.all([
+          api.astrologers.list(),
+          api.horoscope.bySign('aries'),
+          api.videos.list(),
+          api.blogs.list(),
+          api.mandirPooja.list(),
+          api.notifications.list({ userId: user?.id }),
+        ]);
+        setAstrologers(a);
+        setHoroscope(h);
+        setVideos(v);
+        setBlogs(b);
+        setPoojas(p);
+        setNotifications(n);
+      } catch {} finally { setLoading(false); }
+    })();
+  }, []);
 
-  if (loading) return <ScreenWrapper scroll><SkeletonLoader height={200} /><View style={{ height: 20 }} /><SkeletonLoader height={120} /><View style={{ height: 20 }} /><SkeletonLoader height={120} /></ScreenWrapper>;
+  const fetchHoroscope = async (sign: string) => {
+    setHoroscopeLoading(true);
+    try {
+      const h = await api.horoscope.bySign(sign);
+      setHoroscope(h);
+    } catch {} finally { setHoroscopeLoading(false); }
+  };
+
+  const handleSignSelect = (sign: string) => {
+    setSelectedSign(sign);
+    if (sign !== selectedSign) fetchHoroscope(sign);
+  };
+
+  const filteredCategoryAstro = selectedCategory === 'All'
+    ? astrologers
+    : astrologers.filter(a => a.specialization?.some(s => s.toLowerCase() === selectedCategory.toLowerCase()));
+
+  if (loading) return (
+    <ScreenWrapper scroll>
+      <SkeletonLoader height={80} />
+      <View style={{ height: 16 }} />
+      <SkeletonLoader height={48} />
+      <View style={{ height: 16 }} />
+      <SkeletonLoader height={180} />
+      <View style={{ height: 24 }} />
+      <SkeletonLoader height={120} />
+      <View style={{ height: 16 }} />
+      <SkeletonLoader height={48} />
+      <View style={{ height: 16 }} />
+      <SkeletonLoader height={160} />
+      <View style={{ height: 24 }} />
+      <SkeletonLoader height={120} />
+    </ScreenWrapper>
+  );
 
   return (
     <ScreenWrapper style={{ position: 'relative', zIndex: 1 }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
           <View style={{ flex: 1 }}>
             <Text style={[typography.pageTitle, { marginBottom: 4, color: colors.textPrimary }]}>Namaste ✨</Text>
             <Text style={[typography.body, { color: colors.textSecondary }]}>Discover what the stars hold for you</Text>
           </View>
-          <TouchableOpacity onPress={() => setMenuOpen(true)} style={{ padding: 8 }}>
-            <Ionicons name="menu-outline" size={32} color={colors.textPrimary} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ padding: 8, position: 'relative' }}>
+              <Ionicons name="notifications-outline" size={28} color={colors.textPrimary} />
+              {unreadCount > 0 && (
+                <View style={styles.notifBadge}>
+                  <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setMenuOpen(true)} style={{ padding: 8 }}>
+              <Ionicons name="menu-outline" size={28} color={colors.textPrimary} />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        <SectionHeader title="Live Astrologers" onSeeAll={() => navigation.navigate('AstrologerList')} />
-        <FlatList horizontal showsHorizontalScrollIndicator={false} data={astrologers} keyExtractor={(a) => a.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.id })} style={styles.astroCard}>
-              <GlassCard style={styles.astroInner}>
-                <Avatar size={56} online={item.onlineStatus === 'online'} />
-                <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
-                <StarRating rating={parseFloat(item.rating)} size={12} />
-                <Text style={typography.caption}>{item.specialization?.[0] || 'Astrologer'}</Text>
-                <Text style={typography.price}>₹{item.pricePerMin}/min</Text>
-              </GlassCard>
+        <SectionHeader title="Today's Horoscope" />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }} contentContainerStyle={{ gap: 8 }}>
+          {ZODIAC_SIGNS.map(z => (
+            <TouchableOpacity key={z.sign} onPress={() => handleSignSelect(z.sign)} style={[
+              styles.zodiacChip,
+              { backgroundColor: selectedSign === z.sign ? colors.primary : colors.surfaceLight, borderColor: selectedSign === z.sign ? colors.primaryLight : colors.cardBorder },
+            ]}>
+              <Text style={{ fontSize: 16 }}>{z.emoji}</Text>
+              <Text style={[typography.caption, { color: selectedSign === z.sign ? colors.white : colors.textSecondary, marginTop: 2 }]}>{z.label.slice(0, 3)}</Text>
             </TouchableOpacity>
-          )} style={{ marginLeft: 8 }} />
+          ))}
+        </ScrollView>
+        {horoscopeLoading ? (
+          <SkeletonLoader height={120} />
+        ) : horoscope.length > 0 ? (
+          <GlassCard>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <Text style={{ fontSize: 28 }}>
+                {ZODIAC_SIGNS.find(z => z.sign === selectedSign)?.emoji}
+              </Text>
+              <View>
+                <Text style={typography.cardTitle}>{ZODIAC_SIGNS.find(z => z.sign === selectedSign)?.label}</Text>
+                <Text style={typography.caption}>{horoscope[0]?.date ? new Date(horoscope[0].date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) : 'Today'}</Text>
+              </View>
+            </View>
+            <Text style={[typography.body, { marginBottom: 8 }]}>{horoscope[0]?.prediction?.slice(0, 200)}{(horoscope[0]?.prediction?.length || 0) > 200 ? '...' : ''}</Text>
+            {horoscope[0]?.mood && (
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                {horoscope[0].mood && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><Ionicons name="moon" size={14} color={colors.accentGold} /><Text style={typography.caption}>{horoscope[0].mood}</Text></View>}
+                {horoscope[0].luckyNumber && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><Ionicons name="dice" size={14} color={colors.accentGold} /><Text style={typography.caption}>Lucky: {horoscope[0].luckyNumber}</Text></View>}
+                {horoscope[0].luckyColor && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><Ionicons name="color-palette" size={14} color={colors.accentGold} /><Text style={typography.caption}>{horoscope[0].luckyColor}</Text></View>}
+              </View>
+            )}
+          </GlassCard>
+        ) : (
+          <GlassCard><Text style={[typography.body, { textAlign: 'center', marginVertical: 16 }]}>No horoscope available for this sign today. Check back tomorrow!</Text></GlassCard>
+        )}
+
+        <View style={{ height: 24 }} />
 
         <SectionHeader title="Quick Actions" />
-        <View style={styles.quickActions}>
+        <View style={[styles.quickActions, { marginBottom: 8 }]}>
           <QuickAction icon="planet" label="Kundli" onPress={() => navigation.navigate('Kundli')} />
           <QuickAction icon="heart" label="Matchmaking" onPress={() => navigation.navigate('Matchmaking')} />
           <QuickAction icon="calendar" label="Panchang" onPress={() => navigation.navigate('Panchang')} />
           <QuickAction icon="pricetags" label="Shop" onPress={() => navigation.navigate('Shop')} />
         </View>
+        <View style={styles.quickActions}>
+          <QuickAction icon="flame" label="Pooja" onPress={() => navigation.navigate('MandirPooja')} />
+          <QuickAction icon="heart-circle" label="Donate" onPress={() => navigation.navigate('Donation')} />
+          <QuickAction icon="newspaper" label="Blogs" onPress={() => navigation.navigate('Blogs')} />
+          <QuickAction icon="videocam" label="Videos" onPress={() => navigation.navigate('Videos')} />
+        </View>
 
-        {horoscope.length > 0 && (
+        <View style={{ height: 24 }} />
+
+        <SectionHeader title="Live Astrologers" onSeeAll={() => navigation.navigate('AstrologerList')} />
+        {astrologers.length > 0 ? (
+          <FlatList horizontal showsHorizontalScrollIndicator={false} data={astrologers.slice(0, 6)} keyExtractor={(a) => a.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.id })} style={styles.astroCard}>
+                <GlassCard style={styles.astroInner}>
+                  <Avatar size={56} online={item.onlineStatus === 'online'} />
+                  <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
+                  <StarRating rating={parseFloat(item.rating)} size={12} />
+                  <Text style={typography.caption}>{item.specialization?.[0] || 'Astrologer'}</Text>
+                  <Text style={typography.price}>₹{item.pricePerMin}/min</Text>
+                </GlassCard>
+              </TouchableOpacity>
+            )} style={{ marginLeft: 8 }} />
+        ) : (
+          <GlassCard><Text style={[typography.body, { textAlign: 'center' }]}>No astrologers available right now</Text></GlassCard>
+        )}
+
+        <View style={{ height: 24 }} />
+
+        <SectionHeader title="By Category" onSeeAll={() => navigation.navigate('AstrologerList')} />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
+          {ASTRO_CATEGORIES.map(cat => (
+            <Chip key={cat} label={cat} selected={cat === selectedCategory} onPress={() => setSelectedCategory(cat)} />
+          ))}
+        </ScrollView>
+        {filteredCategoryAstro.length > 0 ? (
+          <FlatList horizontal showsHorizontalScrollIndicator={false} data={filteredCategoryAstro.slice(0, 6)} keyExtractor={(a) => a.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.id })} style={styles.astroCard}>
+                <GlassCard style={styles.astroInner}>
+                  <Avatar size={56} online={item.onlineStatus === 'online'} />
+                  <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
+                  <StarRating rating={parseFloat(item.rating)} size={12} />
+                  <Text style={typography.caption}>{item.specialization?.[0] || 'Astrologer'}</Text>
+                  <Text style={typography.price}>₹{item.pricePerMin}/min</Text>
+                </GlassCard>
+              </TouchableOpacity>
+            )} style={{ marginLeft: 8 }} />
+        ) : (
+          <GlassCard><Text style={[typography.body, { textAlign: 'center' }]}>No astrologers in this category</Text></GlassCard>
+        )}
+
+        {poojas.length > 0 && (
           <>
-            <SectionHeader title="Today's Horoscope" />
-            <GlassCard><Text style={typography.cardTitle}>♈ Aries</Text><Text style={[typography.body, { marginTop: 8 }]}>{horoscope[0]?.prediction?.slice(0, 150)}...</Text></GlassCard>
+            <View style={{ height: 24 }} />
+            <SectionHeader title="Mandir Pooja" onSeeAll={() => navigation.navigate('MandirPooja')} />
+            <FlatList horizontal showsHorizontalScrollIndicator={false} data={poojas.slice(0, 4)} keyExtractor={(p) => p.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity onPress={() => navigation.navigate('MandirPooja')} style={{ width: 180, marginRight: 12 }}>
+                  <GlassCard style={{ alignItems: 'center', paddingVertical: 20, gap: 8 }}>
+                    <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.accentGold + '20', alignItems: 'center', justifyContent: 'center' }}>
+                      <Ionicons name="flame" size={24} color={colors.accentGold} />
+                    </View>
+                    <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
+                    {item.description && <Text style={[typography.caption, { textAlign: 'center' }]} numberOfLines={2}>{item.description}</Text>}
+                    <Text style={typography.price}>₹{item.price}</Text>
+                  </GlassCard>
+                </TouchableOpacity>
+              )} style={{ marginLeft: 8 }} />
           </>
         )}
+
+        {videos.length > 0 && (
+          <>
+            <View style={{ height: 24 }} />
+            <SectionHeader title="Videos" onSeeAll={() => navigation.navigate('Videos')} />
+            <FlatList horizontal showsHorizontalScrollIndicator={false} data={videos.slice(0, 5)} keyExtractor={(v) => v.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity style={{ width: 220, marginRight: 12 }}>
+                  <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
+                    <View style={{ height: 120, backgroundColor: colors.surfaceLight, alignItems: 'center', justifyContent: 'center', borderTopLeftRadius: 24, borderTopRightRadius: 24 }}>
+                      <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.primary + '40', alignItems: 'center', justifyContent: 'center' }}>
+                        <Ionicons name="play" size={22} color={colors.white} style={{ marginLeft: 3 }} />
+                      </View>
+                    </View>
+                    <View style={{ padding: 12 }}>
+                      <Text style={typography.cardTitle} numberOfLines={2}>{item.title}</Text>
+                      {item.category && <Text style={[typography.caption, { marginTop: 4 }]}>{item.category}</Text>}
+                    </View>
+                  </GlassCard>
+                </TouchableOpacity>
+              )} style={{ marginLeft: 8 }} />
+          </>
+        )}
+
+        {blogs.length > 0 && (
+          <>
+            <View style={{ height: 24 }} />
+            <SectionHeader title="Latest Blogs" onSeeAll={() => navigation.navigate('Blogs')} />
+            <FlatList horizontal showsHorizontalScrollIndicator={false} data={blogs.slice(0, 5)} keyExtractor={(b) => b.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity onPress={() => navigation.navigate('Blogs')} style={{ width: 240, marginRight: 12 }}>
+                  <GlassCard style={{ padding: 16 }}>
+                    <Text style={typography.cardTitle} numberOfLines={2}>{item.title}</Text>
+                    <Text style={[typography.body, { marginTop: 6 }]} numberOfLines={3}>{item.excerpt || item.content?.slice(0, 120)}</Text>
+                    {item.tags && item.tags.length > 0 && (
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
+                        {item.tags.slice(0, 3).map(tag => <Chip key={tag} label={tag} />)}
+                      </View>
+                    )}
+                  </GlassCard>
+                </TouchableOpacity>
+              )} style={{ marginLeft: 8 }} />
+          </>
+        )}
+
+        <View style={{ height: 24 }} />
+        <SectionHeader title="Support Our Mission" />
+        <GlassCard style={{ alignItems: 'center', padding: 24 }}>
+          <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: colors.danger + '20', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+            <Ionicons name="heart" size={28} color={colors.danger} />
+          </View>
+          <Text style={[typography.cardTitle, { textAlign: 'center' }]}>Make a Donation</Text>
+          <Text style={[typography.body, { textAlign: 'center', marginTop: 4, marginBottom: 12 }]}>Your contribution helps us maintain this sacred platform and support our spiritual community.</Text>
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+            {['101', '501', '1100', '2100'].map(a => <Chip key={a} label={`₹${a}`} />)}
+          </View>
+          <GradientButton title="Donate Now" variant="gold" onPress={() => navigation.navigate('Donation')} style={{ width: '100%' }} />
+        </GlassCard>
+
+        <View style={{ height: 40 }} />
       </ScrollView>
 
       {menuOpen && (
@@ -132,7 +370,21 @@ export function AstrologerListScreen({ navigation }: any) {
         ListEmptyComponent={<EmptyState icon={<Ionicons name="people-outline" size={48} color={colors.textMuted} />} title="No astrologers" />}
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.id })} style={{ marginBottom: 12 }}>
-            <GlassCard><View style={styles.row}><Avatar size={56} online={item.onlineStatus === 'online'} /><View style={{ flex: 1, marginLeft: 12 }}><Text style={typography.cardTitle}>{item.name}</Text><StarRating rating={parseFloat(item.rating)} size={12} reviewCount={item.totalReviews} /><View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 }}>{item.specialization?.slice(0, 2).map((s) => <Chip key={s} label={s} />)}</View></View><View style={{ alignItems: 'flex-end' }}><Text style={typography.price}>₹{item.pricePerMin}/min</Text></View></View></GlassCard>
+            <GlassCard>
+              <View style={styles.row}>
+                <Avatar size={56} online={item.onlineStatus === 'online'} />
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
+                  <StarRating rating={parseFloat(item.rating)} size={12} reviewCount={item.totalReviews} />
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4, gap: 4 }}>
+                    {item.specialization?.slice(0, 2).map((s) => <Chip key={s} label={s} />)}
+                  </View>
+                </View>
+                <View style={{ alignItems: 'flex-end', marginLeft: 8 }}>
+                  <Text style={typography.price}>₹{item.pricePerMin}/min</Text>
+                </View>
+              </View>
+            </GlassCard>
           </TouchableOpacity>
         )} />
     </ScreenWrapper>
@@ -143,30 +395,57 @@ export function AstrologerListScreen({ navigation }: any) {
 export function AstrologerDetailScreen({ route, navigation }: any) {
   const { id } = route.params;
   const [astro, setAstro] = useState<Astrologer | null>(null);
-  const [showCall, setShowCall] = useState(false);
   const { openConversation } = useChat();
+  const { initiateCall } = useCall();
 
   useEffect(() => { api.astrologers.get(id).then(setAstro); }, []);
   if (!astro) return <ScreenWrapper><Text style={typography.body}>Loading...</Text></ScreenWrapper>;
 
+  const isVerified = astro.verificationStatus === 'approved';
+
   const handleChat = async () => {
+    if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified. Please choose a verified astrologer.'); return; }
     const convId = await openConversation(id, 'astrologer');
-    navigation.navigate('ChatRoom', { conversationId: convId, participantId: id, participantRole: 'astrologer' });
+    navigation.navigate('ChatRoom', { conversationId: convId, participantId: id, participantRole: 'astrologer', participantName: astro.name });
+  };
+
+  const handleAudioCall = () => {
+    if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified.'); return; }
+    initiateCall(id, astro.name, 'audio');
+  };
+
+  const handleVideoCall = () => {
+    if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified.'); return; }
+    initiateCall(id, astro.name, 'video');
   };
 
   return (
     <ScreenWrapper scroll>
-      <View style={styles.header}><Avatar size={80} online={astro.onlineStatus === 'online'} /><Text style={[typography.pageTitle, { marginTop: 12, color: colors.textPrimary }]}>{astro.name}</Text><StarRating rating={parseFloat(astro.rating)} size={16} reviewCount={astro.totalReviews} /><Text style={[typography.body, { marginTop: 8, color: colors.textSecondary }]}>{astro.bio || 'Experienced astrologer'}</Text></View>
+      <View style={styles.header}>
+        <Avatar size={80} online={astro.onlineStatus === 'online'} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 }}>
+          <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>{astro.name}</Text>
+          {isVerified && <Ionicons name="checkmark-circle" size={20} color={colors.primaryLight} />}
+        </View>
+        <StarRating rating={parseFloat(astro.rating)} size={16} reviewCount={astro.totalReviews} />
+        <Text style={[typography.body, { marginTop: 8, color: colors.textSecondary }]}>{astro.bio || 'Experienced astrologer'}</Text>
+        {!isVerified && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8, backgroundColor: colors.warning + '20', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8 }}>
+            <Ionicons name="warning-outline" size={14} color={colors.warning} />
+            <Text style={[typography.caption, { color: colors.warning }]}>Verification Pending</Text>
+          </View>
+        )}
+      </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 16, backgroundColor: colors.surfaceLight, borderRadius: radii.card, marginTop: 16 }}>
         <Stat label="Experience" value={`${astro.experience}y`} /><Stat label="Calls" value={`${astro.totalCalls}`} /><Stat label="Price" value={`₹${astro.pricePerMin}/min`} />
       </View>
       <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
         <View style={{ flex: 1 }}><GradientButton title="Chat" onPress={handleChat} /></View>
-        <View style={{ flex: 1 }}><GradientButton title="Call" variant="gold" onPress={() => setShowCall(true)} /></View>
+        <View style={{ flex: 1 }}><GradientButton title="Audio Call" variant="gold" onPress={handleAudioCall} /></View>
       </View>
-      <CustomModal visible={showCall} onClose={() => setShowCall(false)}>
-        <View style={{ padding: 24, alignItems: 'center', gap: 16 }}><Ionicons name="call" size={48} color={colors.success} /><Text style={typography.pageTitle}>Start Call</Text><Text style={typography.body}>Audio call with {astro.name} at ₹{astro.pricePerMin}/min</Text><GradientButton title="Connect Now" onPress={() => { setShowCall(false); }} /></View>
-      </CustomModal>
+      <View style={{ marginTop: 10 }}>
+        <GradientButton title="Video Call" variant="gold" onPress={handleVideoCall} />
+      </View>
     </ScreenWrapper>
   );
 }
@@ -396,7 +675,7 @@ export function ProfileScreen({ navigation }: any) {
         <View style={[styles.menuItem, styles.border, { paddingVertical: 8, borderBottomColor: colors.divider }]}>
           <Ionicons name="moon-outline" size={22} color={colors.textSecondary} />
           <Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.textPrimary }]}>Dark Mode</Text>
-          <Switch value={theme === 'dark'} onValueChange={toggleTheme} trackColor={{ false: '#767577', true: colors.primary }} thumbColor={theme === 'dark' ? colors.accentGold : '#f4f3f4'} />
+          <Toggle value={theme === 'dark'} onValueChange={toggleTheme} trackColor={{ false: '#767577', true: colors.primary }} />
         </View>
 
         {/* Change Password Item */}
@@ -458,4 +737,6 @@ const styles = StyleSheet.create({
   logout: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 32, padding: 16, marginBottom: 100 },
   dropdownContainer: { position: 'absolute', top: 55, right: 16, width: 190, borderRadius: 12, borderWidth: 1, paddingVertical: 4, zIndex: 2000 },
   dropdownItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
+  zodiacChip: { width: 52, height: 52, borderRadius: 26, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  notifBadge: { position: 'absolute', top: 2, right: 2, backgroundColor: colors.danger, borderRadius: 10, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
 });

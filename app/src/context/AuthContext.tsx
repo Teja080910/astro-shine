@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { useColorScheme } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { api } from "../shared/api-client";
+import { setThemeState } from "../shared/theme";
 import type { User, Astrologer } from "../shared/types";
 
 export type AppRole = "user" | "astrologer" | null;
@@ -66,8 +67,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const storedTheme = await AsyncStorage.getItem("theme_preference");
         if (storedTheme === "light" || storedTheme === "dark") {
           setThemeVal(storedTheme);
+          setThemeState(storedTheme);
         } else if (systemScheme) {
           setThemeVal(systemScheme);
+          setThemeState(systemScheme);
         }
       } catch {
       } finally {
@@ -78,6 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const setTheme = async (t: "light" | "dark") => {
     setThemeVal(t);
+    setThemeState(t);
     try {
       await AsyncStorage.setItem("theme_preference", t);
     } catch {}
