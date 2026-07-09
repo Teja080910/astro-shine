@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal } from 'react-native';
-import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, colors, typography, radii } from '../../shared';
+import { useIsFocused } from '@react-navigation/native';
+import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, colors, typography, radii } from '../../shared';
 import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
 import type { Blog, Notification, SupportTicket, NewsItem, Video } from '../../shared/types';
@@ -18,8 +19,9 @@ export function PanchangScreen() {
 
 // Videos
 export function VideosScreen() {
+  const isFocused = useIsFocused();
   const [videos, setVideos] = useState<Video[]>([]);
-  useEffect(() => { api.videos.list().then(setVideos).catch(() => {}); }, []);
+  useEffect(() => { if (isFocused) api.videos.list().then(setVideos).catch(() => {}); }, [isFocused]);
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Videos" />
@@ -49,8 +51,9 @@ export function VideosScreen() {
 
 // Blogs with data
 export function BlogsScreen() {
+  const isFocused = useIsFocused();
   const [blogs, setBlogs] = useState<Blog[]>([]);
-  useEffect(() => { api.blogs.list().then(setBlogs).catch(() => {}); }, []);
+  useEffect(() => { if (isFocused) api.blogs.list().then(setBlogs).catch(() => {}); }, [isFocused]);
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Blogs" />
@@ -62,9 +65,10 @@ export function BlogsScreen() {
 
 // Notifications with data
 export function NotificationsScreen({ route }: any) {
+  const isFocused = useIsFocused();
   const [notifs, setNotifs] = useState<Notification[]>([]);
   const userId = route?.params?.userId;
-  useEffect(() => { api.notifications.list({ userId }).then(setNotifs).catch(() => {}); }, []);
+  useEffect(() => { if (isFocused) api.notifications.list({ userId }).then(setNotifs).catch(() => {}); }, [isFocused, userId]);
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Notifications" />
@@ -222,7 +226,7 @@ export function EditProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          <CalendarPickerModal
+          <DatePicker
             visible={showDatePicker}
             value={dateOfBirth}
             onClose={() => setShowDatePicker(false)}
@@ -312,12 +316,13 @@ export function EditProfileScreen() {
 
 // Support
 export function SupportScreen() {
+  const isFocused = useIsFocused();
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { api.support.tickets().then(setTickets).catch(() => {}); }, []);
+  useEffect(() => { if (isFocused) api.support.tickets().then(setTickets).catch(() => {}); }, [isFocused]);
 
   const handleSubmit = async () => {
     if (!subject.trim() || !message.trim()) return;
@@ -400,15 +405,18 @@ export function MandirPoojaScreen() {
 
 // Order History
 export function OrderHistoryScreen() {
+  const isFocused = useIsFocused();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.orders.list()
-      .then(setOrders)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+    if (isFocused) {
+      api.orders.list()
+        .then(setOrders)
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    }
+  }, [isFocused]);
 
   return (
     <ScreenWrapper scroll>
@@ -496,20 +504,14 @@ export function AstrologerScheduleScreen() {
                 <Text style={[typography.cardTitle, { opacity: s?.isAvailable === false ? 0.4 : 1 }]}>{d}</Text>
               </View>
               <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center', opacity: s?.isAvailable === false ? 0.4 : 1 }}>
-                <TextInput
-                  style={[styles.input, { width: 80, height: 40, textAlign: 'center' }]}
+                <TimePicker
                   value={s?.startTime || '09:00'}
-                  onChangeText={(v) => updateDay(i, 'startTime', v)}
-                  placeholder="09:00"
-                  placeholderTextColor={colors.textMuted}
+                  onChange={(v) => updateDay(i, 'startTime', v)}
                 />
                 <Text style={typography.caption}>to</Text>
-                <TextInput
-                  style={[styles.input, { width: 80, height: 40, textAlign: 'center' }]}
+                <TimePicker
                   value={s?.endTime || '18:00'}
-                  onChangeText={(v) => updateDay(i, 'endTime', v)}
-                  placeholder="18:00"
-                  placeholderTextColor={colors.textMuted}
+                  onChange={(v) => updateDay(i, 'endTime', v)}
                 />
               </View>
             </View>
@@ -664,144 +666,6 @@ export function AboutAppScreen({ navigation }: any) {
       </GlassCard>
       <GradientButton title="Back to Dashboard" onPress={() => navigation.navigate('Main')} style={{ marginTop: 12 }} />
     </ScreenWrapper>
-  );
-}
-
-interface CalendarProps {
-  visible: boolean;
-  value: string;
-  onClose: () => void;
-  onSelect: (date: string) => void;
-}
-
-export function CalendarPickerModal({ visible, value, onClose, onSelect }: CalendarProps) {
-  const today = new Date();
-  const initialDate = value ? new Date(value) : today;
-  const [selectedYear, setSelectedYear] = useState(isNaN(initialDate.getTime()) ? today.getFullYear() : initialDate.getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(isNaN(initialDate.getTime()) ? today.getMonth() : initialDate.getMonth());
-  const [selectedDay, setSelectedDay] = useState(isNaN(initialDate.getTime()) ? today.getDate() : initialDate.getDate());
-
-  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  const years: number[] = [];
-  for (let y = today.getFullYear(); y >= 1950; y--) {
-    years.push(y);
-  }
-
-  const getDaysInMonth = (month: number, year: number) => {
-    return new Date(year, month + 1, 0).getDate();
-  };
-
-  const daysInMonth = getDaysInMonth(selectedMonth, selectedYear);
-  const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-
-  const handleConfirm = () => {
-    const mm = String(selectedMonth + 1).padStart(2, '0');
-    const dd = String(selectedDay).padStart(2, '0');
-    onSelect(`${selectedYear}-${mm}-${dd}`);
-    onClose();
-  };
-
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <TouchableOpacity activeOpacity={1} onPress={onClose} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-        <TouchableOpacity activeOpacity={1} style={{ width: '100%', maxWidth: 340, backgroundColor: colors.surface, borderRadius: radii.card, borderWidth: 1, borderColor: colors.cardBorder, padding: 16 }}>
-          <Text style={[typography.sectionTitle, { textAlign: 'center', marginBottom: 12, color: colors.accentGold }]}>Select Date of Birth</Text>
-
-          <View style={{ backgroundColor: colors.surfaceLight, padding: 10, borderRadius: 8, alignItems: 'center', marginBottom: 16 }}>
-            <Text style={[typography.cardTitle, { color: colors.textPrimary }]}>
-              {selectedDay} {months[selectedMonth]} {selectedYear}
-            </Text>
-          </View>
-
-          <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: 4 }]}>Year</Text>
-          <View style={{ height: 48, marginBottom: 12 }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-              {years.map(y => (
-                <TouchableOpacity
-                  key={y}
-                  onPress={() => {
-                    setSelectedYear(y);
-                    const days = getDaysInMonth(selectedMonth, y);
-                    if (selectedDay > days) setSelectedDay(days);
-                  }}
-                  style={{
-                    paddingHorizontal: 12,
-                    height: 38,
-                    borderRadius: 19,
-                    borderWidth: 1,
-                    borderColor: selectedYear === y ? colors.primary : colors.cardBorder,
-                    backgroundColor: selectedYear === y ? colors.primary : colors.surfaceLight,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text style={{ color: selectedYear === y ? colors.white : colors.textPrimary, fontWeight: '600', fontSize: 13 }}>{y}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-
-          <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: 4 }]}>Month</Text>
-          <View style={{ height: 48, marginBottom: 12 }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-              {months.map((m, idx) => (
-                <TouchableOpacity
-                  key={m}
-                  onPress={() => {
-                    setSelectedMonth(idx);
-                    const days = getDaysInMonth(idx, selectedYear);
-                    if (selectedDay > days) setSelectedDay(days);
-                  }}
-                  style={{
-                    paddingHorizontal: 12,
-                    height: 38,
-                    borderRadius: 19,
-                    borderWidth: 1,
-                    borderColor: selectedMonth === idx ? colors.primary : colors.cardBorder,
-                    backgroundColor: selectedMonth === idx ? colors.primary : colors.surfaceLight,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text style={{ color: selectedMonth === idx ? colors.white : colors.textPrimary, fontWeight: '600', fontSize: 13 }}>{m.slice(0, 3)}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-
-          <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: 4 }]}>Day</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center', marginBottom: 16 }}>
-            {daysArray.map(d => (
-              <TouchableOpacity
-                key={d}
-                onPress={() => setSelectedDay(d)}
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 18,
-                  borderWidth: 1,
-                  borderColor: selectedDay === d ? colors.primary : colors.cardBorder,
-                  backgroundColor: selectedDay === d ? colors.primary : colors.surfaceLight,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ color: selectedDay === d ? colors.white : colors.textPrimary, fontSize: 12, fontWeight: '600' }}>{d}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <TouchableOpacity onPress={onClose} style={{ flex: 1, height: 44, borderRadius: radii.button, borderWidth: 1, borderColor: colors.cardBorder, justifyContent: 'center', alignItems: 'center' }}>
-              <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleConfirm} style={{ flex: 1, height: 44, borderRadius: radii.button, backgroundColor: colors.accentGold, justifyContent: 'center', alignItems: 'center' }}>
-              <Text style={{ color: colors.white, fontWeight: '700' }}>Select Date</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </TouchableOpacity>
-    </Modal>
   );
 }
 

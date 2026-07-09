@@ -57,6 +57,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       console.log(`[WS] Online users map:`, Object.fromEntries(this.onlineUsers));
 
       client.broadcast.emit('user:online', { userId: payload.userId, role: 'user' });
+      client.broadcast.emit('astrologer:status-changed', { astrologerId: payload.userId, onlineStatus: 'online' });
+      client.broadcast.emit('astrologer:status-changed', { astrologerId: payload.userId, onlineStatus: 'online' });
 
       const convs = await this.conversationsService.findByUser(payload.userId);
       console.log(`[WS] Auto-joining ${convs.length} rooms for userId: ${payload.userId}`);
@@ -92,6 +94,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       this.onlineUsers.delete(userId);
       console.log(`[WS] Online users map after disconnect:`, Object.fromEntries(this.onlineUsers));
       client.broadcast.emit('user:offline', { userId, role: client.data.role });
+      client.broadcast.emit('astrologer:status-changed', { astrologerId: userId, onlineStatus: 'offline' });
     }
   }
 

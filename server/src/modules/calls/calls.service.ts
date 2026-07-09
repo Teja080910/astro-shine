@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 @Injectable()
 export class CallsService {
@@ -46,6 +46,14 @@ export class CallsService {
       duration,
       cost,
     }).where(eq(schema.callLogs.id, id)).returning();
+
+    // Update astrologer total calls and earnings
+    await this.db.update(schema.astrologers).set({
+      totalCalls: sql`${schema.astrologers.totalCalls} + 1`,
+      totalEarnings: sql`${schema.astrologers.totalEarnings} + ${cost}::decimal`,
+      updatedAt: new Date(),
+    }).where(eq(schema.astrologers.id, call.astrologerId));
+
     return r;
   }
 }

@@ -15,6 +15,7 @@ interface ChatState {
   unreadCounts: Record<string, number>;
   loading: boolean;
   hasMore: boolean;
+  astrologerStatuses: Record<string, 'online' | 'offline' | 'busy'>;
   loadConversations: () => Promise<void>;
   openConversation: (participantId: string, participantRole: string) => Promise<string>;
   setActiveConversation: (conv: Conversation | null) => void;
@@ -43,6 +44,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [onlineUsers, setOnlineUsers] = useState<Record<string, boolean>>({});
   const [typingUsers, setTypingUsers] = useState<Record<string, string | null>>({});
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [astrologerStatuses, setAstrologerStatuses] = useState<Record<string, 'online' | 'offline' | 'busy'>>({});
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const cursorRef = useRef<string | null>(null);
@@ -157,6 +159,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
     socket.on('user:offline', (data: { userId: string }) => {
       setOnlineUsers((prev) => ({ ...prev, [data.userId]: false }));
+    });
+
+    socket.on('astrologer:status-changed', (data: { astrologerId: string; onlineStatus: 'online' | 'offline' | 'busy' }) => {
+      setAstrologerStatuses((prev) => ({ ...prev, [data.astrologerId]: data.onlineStatus }));
     });
 
     socketRef.current = socket;
@@ -298,6 +304,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         onlineUsers,
         typingUsers,
         unreadCounts,
+        astrologerStatuses,
         loading,
         hasMore,
         loadConversations,
