@@ -5,23 +5,12 @@
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
-    "start:clear": "expo start -c",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "apk:debug": "expo run:android --variant debug",
-    "apk:release": "expo run:android --variant release",
-    "aab:release": "cd android && ./gradlew bundleRelease",
-    "apk:install": "adb install android/app/build/outputs/apk/debug/app-debug.apk",
-    "gradle:clean": "cd android && ./gradlew clean",
-    "gradle:build:debug": "cd android && ./gradlew assembleDebug",
-    "gradle:build:release": "cd android && ./gradlew assembleRelease",
-    "gradle:bundle:release": "cd android && ./gradlew bundleRelease",
-    "clean:android": "rm -rf android && npx expo prebuild --platform android --clean",
-    "clean:expo": "expo start -c",
-    "eas:dev": "eas build --platform android --profile development",
-    "eas:preview": "eas build --platform android --profile preview",
-    "eas:prod": "eas build --platform android --profile production"
+    "apk:debug": "cd android && ./gradlew assembleDebug",
+    "apk:release": "cd android && ./gradlew assembleRelease",
+    "aab:release": "cd android && ./gradlew bundleRelease"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
