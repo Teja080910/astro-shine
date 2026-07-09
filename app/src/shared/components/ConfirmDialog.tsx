@@ -25,7 +25,7 @@ export function ConfirmDialog({ visible, title, subtitle, icon, actions, onClose
           {icon ? (
             <View style={styles.iconWrap}>{icon}</View>
           ) : (
-            <Image source={require('../../../assets/logo_clean.jpg')} style={styles.logo} resizeMode="contain" />
+            <Image source={require('../../../assets/logo_clean.png')} style={styles.logo} resizeMode="contain" />
           )}
           {title && <Text style={[typography.sectionTitle, { color: colors.textPrimary, textAlign: 'center', marginBottom: subtitle ? 4 : 16 }]}>{title}</Text>}
           {subtitle && <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginBottom: 24, lineHeight: 20 }]}>{subtitle}</Text>}
@@ -65,8 +65,7 @@ const styles = StyleSheet.create({
   },
   logo: {
     width: 56,
-    height: 56,
-    borderRadius: 12,
+    height: 41,
     marginBottom: 16,
   },
   iconWrap: {

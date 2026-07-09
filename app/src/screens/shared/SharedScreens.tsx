@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, colors, typography, radii } from '../../shared';
 import { api } from '../../shared/api-client';
@@ -218,9 +218,9 @@ export function EditProfileScreen() {
           name, phone, gender, dateOfBirth,
           bio,
           experience: parseInt(experience) || 0,
-          specialization: specialization.split(',').map(s => s.trim()).filter(Boolean),
-          languages: languages.split(',').map(s => s.trim()).filter(Boolean),
-          skills: skills.split(',').map(s => s.trim()).filter(Boolean),
+          specialization: specialization.split(',').map((s: string) => s.trim()).filter(Boolean),
+          languages: languages.split(',').map((s: string) => s.trim()).filter(Boolean),
+          skills: skills.split(',').map((s: string) => s.trim()).filter(Boolean),
           pricePerMin,
         });
       } else if (role === 'admin') {

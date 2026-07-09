@@ -130,6 +130,13 @@ export class AuthService {
       throw new BadRequestException('Email already registered');
     }
 
+    if (data.phone) {
+      const existingPhone = await this.usersService.findByPhone(data.phone);
+      if (existingPhone) {
+        throw new BadRequestException('Phone number already registered');
+      }
+    }
+
     const hashedPassword = await this.hashPassword(data.password);
     const user = await this.usersService.create({
       ...data,
