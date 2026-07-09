@@ -33,7 +33,7 @@ export function ChatListScreen({ navigation }: any) {
     return (
       <TouchableOpacity
         style={[styles.item, { borderBottomColor: colors.divider }]}
-        onPress={() => navigation.navigate('ChatRoom', { conversationId: item.id, participantId: item.participantId, participantRole: item.participantRole })}
+        onPress={() => navigation.navigate('ChatRoom', { conversationId: item.id, participantId: item.participantId, participantRole: item.participantRole, participantName: item.participantName })}
       >
         <View style={styles.avatarContainer}>
           <Avatar size={52} online={isOnline} />
@@ -47,7 +47,7 @@ export function ChatListScreen({ navigation }: any) {
             <Text style={[typography.body, { flex: 1 }]} numberOfLines={1}>{item.lastMessagePreview || 'No messages yet'}</Text>
             {unread > 0 && (
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unread > 9 ? '9+' : unread}</Text>
+                <Text style={styles.badgeText}>{unread > 99 ? '99+' : unread}</Text>
               </View>
             )}
           </View>

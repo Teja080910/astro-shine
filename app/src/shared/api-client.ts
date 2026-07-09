@@ -289,6 +289,13 @@ class ApiClient {
     update: (id: string, d: any) => this.put<Video>(`/videos/${id}`, d),
   };
 
+  // Schedule
+  schedule = {
+    byAstrologer: (astrologerId: string) => this.get<any[]>(`/schedule/${astrologerId}`),
+    upsert: (astrologerId: string, d: any) => this.post<any>(`/schedule/${astrologerId}`, d),
+    bulkUpsert: (astrologerId: string, schedules: any[]) => this.put<any>(`/schedule/${astrologerId}/bulk`, { schedules }),
+  };
+
   // Conversations
   conversations = {
     list: () => this.get<{ data: Conversation[] }>('/conversations'),

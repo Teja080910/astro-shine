@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Switch, Alert, Modal, ScrollView, Image } from 'react-native';
-import { ScreenWrapper, GlassCard, SectionHeader, SearchBar, GradientButton, CustomModal, Avatar, StarRating, Chip, SkeletonLoader, EmptyState, colors, typography, radii } from '../../shared';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, TextInput, Alert, Modal, ScrollView, Image } from 'react-native';
+import { ScreenWrapper, GlassCard, SectionHeader, SearchBar, GradientButton, CustomModal, Avatar, StarRating, Chip, SkeletonLoader, EmptyState, Toggle, colors, typography, radii } from '../../shared';
 import { api } from '../../shared/api-client';
 import type { Astrologer, HoroscopeRecord, ShopProduct, Blog, Transaction, Wallet, Video, MandirPooja, Notification } from '../../shared/types';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
+import { useCall } from '../../context/CallContext';
 
 const ZODIAC_SIGNS = [
   { sign: 'aries', emoji: '♈', label: 'Aries' },
@@ -369,7 +370,21 @@ export function AstrologerListScreen({ navigation }: any) {
         ListEmptyComponent={<EmptyState icon={<Ionicons name="people-outline" size={48} color={colors.textMuted} />} title="No astrologers" />}
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.id })} style={{ marginBottom: 12 }}>
-            <GlassCard><View style={styles.row}><Avatar size={56} online={item.onlineStatus === 'online'} /><View style={{ flex: 1, marginLeft: 12 }}><Text style={typography.cardTitle}>{item.name}</Text><StarRating rating={parseFloat(item.rating)} size={12} reviewCount={item.totalReviews} /><View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 }}>{item.specialization?.slice(0, 2).map((s) => <Chip key={s} label={s} />)}</View></View><View style={{ alignItems: 'flex-end' }}><Text style={typography.price}>₹{item.pricePerMin}/min</Text></View></View></GlassCard>
+            <GlassCard>
+              <View style={styles.row}>
+                <Avatar size={56} online={item.onlineStatus === 'online'} />
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
+                  <StarRating rating={parseFloat(item.rating)} size={12} reviewCount={item.totalReviews} />
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4, gap: 4 }}>
+                    {item.specialization?.slice(0, 2).map((s) => <Chip key={s} label={s} />)}
+                  </View>
+                </View>
+                <View style={{ alignItems: 'flex-end', marginLeft: 8 }}>
+                  <Text style={typography.price}>₹{item.pricePerMin}/min</Text>
+                </View>
+              </View>
+            </GlassCard>
           </TouchableOpacity>
         )} />
     </ScreenWrapper>
@@ -380,30 +395,57 @@ export function AstrologerListScreen({ navigation }: any) {
 export function AstrologerDetailScreen({ route, navigation }: any) {
   const { id } = route.params;
   const [astro, setAstro] = useState<Astrologer | null>(null);
-  const [showCall, setShowCall] = useState(false);
   const { openConversation } = useChat();
+  const { initiateCall } = useCall();
 
   useEffect(() => { api.astrologers.get(id).then(setAstro); }, []);
   if (!astro) return <ScreenWrapper><Text style={typography.body}>Loading...</Text></ScreenWrapper>;
 
+  const isVerified = astro.verificationStatus === 'approved';
+
   const handleChat = async () => {
+    if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified. Please choose a verified astrologer.'); return; }
     const convId = await openConversation(id, 'astrologer');
-    navigation.navigate('ChatRoom', { conversationId: convId, participantId: id, participantRole: 'astrologer' });
+    navigation.navigate('ChatRoom', { conversationId: convId, participantId: id, participantRole: 'astrologer', participantName: astro.name });
+  };
+
+  const handleAudioCall = () => {
+    if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified.'); return; }
+    initiateCall(id, astro.name, 'audio');
+  };
+
+  const handleVideoCall = () => {
+    if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified.'); return; }
+    initiateCall(id, astro.name, 'video');
   };
 
   return (
     <ScreenWrapper scroll>
-      <View style={styles.header}><Avatar size={80} online={astro.onlineStatus === 'online'} /><Text style={[typography.pageTitle, { marginTop: 12, color: colors.textPrimary }]}>{astro.name}</Text><StarRating rating={parseFloat(astro.rating)} size={16} reviewCount={astro.totalReviews} /><Text style={[typography.body, { marginTop: 8, color: colors.textSecondary }]}>{astro.bio || 'Experienced astrologer'}</Text></View>
+      <View style={styles.header}>
+        <Avatar size={80} online={astro.onlineStatus === 'online'} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 }}>
+          <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>{astro.name}</Text>
+          {isVerified && <Ionicons name="checkmark-circle" size={20} color={colors.primaryLight} />}
+        </View>
+        <StarRating rating={parseFloat(astro.rating)} size={16} reviewCount={astro.totalReviews} />
+        <Text style={[typography.body, { marginTop: 8, color: colors.textSecondary }]}>{astro.bio || 'Experienced astrologer'}</Text>
+        {!isVerified && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8, backgroundColor: colors.warning + '20', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8 }}>
+            <Ionicons name="warning-outline" size={14} color={colors.warning} />
+            <Text style={[typography.caption, { color: colors.warning }]}>Verification Pending</Text>
+          </View>
+        )}
+      </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 16, backgroundColor: colors.surfaceLight, borderRadius: radii.card, marginTop: 16 }}>
         <Stat label="Experience" value={`${astro.experience}y`} /><Stat label="Calls" value={`${astro.totalCalls}`} /><Stat label="Price" value={`₹${astro.pricePerMin}/min`} />
       </View>
       <View style={{ flexDirection: 'row', gap: 12, marginTop: 20 }}>
         <View style={{ flex: 1 }}><GradientButton title="Chat" onPress={handleChat} /></View>
-        <View style={{ flex: 1 }}><GradientButton title="Call" variant="gold" onPress={() => setShowCall(true)} /></View>
+        <View style={{ flex: 1 }}><GradientButton title="Audio Call" variant="gold" onPress={handleAudioCall} /></View>
       </View>
-      <CustomModal visible={showCall} onClose={() => setShowCall(false)}>
-        <View style={{ padding: 24, alignItems: 'center', gap: 16 }}><Ionicons name="call" size={48} color={colors.success} /><Text style={typography.pageTitle}>Start Call</Text><Text style={typography.body}>Audio call with {astro.name} at ₹{astro.pricePerMin}/min</Text><GradientButton title="Connect Now" onPress={() => { setShowCall(false); }} /></View>
-      </CustomModal>
+      <View style={{ marginTop: 10 }}>
+        <GradientButton title="Video Call" variant="gold" onPress={handleVideoCall} />
+      </View>
     </ScreenWrapper>
   );
 }
@@ -633,7 +675,7 @@ export function ProfileScreen({ navigation }: any) {
         <View style={[styles.menuItem, styles.border, { paddingVertical: 8, borderBottomColor: colors.divider }]}>
           <Ionicons name="moon-outline" size={22} color={colors.textSecondary} />
           <Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.textPrimary }]}>Dark Mode</Text>
-          <Switch value={theme === 'dark'} onValueChange={toggleTheme} trackColor={{ false: '#767577', true: colors.primary }} thumbColor={theme === 'dark' ? colors.accentGold : '#f4f3f4'} />
+          <Toggle value={theme === 'dark'} onValueChange={toggleTheme} trackColor={{ false: '#767577', true: colors.primary }} />
         </View>
 
         {/* Change Password Item */}

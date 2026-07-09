@@ -13,3 +13,4 @@ export { StarRating } from './components/StarRating';
 export { FloatingBottomBar } from './components/FloatingBottomBar';
 export { ScreenWrapper } from './components/ScreenWrapper';
 export { Avatar } from './components/Avatar';
+export { Toggle } from './components/Toggle';

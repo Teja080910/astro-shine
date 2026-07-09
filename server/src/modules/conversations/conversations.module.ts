@@ -3,9 +3,11 @@ import { ConversationsController } from './conversations.controller';
 import { ConversationsService } from './conversations.service';
 import { ChatGateway } from './chat.gateway';
 import { AuthModule } from '../auth/auth.module';
+import { CallsModule } from '../calls/calls.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, CallsModule, UsersModule],
   controllers: [ConversationsController],
   providers: [ConversationsService, ChatGateway],
   exports: [ConversationsService],
