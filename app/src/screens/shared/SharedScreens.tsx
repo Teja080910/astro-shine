@@ -87,12 +87,28 @@ export function EditProfileScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Astrologer-specific fields
+  const [bio, setBio] = useState((profile as any)?.bio || '');
+  const [experience, setExperience] = useState(String((profile as any)?.experience || ''));
+  const [specialization, setSpecialization] = useState(((profile as any)?.specialization || []).join(', '));
+  const [languages, setLanguages] = useState(((profile as any)?.languages || []).join(', '));
+  const [skills, setSkills] = useState(((profile as any)?.skills || []).join(', '));
+  const [pricePerMin, setPricePerMin] = useState((profile as any)?.pricePerMin || '');
+
   useEffect(() => {
     if (profile) {
       setName(profile.name);
       setPhone(profile.phone || '');
       setGender((profile as any).gender || 'male');
       setDateOfBirth((profile as any).dateOfBirth ? (profile as any).dateOfBirth.split('T')[0] : '');
+      if (role === 'astrologer') {
+        setBio((profile as any).bio || '');
+        setExperience(String((profile as any).experience || ''));
+        setSpecialization(((profile as any).specialization || []).join(', '));
+        setLanguages(((profile as any).languages || []).join(', '));
+        setSkills(((profile as any).skills || []).join(', '));
+        setPricePerMin((profile as any).pricePerMin || '');
+      }
     }
   }, [profile]);
 
@@ -102,7 +118,15 @@ export function EditProfileScreen() {
     try {
       let updated;
       if (role === 'astrologer') {
-        updated = await api.astrologers.update(profile!.id, { name, phone, gender, dateOfBirth });
+        updated = await api.astrologers.update(profile!.id, {
+          name, phone, gender, dateOfBirth,
+          bio,
+          experience: parseInt(experience) || 0,
+          specialization: specialization.split(',').map(s => s.trim()).filter(Boolean),
+          languages: languages.split(',').map(s => s.trim()).filter(Boolean),
+          skills: skills.split(',').map(s => s.trim()).filter(Boolean),
+          pricePerMin,
+        });
       } else if (role === 'admin') {
         updated = await api.admins.update(profile!.id, { name });
       } else {
@@ -204,6 +228,80 @@ export function EditProfileScreen() {
             onClose={() => setShowDatePicker(false)}
             onSelect={setDateOfBirth}
           />
+        </>
+      )}
+
+      {role === 'astrologer' && (
+        <>
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Bio</Text>
+            <TextInput
+              style={[styles.input, { height: 80, backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={bio}
+              onChangeText={setBio}
+              placeholder="Tell clients about yourself"
+              placeholderTextColor={colors.textMuted}
+              multiline
+              textAlignVertical="top"
+            />
+          </View>
+
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Experience (years)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={experience}
+              onChangeText={setExperience}
+              placeholder="e.g. 10"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="number-pad"
+            />
+          </View>
+
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Specialization (comma separated)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={specialization}
+              onChangeText={setSpecialization}
+              placeholder="e.g. Vedic, Tarot, Numerology"
+              placeholderTextColor={colors.textMuted}
+            />
+          </View>
+
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Languages (comma separated)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={languages}
+              onChangeText={setLanguages}
+              placeholder="e.g. Hindi, English, Tamil"
+              placeholderTextColor={colors.textMuted}
+            />
+          </View>
+
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Skills (comma separated)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={skills}
+              onChangeText={setSkills}
+              placeholder="e.g. Birth Chart, Predictions, Remedies"
+              placeholderTextColor={colors.textMuted}
+            />
+          </View>
+
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Price per minute (₹)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={pricePerMin}
+              onChangeText={setPricePerMin}
+              placeholder="e.g. 15"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="decimal-pad"
+            />
+          </View>
         </>
       )}
 
