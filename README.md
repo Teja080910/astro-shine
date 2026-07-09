@@ -28,9 +28,10 @@ npx expo start
 
 ```bash
 cd app
-npm run apk:debug    # Debug APK
-npm run apk:release  # Release APK
-npm run aab:release  # Release AAB (for Play Store)
+npm run prebuild          # Generate android/ folder (required first time)
+npm run apk:debug         # Debug APK
+npm run apk:release       # Release APK
+npm run aab:release       # Release AAB (for Play Store)
 ```
 
 APK output: `app/android/app/build/outputs/apk/`
