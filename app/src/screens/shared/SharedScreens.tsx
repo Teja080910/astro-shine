@@ -3,7 +3,7 @@ import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleShe
 import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, colors, typography, radii } from '../../shared';
 import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
-import type { Blog, Notification, SupportTicket, NewsItem } from '../../shared/types';
+import type { Blog, Notification, SupportTicket, NewsItem, Video } from '../../shared/types';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 
@@ -14,6 +14,37 @@ function SectionTitle({ title }: { title: string }) {
 // Panchang
 export function PanchangScreen() {
   return <ScreenWrapper scroll><SectionTitle title="Panchang" /><GlassCard><Text style={typography.body}>Daily panchang calendar with tithi, nakshatra, yoga, karana, sunrise/sunset timings.</Text></GlassCard></ScreenWrapper>;
+}
+
+// Videos
+export function VideosScreen() {
+  const [videos, setVideos] = useState<Video[]>([]);
+  useEffect(() => { api.videos.list().then(setVideos).catch(() => {}); }, []);
+  return (
+    <ScreenWrapper scroll>
+      <SectionTitle title="Videos" />
+      {videos.length === 0 ? <EmptyState icon={<Ionicons name="videocam-outline" size={48} color={colors.textMuted} />} title="No videos yet" /> :
+        videos.map(v => (
+          <TouchableOpacity key={v.id} style={{ marginBottom: 12 }}>
+            <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
+              <View style={{ height: 180, backgroundColor: colors.surfaceLight, alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primary + '40', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="play" size={28} color={colors.white} style={{ marginLeft: 4 }} />
+                </View>
+              </View>
+              <View style={{ padding: 16 }}>
+                <Text style={typography.cardTitle}>{v.title}</Text>
+                {v.description ? <Text style={[typography.body, { marginTop: 4 }]} numberOfLines={2}>{v.description}</Text> : null}
+                <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
+                  {v.category && <Text style={[typography.caption, { color: colors.primaryLight }]}>{v.category}</Text>}
+                  {v.duration && <Text style={typography.caption}>{Math.floor(v.duration / 60)}:{String(v.duration % 60).padStart(2, '0')}</Text>}
+                </View>
+              </View>
+            </GlassCard>
+          </TouchableOpacity>
+        ))}
+    </ScreenWrapper>
+  );
 }
 
 // Blogs with data

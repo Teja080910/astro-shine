@@ -15,7 +15,7 @@ import { ChatRoomScreen } from '../screens/user/ChatRoomScreen';
 import { AstrologerHomeScreen, AstrologerWalletScreen, AstrologerProfileScreen } from '../screens/astrologer/AstrologerScreens';
 import {
   PanchangScreen, BlogsScreen, NotificationsScreen, EditProfileScreen, SupportScreen,
-  DonationScreen, ReportScreen, MandirPoojaScreen, OrderHistoryScreen,
+  DonationScreen, ReportScreen, MandirPoojaScreen, OrderHistoryScreen, VideosScreen,
   AstrologerRequestsScreen, AstrologerScheduleScreen, AstrologerDocumentsScreen,
   AstrologerCommissionScreen, AstrologerGoLiveScreen,
   PrivacyPolicyScreen, TermsConditionsScreen, AboutAppScreen,
@@ -96,6 +96,7 @@ export function Navigation() {
             <Stack.Screen name="Panchang" component={PanchangScreen} options={headerOpts('Panchang')} />
             <Stack.Screen name="Shop" component={ShopScreen} options={headerOpts('Shop')} />
             <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} options={headerOpts('Orders')} />
+            <Stack.Screen name="Videos" component={VideosScreen} options={headerOpts('Videos')} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} options={headerOpts('Notifications')} />
             <Stack.Screen name="Blogs" component={BlogsScreen} options={headerOpts('Blogs')} />
             <Stack.Screen name="Support" component={SupportScreen} options={headerOpts('Support')} />
