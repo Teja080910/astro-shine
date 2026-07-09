@@ -128,14 +128,44 @@ export function BlogsScreen() {
 // Notifications with data
 export function NotificationsScreen({ route }: any) {
   const isFocused = useIsFocused();
+  const { user, astrologer } = useAuth();
   const [notifs, setNotifs] = useState<Notification[]>([]);
-  const userId = route?.params?.userId;
-  useEffect(() => { if (isFocused) api.notifications.list({ userId }).then(setNotifs).catch(() => {}); }, [isFocused, userId]);
+
+  useEffect(() => {
+    if (!isFocused) return;
+    const uid = route?.params?.userId || user?.id || astrologer?.id;
+    if (uid) api.notifications.list({ userId: uid }).then(setNotifs).catch(() => {});
+  }, [isFocused, route?.params?.userId, user?.id, astrologer?.id]);
+
+  const markRead = async (id: string) => {
+    try { await api.notifications.markRead(id); setNotifs(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n)); } catch {}
+  };
+
   return (
-    <ScreenWrapper scroll>
-      <SectionTitle title="Notifications" />
-      {notifs.length === 0 ? <EmptyState icon={<Ionicons name="notifications-outline" size={48} color={colors.textMuted} />} title="No notifications" /> :
-        notifs.map(n => <GlassCard key={n.id} style={{ marginBottom: 8, padding: 12, opacity: n.isRead ? 0.6 : 1 }}><Text style={typography.cardTitle}>{n.title}</Text><Text style={typography.body}>{n.body}</Text><Text style={typography.caption}>{new Date(n.createdAt).toLocaleDateString()}</Text></GlassCard>)}
+    <ScreenWrapper>
+      <ScrollView contentContainerStyle={{ padding: 16 }}>
+        {notifs.length === 0 ? (
+          <EmptyState icon={<Ionicons name="notifications-outline" size={48} color={colors.textMuted} />} title="No notifications" subtitle="You're all caught up!" />
+        ) : (
+          notifs.map(n => (
+            <TouchableOpacity key={n.id} onPress={() => !n.isRead && markRead(n.id)}>
+              <GlassCard style={{ marginBottom: 8, padding: 14, opacity: n.isRead ? 0.85 : 1 }}>
+                <View style={{ flexDirection: 'row', gap: 12 }}>
+                  <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: n.isRead ? colors.surfaceLight : colors.primary + '20', alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name={n.type === 'system' ? 'settings-outline' : n.type === 'promotional' ? 'megaphone-outline' : 'cash-outline'} size={20} color={n.isRead ? colors.textMuted : colors.primaryLight} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.cardTitle, { fontSize: 14 }]}>{n.title}</Text>
+                    <Text style={[typography.body, { fontSize: 13, marginTop: 2 }]}>{n.body}</Text>
+                    <Text style={[typography.caption, { marginTop: 4 }]}>{new Date(n.createdAt).toLocaleDateString()}</Text>
+                  </View>
+                  {!n.isRead && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primaryLight, marginTop: 4 }} />}
+                </View>
+              </GlassCard>
+            </TouchableOpacity>
+          ))
+        )}
+      </ScrollView>
     </ScreenWrapper>
   );
 }

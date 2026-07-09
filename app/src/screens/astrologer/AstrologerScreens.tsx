@@ -384,7 +384,7 @@ export function AstrologerNotificationsScreen() {
         ) : (
           notifs.map(n => (
             <TouchableOpacity key={n.id} onPress={() => !n.isRead && markRead(n.id)}>
-              <GlassCard style={{ marginBottom: 8, padding: 14, opacity: n.isRead ? 0.6 : 1 }}>
+              <GlassCard style={{ marginBottom: 8, padding: 14, opacity: n.isRead ? 0.85 : 1 }}>
                 <View style={{ flexDirection: 'row', gap: 12 }}>
                   <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: n.isRead ? colors.surfaceLight : colors.primary + '20', alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name={n.type === 'system' ? 'settings-outline' : n.type === 'promotional' ? 'megaphone-outline' : 'cash-outline'} size={20} color={n.isRead ? colors.textMuted : colors.primaryLight} />

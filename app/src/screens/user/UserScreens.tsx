@@ -115,7 +115,7 @@ export function UserHomeScreen({ navigation }: any) {
               <Ionicons name="notifications-outline" size={28} color={colors.textPrimary} />
               {unreadCount > 0 && (
                 <View style={styles.notifBadge}>
-                  <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                  <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
                 </View>
               )}
             </TouchableOpacity>
