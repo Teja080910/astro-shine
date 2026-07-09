@@ -1,11 +1,15 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
+import { RealtimeService } from '../../common/realtime.service';
 
 @Injectable()
 export class CallsService {
-  constructor(@Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>) {}
+  constructor(
+    @Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>,
+    private readonly realtime: RealtimeService,
+  ) {}
 
   async findAll() { return this.db.query.callLogs.findMany(); }
   async findById(id: string) { return this.db.query.callLogs.findFirst({ where: eq(schema.callLogs.id, id) }); }
@@ -46,6 +50,16 @@ export class CallsService {
       duration,
       cost,
     }).where(eq(schema.callLogs.id, id)).returning();
+
+    // Update astrologer total calls and earnings
+    await this.db.update(schema.astrologers).set({
+      totalCalls: sql`${schema.astrologers.totalCalls} + 1`,
+      totalEarnings: sql`${schema.astrologers.totalEarnings} + ${cost}::decimal`,
+      updatedAt: new Date(),
+    }).where(eq(schema.astrologers.id, call.astrologerId));
+
+    this.realtime.broadcast('astrologer:stats-updated', { astrologerId: call.astrologerId });
+
     return r;
   }
 }

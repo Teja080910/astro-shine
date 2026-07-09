@@ -37,6 +37,7 @@ import { FileUploadModule } from './modules/file-upload/file-upload.module';
 import { EmailModule } from './modules/email/email.module';
 import { ConversationsModule } from './modules/conversations/conversations.module';
 import { ScheduleModule } from './modules/schedule/schedule.module';
+import { RealtimeModule } from './common/realtime.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -80,6 +81,7 @@ import { AppService } from './app.service';
     EmailModule,
     ConversationsModule,
     ScheduleModule,
+    RealtimeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

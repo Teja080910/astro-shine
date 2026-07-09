@@ -1,42 +1,50 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState, useCallback } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, FlatList, RefreshControl } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, RefreshControl } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
-import { Avatar, CustomModal, GlassCard, GradientButton, ScreenWrapper, SectionHeader, EmptyState, Chip, StarRating, SearchBar, Toggle, colors, radii, typography } from '../../shared';
+import { useChat } from '../../context/ChatContext';
+import { Avatar, CustomModal, GlassCard, GradientButton, ScreenWrapper, SectionHeader, EmptyState, Chip, StarRating, Toggle, ConfirmDialog, colors, radii, typography } from '../../shared';
 import { api } from '../../shared/api-client';
 import type { Transaction, Review, CallLog, Notification, WithdrawalRequest } from '../../shared/types';
 
-// ─── Astrologer Dashboard ───
 export function AstrologerHomeScreen({ navigation }: any) {
   const { astrologer } = useAuth();
+  const { astrologerStatuses, statsVersion } = useChat();
+  const isFocused = useIsFocused();
   const [isOnline, setIsOnline] = useState(astrologer?.onlineStatus === 'online');
   const [stats, setStats] = useState({ todayEarnings: '₹0', totalCalls: '0', rating: '0', totalEarnings: '₹0' });
-  const [recentTxns, setRecentTxns] = useState<Transaction[]>([]);
+  const [recentTxns, setRecentTxns] = useState<any[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!astrologer?.id) return;
     try {
-      const [astro, txns, calls] = await Promise.all([
+      const [astro, txns] = await Promise.all([
         api.astrologers.get(astrologer.id),
         api.transactions.listMy(),
-        api.calls.list({ astrologerId: astrologer.id }),
       ]);
       setIsOnline(astro.onlineStatus === 'online');
       const todayTxns = txns.filter(t => new Date(t.createdAt).toDateString() === new Date().toDateString());
       const todayEarn = todayTxns.filter(t => t.type === 'credit').reduce((s, t) => s + Number(t.amount), 0);
       setStats({
         todayEarnings: `₹${todayEarn}`,
-        totalCalls: String(calls.length),
+        totalCalls: String(astro.totalCalls || '0'),
         rating: astro.rating || '0',
         totalEarnings: `₹${astro.totalEarnings || '0'}`,
       });
       setRecentTxns(txns.slice(0, 5));
     } catch {}
-  }, [astrologer?.id]);
+  }, [astrologer?.id, statsVersion]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { if (isFocused) loadData(); }, [isFocused, loadData]);
+
+  useEffect(() => {
+    if (astrologer?.id && astrologerStatuses[astrologer.id]) {
+      setIsOnline(astrologerStatuses[astrologer.id] === 'online');
+    }
+  }, [astrologerStatuses, astrologer?.id]);
 
   const onRefresh = async () => { setRefreshing(true); await loadData(); setRefreshing(false); };
 
@@ -57,7 +65,9 @@ export function AstrologerHomeScreen({ navigation }: any) {
       <ScrollView contentContainerStyle={{ padding: 16 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <View style={{ flex: 1 }}>
-            <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>Dashboard</Text>
+            <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>
+              <Ionicons name="sunny" size={24} color={colors.accentGold} /> Namaste
+            </Text>
             <Text style={[typography.body, { color: colors.textSecondary }]}>{astrologer?.name || 'Astrologer'}</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -139,9 +149,9 @@ export function AstrologerHomeScreen({ navigation }: any) {
   );
 }
 
-// ─── Astrologer Wallet & Earnings ───
 export function AstrologerWalletScreen({ navigation }: any) {
   const { astrologer } = useAuth();
+  const isFocused = useIsFocused();
   const [balance, setBalance] = useState('0');
   const [txns, setTxns] = useState<Transaction[]>([]);
   const [filter, setFilter] = useState<'all' | 'credit' | 'debit'>('all');
@@ -155,7 +165,7 @@ export function AstrologerWalletScreen({ navigation }: any) {
     } catch {}
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { if (isFocused) loadData(); }, [isFocused, loadData]);
 
   const onRefresh = async () => { setRefreshing(true); await loadData(); setRefreshing(false); };
 
@@ -214,7 +224,6 @@ export function AstrologerWalletScreen({ navigation }: any) {
   );
 }
 
-// ─── Withdrawal Management ───
 export function AstrologerWithdrawalScreen() {
   const { astrologer } = useAuth();
   const [requests, setRequests] = useState<WithdrawalRequest[]>([]);
@@ -237,15 +246,9 @@ export function AstrologerWithdrawalScreen() {
     if (!amount || !bankAc || !ifsc) return;
     setLoading(true);
     try {
-      await api.withdrawals.create({
-        amount,
-        bankAccount: { accountNumber: bankAc, ifsc },
-        astrologerId: astrologer?.id,
-      });
+      await api.withdrawals.create({ amount, bankAccount: { accountNumber: bankAc, ifsc }, astrologerId: astrologer?.id });
       setShowForm(false);
-      setAmount('');
-      setBankAc('');
-      setIfsc('');
+      setAmount(''); setBankAc(''); setIfsc('');
       await loadData();
     } catch (e) { Alert.alert('Error', 'Failed to submit withdrawal request'); }
     finally { setLoading(false); }
@@ -311,7 +314,6 @@ export function AstrologerWithdrawalScreen() {
   );
 }
 
-// ─── Ratings & Reviews ───
 export function AstrologerReviewsScreen() {
   const { astrologer } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -356,7 +358,6 @@ export function AstrologerReviewsScreen() {
   );
 }
 
-// ─── Notifications ───
 export function AstrologerNotificationsScreen() {
   const { astrologer } = useAuth();
   const [notifs, setNotifs] = useState<Notification[]>([]);
@@ -385,7 +386,7 @@ export function AstrologerNotificationsScreen() {
         ) : (
           notifs.map(n => (
             <TouchableOpacity key={n.id} onPress={() => !n.isRead && markRead(n.id)}>
-              <GlassCard style={{ marginBottom: 8, padding: 14, opacity: n.isRead ? 0.6 : 1 }}>
+              <GlassCard style={{ marginBottom: 8, padding: 14, opacity: n.isRead ? 0.85 : 1 }}>
                 <View style={{ flexDirection: 'row', gap: 12 }}>
                   <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: n.isRead ? colors.surfaceLight : colors.primary + '20', alignItems: 'center', justifyContent: 'center' }}>
                     <Ionicons name={n.type === 'system' ? 'settings-outline' : n.type === 'promotional' ? 'megaphone-outline' : 'cash-outline'} size={20} color={n.isRead ? colors.textMuted : colors.primaryLight} />
@@ -406,7 +407,6 @@ export function AstrologerNotificationsScreen() {
   );
 }
 
-// ─── Consultation History ───
 export function AstrologerConsultationScreen() {
   const { astrologer } = useAuth();
   const [calls, setCalls] = useState<CallLog[]>([]);
@@ -465,10 +465,10 @@ export function AstrologerConsultationScreen() {
   );
 }
 
-// ─── Astrologer Profile ───
 export function AstrologerProfileScreen({ navigation }: any) {
-  const { astrologer, user, role, logout, updateUser, theme, setTheme } = useAuth();
+  const { astrologer, role, logout, updateUser, theme, setTheme } = useAuth();
   const [pwOpen, setPwOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
@@ -491,9 +491,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
     { icon: 'help-circle-outline', label: 'Help & Support', route: 'Support' },
   ];
 
-  const toggleTheme = async (val: boolean) => {
-    try { await setTheme(val ? 'dark' : 'light'); } catch {}
-  };
+  const toggleTheme = async (val: boolean) => { try { await setTheme(val ? 'dark' : 'light'); } catch {} };
 
   const handlePasswordChange = async () => {
     if (!currentPw || !newPw || !confirmPw) { setPwError('Please fill in all password fields.'); return; }
@@ -510,13 +508,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
   };
 
   const handleDeleteAccount = () => {
-    if (!profile) return;
-    Alert.alert("Delete Account", "Are you sure? This action is permanent.", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: async () => {
-        try { await api.astrologers.delete(profile.id); await logout(); } catch { Alert.alert("Error", "Failed to delete account."); }
-      }},
-    ]);
+    setDeleteOpen(true);
   };
 
   return (
@@ -524,9 +516,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
       <View style={{ alignItems: 'center', marginVertical: 24 }}>
         <Avatar size={80} uri={profile?.avatar} />
         <Text style={[typography.sectionTitle, { marginTop: 12, color: colors.textPrimary }]}>{profile?.name}</Text>
-        <Text style={[typography.caption, { color: colors.textSecondary }]}>
-          {profile?.specialization?.join(', ') || 'Astrologer'}
-        </Text>
+        <Text style={[typography.caption, { color: colors.textSecondary }]}>{profile?.specialization?.join(', ') || 'Astrologer'}</Text>
       </View>
 
       <GlassCard style={{ marginTop: 24 }}>
@@ -573,6 +563,20 @@ export function AstrologerProfileScreen({ navigation }: any) {
           <GradientButton title={pwLoading ? 'Changing...' : 'Change Password'} onPress={handlePasswordChange} disabled={pwLoading} style={{ marginTop: 8 }} />
         </View>
       </CustomModal>
+
+      <ConfirmDialog
+        visible={deleteOpen}
+        title="Delete Account"
+        subtitle="Are you sure you want to delete your account? This action is permanent and cannot be undone."
+        actions={[
+          { label: 'Cancel', variant: 'secondary', onPress: () => setDeleteOpen(false) },
+          { label: 'Delete', variant: 'danger', onPress: async () => {
+            setDeleteOpen(false);
+            try { await api.astrologers.delete(profile!.id); await logout(); } catch {}
+          }},
+        ]}
+        onClose={() => setDeleteOpen(false)}
+      />
     </ScreenWrapper>
   );
 }
