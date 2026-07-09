@@ -38,7 +38,7 @@ export function LoginScreen({ navigation }: any) {
           </View>
           {error ? <Text style={styles.error}>{error}</Text> : null}
           
-          <View style={[styles.formCard, { backgroundColor: colors.glassBg, borderColor: colors.cardBorder }]}>
+          <View style={[styles.formCard, { backgroundColor: colors.glassBg, borderColor: colors.inputBorder }]}>
             <Input icon="mail-outline" placeholder="Email" value={email} onChange={setEmail} keyboardType="email-address" />
             <Input icon="lock-closed-outline" placeholder="Password" value={password} onChange={setPassword} secure={!showPw} right={<Ionicons name={showPw ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textMuted} onPress={() => setShowPw(!showPw)} />} />
             <GradientButton title={loading ? 'Signing in...' : 'Sign In'} onPress={handleLogin} disabled={loading} />
@@ -110,7 +110,7 @@ export function RegisterScreen({ navigation }: any) {
 
               <View style={styles.selectionContainer}>
                 <TouchableOpacity 
-                  style={[styles.roleCard, { backgroundColor: colors.glassBg, borderColor: colors.cardBorder }]}
+                  style={[styles.roleCard, { backgroundColor: colors.glassBg, borderColor: colors.inputBorder }]}
                   onPress={() => { setSelectedRole('user'); setStep(1); setError(''); }}
                 >
                   <View style={[styles.roleCardIconContainer, { backgroundColor: colors.surfaceLight }]}>
@@ -121,7 +121,7 @@ export function RegisterScreen({ navigation }: any) {
                 </TouchableOpacity>
 
                 <TouchableOpacity 
-                  style={[styles.roleCard, { backgroundColor: colors.glassBg, borderColor: colors.cardBorder }]}
+                  style={[styles.roleCard, { backgroundColor: colors.glassBg, borderColor: colors.inputBorder }]}
                   onPress={() => { setSelectedRole('astrologer'); setStep(1); setError(''); }}
                 >
                   <View style={[styles.roleCardIconContainer, { backgroundColor: colors.surfaceLight }]}>
@@ -147,7 +147,7 @@ export function RegisterScreen({ navigation }: any) {
                 <Text style={[styles.backToRoleText, { color: colors.textSecondary }]}>Change Role Selection</Text>
               </TouchableOpacity>
 
-              <View style={[styles.formCard, { backgroundColor: colors.glassBg, borderColor: colors.cardBorder }]}>
+              <View style={[styles.formCard, { backgroundColor: colors.glassBg, borderColor: colors.inputBorder }]}>
                 <Input icon="person-outline" placeholder="Full Name" value={name} onChange={setName} />
                 <Input icon="mail-outline" placeholder="Email Address" value={email} onChange={setEmail} keyboardType="email-address" />
                 <Input icon="call-outline" placeholder="Phone Number" value={phone} onChange={setPhone} keyboardType="phone-pad" />
@@ -303,7 +303,7 @@ export function OtpLoginScreen({ navigation }: any) {
           </View>
           {error ? <Text style={styles.error}>{error}</Text> : null}
           
-          <View style={[styles.formCard, { backgroundColor: colors.glassBg, borderColor: colors.cardBorder }]}>
+          <View style={[styles.formCard, { backgroundColor: colors.glassBg, borderColor: colors.inputBorder }]}>
             {/* Verification Type Switcher */}
             <View style={[styles.roleContainer, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder }]}>
               <TouchableOpacity 
@@ -377,9 +377,8 @@ export function OtpLoginScreen({ navigation }: any) {
 }
 
 function Input({ icon, placeholder, value, onChange, secure, keyboardType, right, editable = true }: any) {
-  const { theme } = useAuth();
   return (
-    <View style={[styles.inputContainer, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder }]}>
+    <View style={[styles.inputContainer, { backgroundColor: colors.surfaceLight, borderColor: colors.inputBorder }]}>
       <Ionicons name={icon} size={20} color={colors.textMuted} style={{ marginRight: 10 }} />
       <TextInput 
         style={[styles.input, { color: colors.textPrimary }]} 
@@ -419,11 +418,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 20,
     width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
     marginBottom: 20,
   },
   inputContainer: { flexDirection: 'row', alignItems: 'center', borderRadius: radii.input, borderWidth: 1, paddingHorizontal: 14, height: 52, marginBottom: 14 },
@@ -480,11 +474,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 24,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
   },
   roleCardIconContainer: {
     width: 64,
