@@ -39,13 +39,15 @@ function isConsecutive(prev: any, curr: any): boolean {
 
 export function ChatRoomScreen({ route, navigation }: any) {
   const { conversationId, participantId, participantRole, participantName } = route.params;
-  const { messages, loadMessages, loadMoreMessages, sendMessage, startTyping, stopTyping, markAsRead, typingUsers, hasMore, loading, onlineUsers, connected, joinRoom, setActiveConversation } = useChat();
+  const { messages, loadMessages, loadMoreMessages, sendMessage, startTyping, stopTyping, markAsRead, typingUsers, hasMore, loading, onlineUsers, connected, joinRoom, setActiveConversation, astrologerStatuses } = useChat();
   const { user, astrologer } = useAuth();
   const currentUserId = user?.id || astrologer?.id;
   const [input, setInput] = useState('');
   const flatListRef = useRef<FlatList>(null);
   const typing = typingUsers[conversationId];
-  const isOnline = onlineUsers[participantId] ?? false;
+  const isOnline = participantRole === 'astrologer'
+    ? astrologerStatuses[participantId] === 'online'
+    : onlineUsers[participantId] ?? false;
   const joinedRef = useRef(false);
   const userScrolledUp = useRef(false);
   const prevMsgCount = useRef(0);

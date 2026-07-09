@@ -26,6 +26,12 @@ const ZODIAC_SIGNS = [
 
 const ASTRO_CATEGORIES = ['All', 'Vedic', 'Tarot', 'Numerology', 'Palmistry', 'Vastu'];
 
+function getAstrologerOnlineStatus(astro: Astrologer, astrologerStatuses: Record<string, 'online' | 'offline' | 'busy'>) {
+  const wsStatus = astrologerStatuses[astro.id];
+  if (wsStatus) return wsStatus === 'online';
+  return astro.onlineStatus === 'online';
+}
+
 // User Home Dashboard
 export function UserHomeScreen({ navigation }: any) {
   const { user } = useAuth();
@@ -183,13 +189,13 @@ export function UserHomeScreen({ navigation }: any) {
 
         <View style={{ height: 24 }} />
 
-        <SectionHeader title="Live Astrologers" onSeeAll={() => navigation.navigate('AstrologerList')} />
+        <SectionHeader title="Live Astrologers" onSeeAll={() => navigation.navigate('AstrologerList', { onlyLive: true })} />
         {astrologers.length > 0 ? (
-          <FlatList horizontal showsHorizontalScrollIndicator={false} data={astrologers.filter(a => astrologerStatuses[a.id] === 'online').slice(0, 6)} keyExtractor={(a) => a.id}
+          <FlatList horizontal showsHorizontalScrollIndicator={false} data={astrologers.filter(a => getAstrologerOnlineStatus(a, astrologerStatuses)).slice(0, 6)} keyExtractor={(a) => a.id}
             renderItem={({ item }) => (
               <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.id })} style={styles.astroCard}>
                 <GlassCard style={styles.astroInner}>
-                  <Avatar size={56} online={astrologerStatuses[item.id] === 'online'} />
+                  <Avatar size={56} online={getAstrologerOnlineStatus(item, astrologerStatuses)} />
                   <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
                   <StarRating rating={parseFloat(item.rating)} size={12} />
                   <Text style={typography.caption}>{item.specialization?.[0] || 'Astrologer'}</Text>
@@ -214,7 +220,7 @@ export function UserHomeScreen({ navigation }: any) {
             renderItem={({ item }) => (
               <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.id })} style={styles.astroCard}>
                 <GlassCard style={styles.astroInner}>
-                  <Avatar size={56} online={astrologerStatuses[item.id] === 'online'} />
+                  <Avatar size={56} online={getAstrologerOnlineStatus(item, astrologerStatuses)} />
                   <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
                   <StarRating rating={parseFloat(item.rating)} size={12} />
                   <Text style={typography.caption}>{item.specialization?.[0] || 'Astrologer'}</Text>
@@ -338,7 +344,7 @@ export function UserHomeScreen({ navigation }: any) {
 }
 
 // Astrologers List
-export function AstrologerListScreen({ navigation }: any) {
+export function AstrologerListScreen({ route, navigation }: any) {
   const { astrologerStatuses } = useChat();
   const isFocused = useIsFocused();
   const [data, setData] = useState<Astrologer[]>([]);
@@ -346,24 +352,20 @@ export function AstrologerListScreen({ navigation }: any) {
   const [selectedCat, setSelectedCat] = useState('All');
   const cats = ['All', 'Vedic', 'Tarot', 'Numerology', 'Palmistry', 'Vastu'];
   const [loading, setLoading] = useState(true);
+  const onlyLive = route?.params?.onlyLive ?? false;
 
   useEffect(() => { if (isFocused) api.astrologers.list().then(setData).finally(() => setLoading(false)); }, [isFocused]);
   
   const filtered = data.filter(a => {
     const matchesSearch = !search || a.name.toLowerCase().includes(search.toLowerCase()) || a.specialization?.some(s => s.toLowerCase().includes(search.toLowerCase()));
     const matchesCategory = selectedCat === 'All' || a.specialization?.some(s => s.toLowerCase() === selectedCat.toLowerCase());
-    return matchesSearch && matchesCategory;
+    const matchesLive = !onlyLive || getAstrologerOnlineStatus(a, astrologerStatuses);
+    return matchesSearch && matchesCategory && matchesLive;
   });
-
-  const getOnlineStatus = (astro: Astrologer) => {
-    const wsStatus = astrologerStatuses[astro.id];
-    if (wsStatus) return wsStatus === 'online';
-    return astro.onlineStatus === 'online';
-  };
 
   return (
     <ScreenWrapper noPadding>
-      <View style={{ padding: 16, paddingBottom: 0 }}><Text style={[typography.pageTitle, { color: colors.textPrimary }]}>Astrologers</Text></View>
+      <View style={{ padding: 16, paddingBottom: 0 }}><Text style={[typography.pageTitle, { color: colors.textPrimary }]}>{onlyLive ? 'Live Astrologers' : 'Astrologers'}</Text></View>
       <SearchBar value={search} onChangeText={setSearch} />
       <FlatList 
         horizontal 
@@ -387,7 +389,7 @@ export function AstrologerListScreen({ navigation }: any) {
           <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.id })} style={{ marginBottom: 12 }}>
             <GlassCard>
               <View style={styles.row}>
-                <Avatar size={56} online={getOnlineStatus(item)} />
+                <Avatar size={56} online={getAstrologerOnlineStatus(item, astrologerStatuses)} />
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
                   <StarRating rating={parseFloat(item.rating)} size={12} reviewCount={item.totalReviews} />
@@ -419,7 +421,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
   if (!astro) return <ScreenWrapper><Text style={typography.body}>Loading...</Text></ScreenWrapper>;
 
   const isVerified = astro.verificationStatus === 'approved';
-  const isOnline = astrologerStatuses[astro.id] === 'online';
+  const isOnline = getAstrologerOnlineStatus(astro, astrologerStatuses);
 
   const handleChat = async () => {
     if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified. Please choose a verified astrologer.'); return; }
