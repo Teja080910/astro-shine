@@ -392,7 +392,7 @@ function Input({ icon, placeholder, value, onChange, secure, keyboardType, right
         autoCapitalize="none" 
         editable={editable} 
       />
-      {right}
+      {right && <View style={{ marginLeft: 4 }}>{right}</View>}
     </View>
   );
 }

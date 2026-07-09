@@ -34,11 +34,11 @@ export function TypingIndicator() {
   });
 
   return (
-    <View style={styles.container}>
-      <View style={styles.bubble}>
-        <Animated.View style={[styles.dot, dotStyle(dot1)]} />
-        <Animated.View style={[styles.dot, dotStyle(dot2)]} />
-        <Animated.View style={[styles.dot, dotStyle(dot3)]} />
+    <View style={[styles.container]}>
+      <View style={[styles.bubble, { backgroundColor: colors.surfaceLight }]}>
+        <Animated.View style={[styles.dot, { backgroundColor: colors.textMuted }, dotStyle(dot1)]} />
+        <Animated.View style={[styles.dot, { backgroundColor: colors.textMuted }, dotStyle(dot2)]} />
+        <Animated.View style={[styles.dot, { backgroundColor: colors.textMuted }, dotStyle(dot3)]} />
       </View>
     </View>
   );
@@ -48,7 +48,6 @@ const styles = StyleSheet.create({
   container: { alignSelf: 'flex-start', marginVertical: 2, marginLeft: 8 },
   bubble: {
     flexDirection: 'row',
-    backgroundColor: colors.surfaceLight,
     borderRadius: 12,
     borderBottomLeftRadius: 2,
     paddingHorizontal: 10,
@@ -60,6 +59,5 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.textMuted,
   },
 });

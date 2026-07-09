@@ -20,6 +20,8 @@ import {
   AstrologerCommissionScreen, AstrologerGoLiveScreen,
   PrivacyPolicyScreen, TermsConditionsScreen, AboutAppScreen,
 } from '../screens/shared/SharedScreens';
+import { IncomingCallScreen } from '../screens/shared/IncomingCallScreen';
+import { ActiveCallScreen } from '../screens/shared/ActiveCallScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();

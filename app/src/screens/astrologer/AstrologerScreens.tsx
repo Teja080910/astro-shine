@@ -446,7 +446,7 @@ export function AstrologerConsultationScreen() {
                   </View>
                   <View>
                     <Text style={[typography.cardTitle, { fontSize: 14 }]}>{c.type === 'video' ? 'Video Call' : 'Audio Call'}</Text>
-                    <Text style={typography.caption}>{new Date(c.createdAt).toLocaleDateString()} {c.duration ? `· ${Math.floor(c.duration / 60)}m ${c.duration % 60}s` : ''}</Text>
+                    <Text style={typography.caption}>{(c as any).userName || 'User'} · {new Date(c.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} {c.duration ? `· ${Math.floor(c.duration / 60)}m ${c.duration % 60}s` : ''}</Text>
                   </View>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
