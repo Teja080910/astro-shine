@@ -49,3 +49,6 @@ web-build/
 android/
 *.apk
 *.aab
+*.hprof
+local.properties
+captures/
