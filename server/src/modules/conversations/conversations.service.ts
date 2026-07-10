@@ -14,18 +14,21 @@ export class ConversationsService {
       throw new ConflictException('Cannot create conversation with yourself');
     }
 
-    const existing = await this.db.query.conversations.findFirst({
-      where: or(
-        and(
-          eq(schema.conversations.participantOneId, requesterId),
-          eq(schema.conversations.participantTwoId, participantId),
+    const [existing] = await this.db.select()
+      .from(schema.conversations)
+      .where(
+        or(
+          and(
+            eq(schema.conversations.participantOneId, requesterId),
+            eq(schema.conversations.participantTwoId, participantId),
+          ),
+          and(
+            eq(schema.conversations.participantOneId, participantId),
+            eq(schema.conversations.participantTwoId, requesterId),
+          ),
         ),
-        and(
-          eq(schema.conversations.participantOneId, participantId),
-          eq(schema.conversations.participantTwoId, requesterId),
-        ),
-      ),
-    });
+      )
+      .limit(1);
 
     if (existing) return existing;
 
@@ -40,19 +43,22 @@ export class ConversationsService {
   }
 
   async findByUser(userId: string) {
-    return this.db.query.conversations.findMany({
-      where: or(
-        eq(schema.conversations.participantOneId, userId),
-        eq(schema.conversations.participantTwoId, userId),
-      ),
-      orderBy: desc(schema.conversations.lastMessageAt),
-    });
+    return this.db.select()
+      .from(schema.conversations)
+      .where(
+        or(
+          eq(schema.conversations.participantOneId, userId),
+          eq(schema.conversations.participantTwoId, userId),
+        ),
+      )
+      .orderBy(desc(schema.conversations.lastMessageAt));
   }
 
   async findById(id: string) {
-    const conversation = await this.db.query.conversations.findFirst({
-      where: eq(schema.conversations.id, id),
-    });
+    const [conversation] = await this.db.select()
+      .from(schema.conversations)
+      .where(eq(schema.conversations.id, id))
+      .limit(1);
     if (!conversation) throw new NotFoundException('Conversation not found');
     return conversation;
   }
@@ -61,19 +67,20 @@ export class ConversationsService {
     const conditions = [eq(schema.conversationMessages.conversationId, conversationId)];
 
     if (cursor) {
-      const cursorMsg = await this.db.query.conversationMessages.findFirst({
-        where: eq(schema.conversationMessages.id, cursor),
-      });
+      const [cursorMsg] = await this.db.select()
+        .from(schema.conversationMessages)
+        .where(eq(schema.conversationMessages.id, cursor))
+        .limit(1);
       if (cursorMsg) {
         conditions.push(lt(schema.conversationMessages.createdAt, cursorMsg.createdAt));
       }
     }
 
-    const messages = await this.db.query.conversationMessages.findMany({
-      where: and(...conditions),
-      orderBy: desc(schema.conversationMessages.createdAt),
-      limit: limit + 1,
-    });
+    const messages = await this.db.select()
+      .from(schema.conversationMessages)
+      .where(and(...conditions))
+      .orderBy(desc(schema.conversationMessages.createdAt))
+      .limit(limit + 1);
 
     const hasMore = messages.length > limit;
     if (hasMore) messages.pop();
