@@ -255,7 +255,8 @@ export function OtpLoginScreen({ navigation }: any) {
       }
       setSent(true);
     } catch (e: any) {
-      setError(e?.message || 'Failed to send OTP');
+      const detail = e?.response?.data?.message || e?.message || e?.toString() || 'Failed to send OTP';
+      setError(detail);
     } finally {
       setSending(false);
     }
@@ -293,7 +294,8 @@ export function OtpLoginScreen({ navigation }: any) {
         }
       }
     } catch (e: any) {
-      setError(e?.message || 'Invalid OTP');
+      const detail = e?.response?.data?.message || e?.message || e?.toString() || 'Invalid OTP';
+      setError(detail);
     } finally {
       setLoading(false);
     }
