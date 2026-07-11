@@ -4,10 +4,11 @@ import { colors } from '../../shared';
 import { Ionicons } from '@expo/vector-icons';
 import { useCall } from '../../context/CallContext';
 import { useAgora } from '../../shared/useAgora';
+import { RtcSurfaceView, VideoSourceType } from 'react-native-agora';
 
 export function ActiveCallScreen() {
   const { callData, callState, endCall } = useCall();
-  const { joinChannel, leaveChannel, toggleMute, toggleSpeaker, toggleCamera, switchCamera, isMuted, isSpeakerOn, isVideoEnabled, isCameraFront, remoteUid } = useAgora();
+  const { joinChannel, leaveChannel, toggleMute, toggleSpeaker, toggleCamera, switchCamera, isMuted, isSpeakerOn, isVideoEnabled, isCameraFront, remoteUid, isRemoteMuted, isRemoteVideoMuted } = useAgora();
   const [seconds, setSeconds] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const joinedRef = useRef(false);
@@ -18,7 +19,7 @@ export function ActiveCallScreen() {
   useEffect(() => {
     if (callState === 'active' && callData?.channel && callData?.token && !joinedRef.current) {
       joinedRef.current = true;
-      joinChannel(callData.channel, callData.token, callData.uid);
+      joinChannel(callData.channel, callData.token, callData.uid, callData.type);
     }
   }, [callState, callData]);
 
@@ -56,17 +57,50 @@ export function ActiveCallScreen() {
         {isVideo && (
           <View style={styles.videoContainer}>
             <View style={styles.remoteVideo}>
-              {remoteUid ? (
-                <Text style={styles.remoteName}>{otherName}</Text>
+              {remoteUid && !isRemoteVideoMuted ? (
+                <>
+                  <RtcSurfaceView
+                    canvas={{
+                      uid: remoteUid,
+                      sourceType: VideoSourceType.VideoSourceRemote,
+                    }}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  <View style={styles.remoteNameContainer}>
+                    <Text style={styles.remoteVideoName}>{otherName}</Text>
+                    {isRemoteMuted && (
+                      <Ionicons name="mic-off" size={16} color={colors.danger} style={{ marginLeft: 6 }} />
+                    )}
+                  </View>
+                </>
               ) : (
                 <>
                   <Ionicons name="person-circle" size={80} color={colors.textMuted} />
                   <Text style={styles.remoteName}>{otherName}</Text>
+                  {isRemoteVideoMuted && (
+                    <Text style={{ color: colors.textMuted, fontSize: 14, marginTop: 8 }}>Camera turned off</Text>
+                  )}
+                  {remoteUid && isRemoteMuted && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+                      <Ionicons name="mic-off" size={16} color={colors.danger} />
+                      <Text style={{ color: colors.danger, marginLeft: 4, fontSize: 14 }}>Muted</Text>
+                    </View>
+                  )}
                 </>
               )}
             </View>
             <View style={[styles.localVideo, { opacity: isVideoEnabled ? 1 : 0.4 }]}>
-              <Ionicons name="person" size={24} color={colors.white} />
+              {isVideoEnabled ? (
+                <RtcSurfaceView
+                  canvas={{
+                    uid: 0,
+                    sourceType: VideoSourceType.VideoSourceCamera,
+                  }}
+                  style={StyleSheet.absoluteFill}
+                />
+              ) : (
+                <Ionicons name="person" size={24} color={colors.white} />
+              )}
             </View>
           </View>
         )}
@@ -78,7 +112,11 @@ export function ActiveCallScreen() {
             </View>
             <Text style={styles.name}>{otherName}</Text>
             <Text style={styles.status}>
-              {callState === 'active' ? formatTime(seconds) : callState === 'ended' ? 'Call Ended' : 'Connecting...'}
+              {callState === 'active' 
+                ? (isRemoteMuted ? 'Muted' : formatTime(seconds)) 
+                : callState === 'ended' 
+                  ? 'Call Ended' 
+                  : 'Connecting...'}
             </Text>
           </View>
         )}
@@ -135,6 +173,23 @@ const styles = StyleSheet.create({
   videoContainer: { flex: 1, position: 'relative' },
   remoteVideo: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a1a1a' },
   remoteName: { color: colors.white, fontSize: 18, marginTop: 12 },
+  remoteNameContainer: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    zIndex: 10,
+  },
+  remoteVideoName: {
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: '600',
+  },
   localVideo: { position: 'absolute', top: 50, right: 16, width: 100, height: 140, borderRadius: 12, backgroundColor: colors.surfaceLight, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
   controls: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 20, paddingVertical: 40, paddingBottom: 60, flexWrap: 'wrap' },
   controlButton: { alignItems: 'center' },

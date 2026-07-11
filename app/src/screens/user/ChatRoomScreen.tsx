@@ -89,7 +89,15 @@ export function ChatRoomScreen({ route, navigation }: any) {
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
-        <View style={headerStyles.container}>
+        <TouchableOpacity
+          onPress={() => {
+            if (participantRole === 'astrologer') {
+              navigation.navigate('AstrologerDetail', { id: participantId });
+            }
+          }}
+          disabled={participantRole !== 'astrologer'}
+          style={headerStyles.container}
+        >
           <Avatar size={36} online={isOnline} />
           <View style={headerStyles.textContainer}>
             <Text style={[headerStyles.name, { color: colors.textPrimary }]}>{participantName || (participantId === currentUserId ? 'You' : 'Astrologer')}</Text>
@@ -99,10 +107,10 @@ export function ChatRoomScreen({ route, navigation }: any) {
               <Text style={[headerStyles.status, { color: colors.textMuted }]}>{isOnline ? 'Online' : 'Offline'}</Text>
             )}
           </View>
-        </View>
+        </TouchableOpacity>
       ),
     });
-  }, [navigation, isOnline, typing, participantId, currentUserId, participantName]);
+  }, [navigation, isOnline, typing, participantId, currentUserId, participantName, participantRole]);
 
   useEffect(() => {
     loadMessages(conversationId);
