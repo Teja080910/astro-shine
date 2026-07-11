@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { io, Socket } from 'socket.io-client';
 import { config } from '../config';
 import { useAuth } from './AuthContext';
+import { Platform, PermissionsAndroid, Alert } from 'react-native';
 
 export type CallType = 'audio' | 'video';
 export type CallState = 'idle' | 'calling' | 'ringing' | 'active' | 'ended';
@@ -27,6 +28,35 @@ interface CallContextType {
   endCall: () => void;
   incomingCall: CallData | null;
   setIncomingCall: (data: CallData | null) => void;
+}
+
+async function requestCallPermissions(type: 'audio' | 'video'): Promise<boolean> {
+  if (Platform.OS !== 'android') return true;
+
+  try {
+    const permissions = [PermissionsAndroid.PERMISSIONS.RECORD_AUDIO];
+    if (type === 'video') {
+      permissions.push(PermissionsAndroid.PERMISSIONS.CAMERA);
+    }
+
+    const granted = await PermissionsAndroid.requestMultiple(permissions);
+    const audioGranted = granted[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] === PermissionsAndroid.RESULTS.GRANTED;
+    const cameraGranted = type === 'video'
+      ? granted[PermissionsAndroid.PERMISSIONS.CAMERA] === PermissionsAndroid.RESULTS.GRANTED
+      : true;
+
+    if (!audioGranted || !cameraGranted) {
+      Alert.alert(
+        'Permissions Required',
+        `Please grant ${type === 'video' ? 'microphone and camera' : 'microphone'} permissions to make calls.`
+      );
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn(err);
+    return false;
+  }
 }
 
 const CallContext = createContext<CallContextType>(null!);
@@ -89,23 +119,18 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     return () => { socket.disconnect(); };
   }, [token]);
 
-  const initiateCall = useCallback((astrologerId: string, astrologerName: string, type: CallType) => {
+  const initiateCall = useCallback(async (astrologerId: string, astrologerName: string, type: CallType) => {
+    const hasPermission = await requestCallPermissions(type);
+    if (!hasPermission) return;
+
     setCallState('calling');
     setCallData({ callId: '', channel: '', token: '', uid: 0, type, callerName: astrologerName });
     socketRef.current?.emit('call:initiate', { astrologerId, type });
     setTimeout(() => {
       setCallState(prev => prev === 'calling' ? 'idle' : prev);
       setCallData(prev => prev && !prev.callId ? null : prev);
-    }, 30000);
+    }, 60000);
   }, []);
-
-  const acceptCall = useCallback(() => {
-    if (!incomingCall) return;
-    socketRef.current?.emit('call:accept', { callId: incomingCall.callId });
-    setCallState('active');
-    setCallData(incomingCall);
-    setIncomingCall(null);
-  }, [incomingCall]);
 
   const rejectCall = useCallback(() => {
     if (!incomingCall) return;
@@ -113,6 +138,19 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     setIncomingCall(null);
     setCallState('idle');
   }, [incomingCall]);
+
+  const acceptCall = useCallback(async () => {
+    if (!incomingCall) return;
+    const hasPermission = await requestCallPermissions(incomingCall.type);
+    if (!hasPermission) {
+      rejectCall();
+      return;
+    }
+    socketRef.current?.emit('call:accept', { callId: incomingCall.callId });
+    setCallState('active');
+    setCallData(incomingCall);
+    setIncomingCall(null);
+  }, [incomingCall, rejectCall]);
 
   const endCall = useCallback(() => {
     if (!callData || !callData.callId) return;
