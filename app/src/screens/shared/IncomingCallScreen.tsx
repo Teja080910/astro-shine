@@ -3,10 +3,12 @@ import { View, Text, TouchableOpacity, StyleSheet, Animated, Vibration } from 'r
 import { colors } from '../../shared';
 import { Ionicons } from '@expo/vector-icons';
 import { useCall } from '../../context/CallContext';
+import { Audio } from 'expo-av';
 
 export function IncomingCallScreen() {
   const { incomingCall, acceptCall, rejectCall } = useCall();
   const pulseAnim = useRef(new Animated.Value(1)).current;
+  const soundRef = useRef<Audio.Sound | null>(null);
 
   useEffect(() => {
     const pulse = Animated.loop(
@@ -16,8 +18,36 @@ export function IncomingCallScreen() {
       ]),
     );
     pulse.start();
-    Vibration.vibrate([0, 500, 500], true);
-    return () => { pulse.stop(); Vibration.cancel(); };
+
+    let isMounted = true;
+    const startRingtone = async () => {
+      try {
+        const { sound } = await Audio.Sound.createAsync(
+          require('../../../assets/ringtone.mp3'),
+          { shouldPlay: true, isLooping: true }
+        );
+        if (isMounted) {
+          soundRef.current = sound;
+        } else {
+          await sound.unloadAsync();
+        }
+      } catch (error) {
+        console.warn('Failed to play ringtone:', error);
+      }
+    };
+
+    startRingtone();
+    Vibration.vibrate([0, 500, 1000], true);
+
+    return () => {
+      isMounted = false;
+      pulse.stop();
+      Vibration.cancel();
+      if (soundRef.current) {
+        soundRef.current.stopAsync().catch(() => {});
+        soundRef.current.unloadAsync().catch(() => {});
+      }
+    };
   }, []);
 
   if (!incomingCall) return null;

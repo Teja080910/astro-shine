@@ -59,13 +59,21 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
       this.onlineUsers.set(payload.userId, {
         userId: payload.userId,
-        role: 'user',
+        role: payload.role || 'user',
         socketId: client.id,
       });
 
       console.log(`[WS] Online users map:`, Object.fromEntries(this.onlineUsers));
 
-      client.broadcast.emit('user:online', { userId: payload.userId, role: 'user' });
+      client.broadcast.emit('user:online', { userId: payload.userId, role: payload.role || 'user' });
+
+      if (payload.role === 'astrologer') {
+        try {
+          await this.astrologersService.updateOnlineStatus(payload.userId, 'online');
+        } catch (e: any) {
+          console.error('[WS] Failed to update astrologer online status on connect:', e.message);
+        }
+      }
 
       const convs = await this.conversationsService.findByUser(payload.userId);
       console.log(`[WS] Auto-joining ${convs.length} rooms for userId: ${payload.userId}`);

@@ -159,12 +159,18 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setTypingUsers((prev) => ({ ...prev, [data.conversationId]: null }));
     });
 
-    socket.on('user:online', (data: { userId: string }) => {
+    socket.on('user:online', (data: { userId: string; role?: string }) => {
       setOnlineUsers((prev) => ({ ...prev, [data.userId]: true }));
+      if (data.role === 'astrologer') {
+        setAstrologerStatuses((prev) => ({ ...prev, [data.userId]: 'online' }));
+      }
     });
 
-    socket.on('user:offline', (data: { userId: string }) => {
+    socket.on('user:offline', (data: { userId: string; role?: string }) => {
       setOnlineUsers((prev) => ({ ...prev, [data.userId]: false }));
+      if (data.role === 'astrologer') {
+        setAstrologerStatuses((prev) => ({ ...prev, [data.userId]: 'offline' }));
+      }
     });
 
     socket.on('astrologer:status-changed', (data: { astrologerId: string; onlineStatus: 'online' | 'offline' | 'busy' }) => {

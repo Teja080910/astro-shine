@@ -473,7 +473,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
         )}
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 16, backgroundColor: colors.surfaceLight, borderRadius: radii.card, marginTop: 16 }}>
-        <Stat label="Experience" value={`${astro.experience}y`} /><Stat label="Calls" value={`${astro.totalCalls}`} /><Stat label="Price" value={`₹${astro.pricePerMin}/min`} />
+        <Stat label="Experience" value={`${astro.experience}y`} /><Stat label="Price" value={`₹${astro.pricePerMin}/min`} />
       </View>
 
       <GlassCard style={{ marginTop: 16, padding: 16 }}>
