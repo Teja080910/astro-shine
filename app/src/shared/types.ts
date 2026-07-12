@@ -262,6 +262,52 @@ export interface Video {
   isActive: boolean; createdAt: string; updatedAt: string;
 }
 
+// ============ Payments ============
+export interface PaymentOrderRequest {
+  amount: number;
+  purpose: 'wallet_recharge' | 'donation' | 'order_payment' | 'pooja_booking';
+  purposeId?: string;
+  metadata?: Record<string, any>;
+}
+export interface PaymentOrderResponse {
+  id: string;
+  razorpayOrderId: string;
+  amount: number;
+  currency: string;
+  key: string;
+  purpose: string;
+  status: string;
+}
+export interface PaymentVerifyRequest {
+  razorpayPaymentId: string;
+  razorpayOrderId: string;
+  razorpaySignature: string;
+}
+export interface PaymentVerifyResponse {
+  success: boolean;
+  transaction?: Transaction;
+  wallet?: Wallet;
+  status?: string;
+}
+export interface PaymentStatusResponse {
+  id: string;
+  razorpayOrderId: string;
+  razorpayPaymentId?: string;
+  amount: number;
+  purpose: string;
+  status: string;
+  transaction?: Transaction;
+}
+export interface PaymentRefundRequest {
+  amount?: number;
+  reason?: string;
+}
+export interface PaymentRefundResponse {
+  refundId: string;
+  status: string;
+  amount: number;
+}
+
 // ============ API Response ============
 export interface ApiError { statusCode: number; message: string; timestamp: string; path: string; }
 export interface PaginatedResponse<T> { data: T[]; total: number; page: number; limit: number; }

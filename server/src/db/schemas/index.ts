@@ -37,3 +37,5 @@ export { appReleases } from './app-releases';
 export { videos } from './videos';
 export { conversations } from './conversations';
 export { conversationMessages } from './conversation-messages';
+export { paymentOrders } from './payment-orders';
+export { paymentEvents } from './payment-events';

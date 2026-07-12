@@ -9,4 +9,4 @@ import { AuthModule } from '../auth/auth.module';
   providers: [ScheduleService],
   exports: [ScheduleService],
 })
-export class ScheduleModule {}
+export class AstrologerScheduleModule {}
