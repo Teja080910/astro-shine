@@ -10,15 +10,21 @@ export class WalletService {
   ) {}
 
   async getWalletByUserId(userId: string) {
-    return this.db.query.wallets.findFirst({
-      where: eq(schema.wallets.userId, userId),
-    });
+    const [wallet] = await this.db
+      .select()
+      .from(schema.wallets)
+      .where(eq(schema.wallets.userId, userId))
+      .limit(1);
+    return wallet;
   }
 
   async getWalletByAstrologerId(astrologerId: string) {
-    return this.db.query.wallets.findFirst({
-      where: eq(schema.wallets.astrologerId, astrologerId),
-    });
+    const [wallet] = await this.db
+      .select()
+      .from(schema.wallets)
+      .where(eq(schema.wallets.astrologerId, astrologerId))
+      .limit(1);
+    return wallet;
   }
 
   async createWallet(data: { userId?: string; astrologerId?: string }) {

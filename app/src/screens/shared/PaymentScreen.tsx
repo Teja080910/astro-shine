@@ -4,6 +4,72 @@ import { Alert, View, Text } from 'react-native';
 import { api } from '../../shared/api-client';
 import { ScreenWrapper, colors, typography } from '../../shared';
 
+type PaymentErrorCategory = 'cancelled' | 'failed' | 'auth_failed' | 'network' | 'timeout' | 'gateway' | 'unknown';
+
+function categorizeRazorpayError(error: any): { category: PaymentErrorCategory; friendly: string; raw: any } {
+  const raw = error?.error || error;
+  const code = raw?.code || '';
+  const description = raw?.description || '';
+  const reason = raw?.reason || '';
+
+  console.log('[Payment] Razorpay error:', JSON.stringify({ code, description, reason, metadata: raw?.metadata }));
+
+  const isCancelled = (
+    code === 'BAD_REQUEST_ERROR' ||
+    reason === 'payment_error' ||
+    description?.toLowerCase().includes('cancelled') ||
+    description?.toLowerCase().includes('cancelled') ||
+    description?.toLowerCase().includes('closed') ||
+    description === 'undefined'
+  );
+
+  if (isCancelled) {
+    return {
+      category: 'cancelled',
+      friendly: 'You cancelled the payment. No amount has been charged.',
+      raw,
+    };
+  }
+
+  if (code?.includes('NETWORK') || code?.includes('TIMEOUT') || reason === 'network_error') {
+    return {
+      category: 'network',
+      friendly: 'A network error occurred. Please check your connection and try again.',
+      raw,
+    };
+  }
+
+  if (code?.includes('AUTH') || code?.includes('FAILED') || reason === 'authentication_failed') {
+    return {
+      category: 'auth_failed',
+      friendly: 'Payment authentication failed. Please try again or use a different method.',
+      raw,
+    };
+  }
+
+  if (code?.includes('TIMEOUT') || reason === 'timeout') {
+    return {
+      category: 'timeout',
+      friendly: 'The payment request timed out. Please try again.',
+      raw,
+    };
+  }
+
+  if (code?.includes('GATEWAY') || description?.toLowerCase().includes('gateway')) {
+    return {
+      category: 'gateway',
+      friendly: 'The payment gateway is temporarily unavailable. Please try again later.',
+      raw,
+    };
+  }
+
+  return {
+    category: 'failed',
+    friendly: 'We couldn\'t complete your payment at this time. Please try again or use a different payment method.',
+    raw,
+  };
+}
+
 export function PaymentScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -52,7 +118,8 @@ export function PaymentScreen() {
           setStatus('failed');
           setTimeout(() => {
             navigation.replace('PaymentFailure', {
-              error: 'Payment verification failed',
+              category: 'failed',
+              message: 'Payment verification failed on our end. Please check your transaction status.',
               purpose,
               paymentOrderId,
             });
@@ -60,10 +127,12 @@ export function PaymentScreen() {
         }
       } catch (error: any) {
         setStatus('failed');
-        const errorMessage = error?.message || error?.description || 'Payment was cancelled or failed';
+        const { category, friendly, raw } = categorizeRazorpayError(error);
+        console.log('[Payment] Mapped to category:', category, '| raw:', JSON.stringify(raw));
         setTimeout(() => {
           navigation.replace('PaymentFailure', {
-            error: errorMessage,
+            category,
+            message: friendly,
             purpose,
             paymentOrderId,
           });

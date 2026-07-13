@@ -559,7 +559,9 @@ export function WalletScreen() {
         paymentOrderId: order.id,
       });
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Failed to initiate payment');
+      const serverMsg = e?.response?.data?.message;
+      const msg = serverMsg || e?.message || 'Failed to initiate payment';
+      Alert.alert('Payment Error', msg);
     } finally {
       setLoadingPayment(false);
     }

@@ -44,7 +44,7 @@ export function PaymentSuccessScreen() {
         </GlassCard>
         <GradientButton
           title={purpose === 'wallet_recharge' ? 'Back to Wallet' : 'Back to Home'}
-          onPress={() => navigation.navigate(purpose === 'wallet_recharge' ? 'Wallet' : 'Home')}
+          onPress={() => navigation.navigate('Main', { screen: purpose === 'wallet_recharge' ? 'Wallet' : 'Home' })}
           style={{ marginTop: 24 }}
         />
       </View>

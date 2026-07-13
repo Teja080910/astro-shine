@@ -53,16 +53,29 @@ export class PaymentsService {
       throw new BadRequestException(`Invalid purpose. Must be one of: ${validPurposes.join(', ')}`);
     }
 
-    const razorpayOrder = await this.razorpay.orders.create({
-      amount: Math.round(amount * 100),
-      currency: 'INR',
-      receipt: `rcpt_${Date.now()}_${userId.slice(0, 8)}`,
-      notes: {
-        userId,
-        purpose,
-        ...metadata,
-      },
-    });
+    let razorpayOrder;
+    try {
+      razorpayOrder = await this.razorpay.orders.create({
+        amount: Math.round(amount * 100),
+        currency: 'INR',
+        receipt: `rcpt_${Date.now()}_${userId.slice(0, 8)}`,
+        notes: {
+          userId,
+          purpose,
+          ...metadata,
+        },
+      });
+    } catch (razorpayError: any) {
+      this.logger.error(
+        `Razorpay order creation failed: ${razorpayError.message || JSON.stringify(razorpayError)}`,
+        razorpayError.stack,
+      );
+      const razorpayMessage =
+        razorpayError.error?.description ||
+        razorpayError.message ||
+        'Failed to create payment order with Razorpay';
+      throw new BadRequestException(`Payment gateway error: ${razorpayMessage}`);
+    }
 
     const fullMetadata: PaymentMetadata = {
       userId,
@@ -100,9 +113,11 @@ export class PaymentsService {
     razorpayOrderId: string,
     razorpaySignature: string,
   ) {
-    const paymentOrder = await this.db.query.paymentOrders.findFirst({
-      where: eq(schema.paymentOrders.razorpayOrderId, razorpayOrderId),
-    });
+    const [paymentOrder] = await this.db
+      .select()
+      .from(schema.paymentOrders)
+      .where(eq(schema.paymentOrders.razorpayOrderId, razorpayOrderId))
+      .limit(1);
 
     if (!paymentOrder) {
       throw new NotFoundException('Payment order not found');
@@ -252,12 +267,11 @@ export class PaymentsService {
   }
 
   async getPaymentStatus(id: string, userId: string) {
-    const paymentOrder = await this.db.query.paymentOrders.findFirst({
-      where: eq(schema.paymentOrders.id, id),
-      with: {
-        transaction: true,
-      },
-    });
+    const [paymentOrder] = await this.db
+      .select()
+      .from(schema.paymentOrders)
+      .where(eq(schema.paymentOrders.id, id))
+      .limit(1);
 
     if (!paymentOrder) {
       throw new NotFoundException('Payment order not found');
@@ -267,6 +281,15 @@ export class PaymentsService {
       throw new UnauthorizedException('Payment order does not belong to this user');
     }
 
+    let transaction = null;
+    if (paymentOrder.transactionId) {
+      [transaction] = await this.db
+        .select()
+        .from(schema.transactions)
+        .where(eq(schema.transactions.id, paymentOrder.transactionId))
+        .limit(1);
+    }
+
     return {
       id: paymentOrder.id,
       razorpayOrderId: paymentOrder.razorpayOrderId,
@@ -274,7 +297,7 @@ export class PaymentsService {
       amount: Number(paymentOrder.amount) * 100,
       purpose: paymentOrder.purpose,
       status: paymentOrder.status,
-      transaction: paymentOrder.transaction,
+      transaction,
     };
   }
 
@@ -294,9 +317,11 @@ export class PaymentsService {
     const eventId = event.id;
     const eventType = event.event;
 
-    const existingEvent = await this.db.query.paymentEvents.findFirst({
-      where: eq(schema.paymentEvents.eventId, eventId),
-    });
+    const [existingEvent] = await this.db
+      .select()
+      .from(schema.paymentEvents)
+      .where(eq(schema.paymentEvents.eventId, eventId))
+      .limit(1);
 
     if (existingEvent && existingEvent.status === 'processed') {
       return { received: true, ignored: true };
@@ -321,9 +346,11 @@ export class PaymentsService {
       return { received: true, ignored: true };
     }
 
-    const paymentOrder = await this.db.query.paymentOrders.findFirst({
-      where: eq(schema.paymentOrders.razorpayOrderId, razorpayOrderId),
-    });
+    const [paymentOrder] = await this.db
+      .select()
+      .from(schema.paymentOrders)
+      .where(eq(schema.paymentOrders.razorpayOrderId, razorpayOrderId))
+      .limit(1);
 
     if (!paymentOrder) {
       await this.db.insert(schema.paymentEvents).values({
@@ -408,9 +435,11 @@ export class PaymentsService {
   }
 
   async refundPayment(paymentOrderId: string, amount?: number, reason?: string) {
-    const paymentOrder = await this.db.query.paymentOrders.findFirst({
-      where: eq(schema.paymentOrders.id, paymentOrderId),
-    });
+    const [paymentOrder] = await this.db
+      .select()
+      .from(schema.paymentOrders)
+      .where(eq(schema.paymentOrders.id, paymentOrderId))
+      .limit(1);
 
     if (!paymentOrder) {
       throw new NotFoundException('Payment order not found');
@@ -461,12 +490,13 @@ export class PaymentsService {
   }
 
   async getNonFinalPaymentOrders() {
-    return this.db.query.paymentOrders.findMany({
-      where: and(
+    return this.db
+      .select()
+      .from(schema.paymentOrders)
+      .where(
         sql`${schema.paymentOrders.status} NOT IN (${sql.join(FINAL_STATES.map(s => sql`${s}`), sql`, `)})`,
-      ),
-      orderBy: (orders, { asc }) => [asc(orders.createdAt)],
-    });
+      )
+      .orderBy(schema.paymentOrders.createdAt);
   }
 
   async reconcilePaymentOrder(paymentOrder: typeof schema.paymentOrders.$inferSelect) {
