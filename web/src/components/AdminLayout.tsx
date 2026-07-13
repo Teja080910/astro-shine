@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Star, Receipt, ArrowDownUp, Percent, MessageSquare, AlertTriangle, Bell, Key, Link2, Globe, FileText, Newspaper, Package, Sparkles, Calendar } from 'lucide-react';
+import { LayoutDashboard, Users, Star, Receipt, ArrowDownUp, Percent, MessageSquare, AlertTriangle, Bell, Key, Link2, Globe, FileText, Newspaper, Package, Sparkles, Calendar, Sun, Moon } from 'lucide-react';
 
 const menuItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -27,11 +27,33 @@ const menuItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [theme, setTheme] = React.useState<'dark' | 'light'>('dark');
+
+  React.useEffect(() => {
+    const saved = localStorage.getItem('admin-theme') as 'dark' | 'light';
+    if (saved) {
+      setTheme(saved);
+      document.documentElement.setAttribute('data-theme', saved);
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    localStorage.setItem('admin-theme', next);
+    document.documentElement.setAttribute('data-theme', next);
+  };
+
   return (
     <aside className="w-64 h-screen bg-surface border-r border-divider fixed left-0 top-0 flex flex-col p-4">
-      <div className="flex items-center gap-3 px-2 py-4 mb-6">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-primary to-primary-light" />
-        <span className="text-lg font-bold text-text-primary">Astro Shine</span>
+      <div className="flex justify-between items-center px-2 py-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-primary to-primary-light" />
+          <span className="text-lg font-bold text-text-primary font-sans">Astro Shine</span>
+        </div>
+        <button onClick={toggleTheme} className="p-2 rounded-lg hover:bg-surface-light text-text-secondary hover:text-text-primary transition-colors" title="Toggle Theme">
+          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto">
         {menuItems.map(item => {

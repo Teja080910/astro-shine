@@ -1,25 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, NativeModules } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors } from '../../shared';
 import { Ionicons } from '@expo/vector-icons';
 import { useCall } from '../../context/CallContext';
 import { useAgora } from '../../shared/useAgora';
-
-const isExpoGo = !NativeModules.AgoraRtcNg;
-
-let RtcSurfaceView: any;
-let VideoSourceType: any;
-
-if (!isExpoGo) {
-  try {
-    // @ts-ignore
-    const agora = require('react-native-agora');
-    RtcSurfaceView = agora.RtcSurfaceView;
-    VideoSourceType = agora.VideoSourceType;
-  } catch (e) {
-    console.error('Failed to import react-native-agora in ActiveCallScreen:', e);
-  }
-}
 
 export function ActiveCallScreen() {
   const { callData, callState, endCall } = useCall();
@@ -74,20 +58,10 @@ export function ActiveCallScreen() {
             <View style={styles.remoteVideo}>
               {remoteUid && !isRemoteVideoMuted ? (
                 <>
-                  {isExpoGo ? (
-                    <View style={[StyleSheet.absoluteFill, { backgroundColor: '#1C1C1E', justifyContent: 'center', alignItems: 'center' }]}>
-                      <Ionicons name="videocam" size={48} color={colors.primary} />
-                      <Text style={{ color: colors.white, marginTop: 8, fontSize: 12 }}>Remote View (Mock)</Text>
-                    </View>
-                  ) : (
-                    <RtcSurfaceView
-                      canvas={{
-                        uid: remoteUid,
-                        sourceType: VideoSourceType.VideoSourceRemote,
-                      }}
-                      style={StyleSheet.absoluteFill}
-                    />
-                  )}
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: '#1C1C1E', justifyContent: 'center', alignItems: 'center' }]}>
+                    <Ionicons name="videocam" size={48} color={colors.primary} />
+                    <Text style={{ color: colors.white, marginTop: 8, fontSize: 12 }}>Remote Web Stream</Text>
+                  </View>
                   <View style={styles.remoteNameContainer}>
                     <Text style={styles.remoteVideoName}>{otherName}</Text>
                     {isRemoteMuted && (
@@ -113,20 +87,10 @@ export function ActiveCallScreen() {
             </View>
             <View style={[styles.localVideo, { opacity: isVideoEnabled ? 1 : 0.4 }]}>
               {isVideoEnabled ? (
-                isExpoGo ? (
-                  <View style={[StyleSheet.absoluteFill, { backgroundColor: '#2C2C2E', justifyContent: 'center', alignItems: 'center' }]}>
-                    <Ionicons name="person" size={24} color={colors.white} />
-                    <Text style={{ color: colors.textMuted, fontSize: 8, marginTop: 4 }}>Local Mock</Text>
-                  </View>
-                ) : (
-                  <RtcSurfaceView
-                    canvas={{
-                      uid: 0,
-                      sourceType: VideoSourceType.VideoSourceCamera,
-                    }}
-                    style={StyleSheet.absoluteFill}
-                  />
-                )
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: '#2C2C2E', justifyContent: 'center', alignItems: 'center' }]}>
+                  <Ionicons name="person" size={24} color={colors.white} />
+                  <Text style={{ color: colors.textMuted, fontSize: 8, marginTop: 4 }}>Local Web Stream</Text>
+                </View>
               ) : (
                 <Ionicons name="person" size={24} color={colors.white} />
               )}

@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
-import { Table, Badge, CustomModal, GradientButton } from '@/components/UIComponents';
+import { Table, Badge, CustomModal, GradientButton, DatePicker, TimePicker } from '@/components/UIComponents';
 import { api } from '@/lib/api';
 import type { PanchangRecord } from '@astro-shine/shared-types';
 
@@ -101,10 +102,10 @@ export default function PanchangPage() {
       {loading ? (
         <div className="flex items-center justify-center h-64 text-text-secondary">Loading Panchang records...</div>
       ) : (
-        <Table headers={['Date', 'Tithi', 'Nakshatra', 'Yoga', 'Karana', 'Sunrise', 'Sunset', '']}>
+        <Table headers={['Date', 'Tithi', 'Nakshatra', 'Yoga', 'Karana', 'Sunrise', 'Sunset', '']} emptyMessage="No Panchang records found">
           {data.map(p => (
             <tr key={p.id} className="border-b border-divider hover:bg-surface-light/50">
-              <td className="px-4 py-3 text-text-primary font-bold">{new Date(p.date).toLocaleDateString()}</td>
+              <td className="px-4 py-3 text-text-primary font-bold">{formatDate(p.date)}</td>
               <td className="px-4 py-3 text-text-secondary">{p.tithi || '-'}</td>
               <td className="px-4 py-3 text-text-secondary">{p.nakshatra || '-'}</td>
               <td className="px-4 py-3 text-text-secondary">{p.yoga || '-'}</td>
@@ -135,11 +136,9 @@ export default function PanchangPage() {
         <div className="space-y-4 text-text-secondary text-sm">
           <div>
             <label className="block text-text-primary font-medium mb-1">Date</label>
-            <input
-              type="date"
+            <DatePicker
               value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="input-field text-sm"
+              onChange={setDate}
             />
           </div>
 
@@ -192,66 +191,30 @@ export default function PanchangPage() {
           <div className="grid grid-cols-4 gap-2">
             <div>
               <label className="block text-text-primary font-medium text-[11px] mb-1">Sunrise</label>
-              <input
-                type="text"
-                value={sunrise}
-                onChange={(e) => setSunrise(e.target.value)}
-                className="input-field text-sm py-1.5 px-2"
-                placeholder="06:00"
-              />
+              <TimePicker value={sunrise} onChange={setSunrise} />
             </div>
             <div>
               <label className="block text-text-primary font-medium text-[11px] mb-1">Sunset</label>
-              <input
-                type="text"
-                value={sunset}
-                onChange={(e) => setSunset(e.target.value)}
-                className="input-field text-sm py-1.5 px-2"
-                placeholder="18:30"
-              />
+              <TimePicker value={sunset} onChange={setSunset} />
             </div>
             <div>
               <label className="block text-text-primary font-medium text-[11px] mb-1">Moonrise</label>
-              <input
-                type="text"
-                value={moonrise}
-                onChange={(e) => setMoonrise(e.target.value)}
-                className="input-field text-sm py-1.5 px-2"
-                placeholder="08:15"
-              />
+              <TimePicker value={moonrise} onChange={setMoonrise} />
             </div>
             <div>
               <label className="block text-text-primary font-medium text-[11px] mb-1">Moonset</label>
-              <input
-                type="text"
-                value={moonset}
-                onChange={(e) => setMoonset(e.target.value)}
-                className="input-field text-sm py-1.5 px-2"
-                placeholder="21:40"
-              />
+              <TimePicker value={moonset} onChange={setMoonset} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-text-primary font-medium mb-1">Rahu Kaal Start</label>
-              <input
-                type="text"
-                value={rahuStart}
-                onChange={(e) => setRahuStart(e.target.value)}
-                className="input-field text-sm"
-                placeholder="e.g. 07:30"
-              />
+              <TimePicker value={rahuStart} onChange={setRahuStart} />
             </div>
             <div>
               <label className="block text-text-primary font-medium mb-1">Rahu Kaal End</label>
-              <input
-                type="text"
-                value={rahuEnd}
-                onChange={(e) => setRahuEnd(e.target.value)}
-                className="input-field text-sm"
-                placeholder="e.g. 09:00"
-              />
+              <TimePicker value={rahuEnd} onChange={setRahuEnd} />
             </div>
           </div>
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge } from '@/components/UIComponents';
 import { api } from '@/lib/api';
@@ -99,7 +100,7 @@ export default function DashboardPage() {
             <Table headers={['Astrologer', 'Amount', 'Status']}>
               {stats.pendingWithdrawals.map(w => (
                 <tr key={w.id} className="border-b border-divider hover:bg-surface-light/50">
-                  <td className="px-4 py-3 text-text-secondary">{w.astrologerId?.slice(0, 8)}...</td>
+                  <td className="px-4 py-3 text-text-secondary">{w.astrologerName || w.astrologerId?.slice(0, 8) + '...'}</td>
                   <td className="px-4 py-3 text-text-primary">₹{w.amount}</td>
                   <td className="px-4 py-3"><Badge variant="warning">Pending</Badge></td>
                 </tr>
@@ -128,7 +129,7 @@ export default function DashboardPage() {
                 <td className="px-4 py-3">
                   {t.status === 'success' ? <Badge variant="success">Success</Badge> : t.status === 'failed' ? <Badge variant="danger">Failed</Badge> : <Badge variant="warning">Pending</Badge>}
                 </td>
-                <td className="px-4 py-3 text-text-muted text-sm">{new Date(t.createdAt).toLocaleDateString()}</td>
+                <td className="px-4 py-3 text-text-muted text-sm">{formatDate(t.createdAt)}</td>
               </tr>
             ))}
           </Table>

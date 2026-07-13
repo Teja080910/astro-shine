@@ -43,11 +43,19 @@ export class AdminsService {
       orderBy: desc(schema.transactions.createdAt),
     });
 
-    const pendingWithdrawals = await this.db.query.withdrawalRequests.findMany({
-      where: eq(schema.withdrawalRequests.status, 'pending'),
-      limit: 5,
-      orderBy: desc(schema.withdrawalRequests.createdAt),
-    });
+    const pendingWithdrawals = await this.db.select({
+      id: schema.withdrawalRequests.id,
+      astrologerId: schema.withdrawalRequests.astrologerId,
+      astrologerName: schema.astrologers.name,
+      amount: schema.withdrawalRequests.amount,
+      status: schema.withdrawalRequests.status,
+      createdAt: schema.withdrawalRequests.createdAt,
+    })
+    .from(schema.withdrawalRequests)
+    .leftJoin(schema.astrologers, eq(schema.withdrawalRequests.astrologerId, schema.astrologers.id))
+    .where(eq(schema.withdrawalRequests.status, 'pending'))
+    .limit(5)
+    .orderBy(desc(schema.withdrawalRequests.createdAt));
 
     const pendingAstrologers = await this.db.query.astrologers.findMany({
       where: eq(schema.astrologers.verificationStatus, 'pending'),

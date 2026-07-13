@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
-import { Table, Badge, CustomModal, GradientButton } from '@/components/UIComponents';
+import { Table, Badge, CustomModal, GradientButton, DatePicker } from '@/components/UIComponents';
 import { api } from '@/lib/api';
 import type { HoroscopeRecord } from '@astro-shine/shared-types';
 
@@ -92,11 +93,11 @@ export default function HoroscopePage() {
       {loading ? (
         <div className="flex items-center justify-center h-64 text-text-secondary">Loading horoscopes...</div>
       ) : (
-        <Table headers={['Zodiac Sign', 'Date', 'Prediction', 'Lucky Num', 'Lucky Color', 'Mood', '']}>
+        <Table headers={['Zodiac Sign', 'Date', 'Prediction', 'Lucky Num', 'Lucky Color', 'Mood', '']} emptyMessage="No horoscope records found">
           {data.map(h => (
             <tr key={h.id} className="border-b border-divider hover:bg-surface-light/50">
               <td className="px-4 py-3 text-text-primary font-bold">{h.zodiacSign}</td>
-              <td className="px-4 py-3 text-text-secondary text-sm">{new Date(h.date).toLocaleDateString()}</td>
+              <td className="px-4 py-3 text-text-secondary text-sm">{formatDate(h.date)}</td>
               <td className="px-4 py-3 text-text-secondary text-sm max-w-xs truncate">{h.prediction}</td>
               <td className="px-4 py-3 text-text-secondary">{h.luckyNumber ?? '-'}</td>
               <td className="px-4 py-3 text-text-secondary">{h.luckyColor || '-'}</td>
@@ -136,11 +137,9 @@ export default function HoroscopePage() {
 
           <div>
             <label className="block text-text-primary font-medium mb-1">Date</label>
-            <input
-              type="date"
+            <DatePicker
               value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="input-field text-sm"
+              onChange={setDate}
             />
           </div>
 

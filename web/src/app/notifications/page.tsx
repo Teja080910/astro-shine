@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { GradientButton, CustomModal } from '@/components/UIComponents';
 import { api } from '@/lib/api';
@@ -31,7 +32,7 @@ export default function NotificationsPage() {
             <div key={n.id} className="border-b border-divider py-3 last:border-0">
               <p className="text-text-primary font-medium">{n.title}</p>
               <p className="text-text-secondary text-sm">{n.body}</p>
-              <span className="text-text-muted text-xs">{new Date(n.createdAt).toLocaleString()}</span>
+              <span className="text-text-muted text-xs">{formatDate(n.createdAt)}</span>
             </div>
           ))}
       </div>

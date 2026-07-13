@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, CustomModal, GradientButton } from '@/components/UIComponents';
 import { api } from '@/lib/api';
@@ -72,14 +73,14 @@ export default function OrdersPage() {
       {loading ? (
         <div className="flex items-center justify-center h-64 text-text-secondary">Loading orders...</div>
       ) : (
-        <Table headers={['Order ID', 'User ID', 'Total Amount', 'Status', 'Date', '']}>
+        <Table headers={['Order ID', 'User', 'Total Amount', 'Status', 'Date', '']} emptyMessage="No orders found">
           {orders.map(o => (
             <tr key={o.id} className="border-b border-divider hover:bg-surface-light/50">
               <td className="px-4 py-3 text-text-primary font-medium">{o.id.slice(0, 8)}...</td>
-              <td className="px-4 py-3 text-text-secondary">{o.userId.slice(0, 8)}...</td>
+              <td className="px-4 py-3 text-text-secondary">{(o as any).userName || 'Unknown User'}</td>
               <td className="px-4 py-3 text-text-primary font-semibold">₹{o.totalAmount}</td>
               <td className="px-4 py-3">{getStatusBadge(o.status)}</td>
-              <td className="px-4 py-3 text-text-muted text-sm">{new Date(o.createdAt).toLocaleDateString()}</td>
+              <td className="px-4 py-3 text-text-muted text-sm">{formatDate(o.createdAt)}</td>
               <td className="px-4 py-3">
                 <button
                   onClick={() => handleOpenDetails(o)}
@@ -100,14 +101,14 @@ export default function OrdersPage() {
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="text-base font-bold text-text-primary">Order ID: {selected.id}</h3>
-                <p className="text-xs text-text-muted">User ID: {selected.userId}</p>
+                <p className="text-xs text-text-muted">User: {(selected as any).userName || 'Unknown User'}</p>
               </div>
               {getStatusBadge(selected.status)}
             </div>
 
             <div className="border-t border-divider pt-3 space-y-1">
               <p><span className="font-medium text-text-primary">Total Amount:</span> ₹{selected.totalAmount}</p>
-              <p><span className="font-medium text-text-primary">Date:</span> {new Date(selected.createdAt).toLocaleString()}</p>
+              <p><span className="font-medium text-text-primary">Date:</span> {formatDate(selected.createdAt)}</p>
               {selected.transactionId && (
                 <p><span className="font-medium text-text-primary">Transaction ID:</span> {selected.transactionId}</p>
               )}

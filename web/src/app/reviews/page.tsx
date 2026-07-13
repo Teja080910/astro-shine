@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
 import { api } from '@/lib/api';
@@ -19,15 +20,15 @@ export default function ReviewsPage() {
   return (
     <AdminLayout>
       <h1 className="text-3xl font-extrabold text-text-primary mb-6">Reviews</h1>
-      <Table headers={['User', 'Astrologer', 'Rating', 'Comment', 'Visible', 'Date', '']}>
+      <Table headers={['User', 'Astrologer', 'Rating', 'Comment', 'Visible', 'Date', '']} emptyMessage="No reviews found">
         {data.map(r => (
           <tr key={r.id} className="border-b border-divider hover:bg-surface-light/50">
-            <td className="px-4 py-3 text-text-primary">{r.userId?.slice(0, 8)}...</td>
-            <td className="px-4 py-3 text-text-primary">{r.astrologerId?.slice(0, 8)}...</td>
+            <td className="px-4 py-3 text-text-primary">{(r as any).userName || r.userId?.slice(0, 8) + '...'}</td>
+            <td className="px-4 py-3 text-text-primary">{(r as any).astrologerName || r.astrologerId?.slice(0, 8) + '...'}</td>
             <td className="px-4 py-3 text-text-primary">{'⭐'.repeat(r.rating)} {r.rating}/5</td>
             <td className="px-4 py-3 text-text-secondary max-w-xs truncate">{r.comment || '-'}</td>
             <td className="px-4 py-3">{r.isVisible ? <Badge variant="success">Visible</Badge> : <Badge variant="warning">Hidden</Badge>}</td>
-            <td className="px-4 py-3 text-text-muted text-sm">{new Date(r.createdAt).toLocaleDateString()}</td>
+            <td className="px-4 py-3 text-text-muted text-sm">{formatDate(r.createdAt)}</td>
             <td className="px-4 py-3">
               <button onClick={() => toggleVisibility(r.id, !r.isVisible)} className="text-primary-light hover:underline text-sm">
                 {r.isVisible ? 'Hide' : 'Show'}

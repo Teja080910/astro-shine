@@ -9,7 +9,7 @@ export class ReviewsController {
   async findAll(@Query('astrologerId') astrologerId?: string, @Query('userId') userId?: string) {
     if (astrologerId) return this.service.findByAstrologerId(astrologerId);
     if (userId) return this.service.findByUserId(userId);
-    return [];
+    return this.service.findAllReviews();
   }
 
   @Get(':id')

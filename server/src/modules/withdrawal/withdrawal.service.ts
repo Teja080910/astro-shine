@@ -8,7 +8,22 @@ export class WithdrawalService {
   constructor(@Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>) {}
 
   async findByAstrologerId(astrologerId: string) { return this.db.query.withdrawalRequests.findMany({ where: eq(schema.withdrawalRequests.astrologerId, astrologerId) }); }
-  async findAll() { return this.db.query.withdrawalRequests.findMany(); }
+  async findAll() {
+    return this.db
+      .select({
+        id: schema.withdrawalRequests.id,
+        astrologerId: schema.withdrawalRequests.astrologerId,
+        astrologerName: schema.astrologers.name,
+        amount: schema.withdrawalRequests.amount,
+        status: schema.withdrawalRequests.status,
+        bankAccount: schema.withdrawalRequests.bankAccount,
+        adminNote: schema.withdrawalRequests.adminNote,
+        createdAt: schema.withdrawalRequests.createdAt,
+        updatedAt: schema.withdrawalRequests.updatedAt,
+      })
+      .from(schema.withdrawalRequests)
+      .leftJoin(schema.astrologers, eq(schema.withdrawalRequests.astrologerId, schema.astrologers.id));
+  }
 
   async create(data: typeof schema.withdrawalRequests.$inferInsert) {
     const [r] = await this.db.insert(schema.withdrawalRequests).values(data).returning(); return r;

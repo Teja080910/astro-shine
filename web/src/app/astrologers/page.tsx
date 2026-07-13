@@ -41,7 +41,7 @@ export default function AstrologersPage() {
         <h1 className="text-3xl font-extrabold text-text-primary">Astrologers</h1>
         <span className="text-text-secondary">{data.length} total</span>
       </div>
-      <Table headers={['Name', 'Email', 'Specialization', 'Price/min', 'Rating', 'Status', '']}>
+      <Table headers={['Name', 'Email', 'Specialization', 'Price/min', 'Rating', 'Status', '']} emptyMessage="No astrologers found">
         {data.map(a => (
           <tr key={a.id} className="border-b border-divider hover:bg-surface-light/50">
             <td className="px-4 py-3 text-text-primary font-medium">{a.name}</td>

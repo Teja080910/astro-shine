@@ -56,16 +56,16 @@ export default function CommissionsPage() {
         <h1 className="text-3xl font-extrabold text-text-primary">Commissions</h1>
         <button onClick={() => openEdit({} as Commission)} className="gradient-btn">Add Commission</button>
       </div>
-      <Table headers={['Astrologer ID', 'Type', 'Value', 'Min Amount', 'Max Cap', 'Status', '']}>
+      <Table headers={['Astrologer', 'Type', 'Value', 'Min Amount', 'Max Cap', 'Status', '']} emptyMessage="No commissions found">
         {data.map(c => (
           <tr key={c.id} className="border-b border-divider hover:bg-surface-light/50">
-            <td className="px-4 py-3 text-text-primary">{c.astrologerId?.slice(0, 12)}...</td>
+            <td className="px-4 py-3 text-text-primary">{(c as any).astrologerName || c.astrologerId?.slice(0, 12) + '...'}</td>
             <td className="px-4 py-3 text-text-secondary">{c.type}</td>
             <td className="px-4 py-3 text-text-primary">{c.value}{c.type === 'percentage' ? '%' : ''}</td>
             <td className="px-4 py-3 text-text-secondary">{c.minAmount ? `₹${c.minAmount}` : '-'}</td>
             <td className="px-4 py-3 text-text-secondary">{c.maxCap ? `₹${c.maxCap}` : '-'}</td>
             <td className="px-4 py-3">{c.isActive ? <Badge variant="success">Active</Badge> : <Badge variant="danger">Inactive</Badge>}</td>
-            <td className="px-4 py-3"><button onClick={() => openEdit(c)} className="text-primary-light hover:underline text-sm">Edit</button></td>
+            <td className="px-4 py-3"><button onClick={() => openEdit(c)} className="text-primary-light hover:underline text-sm font-medium">Edit</button></td>
           </tr>
         ))}
       </Table>
