@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
@@ -531,14 +531,45 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
 
 // Wallet
 export function WalletScreen() {
+  const navigation = useNavigation<any>();
   const isFocused = useIsFocused();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [txns, setTxns] = useState<Transaction[]>([]);
   const [amount, setAmount] = useState('');
   const [showAdd, setShowAdd] = useState(false);
+  const [loadingPayment, setLoadingPayment] = useState(false);
 
   const load = useCallback(async () => { const w = await api.wallet.get(); setWallet(w); const t = await api.transactions.listMy(); setTxns(t); }, []);
   useEffect(() => { if (isFocused) load(); }, [isFocused, load]);
+
+  const handleAddFunds = async () => {
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0) { Alert.alert('Invalid Amount', 'Please enter a valid amount'); return; }
+    setLoadingPayment(true);
+    try {
+      const order = await api.payments.createOrder({ amount: amt, purpose: 'wallet_recharge' });
+      setShowAdd(false);
+      setAmount('');
+      navigation.navigate('Payment', {
+        razorpayOrderId: order.razorpayOrderId,
+        key: order.key,
+        amount: order.amount,
+        currency: order.currency,
+        purpose: 'wallet_recharge',
+        paymentOrderId: order.id,
+      });
+    } catch (e: any) {
+      const serverMsg = e?.response?.data?.message;
+      const msg = serverMsg || e?.message || 'Failed to initiate payment';
+      Alert.alert('Payment Error', msg);
+    } finally {
+      setLoadingPayment(false);
+    }
+  };
+
+  const handleDonate = () => {
+    navigation.navigate('Donation');
+  };
 
   return (
     <ScreenWrapper scroll>
@@ -547,9 +578,30 @@ export function WalletScreen() {
         <Text style={styles.balance}>₹{wallet?.balance || '0'}</Text>
         <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
           <View style={{ flex: 1 }}><GradientButton title="Add Funds" onPress={() => setShowAdd(true)} small /></View>
-          <View style={{ flex: 1 }}><GradientButton title="Donate" variant="gold" onPress={() => {}} small /></View>
+          <View style={{ flex: 1 }}><GradientButton title="Donate" variant="gold" onPress={handleDonate} small /></View>
         </View>
       </GlassCard>
+
+      {showAdd && (
+        <GlassCard style={{ padding: 20, marginTop: 12 }}>
+          <Text style={[typography.cardTitle, { marginBottom: 12 }]}>Enter Amount</Text>
+          <TextInput
+            style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+            value={amount} onChangeText={setAmount}
+            placeholder="Amount in ₹" placeholderTextColor={colors.textMuted}
+            keyboardType="decimal-pad"
+          />
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+            <TouchableOpacity onPress={() => setShowAdd(false)} style={{ flex: 1, height: 48, borderRadius: radii.button, borderWidth: 1, borderColor: colors.cardBorder, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
+            </TouchableOpacity>
+            <View style={{ flex: 1 }}>
+              <GradientButton title={loadingPayment ? 'Processing...' : 'Pay Now'} onPress={handleAddFunds} disabled={loadingPayment} />
+            </View>
+          </View>
+        </GlassCard>
+      )}
+
       {txns.map((t) => <GlassCard key={t.id} style={{ marginTop: 8, padding: 12 }}><View style={{ flexDirection: 'row', justifyContent: 'space-between' }}><View><Text style={typography.cardTitle}>{t.category?.replace(/_/g, ' ')}</Text><Text style={typography.caption}>{new Date(t.createdAt).toLocaleDateString()}</Text></View><Text style={{ fontWeight: '700', color: t.type === 'credit' ? colors.success : colors.danger }}>{t.type === 'credit' ? '+' : '-'}₹{t.amount}</Text></View></GlassCard>)}
     </ScreenWrapper>
   );

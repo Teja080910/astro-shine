@@ -52,3 +52,5 @@ android/
 *.hprof
 local.properties
 captures/
+.opencode/
+ios/

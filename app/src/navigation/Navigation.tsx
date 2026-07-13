@@ -29,6 +29,9 @@ import {
   TermsConditionsScreen,
   VideosScreen,
 } from '../screens/shared/SharedScreens';
+import { PaymentScreen } from '../screens/shared/PaymentScreen';
+import { PaymentSuccessScreen } from '../screens/shared/PaymentSuccessScreen';
+import { PaymentFailureScreen } from '../screens/shared/PaymentFailureScreen';
 import { ChatListScreen } from '../screens/user/ChatListScreen';
 import { ChatRoomScreen } from '../screens/user/ChatRoomScreen';
 import { AstrologerDetailScreen, AstrologerListScreen, KundliScreen, MatchmakingScreen, ProfileScreen, ShopScreen, UserHomeScreen, WalletScreen } from '../screens/user/UserScreens';
@@ -135,6 +138,9 @@ export function Navigation() {
             <Stack.Screen name="TermsConditions" component={TermsConditionsScreen} options={headerOpts('Terms & Conditions')} />
             <Stack.Screen name="AboutApp" component={AboutAppScreen} options={headerOpts('About App')} />
             <Stack.Screen name="ChatRoom" component={ChatRoomScreen} options={headerOpts('Chat')} />
+            <Stack.Screen name="Payment" component={PaymentScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="PaymentFailure" component={PaymentFailureScreen} options={{ headerShown: false }} />
           </>
         ) : (
           <>
@@ -153,6 +159,9 @@ export function Navigation() {
             <Stack.Screen name="Withdrawals" component={AstrologerWithdrawalScreen} options={headerOpts('Withdrawals')} />
             <Stack.Screen name="Reviews" component={AstrologerReviewsScreen} options={headerOpts('Ratings & Reviews')} />
             <Stack.Screen name="Consultations" component={AstrologerConsultationScreen} options={headerOpts('Consultation History')} />
+            <Stack.Screen name="Payment" component={PaymentScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="PaymentFailure" component={PaymentFailureScreen} options={{ headerShown: false }} />
           </>
         )}
       </Stack.Navigator>

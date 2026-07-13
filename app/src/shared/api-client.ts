@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import type { AuthResponse, LoginRequest, RegisterRequest, User, Astrologer, Admin, KundliRecord, MatchmakingRecord, HoroscopeRecord, PanchangRecord, Wallet, Transaction, WithdrawalRequest, Commission, CommissionLog, CallLog, ChatMessage, Gift, GiftTransaction, Donation, ShopProduct, Order, OrderItem, Blog, NewsItem, Review, Report, Notification, AppSetting, ApiKey, DynamicLink, WebsiteContent, LiveSession, MandirPooja, PoojaBooking, SupportTicket, TicketReply, AppRelease, Video, Conversation, ConversationMessage, PaginatedMessages } from '../shared/types';
+import type { AuthResponse, LoginRequest, RegisterRequest, User, Astrologer, Admin, KundliRecord, MatchmakingRecord, HoroscopeRecord, PanchangRecord, Wallet, Transaction, WithdrawalRequest, Commission, CommissionLog, CallLog, ChatMessage, Gift, GiftTransaction, Donation, ShopProduct, Order, OrderItem, Blog, NewsItem, Review, Report, Notification, AppSetting, ApiKey, DynamicLink, WebsiteContent, LiveSession, MandirPooja, PoojaBooking, SupportTicket, TicketReply, AppRelease, Video, Conversation, ConversationMessage, PaginatedMessages, PaymentOrderRequest, PaymentOrderResponse, PaymentVerifyRequest, PaymentVerifyResponse, PaymentStatusResponse, PaymentRefundRequest, PaymentRefundResponse } from '../shared/types';
 import { config } from '../config';
 
 const BASE_URL = config.apiBaseUrl;
@@ -22,6 +22,14 @@ class ApiClient {
   private async post<T>(path: string, data?: any): Promise<T> { const r = await this.client.post(path, data); return r.data; }
   private async put<T>(path: string, data?: any): Promise<T> { const r = await this.client.put(path, data); return r.data; }
   private async del(path: string): Promise<void> { await this.client.delete(path); }
+
+  // Payments
+  payments = {
+    createOrder: (d: PaymentOrderRequest) => this.post<PaymentOrderResponse>('/payments/create-order', d),
+    verify: (d: PaymentVerifyRequest) => this.post<PaymentVerifyResponse>('/payments/verify', d),
+    getStatus: (id: string) => this.get<PaymentStatusResponse>(`/payments/${id}/status`),
+    refund: (id: string, d?: PaymentRefundRequest) => this.post<PaymentRefundResponse>(`/payments/${id}/refund`, d),
+  };
 
   // Auth
   auth = {

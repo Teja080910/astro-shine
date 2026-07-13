@@ -15,6 +15,13 @@
       "when": 1783491559772,
       "tag": "0001_damp_mesmero",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783787821619,
+      "tag": "0002_windy_meltdown",
+      "breakpoints": true
     }
   ]
 }

@@ -446,7 +446,31 @@ export function SupportScreen() {
 
 // Donation
 export function DonationScreen() {
+  const navigation = useNavigation<any>();
   const [amount, setAmount] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleDonate = async () => {
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0) { Alert.alert('Invalid Amount', 'Please enter a valid donation amount'); return; }
+    setLoading(true);
+    try {
+      const order = await api.payments.createOrder({ amount: amt, purpose: 'donation' });
+      navigation.navigate('Payment', {
+        razorpayOrderId: order.razorpayOrderId,
+        key: order.key,
+        amount: order.amount,
+        currency: order.currency,
+        purpose: 'donation',
+        paymentOrderId: order.id,
+      });
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Failed to initiate donation');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Make a Donation" />
@@ -457,7 +481,7 @@ export function DonationScreen() {
           {['101', '501', '1100', '2100'].map(a => <Chip key={a} label={`₹${a}`} selected={amount === a} onPress={() => setAmount(a)} />)}
         </View>
         <View style={{ marginTop: 12, width: '100%' }}><TextInput style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]} value={amount} onChangeText={setAmount} placeholder="Custom amount" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" /></View>
-        <GradientButton title="Donate Now" variant="gold" onPress={() => {}} style={{ marginTop: 12 }} />
+        <GradientButton title={loading ? 'Processing...' : 'Donate Now'} variant="gold" onPress={handleDonate} disabled={loading} style={{ marginTop: 12 }} />
       </GlassCard>
     </ScreenWrapper>
   );

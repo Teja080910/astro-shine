@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, UseGuards, Req } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -18,17 +18,5 @@ export class WalletController {
       wallet = await this.walletService.createWallet({ userId });
     }
     return wallet;
-  }
-
-  @Post('add-funds')
-  async addFunds(@CurrentUser() userId: string, @Body() body: { amount: string }) {
-    let wallet = await this.walletService.getWalletByUserId(userId);
-    if (!wallet) {
-      wallet = await this.walletService.getWalletByAstrologerId(userId);
-    }
-    if (!wallet) {
-      wallet = await this.walletService.createWallet({ userId });
-    }
-    return this.walletService.addFunds(wallet.id, body.amount);
   }
 }
