@@ -19,4 +19,21 @@ export class PanchangService {
     this.realtime.broadcast('panchang:updated', r);
     return r;
   }
+
+  async update(id: string, data: Partial<typeof schema.panchangRecords.$inferInsert>) {
+    const [r] = await this.db.update(schema.panchangRecords)
+      .set(data)
+      .where(eq(schema.panchangRecords.id, id))
+      .returning();
+    this.realtime.broadcast('panchang:updated', r);
+    return r;
+  }
+
+  async delete(id: string) {
+    const [r] = await this.db.delete(schema.panchangRecords)
+      .where(eq(schema.panchangRecords.id, id))
+      .returning();
+    this.realtime.broadcast('panchang:deleted', { id });
+    return r;
+  }
 }

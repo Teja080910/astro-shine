@@ -9,14 +9,30 @@ import type { Astrologer } from '@astro-shine/shared-types';
 export default function AstrologersPage() {
   const [data, setData] = useState<Astrologer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Astrologer | null>(null);
   const [verify, setVerify] = useState<Astrologer | null>(null);
+  const [priceInput, setPriceInput] = useState('');
+  const [rejectionNote, setRejectionNote] = useState('');
 
   useEffect(() => { api.get<Astrologer[]>('/astrologers').then(setData).finally(() => setLoading(false)); }, []);
 
   const handleVerify = async (id: string, status: 'approved' | 'rejected') => {
-    await api.post<any>(`/astrologers/${id}/verify`, { status });
-    setData(data.map(a => a.id === id ? { ...a, verificationStatus: status } : a));
+    await api.post<any>(`/astrologers/${id}/verify`, { status, note: rejectionNote });
+    setData(data.map(a => a.id === id ? { ...a, verificationStatus: status, verificationNote: rejectionNote } : a));
     setVerify(null);
+    setRejectionNote('');
+  };
+
+  const handleToggleActive = async (astrologer: Astrologer) => {
+    const updated = await api.put<Astrologer>(`/astrologers/${astrologer.id}`, { isActive: !astrologer.isActive });
+    setData(data.map(a => a.id === astrologer.id ? updated : a));
+    if (selected?.id === astrologer.id) setSelected(updated);
+  };
+
+  const handleSavePrice = async (id: string) => {
+    const updated = await api.put<Astrologer>(`/astrologers/${id}`, { pricePerMin: priceInput });
+    setData(data.map(a => a.id === id ? updated : a));
+    if (selected?.id === id) setSelected(updated);
   };
 
   return (
@@ -38,21 +54,113 @@ export default function AstrologersPage() {
               {a.verificationStatus === 'pending' && <Badge variant="warning">Pending</Badge>}
               {a.verificationStatus === 'rejected' && <Badge variant="danger">Rejected</Badge>}
             </td>
-            <td className="px-4 py-3">
+            <td className="px-4 py-3 flex gap-2">
+              <button
+                onClick={() => {
+                  setSelected(a);
+                  setPriceInput(a.pricePerMin);
+                }}
+                className="text-primary-light hover:underline text-sm font-medium"
+              >
+                View
+              </button>
               {a.verificationStatus === 'pending' && (
-                <button onClick={() => setVerify(a)} className="text-primary-light hover:underline text-sm">Review</button>
+                <button onClick={() => setVerify(a)} className="text-amber-400 hover:underline text-sm font-medium">Review</button>
               )}
             </td>
           </tr>
         ))}
       </Table>
 
-      <CustomModal open={!!verify} onClose={() => setVerify(null)} title="Verify Astrologer">
+      {/* Details & Pricing Management Modal */}
+      <CustomModal open={!!selected} onClose={() => setSelected(null)} title="Astrologer Details">
+        {selected && (
+          <div className="space-y-4 text-text-secondary text-sm">
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="text-lg font-bold text-text-primary">{selected.name}</h3>
+                <p className="text-xs text-text-muted">{selected.id}</p>
+              </div>
+              <Badge variant={selected.isActive ? 'success' : 'danger'}>
+                {selected.isActive ? 'Active' : 'Inactive'}
+              </Badge>
+            </div>
+            
+            <p><span className="font-medium text-text-primary">Email:</span> {selected.email}</p>
+            <p><span className="font-medium text-text-primary">Phone:</span> {selected.phone || '-'}</p>
+            <p><span className="font-medium text-text-primary">Experience:</span> {selected.experience} years</p>
+            <p><span className="font-medium text-text-primary">Specialization:</span> {selected.specialization?.join(', ') || '-'}</p>
+            <p><span className="font-medium text-text-primary">Languages:</span> {selected.languages?.join(', ') || '-'}</p>
+            <p><span className="font-medium text-text-primary">Skills:</span> {selected.skills?.join(', ') || '-'}</p>
+            <p><span className="font-medium text-text-primary">Rating:</span> {parseFloat(selected.rating).toFixed(2)} ({selected.totalReviews} reviews)</p>
+            <p><span className="font-medium text-text-primary">Total Earnings:</span> ₹{selected.totalEarnings}</p>
+            <p><span className="font-medium text-text-primary">Bio:</span> {selected.bio || '-'}</p>
+
+            <div className="border-t border-divider pt-4 mt-2">
+              <label className="block text-text-primary font-medium mb-1">Consultation Pricing (₹/min)</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  value={priceInput}
+                  onChange={(e) => setPriceInput(e.target.value)}
+                  className="input-field py-2 px-3 text-sm"
+                  placeholder="Price per minute"
+                />
+                <button
+                  onClick={() => handleSavePrice(selected.id)}
+                  className="gradient-btn py-2 px-4 text-sm font-bold shrink-0"
+                  style={{ borderRadius: '16px' }}
+                >
+                  Save Price
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-3 border-t border-divider pt-4 mt-4">
+              <GradientButton
+                variant={selected.isActive ? 'danger' : undefined}
+                onClick={() => handleToggleActive(selected)}
+              >
+                {selected.isActive ? 'Deactivate' : 'Activate'}
+              </GradientButton>
+              <GradientButton onClick={() => setSelected(null)}>Close</GradientButton>
+            </div>
+          </div>
+        )}
+      </CustomModal>
+
+      {/* Verification Review Modal */}
+      <CustomModal open={!!verify} onClose={() => setVerify(null)} title="Verify Astrologer Request">
         {verify && (
-          <div className="space-y-3 text-text-secondary">
+          <div className="space-y-4 text-text-secondary text-sm">
             <p><span className="font-medium text-text-primary">Name:</span> {verify.name}</p>
             <p><span className="font-medium text-text-primary">Specialization:</span> {verify.specialization?.join(', ')}</p>
             <p><span className="font-medium text-text-primary">Experience:</span> {verify.experience} years</p>
+            {verify.verificationDoc && verify.verificationDoc.length > 0 && (
+              <div>
+                <span className="font-medium text-text-primary block mb-1">Documents:</span>
+                <ul className="list-disc pl-5 space-y-1">
+                  {verify.verificationDoc.map((doc, idx) => (
+                    <li key={idx}>
+                      <a href={doc} target="_blank" rel="noreferrer" className="text-primary-light hover:underline">
+                        Document #{idx + 1}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
+            <div className="space-y-1">
+              <label className="block text-text-primary font-medium">Verification Note / Reason</label>
+              <textarea
+                value={rejectionNote}
+                onChange={(e) => setRejectionNote(e.target.value)}
+                className="input-field h-20 text-sm"
+                placeholder="Explain approval decision or rejection reasons here..."
+              />
+            </div>
+
             <div className="flex gap-3 mt-4">
               <GradientButton onClick={() => handleVerify(verify.id, 'approved')}>Approve</GradientButton>
               <GradientButton variant="danger" onClick={() => handleVerify(verify.id, 'rejected')}>Reject</GradientButton>
@@ -63,3 +171,4 @@ export default function AstrologersPage() {
     </AdminLayout>
   );
 }
+

@@ -3,15 +3,18 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Star, Receipt, ArrowDownUp, Percent, MessageSquare, AlertTriangle, Bell, Key, Link2, Globe, FileText, Newspaper } from 'lucide-react';
+import { LayoutDashboard, Users, Star, Receipt, ArrowDownUp, Percent, MessageSquare, AlertTriangle, Bell, Key, Link2, Globe, FileText, Newspaper, Package, Sparkles, Calendar } from 'lucide-react';
 
 const menuItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/users', icon: Users, label: 'Users' },
   { href: '/astrologers', icon: Star, label: 'Astrologers' },
+  { href: '/orders', icon: Package, label: 'Orders' },
   { href: '/transactions', icon: Receipt, label: 'Transactions' },
   { href: '/withdrawals', icon: ArrowDownUp, label: 'Withdrawals' },
   { href: '/commissions', icon: Percent, label: 'Commissions' },
+  { href: '/horoscope', icon: Sparkles, label: 'Horoscopes' },
+  { href: '/panchang', icon: Calendar, label: 'Panchang' },
   { href: '/reviews', icon: MessageSquare, label: 'Reviews' },
   { href: '/reports', icon: AlertTriangle, label: 'Reports' },
   { href: '/notifications', icon: Bell, label: 'Notifications' },

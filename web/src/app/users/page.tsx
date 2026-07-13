@@ -13,6 +13,12 @@ export default function UsersPage() {
 
   useEffect(() => { api.get<User[]>('/users').then(setUsers).finally(() => setLoading(false)); }, []);
 
+  const handleToggleActive = async (user: User) => {
+    const updated = await api.put<User>(`/users/${user.id}`, { isActive: !user.isActive });
+    setUsers(users.map(u => u.id === user.id ? updated : u));
+    setSelected(null);
+  };
+
   return (
     <AdminLayout>
       <div className="flex justify-between items-center mb-6">
@@ -39,7 +45,17 @@ export default function UsersPage() {
             <p><span className="font-medium text-text-primary">Name:</span> {selected.name}</p>
             <p><span className="font-medium text-text-primary">Email:</span> {selected.email}</p>
             <p><span className="font-medium text-text-primary">Phone:</span> {selected.phone || '-'}</p>
-            <div className="flex gap-3 mt-4"><GradientButton variant="danger">Deactivate</GradientButton><GradientButton>Close</GradientButton></div>
+            <p><span className="font-medium text-text-primary">Status:</span> {selected.isActive ? 'Active' : 'Inactive'}</p>
+            <p><span className="font-medium text-text-primary">Joined:</span> {new Date(selected.createdAt).toLocaleString()}</p>
+            <div className="flex gap-3 mt-6">
+              <GradientButton
+                variant={selected.isActive ? 'danger' : undefined}
+                onClick={() => handleToggleActive(selected)}
+              >
+                {selected.isActive ? 'Deactivate' : 'Activate'}
+              </GradientButton>
+              <GradientButton onClick={() => setSelected(null)}>Close</GradientButton>
+            </div>
           </div>
         )}
       </CustomModal>
