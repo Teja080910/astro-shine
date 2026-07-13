@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge } from '@/components/UIComponents';
 import { api } from '@/lib/api';
@@ -13,7 +14,7 @@ export default function TransactionsPage() {
   return (
     <AdminLayout>
       <h1 className="text-3xl font-extrabold text-text-primary mb-6">Transactions</h1>
-      <Table headers={['Type', 'Category', 'Amount', 'Fee', 'Net', 'Status', 'Date']}>
+      <Table headers={['Type', 'Category', 'Amount', 'Fee', 'Net', 'Status', 'Date']} emptyMessage="No transactions found">
         {data.map(t => (
           <tr key={t.id} className="border-b border-divider hover:bg-surface-light/50">
             <td className="px-4 py-3 text-text-secondary">{t.type}</td>
@@ -22,7 +23,7 @@ export default function TransactionsPage() {
             <td className="px-4 py-3 text-text-secondary">₹{t.fee}</td>
             <td className="px-4 py-3 text-text-primary">₹{t.netAmount}</td>
             <td className="px-4 py-3">{t.status === 'success' ? <Badge variant="success">Success</Badge> : t.status === 'failed' ? <Badge variant="danger">Failed</Badge> : <Badge variant="warning">Pending</Badge>}</td>
-            <td className="px-4 py-3 text-text-muted text-sm">{new Date(t.createdAt).toLocaleDateString()}</td>
+            <td className="px-4 py-3 text-text-muted text-sm">{formatDate(t.createdAt)}</td>
           </tr>
         ))}
       </Table>

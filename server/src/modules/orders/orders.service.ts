@@ -9,7 +9,21 @@ export class OrdersService {
 
   async findByUserId(userId: string) { return this.db.query.orders.findMany({ where: eq(schema.orders.userId, userId) }); }
   async findById(id: string) { return this.db.query.orders.findFirst({ where: eq(schema.orders.id, id) }); }
-  async findAll() { return this.db.query.orders.findMany(); }
+  async findAll() {
+    return this.db
+      .select({
+        id: schema.orders.id,
+        userId: schema.orders.userId,
+        userName: schema.users.name,
+        totalAmount: schema.orders.totalAmount,
+        status: schema.orders.status,
+        shippingAddress: schema.orders.shippingAddress,
+        createdAt: schema.orders.createdAt,
+        updatedAt: schema.orders.updatedAt,
+      })
+      .from(schema.orders)
+      .leftJoin(schema.users, eq(schema.orders.userId, schema.users.id));
+  }
 
   async create(data: typeof schema.orders.$inferInsert) { const [r] = await this.db.insert(schema.orders).values(data).returning(); return r; }
 

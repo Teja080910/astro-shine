@@ -1,6 +1,24 @@
 import { useCallback, useRef, useEffect, useState } from 'react';
-import { createAgoraRtcEngine, ChannelProfileType, ClientRoleType, IRtcEngine } from 'react-native-agora';
+import { NativeModules } from 'react-native';
 import { config } from '../config';
+
+const isExpoGo = !NativeModules.AgoraRtcNg;
+
+let createAgoraRtcEngine: any;
+let ChannelProfileType: any;
+let ClientRoleType: any;
+
+if (!isExpoGo) {
+  try {
+    // @ts-ignore
+    const agora = require('react-native-agora');
+    createAgoraRtcEngine = agora.createAgoraRtcEngine;
+    ChannelProfileType = agora.ChannelProfileType;
+    ClientRoleType = agora.ClientRoleType;
+  } catch (e) {
+    console.error('Failed to import react-native-agora:', e);
+  }
+}
 
 export function useAgora() {
   const [joined, setJoined] = useState(false);
@@ -12,9 +30,10 @@ export function useAgora() {
   const [isRemoteMuted, setIsRemoteMuted] = useState(false);
   const [isRemoteVideoMuted, setIsRemoteVideoMuted] = useState(false);
 
-  const engineRef = useRef<IRtcEngine | null>(null);
+  const engineRef = useRef<any>(null);
 
   useEffect(() => {
+    if (isExpoGo) return;
     const init = async () => {
       try {
         engineRef.current = createAgoraRtcEngine();
@@ -69,6 +88,14 @@ export function useAgora() {
   }, []);
 
   const joinChannel = useCallback(async (channel: string, token: string, uid: number, type: 'audio' | 'video') => {
+    if (isExpoGo) {
+      console.log('[Expo Go Agora Mock] Joining channel:', channel);
+      setJoined(true);
+      setTimeout(() => {
+        setRemoteUid(12345);
+      }, 2000);
+      return;
+    }
     if (!engineRef.current) return;
     try {
       engineRef.current.setClientRole(ClientRoleType.ClientRoleBroadcaster);
@@ -87,6 +114,13 @@ export function useAgora() {
   }, []);
 
   const leaveChannel = useCallback(() => {
+    if (isExpoGo) {
+      setJoined(false);
+      setRemoteUid(null);
+      setIsRemoteMuted(false);
+      setIsRemoteVideoMuted(false);
+      return;
+    }
     if (!engineRef.current) return;
     try {
       engineRef.current.leaveChannel();
@@ -100,6 +134,10 @@ export function useAgora() {
   }, []);
 
   const toggleMute = useCallback(() => {
+    if (isExpoGo) {
+      setIsMuted(prev => !prev);
+      return;
+    }
     if (!engineRef.current) return;
     setIsMuted(prev => {
       const next = !prev;
@@ -109,6 +147,10 @@ export function useAgora() {
   }, []);
 
   const toggleSpeaker = useCallback(() => {
+    if (isExpoGo) {
+      setIsSpeakerOn(prev => !prev);
+      return;
+    }
     if (!engineRef.current) return;
     setIsSpeakerOn(prev => {
       const next = !prev;
@@ -118,6 +160,10 @@ export function useAgora() {
   }, []);
 
   const toggleCamera = useCallback(() => {
+    if (isExpoGo) {
+      setIsVideoEnabled(prev => !prev);
+      return;
+    }
     if (!engineRef.current) return;
     setIsVideoEnabled(prev => {
       const next = !prev;
@@ -133,6 +179,10 @@ export function useAgora() {
   }, []);
 
   const switchCamera = useCallback(() => {
+    if (isExpoGo) {
+      setIsCameraFront(prev => !prev);
+      return;
+    }
     if (!engineRef.current) return;
     engineRef.current.switchCamera();
     setIsCameraFront(prev => !prev);
@@ -143,3 +193,4 @@ export function useAgora() {
     joined, remoteUid, isMuted, isSpeakerOn, isVideoEnabled, isCameraFront, isRemoteMuted, isRemoteVideoMuted,
   };
 }
+

@@ -22,4 +22,21 @@ export class HoroscopeService {
     this.realtime.broadcast('horoscope:updated', r);
     return r;
   }
+
+  async update(id: string, data: Partial<typeof schema.horoscopeRecords.$inferInsert>) {
+    const [r] = await this.db.update(schema.horoscopeRecords)
+      .set(data)
+      .where(eq(schema.horoscopeRecords.id, id))
+      .returning();
+    this.realtime.broadcast('horoscope:updated', r);
+    return r;
+  }
+
+  async delete(id: string) {
+    const [r] = await this.db.delete(schema.horoscopeRecords)
+      .where(eq(schema.horoscopeRecords.id, id))
+      .returning();
+    this.realtime.broadcast('horoscope:deleted', { id });
+    return r;
+  }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
 import { api } from '@/lib/api';
@@ -21,17 +22,17 @@ export default function WithdrawalsPage() {
   return (
     <AdminLayout>
       <h1 className="text-3xl font-extrabold text-text-primary mb-6">Withdrawals</h1>
-      <Table headers={['Astrologer', 'Amount', 'Status', 'Date', '']}>
+      <Table headers={['Astrologer', 'Amount', 'Status', 'Date', '']} emptyMessage="No withdrawals found">
         {data.map(w => (
           <tr key={w.id} className="border-b border-divider hover:bg-surface-light/50">
-            <td className="px-4 py-3 text-text-primary">{w.astrologerId?.slice(0, 8)}...</td>
+            <td className="px-4 py-3 text-text-primary">{(w as any).astrologerName || w.astrologerId?.slice(0, 8) + '...'}</td>
             <td className="px-4 py-3 text-text-primary">₹{w.amount}</td>
             <td className="px-4 py-3">
               {w.status === 'approved' && <Badge variant="success">Approved</Badge>}
               {w.status === 'pending' && <Badge variant="warning">Pending</Badge>}
               {w.status === 'rejected' && <Badge variant="danger">Rejected</Badge>}
             </td>
-            <td className="px-4 py-3 text-text-muted text-sm">{new Date(w.createdAt).toLocaleDateString()}</td>
+            <td className="px-4 py-3 text-text-muted text-sm">{formatDate(w.createdAt)}</td>
             <td className="px-4 py-3">
               {w.status === 'pending' && <button onClick={() => setSelected(w)} className="text-primary-light hover:underline text-sm">Review</button>}
             </td>

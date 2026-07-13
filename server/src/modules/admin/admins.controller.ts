@@ -10,6 +10,11 @@ export class AdminsController {
   @Get()
   async findAll() { const items = await this.service.findAll(); return items.map(stripPassword); }
 
+  @Get('dashboard-stats')
+  async getDashboardStats() {
+    return this.service.getDashboardStats();
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) { return stripPassword(await this.service.findById(id)); }
 
