@@ -123,6 +123,7 @@ class ApiClient {
   // Commissions
   commissions = {
     list: () => this.get<Commission[]>('/commissions'),
+    findByAstrologer: (astrologerId: string) => this.get<Commission>(`/commissions/by-astrologer/${astrologerId}`),
     create: (d: any) => this.post<Commission>('/commissions', d),
     update: (id: string, d: any) => this.put<Commission>(`/commissions/${id}`, d),
     logs: (astrologerId?: string) => this.get<CommissionLog[]>('/commissions/logs', { astrologerId }),

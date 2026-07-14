@@ -17,6 +17,8 @@ import { ConfigService } from '@nestjs/config';
 import { RtcTokenBuilder, RtcRole } from 'agora-access-token';
 import { RealtimeService } from '../../common/realtime.service';
 import { AstrologersService } from '../astrologers/astrologers.service';
+import { WalletService } from '../wallet/wallet.service';
+import { CommissionService } from '../commission/commission.service';
 
 @WebSocketGateway({
   cors: { origin: '*', credentials: true },
@@ -35,6 +37,8 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     private readonly configService: ConfigService,
     private readonly realtime: RealtimeService,
     private readonly astrologersService: AstrologersService,
+    private readonly walletService: WalletService,
+    private readonly commissionService: CommissionService,
   ) {}
 
   afterInit() {
@@ -149,6 +153,16 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     const { userId, role } = client.data;
     console.log(`[WS] message:send RECEIVED - userId: ${userId}, socketId: ${client.id}, conversationId: ${data.conversationId}, content: "${data.content}"`);
 
+    const CHARGE_PER_MESSAGE = 5;
+
+    if (role === 'user') {
+      const canSend = await this.walletService.checkSufficientBalance(userId, CHARGE_PER_MESSAGE);
+      if (!canSend) {
+        client.emit('error', { message: 'Insufficient wallet balance to send message. Please recharge.' });
+        return;
+      }
+    }
+
     const message = await this.conversationsService.createMessage(
       data.conversationId,
       userId,
@@ -157,6 +171,36 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       data.type || 'text',
     );
     console.log(`[WS] Message persisted - messageId: ${message.id}`);
+
+    if (role === 'user') {
+      try {
+        await this.walletService.deductFundsAtomic({
+          userId,
+          amount: CHARGE_PER_MESSAGE,
+          description: 'Chat message',
+          category: 'chat_charge',
+          referenceId: message.id,
+        });
+
+        // Distribute chat earnings to astrologer
+        try {
+          const conversation = await this.conversationsService.findById(data.conversationId);
+          const astrologerId = conversation.participantOneRole === 'astrologer'
+            ? conversation.participantOneId
+            : conversation.participantTwoId;
+          await this.commissionService.distributeChatEarnings(
+            astrologerId,
+            data.conversationId,
+            message.id,
+            CHARGE_PER_MESSAGE,
+          );
+        } catch (distErr: any) {
+          console.error(`[WS] Failed to distribute chat earnings: ${distErr.message}`);
+        }
+      } catch (e: any) {
+        console.error(`[WS] Failed to deduct chat charge: ${e.message}`);
+      }
+    }
 
     const room = `conversation:${data.conversationId}`;
     const roomSockets = this.server.sockets.adapter.rooms.get(room);
@@ -291,6 +335,19 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   ) {
     const call = await this.callsService.findById(data.callId);
     if (!call) return;
+
+    const MIN_BALANCE = 10;
+    const hasBalance = await this.walletService.checkSufficientBalance(call.userId, MIN_BALANCE);
+    if (!hasBalance) {
+      const callerSocket = this.findSocketByUserId(call.userId);
+      if (callerSocket) {
+        callerSocket.emit('call:error', { message: 'Insufficient wallet balance to start call. Please recharge.' });
+      }
+      client.emit('call:error', { message: 'Caller has insufficient wallet balance.' });
+      await this.callsService.updateStatus(data.callId, 'cancelled');
+      return;
+    }
+
     await this.callsService.updateStatus(data.callId, 'ongoing');
     await this.callsService.updateStartedAt(data.callId);
     const callerSocket = this.findSocketByUserId(call.userId);

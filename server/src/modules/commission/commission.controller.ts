@@ -9,7 +9,17 @@ export class CommissionController {
   async findAll() { return this.service.findAll(); }
 
   @Get('logs')
-  async getLogs(@Query('astrologerId') astrologerId?: string) { return this.service.getLogs(astrologerId); }
+  async getLogs(
+    @Query('astrologerId') astrologerId?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) { return this.service.getLogs(astrologerId, page || 1, limit || 20); }
+
+  @Get('stats/:astrologerId')
+  async getAstrologerStats(@Param('astrologerId') astrologerId: string) { return this.service.getAstrologerStats(astrologerId); }
+
+  @Get('by-astrologer/:astrologerId')
+  async findByAstrologerId(@Param('astrologerId') astrologerId: string) { return this.service.findByAstrologerId(astrologerId); }
 
   @Post()
   async create(@Body() body: any) { return this.service.create(body); }

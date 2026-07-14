@@ -205,6 +205,12 @@ export function ChatRoomScreen({ route, navigation }: any) {
             }, 100);
           }}
         />
+        {currentUserId === user?.id && (
+          <View style={styles.chargeIndicator}>
+            <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
+            <Text style={styles.chargeText}>₹5 per message</Text>
+          </View>
+        )}
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
@@ -286,4 +292,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sendButtonDisabled: { opacity: 0.5 },
+  chargeIndicator: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    paddingVertical: 6, backgroundColor: colors.surfaceLight, gap: 4,
+  },
+  chargeText: { fontSize: 12, color: colors.textMuted },
 });

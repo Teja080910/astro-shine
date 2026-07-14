@@ -1,726 +1,786 @@
-# Real-Time One-to-One Chat — Implementation Plan
+# Wallet, Recharge, Revenue Distribution & Redemption — Implementation Plan
 
 ---
 
-## Current Project Analysis
+## Project Analysis Summary
 
-### Existing Architecture
+### Server Modules (NestJS v11, PostgreSQL 16, Drizzle ORM v0.45)
 
-**Backend (server/)**
-- **Framework:** NestJS v11, modular feature-based architecture
-- **Database:** PostgreSQL 16 via Drizzle ORM v0.45, 37 tables, 18 enums
-- **Auth:** JWT (jsonwebtoken library), Bearer token, no role-based guards
-- **API Prefix:** `/api/v1` (set in main.ts)
-- **File Upload:** Local disk via multer (`uploads/` directory)
-- **WebSocket:** None
-- **Caching/Queue/Redis:** None
-- **Push Notifications:** None
-- **Error Handling:** GlobalExceptionFilter, NestJS ValidationPipe (whitelist mode)
-- **Logging:** NestJS Logger (in exception filter), console.log (in auth service)
+| Module | Files | Status |
+|--------|-------|--------|
+| **Wallet** | `wallet.service.ts`, `wallet.controller.ts`, `wallet.module.ts` | Existing — basic CRUD, no balance validation calls |
+| **Payments** | `payments.service.ts`, `payments.controller.ts`, `payments.module.ts`, `payment.dto.ts`, `rescue.service.ts` | Existing — Razorpay integration working |
+| **Transactions** | `transactions.service.ts`, `transactions.controller.ts`, `transactions.module.ts` | Existing — CRUD only |
+| **Commission** | `commission.service.ts`, `commission.controller.ts`, `commission.module.ts` | Existing — CRUD for astrologer commission % |
+| **Withdrawal** | `withdrawal.service.ts`, `withdrawal.controller.ts`, `withdrawal.module.ts` | Existing — CRUD for withdrawal requests |
+| **Calls** | `calls.service.ts`, `calls.controller.ts`, `calls.gateway.ts`, `calls.module.ts` | Existing — calculates cost on endCall but NEVER deducts from wallet |
+| **Conversations** | `conversations.service.ts`, `conversations.controller.ts`, `conversations.module.ts`, `chat.gateway.ts` | Existing — WebSocket chat, no charging logic |
+| **Admin** | `admin.module.ts`, `admin.controller.ts` (4 files) | Existing — dashboard stats, user/astrologer/call mgmt |
 
-**App (app/)**
-- **Framework:** Expo SDK 54, React Native 0.81.5, React 19.1.0
-- **Navigation:** NativeStackNavigator (root) + BottomTabNavigator (custom FloatingBottomBar)
-- **Auth:** React Context (AuthContext), AsyncStorage persistence, role-based (user/astrologer/admin)
-- **API:** Axios singleton, 15s timeout, Bearer token interceptor
-- **State Management:** React Context only (no Redux/Zustand)
-- **UI Library:** react-native-paper MD3 + 12 custom components
-- **Theme:** Dark-first, dynamic getters, purple primary + gold accent
-- **Chat:** UI skeleton only — no real-time messaging, no WebSocket
-- **Push Notifications:** Not implemented
-- **File Upload:** Not implemented (no image picker)
+### Database Tables (37 tables — wallet-related only)
 
-### Existing Chat-Related Code
+| Table | Key Columns | Purpose |
+|-------|-------------|---------|
+| `wallets` | `id`, `userId`, `astrologerId`, `balance`, `totalAdded`, `totalDeducted` | Wallet per user & astrologer |
+| `transactions` | `id`, `walletId`, `amount`, `type` (enum: add_funds, withdrawal, call_charge, chat_charge, gift, donation, commission, order_payment, refund), `status` (pending, completed, failed), `category`, `description` | Financial ledger |
+| `commissions` | `id`, `astrologerId`, `percentage` | Commission % per astrologer (platform cut) |
+| `commission_logs` | `id`, `callLogId`, `astrologerId`, `amount`, `percentage`, `totalEarned`, `platformFee` | Commission earned per call |
+| `withdrawal_requests` | `id`, `astrologerId`, `walletId`, `amount`, `status` (pending, approved, rejected), `approvedAt` | Astrologer withdrawal requests |
+| `users` | `id`, `credits` (int), `name`, `email`, `phone` | Users |
+| `astrologers` | `id`, `userId`, `totalEarnings`, `totalOrders`, `experience`, `baseRate` | Astrologers |
+| `call_logs` | `id`, `callerId`, `astrologerId`, `status`, `duration`, `cost`, `ratePerMin`, `startedAt`, `endedAt` | Call records |
+| `payment_orders` | `id`, `userId`, `amount`, `currency`, `razorpayOrderId`, `status`, `metadata` | Razorpay orders |
+| `payment_events` | `id`, `paymentOrderId`, `eventType`, `payload`, `status` | Razorpay webhook events |
 
-**Database:** `chat_messages` table exists but is tied to `callId` (FK to call_logs). It is designed for call-associated messages only.
+### Mobile Screens (Expo SDK 54, RN 0.81.5)
 
-**Backend ChatModule:** REST endpoints for CRUD on call-associated messages:
-- `GET /chat?callId=xxx` — list messages by call
-- `POST /chat` — create message
-- `PUT /chat/:id/read` — mark as read
-
-**App ChatScreen:** UI skeleton only — FlatList with empty state, text input bar, send button is a no-op.
+| Screen | Location | Status |
+|--------|----------|--------|
+| WalletScreen | `UserScreens.tsx` | Shows balance, add funds button, withdrawal history |
+| AstrologerWalletScreen | `AstrologerScreens.tsx` | Shows balance, add funds, withdrawal requests |
+| AstrologerEarningsScreen | `AstrologerScreens.tsx` | Shows total earnings |
+| AstrologerCommissionScreen | `AstrologerScreens.tsx` | Empty placeholder — "Comming Soon" |
+| AstrologerWithdrawalScreen | `AstrologerScreens.tsx` | Withdrawal request form |
+| PaymentScreen | `PaymentScreen.tsx` | Razorpay checkout (working) |
+| PaymentSuccessScreen | `PaymentSuccessScreen.tsx` | Success display (working) |
+| PaymentFailureScreen | `PaymentFailureScreen.tsx` | Categorized error display (working) |
+| AdminDashboard | Admin section | Stats, charts |
+| AdminAstrologersScreen | Admin section | Astrologer management |
 
 ---
 
-## Chat Requirements
+## Phase 1 — Wallet Balance Validation for Calls & Chat
 
-| Feature | Description |
-|---------|-------------|
-| One-to-One Chat | Direct messaging between user and astrologer |
-| Real-time messaging | Instant delivery via WebSocket (Socket.IO) |
-| Online/Offline status | Show green/gray dot on avatar |
-| Typing indicator | Show "typing..." when the other person is typing |
-| Message delivery | Single tick (sent) → Double tick (delivered) |
-| Read receipts | Double blue tick when recipient opens conversation |
-| Message history | Load past messages on conversation open |
-| Pagination | Cursor-based, 20 messages per page |
-| Infinite scrolling | Load more on scroll to top |
-| Retry failed messages | Tap to retry if send fails |
-| Optimistic UI | Show message immediately, update status async |
-| Reconnection handling | Auto-reconnect with Socket.IO, re-join rooms |
-| File/Image support | Upload images via existing file upload endpoint |
-| Push notifications | Not possible — no push notification infrastructure exists |
-| Authentication | JWT token required for WebSocket connection |
-| Authorization | Only participants can read/send in a conversation |
+### Problem
+When a user initiates a call or chat, the system NEVER checks if the user has sufficient wallet balance. `WalletService.deductFunds()` exists but is never called anywhere.
 
-### Features NOT possible due to existing architecture
+### What Needs to Change
 
-1. **Push notifications** — No `expo-notifications`, no FCM setup, no push token registration. Adding this would require significant new infrastructure (FCM project, expo-notifications package, push token storage, notification sending service). Out of scope.
+#### Server: Calls Gateway (`calls.gateway.ts`)
 
-2. **File/Image upload from chat** — The server has a file upload endpoint, but the app has no image picker library (`expo-image-picker` not installed). Can be added as a follow-up.
+**Current flow:**
+1. User sends `call:start` with `{ astrologerId, type }`
+2. Gateway creates a call log with status `pending`
+3. Gateway notifies astrologer
+4. Astrologer accepts → status becomes `active`
+5. Agora token generated, both parties join
+6. On end → `endCall()` calculates duration, cost, ratePerMin — saves to DB but NEVER deducts wallet
+
+**Required changes:**
+
+1. **Add wallet balance check BEFORE call acceptance** — When astrologer accepts, check caller's wallet balance. If insufficient, reject the call.
+2. **Add live wallet deduction during call** — During active call, periodically deduct funds based on duration. If balance reaches zero, auto-terminate the call.
+3. **Deduct wallet on call end** — In `endCall()`, actually call `WalletService.deductFunds()` and create a transaction record.
+
+#### Server: Chat Gateway (`chat.gateway.ts`)
+
+**Current flow:**
+1. User creates or joins conversation
+2. User sends messages via WebSocket
+3. Messages saved to DB
+4. NO charging whatsoever
+
+**Required:**
+- Add a `conversation_charges` table or use existing `transactions` table with `chat_charge` type
+- Deduct per-message or per-minute charge from user wallet
+- Check balance before allowing message send
+
+#### Server: Wallet Service (`wallet.service.ts`)
+
+**Method to add:**
+- `checkSufficientBalance(userId: string, amount: number): Promise<boolean>` — queries balance, returns true/false
+- `deductFundsWithTransaction(userId: string, amount: number, description: string, referenceType: string, referenceId: string): Promise<void>` — atomic deduct + transaction insert in DB transaction
+
+### Implementation Order
+1. Add `checkSufficientBalance()` and `deductFundsWithTransaction()` to WalletService
+2. Modify CallsGateway to check balance before accepting call
+3. Modify CallsGateway/Service to deduct wallet on `endCall`
+4. Add ChatGateway balance check + deduction
+5. Add conversation_charges table if needed
+
+---
+
+## Phase 2 — Revenue Distribution (Platform Commission)
+
+### Problem
+`commissions` table stores astrologer commission % but is never applied. `commission_logs` table exists but is never populated. Platform gets nothing from calls.
+
+### How It Should Work
+
+**On every paid call:**
+1. Calculate total call cost (duration × ratePerMin)
+2. Deduct full cost from caller's wallet
+3. Look up astrologer's commission % from `commissions` table
+4. Calculate: `platformFee = totalCost × (commissionPercentage / 100)`
+5. Calculate: `astrologerEarnings = totalCost - platformFee`
+6. Add `astrologerEarnings` to astrologer's wallet balance
+7. Insert record in `commission_logs`
+8. Update astrologer's `totalEarnings`
+
+**On every chat message/conversation:**
+- Same distribution logic applied to chat charges
+
+### Server Changes
+
+#### Calls Service (`calls.service.ts`)
+
+In `endCall()`:
+```typescript
+async endCall(callLogId: string, endedBy: string): Promise<void> {
+  // ... existing duration/cost calculation ...
+
+  // Deduct from caller wallet
+  await this.walletService.deductFundsWithTransaction(
+    callerId, cost, `Call with ${astrologerName}`,
+    'call_charge', callLogId
+  );
+
+  // Apply commission distribution
+  await this.commissionService.distributeEarnings(astrologerId, callLogId, cost);
+
+  // Update astrologer totalEarnings
+  await this.astrologerService.addEarnings(astrologerId, astrologerEarnings);
+}
+```
+
+#### Commission Service (`commission.service.ts`)
+
+**New method:**
+- `distributeEarnings(astrologerId, callLogId, totalCost)` — calculates split, credits astrologer wallet, inserts commission_log
+
+**Currently exists (reuse):**
+- `findByAstrologerId(astrologerId)` — get commission %
+- `create(data)` / `update(id, data)` — CRUD
+
+#### Astrologer Service / Wallet
+
+- Need method to credit astrologer wallet: `WalletService.creditFunds(astrologerId, amount, description, type, referenceId)`
+
+---
+
+## Phase 3 — Redemption (Withdrawal Flow)
+
+### Problem
+Withdrawal requests can be approved/rejected but the flow is incomplete:
+1. No balance check before creating withdrawal request
+2. On approval, astrologer wallet is NOT deducted
+3. No transaction record for approved withdrawals
+
+### How It Should Work
+
+**Create withdrawal request:**
+1. Astrologer requests withdrawal of amount X
+2. Check astrologer wallet balance >= X
+3. Create `withdrawal_requests` record with status `pending`
+4. Admin reviews in admin panel
+
+**Approve withdrawal:**
+1. Admin approves request
+2. Deduct X from astrologer wallet
+3. Create transaction record with type `withdrawal`, status `completed`
+4. Update `withdrawal_requests` status to `approved`, set `approvedAt`
+
+**Reject withdrawal:**
+1. Admin rejects
+2. Update status to `rejected`
+3. Nothing else needed
+
+### Server Changes
+
+#### Withdrawal Service (`withdrawal.service.ts`)
+
+- Add balance check in `create()` method
+- Add wallet deduction + transaction creation in `approve()` method
+
+---
+
+## Phase 4 — Astrologer Commission Screen
+
+### Problem
+The AstrologerCommissionScreen shows "Comming Soon" — completely empty.
+
+### What to Build
+
+A screen showing:
+- Current commission percentage
+- Total earnings (from `astrologers.totalEarnings`)
+- Total platform fees paid
+- List of commission_logs entries (filterable by date)
+- Total calls, total revenue generated
+
+### API Endpoints Needed
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/commission/astrologer/:id/logs` | Commission logs for astrologer (paginated) |
+| GET | `/commission/astrologer/:id/stats` | Aggregated stats (total earnings, fees, calls) |
+
+### Mobile Changes
+
+AstrologerCommissionScreen — replace placeholder with real data display:
+- Summary cards (commission %, total earnings, platform fees paid)
+- List of commission logs with date, call info, amount breakdown
+- Pull-to-refresh
+
+---
+
+## Phase 5 — Wallet Balance Display Across App
+
+### Problem
+Wallet balance is only shown on WalletScreen. Users can't see their balance when:
+- Browsing astrologer profiles
+- Initiating a call
+- On home screen
+
+### Mobile Changes
+
+| Screen | Change |
+|--------|--------|
+| UserHomeScreen | Add wallet balance badge in header |
+| AstrologerProfileScreen | Show caller's balance when initiating call |
+| CallScreen | Show remaining balance/live deduction counter |
+| ChatRoomScreen | Show balance/charge indicator |
+| ProfileScreen | Show wallet balance |
+
+### API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/wallet/me` | Get current user's wallet (already exists) |
+
+---
+
+## Phase 6 — Admin Revenue Dashboard
+
+### Problem
+Admin dashboard shows user/astrologer/call stats but NO revenue/financial data.
+
+### What to Build
+
+Add to Admin Dashboard:
+- Total platform revenue (sum of all platform fees from commission_logs)
+- Total user deposits (sum of add_funds transactions)
+- Total withdrawals processed
+- Pending withdrawal requests count + amount
+- Daily/weekly/monthly revenue charts
+- Recent transactions list
+- How much commssion he got .
+
+### API Endpoints Needed
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/admin/revenue/summary` | Aggregated revenue stats |
+| GET | `/admin/revenue/transactions` | Paginated transaction list |
+| GET | `/admin/revenue/chart?period=week` | Chart data by period |
 
 ---
 
 ## Database Changes
 
-### Why new tables are needed
-
-The existing `chat_messages` table has `callId` as a NOT NULL foreign key to `call_logs`. It is designed for messages exchanged during a call session. One-to-one chat is a different concept — conversations exist independently of calls. Modifying `chat_messages` to make `callId` nullable and add a `conversationId` would:
-1. Break the existing ChatModule which queries by `callId`
-2. Mix two different concerns in one table
-3. Require complex migration of existing data
-
-**Solution:** Create two new tables while keeping `chat_messages` unchanged.
-
-### New Table: `conversations`
-
-Represents a one-to-one chat session between two participants.
+### New Table: `conversation_charges` (if per-message charging)
 
 | Column | Type | Constraints |
 |--------|------|-------------|
 | id | uuid | PK, defaultRandom |
-| participantOneId | uuid | FK -> users.id OR astrologers.id, NOT NULL |
-| participantOneRole | user_role | NOT NULL |
-| participantTwoId | uuid | FK -> users.id OR astrologers.id, NOT NULL |
-| participantTwoRole | user_role | NOT NULL |
-| lastMessageAt | timestamp | nullable |
-| lastMessagePreview | varchar(200) | nullable |
-| createdAt | timestamp | NOT NULL, defaultNow |
-| updatedAt | timestamp | NOT NULL, defaultNow |
+| conversationId | uuid | FK -> conversations.id |
+| userId | uuid | NOT NULL |
+| astrologerId | uuid | NOT NULL |
+| messagesCount | int | NOT NULL, default 0 |
+| totalCharged | decimal(10,2) | NOT NULL, default 0 |
+| ratePerMessage | decimal(10,2) | NOT NULL |
+| startedAt | timestamp | NOT NULL |
+| lastChargedAt | timestamp | nullable |
+| status | varchar | 'active', 'completed' |
+| createdAt | timestamp | defaultNow |
 
-**Indexes:**
-- `(participantOneId, participantTwoId)` — unique composite (prevents duplicate conversations)
-- `(participantOneId, lastMessageAt)` — for ordering user's conversation list
-- `(participantTwoId, lastMessageAt)` — for ordering other participant's conversation list
+### Migration — New Columns on Existing Tables
 
-### New Table: `conversation_messages`
+**`astrologers` table:**
+- No new columns needed — `totalEarnings` already exists
 
-Individual messages within a conversation.
+**`wallets` table:**
+- No new columns needed — `balance`, `totalAdded`, `totalDeducted` already exist
 
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | uuid | PK, defaultRandom |
-| conversationId | uuid | FK -> conversations.id, CASCADE, NOT NULL |
-| senderId | uuid | NOT NULL |
-| senderRole | user_role | NOT NULL |
-| type | message_type | NOT NULL, default 'text' (reuse existing enum) |
-| content | text | nullable |
-| mediaUrl | text | nullable |
-| isDelivered | boolean | NOT NULL, default false |
-| isRead | boolean | NOT NULL, default false |
-| readAt | timestamp | nullable |
-| createdAt | timestamp | NOT NULL, defaultNow |
+**`withdrawal_requests` table:**
+- Add `processedAt` timestamp if missing
+- Add `transactionId` FK to transactions (nullable)
 
-**Indexes:**
-- `(conversationId, createdAt DESC)` — for paginated message loading
-- `(conversationId, isRead)` — for unread count queries
-
-### Why not reuse existing enums/types
-
-- `message_type` enum already exists and is reused
-- `user_role` enum already exists and is reused
-- No new enums needed
+No new tables strictly needed for core flow — all financial tracking reuses existing `transactions`, `commission_logs`, `withdrawal_requests`.
 
 ---
 
-## Backend Changes
+## Server Implementation Details
 
-### New Dependencies
+### Phase 1A — WalletService Enhancements
 
-```
-@nestjs/websockets     (NestJS WebSocket module — part of NestJS core)
-@nestjs/platform-socket.io  (Socket.IO adapter for NestJS)
-socket.io              (Socket.IO server)
-```
-
-These are standard NestJS packages, not a new technology stack.
-
-### Files to Create
-
-| File | Purpose |
-|------|---------|
-| `server/src/modules/conversations/conversations.module.ts` | Module definition |
-| `server/src/modules/conversations/conversations.controller.ts` | REST endpoints for conversations |
-| `server/src/modules/conversations/conversations.service.ts` | Business logic |
-| `server/src/modules/conversations/chat.gateway.ts` | WebSocket gateway for real-time messaging |
-| `server/src/db/schemas/conversations.ts` | Drizzle schema for conversations table |
-| `server/src/db/schemas/conversation-messages.ts` | Drizzle schema for conversation_messages table |
-
-### Files to Modify
-
-| File | Change | Why |
-|------|--------|-----|
-| `server/src/db/schemas/index.ts` | Export new schemas | Required for Drizzle to recognize new tables |
-| `server/src/app.module.ts` | Import ConversationsModule | Register the new module |
-| `server/src/main.ts` | Add Socket.IO adapter | Enable WebSocket support |
-
-### WebSocket Gateway Design
-
-**ChatGateway** (`chat.gateway.ts`)
-
-Authentication:
-- Client connects with `?token=JWT_TOKEN` query parameter
-- Gateway validates JWT on connection using existing `AuthService.validateToken()`
-- If invalid, connection is rejected
-
-Events:
-
-**Client → Server:**
-
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `join:conversation` | `{ conversationId }` | Join a conversation room |
-| `leave:conversation` | `{ conversationId }` | Leave a conversation room |
-| `message:send` | `{ conversationId, content, type? }` | Send a text message |
-| `typing:start` | `{ conversationId }` | User started typing |
-| `typing:stop` | `{ conversationId }` | User stopped typing |
-| `message:read` | `{ conversationId }` | Mark all messages as read in conversation |
-
-**Server → Client:**
-
-| Event | Payload | Description |
-|-------|---------|-------------|
-| `message:new` | `{ id, conversationId, senderId, senderRole, content, type, createdAt }` | New message received |
-| `message:delivered` | `{ messageId, conversationId }` | Message delivered to recipient |
-| `message:read` | `{ conversationId, readBy }` | Messages read by recipient |
-| `typing:start` | `{ conversationId, userId }` | Other user started typing |
-| `typing:stop` | `{ conversationId, userId }` | Other user stopped typing |
-| `user:online` | `{ userId, role }` | User came online |
-| `user:offline` | `{ userId, role }` | User went offline |
-| `error` | `{ message }` | Error notification |
-
-### REST API Endpoints
-
-All endpoints require JWT auth (AuthGuard).
-
-#### Conversations
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/conversations` | List user's conversations (sorted by lastMessageAt DESC) |
-| GET | `/conversations/:id` | Get conversation details |
-| POST | `/conversations` | Create or get existing conversation with another user |
-| DELETE | `/conversations/:id` | Delete conversation (soft) |
-
-**POST /conversations**
-```json
-// Request
-{ "participantId": "uuid", "participantRole": "astrologer" }
-
-// Response
-{
-  "id": "uuid",
-  "participantOneId": "uuid",
-  "participantOneRole": "user",
-  "participantTwoId": "uuid",
-  "participantTwoRole": "astrologer",
-  "lastMessageAt": null,
-  "lastMessagePreview": null,
-  "createdAt": "2026-07-08T..."
-}
-```
-
-**GET /conversations**
-```json
-// Response
-{
-  "data": [
-    {
-      "id": "uuid",
-      "participant": { "id": "uuid", "name": "Astrologer Name", "avatar": "...", "onlineStatus": "online" },
-      "lastMessagePreview": "Hello, how can I help?",
-      "lastMessageAt": "2026-07-08T...",
-      "unreadCount": 2,
-      "createdAt": "2026-07-08T..."
-    }
-  ]
-}
-```
-
-#### Conversation Messages
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/conversations/:id/messages` | Get paginated messages (cursor-based) |
-| POST | `/conversations/:id/messages` | Send a message (fallback if WebSocket unavailable) |
-
-**GET /conversations/:id/messages?cursor=xxx&limit=20**
-```json
-// Response
-{
-  "data": [
-    {
-      "id": "uuid",
-      "senderId": "uuid",
-      "senderRole": "user",
-      "type": "text",
-      "content": "Hello!",
-      "isDelivered": true,
-      "isRead": true,
-      "readAt": "2026-07-08T...",
-      "createdAt": "2026-07-08T..."
-    }
-  ],
-  "nextCursor": "uuid",
-  "hasMore": true
-}
-```
-
----
-
-## App Changes
-
-### New Dependencies
-
-```
-socket.io-client       (Socket.IO client for React Native)
-```
-
-### Files to Create
-
-| File | Purpose |
-|------|---------|
-| `app/src/context/ChatContext.tsx` | Real-time chat state management (WebSocket connection, message state, conversations) |
-| `app/src/screens/user/ChatListScreen.tsx` | List of active conversations |
-| `app/src/screens/user/ChatRoomScreen.tsx` | Full chat room with messages, input, typing indicator |
-| `app/src/shared/components/ChatBubble.tsx` | Message bubble component (sent/received, status ticks) |
-| `app/src/shared/components/TypingIndicator.tsx` | "typing..." animation |
-| `app/src/shared/components/OnlineDot.tsx` | Green/gray online status dot |
-
-### Files to Modify
-
-| File | Change | Why |
-|------|--------|-----|
-| `app/src/navigation/Navigation.tsx` | Add ChatListScreen and ChatRoomScreen routes; update Chat tab to show ChatListScreen | Navigation for new screens |
-| `app/src/screens/user/UserScreens.tsx` | Remove old ChatScreen, add ChatListScreen export | Replace skeleton with real chat |
-| `app/src/shared/api-client.ts` | Add conversation API methods | REST endpoints for conversations |
-| `app/src/shared/types.ts` | Add Conversation, ConversationMessage interfaces | Type definitions |
-| `app/src/shared/index.ts` | Export new components | Barrel exports |
-
-### ChatContext Design
-
-The ChatContext manages:
-- **Socket connection** — Connect/disconnect, auto-reconnect, token auth
-- **Conversations list** — Fetched from API, updated via WebSocket events
-- **Active conversation messages** — Loaded on open, updated in real-time
-- **Online status** — Map of userId → online status
-- **Typing status** — Map of conversationId → typing userId
-- **Unread counts** — Per conversation
+**File:** `server/src/modules/wallet/wallet.service.ts`
 
 ```typescript
-interface ChatState {
-  connected: boolean;
-  conversations: Conversation[];
-  activeConversation: Conversation | null;
-  messages: ConversationMessage[];
-  onlineUsers: Record<string, boolean>;
-  typingUsers: Record<string, string | null>; // conversationId -> userId
-  unreadCounts: Record<string, number>;
-  loading: boolean;
-  hasMore: boolean;
-  // Actions
-  loadConversations: () => Promise<void>;
-  openConversation: (participantId: string, participantRole: string) => Promise<string>;
-  loadMessages: (conversationId: string) => Promise<void>;
-  loadMoreMessages: () => Promise<void>;
-  sendMessage: (conversationId: string, content: string) => Promise<void>;
-  startTyping: (conversationId: string) => void;
-  stopTyping: (conversationId: string) => void;
-  markAsRead: (conversationId: string) => void;
+// New methods to add:
+
+async checkSufficientBalance(userId: string, amount: number): Promise<boolean> {
+  const wallet = await this.getWalletByUserId(userId);
+  return wallet.balance >= amount;
 }
-```
 
-### Screen Designs
-
-**ChatListScreen:**
-- Header: "Messages"
-- FlatList of conversations
-- Each item: Avatar (with online dot), name, last message preview, timestamp, unread badge
-- Empty state: "No conversations yet"
-- Pull-to-refresh
-
-**ChatRoomScreen:**
-- Header: Avatar + name + online status, back button
-- FlatList (inverted) of messages
-- Each message: ChatBubble component
-- Typing indicator at bottom
-- Message input bar: TextInput + Send button
-- Auto-scroll to bottom on new messages
-- Load more on scroll to top
-
-**ChatBubble:**
-- Aligned right (sent) or left (received)
-- Background: primary purple (sent) or surface (received)
-- Text content
-- Timestamp below
-- Status indicator: sending (gray clock) → sent (single tick) → delivered (double tick) → read (double blue tick)
-
----
-
-## WebSocket Event Documentation
-
-### Connection
-
-```
-ws://31.97.222.250:5321?token=<JWT_TOKEN>
-```
-
-### Event: `message:send` (Client → Server)
-
-```json
+async deductFundsAtomic(userId: string, amount: number, 
+  description: string, transactionType: string, referenceId?: string): Promise<void>
 {
-  "conversationId": "uuid",
-  "content": "Hello!",
-  "type": "text"
+  return this.db.transaction(async (tx) => {
+    // Lock wallet row
+    const wallet = await tx
+      .select()
+      .from(wallets)
+      .where(eq(wallets.userId, userId))
+      .forUpdate()
+      .then(rows => rows[0]);
+
+    if (!wallet || wallet.balance < amount) {
+      throw new BadRequestException('Insufficient balance');
+    }
+
+    // Deduct
+    await tx
+      .update(wallets)
+      .set({
+        balance: sql`${wallets.balance} - ${amount}`,
+        totalDeducted: sql`${wallets.totalDeducted} + ${amount}`,
+      })
+      .where(eq(wallets.id, wallet.id));
+
+    // Create transaction record
+    await tx.insert(transactions).values({
+      walletId: wallet.id,
+      amount: amount,
+      type: transactionType as any,
+      status: 'completed',
+      description,
+      referenceId,
+      createdAt: new Date(),
+    });
+  });
 }
-```
 
-### Event: `message:new` (Server → Client)
-
-```json
+async creditFunds(userId: string, astrologerId: string | null, amount: number,
+  description: string, transactionType: string, referenceId?: string): Promise<void>
 {
-  "id": "uuid",
-  "conversationId": "uuid",
-  "senderId": "uuid",
-  "senderRole": "user",
-  "type": "text",
-  "content": "Hello!",
-  "isDelivered": false,
-  "isRead": false,
-  "createdAt": "2026-07-08T12:00:00Z"
+  return this.db.transaction(async (tx) => {
+    let wallet;
+    if (userId) {
+      wallet = await tx
+        .select()
+        .from(wallets)
+        .where(eq(wallets.userId, userId))
+        .forUpdate()
+        .then(rows => rows[0]);
+    } else if (astrologerId) {
+      wallet = await tx
+        .select()
+        .from(wallets)
+        .where(eq(wallets.astrologerId, astrologerId))
+        .forUpdate()
+        .then(rows => rows[0]);
+    }
+
+    if (!wallet) throw new BadRequestException('Wallet not found');
+
+    await tx
+      .update(wallets)
+      .set({
+        balance: sql`${wallets.balance} + ${amount}`,
+        totalAdded: sql`${wallets.totalAdded} + ${amount}`,
+      })
+      .where(eq(wallets.id, wallet.id));
+
+    await tx.insert(transactions).values({
+      walletId: wallet.id,
+      amount: amount,
+      type: transactionType as any,
+      status: 'completed',
+      description,
+      referenceId,
+      createdAt: new Date(),
+    });
+  });
 }
 ```
 
-### Event: `message:delivered` (Server → Client)
+### Phase 1B — Calls Gateway Balance Check
 
-```json
-{
-  "messageId": "uuid",
-  "conversationId": "uuid"
+**File:** `server/src/modules/calls/calls.gateway.ts`
+
+In `handleAcceptCall`:
+```typescript
+// Before notifying caller that astrologer accepted:
+const canPay = await this.walletService.checkSufficientBalance(callerId, MINIMUM_BALANCE);
+if (!canPay) {
+  // Notify caller: insufficient balance
+  // Notify astrologer: call cancelled due to caller balance
+  // Update call log status to 'failed'
+  return;
 }
 ```
 
-### Event: `message:read` (Client → Server)
-
-```json
-{
-  "conversationId": "uuid"
-}
-```
-
-### Event: `message:read` (Server → Client)
-
-```json
-{
-  "conversationId": "uuid",
-  "readBy": "uuid"
-}
-```
-
-### Event: `typing:start` (Client → Server)
-
-```json
-{
-  "conversationId": "uuid"
-}
-```
-
-### Event: `typing:start` (Server → Client)
-
-```json
-{
-  "conversationId": "uuid",
-  "userId": "uuid"
-}
-```
-
-### Event: `typing:stop` (Client → Server)
-
-```json
-{
-  "conversationId": "uuid"
-}
-```
-
-### Event: `typing:stop` (Server → Client)
-
-```json
-{
-  "conversationId": "uuid",
-  "userId": "uuid"
-}
-```
-
-### Event: `user:online` (Server → Client)
-
-```json
-{
-  "userId": "uuid",
-  "role": "astrologer"
-}
-```
-
-### Event: `user:offline` (Server → Client)
-
-```json
-{
-  "userId": "uuid",
-  "role": "astrologer"
-}
-```
-
----
-
-## Architecture Diagrams
-
-### Message Flow (Real-time)
-
-```mermaid
-sequenceDiagram
-    participant UserA as User A (App)
-    participant WS as WebSocket Server
-    participant DB as PostgreSQL
-    participant UserB as User B (App)
-
-    UserA->>WS: connect(token)
-    WS->>WS: validate JWT
-    WS-->>UserA: connected
-
-    UserA->>WS: join:conversation { conversationId }
-    WS->>WS: join room(conversationId)
-
-    UserA->>WS: message:send { conversationId, content }
-    WS->>DB: INSERT conversation_message
-    DB-->>WS: message saved
-    WS-->>UserA: message:new (optimistic confirm)
-    WS-->>UserB: message:new (deliver to recipient)
-    UserB-->>WS: message:delivered (auto-ack)
-    WS-->>UserA: message:delivered
-```
-
-### Read Receipt Flow
-
-```mermaid
-sequenceDiagram
-    participant UserB as User B
-    participant WS as WebSocket Server
-    participant DB as PostgreSQL
-    participant UserA as User A
-
-    UserB->>WS: message:read { conversationId }
-    WS->>DB: UPDATE messages SET isRead=true, readAt=now()
-    DB-->>WS: updated
-    WS-->>UserB: ack
-    WS-->>UserA: message:read { conversationId, readBy: userBId }
-```
-
-### Typing Indicator Flow
-
-```mermaid
-sequenceDiagram
-    participant UserA as User A
-    participant WS as WebSocket Server
-    participant UserB as User B
-
-    UserA->>WS: typing:start { conversationId }
-    WS-->>UserB: typing:start { conversationId, userId }
-    Note over UserB: Show "typing..." indicator
-    UserA->>WS: typing:stop { conversationId }
-    WS-->>UserB: typing:stop { conversationId, userId }
-    Note over UserB: Hide "typing..." indicator
-```
-
-### Reconnection Flow
-
-```mermaid
-sequenceDiagram
-    participant UserA as User A
-    participant WS as WebSocket Server
-    participant DB as PostgreSQL
-
-    Note over UserA: Connection lost
-    UserA->>WS: auto-reconnect
-    WS->>WS: validate JWT
-    WS-->>UserA: connected
-    UserA->>WS: join:conversation { conversationId }
-    UserA->>WS: message:send { conversationId, content }
-    Note over UserA: Retry queued messages
-    WS->>DB: INSERT message
-    WS-->>UserA: message:new
-```
-
-### Online Status Flow
-
-```mermaid
-sequenceDiagram
-    participant UserA as User A
-    participant WS as WebSocket Server
-    participant UserB as User B
-
-    UserA->>WS: connect(token)
-    WS->>WS: add to online map
-    WS-->>UserB: user:online { userId: userAId, role }
-    Note over UserB: Show green dot on User A's avatar
-
-    UserA->>WS: disconnect
-    WS->>WS: remove from online map
-    WS-->>UserB: user:offline { userId: userAId, role }
-    Note over UserB: Show gray dot on User A's avatar
-```
-
----
-
-## Database Migration Plan
-
-### Step 1: Create `conversations` table
-
-```sql
-CREATE TABLE conversations (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  participant_one_id UUID NOT NULL,
-  participant_one_role user_role NOT NULL,
-  participant_two_id UUID NOT NULL,
-  participant_two_role user_role NOT NULL,
-  last_message_at TIMESTAMP,
-  last_message_preview VARCHAR(200),
-  created_at TIMESTAMP NOT NULL DEFAULT now(),
-  updated_at TIMESTAMP NOT NULL DEFAULT now(),
-  CONSTRAINT unique_participants UNIQUE (participant_one_id, participant_two_id)
+In `handleEndCall` (calls.service.ts `endCall`):
+```typescript
+// At the end of endCall():
+await this.walletService.deductFundsAtomic(
+  callerId, cost, 
+  `Call with ${astrologerName} (${duration} min)`,
+  'call_charge', callLogId
 );
 
-CREATE INDEX idx_conversations_p1_lastmsg ON conversations(participant_one_id, last_message_at DESC);
-CREATE INDEX idx_conversations_p2_lastmsg ON conversations(participant_two_id, last_message_at DESC);
+await this.commissionService.distributeEarnings(astrologerId, callLogId, cost);
 ```
 
-### Step 2: Create `conversation_messages` table
+### Phase 1C — Chat Charging
 
-```sql
-CREATE TABLE conversation_messages (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-  sender_id UUID NOT NULL,
-  sender_role user_role NOT NULL,
-  type message_type NOT NULL DEFAULT 'text',
-  content TEXT,
-  media_url TEXT,
-  is_delivered BOOLEAN NOT NULL DEFAULT false,
-  is_read BOOLEAN NOT NULL DEFAULT false,
-  read_at TIMESTAMP,
-  created_at TIMESTAMP NOT NULL DEFAULT now()
+**File:** `server/src/modules/conversations/chat.gateway.ts`
+
+In `handleMessage`:
+```typescript
+// Check if conversation has an astrologer participant
+// Deduct per-message charge from user
+const CHARGE_PER_MESSAGE = 5; // or get from config
+const canSend = await this.walletService.checkSufficientBalance(senderId, CHARGE_PER_MESSAGE);
+if (!canSend) {
+  socket.emit('error', { message: 'Insufficient wallet balance to send message' });
+  return;
+}
+
+// Save message
+// ...
+
+// Deduct after successful save
+await this.walletService.deductFundsAtomic(
+  senderId, CHARGE_PER_MESSAGE,
+  'Chat message', 'chat_charge', messageId
 );
-
-CREATE INDEX idx_conv_messages_conv_created ON conversation_messages(conversation_id, created_at DESC);
-CREATE INDEX idx_conv_messages_unread ON conversation_messages(conversation_id, is_read) WHERE is_read = false;
 ```
 
-### Step 3: Add Drizzle schemas
+### Phase 2 — Commission Distribution
 
-Create `server/src/db/schemas/conversations.ts` and `server/src/db/schemas/conversation-messages.ts` matching the above SQL.
+**File:** `server/src/modules/commission/commission.service.ts`
 
-### Step 4: Update `server/src/db/schemas/index.ts`
+**New method:**
+```typescript
+async distributeEarnings(astrologerId: string, callLogId: string, totalCost: number): Promise<void> {
+  // Get commission percentage
+  const commission = await this.findByAstrologerId(astrologerId);
+  const percentage = commission?.percentage ?? 10; // default 10% if not set
 
-Export the new schemas.
+  const platformFee = (totalCost * percentage) / 100;
+  const astrologerEarnings = totalCost - platformFee;
 
-### Step 5: Generate migration
+  return this.db.transaction(async (tx) => {
+    // Credit astrologer wallet
+    const astrologerWallet = await tx
+      .select()
+      .from(wallets)
+      .where(eq(wallets.astrologerId, astrologerId))
+      .forUpdate()
+      .then(rows => rows[0]);
 
-```bash
-npm run db:generate
+    if (astrologerWallet) {
+      await tx
+        .update(wallets)
+        .set({
+          balance: sql`${wallets.balance} + ${astrologerEarnings}`,
+          totalAdded: sql`${wallets.totalAdded} + ${astrologerEarnings}`,
+        })
+        .where(eq(wallets.id, astrologerWallet.id));
+
+      await tx.insert(transactions).values({
+        walletId: astrologerWallet.id,
+        amount: astrologerEarnings,
+        type: 'commission',
+        status: 'completed',
+        description: `Earnings from call ${callLogId}`,
+        referenceId: callLogId,
+        createdAt: new Date(),
+      });
+    }
+
+    // Insert commission log
+    await tx.insert(commissionLogs).values({
+      callLogId,
+      astrologerId,
+      amount: totalCost,
+      percentage,
+      totalEarned: astrologerEarnings,
+      platformFee,
+      createdAt: new Date(),
+    });
+
+    // Update astrologer totalEarnings
+    await tx
+      .update(astrologers)
+      .set({
+        totalEarnings: sql`${astrologers.totalEarnings} + ${astrologerEarnings}`,
+      })
+      .where(eq(astrologers.id, astrologerId));
+  });
+}
 ```
 
-### Step 6: Apply migration
+### Phase 3 — Withdrawal Enhancements
 
-```bash
-npm run db:migrate
+**File:** `server/src/modules/withdrawal/withdrawal.service.ts`
+
+**Create (add balance check):**
+```typescript
+async create(data: CreateWithdrawalDto): Promise<WithdrawalRequest> {
+  const wallet = await this.walletService.getWalletByAstrologerId(data.astrologerId);
+  if (!wallet || wallet.balance < data.amount) {
+    throw new BadRequestException('Insufficient wallet balance');
+  }
+  // ... existing creation logic ...
+}
 ```
+
+**Approve (add deduction):**
+```typescript
+async approve(id: string): Promise<void> {
+  return this.db.transaction(async (tx) => {
+    const request = await tx
+      .select()
+      .from(withdrawalRequests)
+      .where(eq(withdrawalRequests.id, id))
+      .forUpdate()
+      .then(rows => rows[0]);
+
+    if (!request || request.status !== 'pending') {
+      throw new BadRequestException('Invalid withdrawal request');
+    }
+
+    // Deduct from astrologer wallet
+    const wallet = await tx
+      .select()
+      .from(wallets)
+      .where(eq(wallets.id, request.walletId))
+      .forUpdate()
+      .then(rows => rows[0]);
+
+    if (!wallet || wallet.balance < request.amount) {
+      throw new BadRequestException('Insufficient balance');
+    }
+
+    await tx
+      .update(wallets)
+      .set({
+        balance: sql`${wallets.balance} - ${request.amount}`,
+        totalDeducted: sql`${wallets.totalDeducted} + ${request.amount}`,
+      })
+      .where(eq(wallets.id, request.walletId));
+
+    // Create transaction
+    const [transaction] = await tx.insert(transactions).values({
+      walletId: request.walletId,
+      amount: request.amount,
+      type: 'withdrawal',
+      status: 'completed',
+      description: `Withdrawal approved by admin`,
+      createdAt: new Date(),
+    }).returning();
+
+    // Update request
+    await tx
+      .update(withdrawalRequests)
+      .set({
+        status: 'approved',
+        approvedAt: new Date(),
+        transactionId: transaction.id,
+      })
+      .where(eq(withdrawalRequests.id, id));
+  });
+}
+```
+
+---
+
+## Mobile Implementation Details
+
+### Phase 4 — Astrologer Commission Screen
+
+**File:** `app/src/screens/astrologer/AstrologerScreens.tsx`
+
+Replace the "Comming Soon" placeholder with:
+
+```typescript
+// AstrologerCommissionScreen
+// - Fetch commission logs from API
+// - Show summary: commission %, total earnings, platform fees
+// - FlatList of commission logs with date, amount, breakdown
+// - Pull-to-refresh
+// - Empty state if no data
+```
+
+### Phase 5 — Wallet Balance Display
+
+**File:** `app/src/screens/user/UserScreens.tsx` — UserHomeScreen
+
+Add balance badge in header:
+```typescript
+// On mount, fetch wallet /wallet/me
+// Show balance as a chip/badge next to greeting
+```
+
+**File:** `app/src/context/AuthContext.tsx` or new `WalletContext.tsx`
+
+Consider adding wallet balance to global context so it's accessible everywhere without repeated API calls.
+
+### Phase 6 — Admin Revenue Dashboard
+
+**Admin dashboard screen** — Add revenue section:
+- Summary cards (total revenue, pending withdrawals, total deposits)
+- Recent transactions list
+- Revenue chart (use existing chart library or simple rendering)
+
+---
+
+## API Endpoints Summary
+
+### Phase 1 — Wallet & Calls
+
+| Method | Path | Description | New/Existing |
+|--------|------|-------------|-------------|
+| GET | `/wallet/me` | Get current user wallet | Existing |
+| GET | `/wallet/astrologer/:id` | Get astrologer wallet | Existing |
+| POST | `/wallet/deduct` | (Internal/admin) Deduct funds | New |
+
+### Phase 2 — Commission
+
+| Method | Path | Description | New/Existing |
+|--------|------|-------------|-------------|
+| GET | `/commission/:astrologerId` | Get commission % | Existing |
+| POST | `/commission` | Create commission | Existing |
+| PUT | `/commission/:id` | Update commission | Existing |
+| GET | `/commission/astrologer/:id/logs` | Commission logs (paginated) | New |
+| GET | `/commission/astrologer/:id/stats` | Aggregated commission stats | New |
+
+### Phase 3 — Withdrawal
+
+| Method | Path | Description | New/Existing |
+|--------|------|-------------|-------------|
+| POST | `/withdrawal` | Create withdrawal request | Existing (needs balance check) |
+| PUT | `/withdrawal/:id/approve` | Approve withdrawal | Existing (needs deduction) |
+| PUT | `/withdrawal/:id/reject` | Reject withdrawal | Existing |
+| GET | `/withdrawal` | List all (admin) | Existing |
+| GET | `/withdrawal/astrologer/:id` | List astrologer's requests | Existing |
+
+### Phase 6 — Admin Revenue
+
+| Method | Path | Description | New/Existing |
+|--------|------|-------------|-------------|
+| GET | `/admin/revenue/summary` | Revenue summary stats | New |
+| GET | `/admin/revenue/transactions` | Paginated transactions | New |
+| GET | `/admin/revenue/chart` | Chart data | New |
+
+---
+
+## Implementation Order (Recommended)
+
+```
+Phase 1A — WalletService: checkSufficientBalance, deductFundsAtomic, creditFunds
+Phase 1B — CallsGateway: balance check before accept, wallet deduct on endCall
+Phase 2   — CommissionService: distributeEarnings called from CallsService.endCall
+Phase 3   — WithdrawalService: balance check on create, deduction on approve
+Phase 1C — ChatGateway: per-message balance check + deduction
+Phase 4   — AstrologerCommissionScreen (mobile)
+Phase 5   — Wallet balance display across mobile app
+Phase 6   — Admin Revenue Dashboard
+```
+
+---
+
+## Files to Create
+
+| File | Phase | Purpose |
+|------|-------|---------|
+| (none new — all changes are to existing files) | | |
+
+## Files to Modify
+
+| File | Phase | Change |
+|------|-------|--------|
+| `server/src/modules/wallet/wallet.service.ts` | 1A | Add checkSufficientBalance, deductFundsAtomic, creditFunds |
+| `server/src/modules/calls/calls.service.ts` | 1B | Call wallet deduct + commission distribution in endCall |
+| `server/src/modules/calls/calls.gateway.ts` | 1B | Add balance check before accepting call |
+| `server/src/modules/commission/commission.service.ts` | 2 | Add distributeEarnings method |
+| `server/src/modules/withdrawal/withdrawal.service.ts` | 3 | Add balance check in create, deduction in approve |
+| `server/src/modules/conversations/chat.gateway.ts` | 1C | Add per-message balance check + deduct |
+| `app/src/screens/astrologer/AstrologerScreens.tsx` | 4 | Replace commission placeholder with real UI |
+| `app/src/screens/user/UserScreens.tsx` | 5 | Add wallet balance badge to UserHomeScreen |
+| `app/src/navigation/Navigation.tsx` | 4,5 | Add new routes/screens if needed |
+| `app/src/shared/api-client.ts` | 2,4,6 | Add new API methods for commission logs, admin revenue |
+| `app/src/context/AuthContext.tsx` | 5 | Add wallet balance to context |
+| Admin dashboard screens | 6 | Add revenue section |
 
 ---
 
 ## Testing Plan
 
-### Unit Tests
+### Wallet Service Tests
 
-| Test | Scope |
-|------|-------|
-| ConversationsService.createConversation | Creates new or returns existing |
-| ConversationsService.getConversations | Returns user's conversations with participant data |
-| ConversationsService.getMessages | Returns paginated messages |
-| ChatGateway.handleConnection | Validates JWT, rejects invalid tokens |
-| ChatGateway.handleMessage | Saves message, emits to room |
-| ChatGateway.handleReadReceipt | Updates DB, notifies sender |
-| ChatGateway.handleTyping | Broadcasts to room |
+| Test | What to Verify |
+|------|---------------|
+| checkSufficientBalance | Returns true when balance >= amount, false otherwise |
+| deductFundsAtomic | Deducts correctly, creates transaction, throws on insufficient |
+| creditFunds | Credits correctly, creates transaction |
+| deductFundsAtomic (concurrent) | DB transaction isolation — two simultaneous deductions don't race |
 
-### Integration Tests
+### Calls Flow Tests
 
-| Test | Scope |
-|------|-------|
-| POST /conversations | Auth required, creates conversation |
-| GET /conversations | Returns list for authenticated user |
-| GET /conversations/:id/messages | Returns paginated messages |
-| WebSocket connect | With valid/invalid token |
-| WebSocket message flow | Send → receive → deliver → read |
+| Test | What to Verify |
+|------|---------------|
+| Accept call with balance | Proceeds normally |
+| Accept call without balance | Rejected with error message |
+| End call deducts wallet | Balance decreases by correct amount |
+| Commission distribution | Platform fee + astrologer earnings calculated correctly |
+| Commission distribution (no commission set) | Uses default 10% |
 
-### Manual Testing
+### Withdrawal Flow Tests
 
-| Scenario | Steps |
-|----------|-------|
-| Send message | User A types → sends → appears in chat → User B receives |
-| Read receipt | User B opens chat → User A sees blue ticks |
-| Typing indicator | User A types → User B sees "typing..." → stops when sent |
-| Online status | User A connects → User B sees online → disconnect → offline |
-| Reconnection | Kill connection → wait → auto-reconnect → messages sync |
-| Pagination | Load 20 messages → scroll up → load 20 more |
-| Optimistic UI | Send message → appears immediately → status updates |
-| Retry | Send with no connection → show failed → tap retry → send |
-
-### Edge Cases
-
-| Case | Expected Behavior |
-|------|------------------|
-| Both users send simultaneously | Both messages saved, no duplicates |
-| User sends to deleted conversation | Return error |
-| User not in conversation | Cannot join room, cannot send |
-| Token expires during session | Disconnect, app reconnects with new token |
-| Very long message | Truncated or rejected |
-| Empty message | Rejected |
-| Conversation with self | Prevented by validation |
+| Test | What to Verify |
+|------|---------------|
+| Create withdrawal with balance | Created successfully |
+| Create withdrawal without balance | Rejected |
+| Approve withdrawal | Wallet deducted, transaction created |
+| Approve twice (same request) | Prevents double deduction |
 
 ---
 
 ## Rollback Plan
 
-### Safe Removal
+### Safe Rollback (per phase)
 
-1. **Database:** Run reverse migration to drop `conversation_messages` and `conversations` tables
-2. **Backend:** Remove ConversationsModule from AppModule, delete module files
-3. **App:** Remove ChatContext, ChatListScreen, ChatRoomScreen, revert Navigation.tsx
-4. **Dependencies:** Uninstall `socket.io`, `@nestjs/platform-socket.io`, `socket.io-client`
+| Phase | Database | Backend | Mobile |
+|-------|----------|---------|--------|
+| 1A | No changes | Revert wallet.service.ts | N/A |
+| 1B | No changes | Revert calls.service.ts, calls.gateway.ts | N/A |
+| 1C | Drop conversation_charges if created | Revert chat.gateway.ts | N/A |
+| 2 | No changes | Revert commission.service.ts | N/A |
+| 3 | No changes | Revert withdrawal.service.ts | N/A |
+| 4 | N/A | N/A | Revert AstrologerScreens.tsx |
+| 5 | N/A | N/A | Revert UserScreens.tsx, Navigation.tsx |
+| 6 | No changes | Revert admin endpoints | Revert admin screens |
 
-### No data loss risk
-- Existing `chat_messages` table is untouched
-- Existing ChatModule is untouched
-- All existing API endpoints remain unchanged
+No irreversible database changes — all changes are application logic additions. No existing columns are dropped or modified. All new logic is additive.
 
 ---
 
-## Risks and Mitigationnpm run db:migrate
-
+## Edge Cases & Risks
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| Socket.IO connection blocked by firewall | Chat won't work | Fallback to REST API polling |
-| WebSocket reconnection storm | Server overload | Rate-limit reconnection, exponential backoff |
-| Race condition on conversation creation | Duplicate conversations | UNIQUE constraint on (participantOneId, participantTwoId) |
-| Large message history | Slow load times | Cursor-based pagination, 20 per page |
-| Memory leak from socket connections | Server crash | Track connections, clean up on disconnect |
-| Token expiry during long session | Disconnection | App refreshes token, reconnects automatically |
+| Double deduction on call end | User charged twice | Idempotency: check if transaction already exists for callLogId |
+| Race condition on concurrent call acceptance | User balance used twice | `FOR UPDATE` row lock in DB transaction |
+| Astrologer has no wallet record | Commission distribution fails | Auto-create wallet on astrologer registration (if not already) |
+| Chat message sent but deduct fails | Message delivered but balance not deducted | Deduct BEFORE insert; if deduct fails, don't save message |
+| Withdrawal approved but wallet empty (admin race) | Negative balance | `FOR UPDATE` lock + balance check inside transaction |
+| Very long call with low balance | Auto-terminate mid-call | Periodic balance check + force end call + notify both parties |
+| Network failure during wallet deduct | Transaction rolled back | Atomic DB transaction ensures consistency |
+| Commission % set to 0 | Astrologer gets nothing | Treat 0% as valid (platform takes all); or enforce minimum 5% |
+| Commission % set to 100 | Platform gets nothing | Treat as valid (astrologer keeps all); admin sets this consciously |
+| User not found during deduction | Call fails | Validate caller exists before starting call |

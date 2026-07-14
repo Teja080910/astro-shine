@@ -3,12 +3,16 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
 import { eq, sql } from 'drizzle-orm';
 import { RealtimeService } from '../../common/realtime.service';
+import { WalletService } from '../wallet/wallet.service';
+import { CommissionService } from '../commission/commission.service';
 
 @Injectable()
 export class CallsService {
   constructor(
     @Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>,
     private readonly realtime: RealtimeService,
+    private readonly walletService: WalletService,
+    private readonly commissionService: CommissionService,
   ) {}
 
   async findAll() { return this.db.query.callLogs.findMany(); }
@@ -51,10 +55,39 @@ export class CallsService {
       cost,
     }).where(eq(schema.callLogs.id, id)).returning();
 
-    // Update astrologer total calls and earnings
+    const costNum = parseFloat(cost);
+
+    // Deduct call cost from caller's wallet
+    if (costNum > 0) {
+      try {
+        await this.walletService.deductFundsAtomic({
+          userId: call.userId,
+          amount: costNum,
+          description: `Call with astrologer (${duration}s)`,
+          category: 'call_charge',
+          referenceId: call.id,
+        });
+      } catch (e: any) {
+        console.error(`[CallsService] Failed to deduct wallet for call ${id}: ${e.message}`);
+      }
+    }
+
+    // Distribute earnings: platform commission + astrologer credit
+    if (costNum > 0) {
+      try {
+        await this.commissionService.distributeEarnings(
+          call.astrologerId,
+          call.id,
+          costNum,
+        );
+      } catch (e: any) {
+        console.error(`[CallsService] Failed to distribute earnings for call ${id}: ${e.message}`);
+      }
+    }
+
+    // Update astrologer total calls count only (earnings handled by commission distribution)
     await this.db.update(schema.astrologers).set({
       totalCalls: sql`${schema.astrologers.totalCalls} + 1`,
-      totalEarnings: sql`${schema.astrologers.totalEarnings} + ${cost}::decimal`,
       updatedAt: new Date(),
     }).where(eq(schema.astrologers.id, call.astrologerId));
 

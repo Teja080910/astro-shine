@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, colors, typography, radii } from '../../shared';
 import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
-import type { Blog, Notification, SupportTicket, NewsItem, Video, PanchangRecord } from '../../shared/types';
+import type { Blog, Notification, SupportTicket, NewsItem, Video, PanchangRecord, CommissionLog } from '../../shared/types';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
@@ -656,10 +656,80 @@ export function AstrologerDocumentsScreen() {
 
 // Astrologer: Commission Logs
 export function AstrologerCommissionScreen() {
+  const { astrologer } = useAuth();
+  const [logs, setLogs] = useState<CommissionLog[]>([]);
+  const [commissionPct, setCommissionPct] = useState('0');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadData = useCallback(async () => {
+    if (!astrologer?.id) return;
+    try {
+      const [l, c] = await Promise.all([
+        api.commissions.logs(astrologer.id),
+        api.commissions.findByAstrologer(astrologer.id).catch(() => null),
+      ]);
+      setLogs(l || []);
+      setCommissionPct(c?.value || '0');
+    } catch {}
+  }, [astrologer?.id]);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const onRefresh = async () => { setRefreshing(true); await loadData(); setRefreshing(false); };
+
+  const totalEarned = logs.reduce((s, l) => s + Number(l.totalEarned), 0);
+  const totalFees = logs.reduce((s, l) => s + Number(l.platformFee), 0);
+  const totalRevenue = logs.reduce((s, l) => s + Number(l.amount), 0);
+
   return (
-    <ScreenWrapper scroll>
-      <SectionTitle title="Commission Logs" />
-      <EmptyState icon={<Ionicons name="receipt-outline" size={48} color={colors.textMuted} />} title="No commission logs yet" subtitle="Earnings from calls and chats will appear here" />
+    <ScreenWrapper>
+      <ScrollView contentContainerStyle={{ padding: 16 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+        <GlassCard style={{ alignItems: 'center', padding: 20 }}>
+          <Ionicons name="receipt-outline" size={40} color={colors.accentGold} />
+          <Text style={[typography.sectionTitle, { marginTop: 8, color: colors.textPrimary }]}>Commission Breakdown</Text>
+          <Text style={[typography.body, { color: colors.textSecondary }]}>Your commission rate: {commissionPct}%</Text>
+        </GlassCard>
+
+        <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
+          <GlassCard style={{ flex: 1, alignItems: 'center', padding: 14 }}>
+            <Text style={[typography.cardTitle, { color: colors.success }]}>₹{totalEarned.toFixed(2)}</Text>
+            <Text style={typography.caption}>Your Earnings</Text>
+          </GlassCard>
+          <GlassCard style={{ flex: 1, alignItems: 'center', padding: 14 }}>
+            <Text style={[typography.cardTitle, { color: colors.danger }]}>₹{totalFees.toFixed(2)}</Text>
+            <Text style={typography.caption}>Platform Fees</Text>
+          </GlassCard>
+        </View>
+
+        <GlassCard style={{ marginTop: 10, alignItems: 'center', padding: 14 }}>
+          <Text style={[typography.cardTitle, { color: colors.accentGold }]}>₹{totalRevenue.toFixed(2)}</Text>
+          <Text style={typography.caption}>Total Revenue Generated</Text>
+        </GlassCard>
+
+        <SectionHeader title="Commission Logs" />
+        {logs.length === 0 ? (
+          <EmptyState icon={<Ionicons name="receipt-outline" size={48} color={colors.textMuted} />} title="No logs yet" subtitle="Earnings from calls will appear here" />
+        ) : (
+          logs.map(l => (
+            <GlassCard key={l.id} style={{ marginTop: 6, padding: 14 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.cardTitle, { fontSize: 14, color: colors.textPrimary }]}>Call Earnings</Text>
+                  <Text style={typography.caption}>{new Date(l.createdAt).toLocaleDateString()}</Text>
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={[typography.cardTitle, { fontSize: 14, color: colors.success }]}>+₹{l.totalEarned}</Text>
+                  <Text style={[typography.caption, { color: colors.textMuted }]}>Fee: ₹{l.platformFee}</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 12, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.divider }}>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>Total: ₹{l.amount}</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>Rate: {l.percentage}%</Text>
+              </View>
+            </GlassCard>
+          ))
+        )}
+      </ScrollView>
     </ScreenWrapper>
   );
 }

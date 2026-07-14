@@ -43,6 +43,7 @@ export function UserHomeScreen({ navigation }: any) {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [poojas, setPoojas] = useState<MandirPooja[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [wallet, setWallet] = useState<Wallet | null>(null);
   const [selectedSign, setSelectedSign] = useState('aries');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [loading, setLoading] = useState(true);
@@ -54,13 +55,14 @@ export function UserHomeScreen({ navigation }: any) {
 
   const loadData = useCallback(async () => {
     try {
-      const [a, h, v, b, p, n] = await Promise.all([
+      const [a, h, v, b, p, n, w] = await Promise.all([
         api.astrologers.list(),
         api.horoscope.bySign(selectedSign, todayStr),
         api.videos.list(),
         api.blogs.list(),
         api.mandirPooja.list(),
         api.notifications.list({ userId: user?.id }),
+        api.wallet.get().catch(() => null),
       ]);
       setAstrologers(a);
       setHoroscope(Array.isArray(h) ? h : [h]);
@@ -68,6 +70,7 @@ export function UserHomeScreen({ navigation }: any) {
       setBlogs(b);
       setPoojas(p);
       setNotifications(n);
+      setWallet(w);
     } catch {} finally { setLoading(false); }
   }, [user?.id, selectedSign, todayStr, horoscopeVersion]);
 
@@ -117,6 +120,10 @@ export function UserHomeScreen({ navigation }: any) {
               <Ionicons name="sunny" size={24} color={colors.accentGold} /> Namaste
             </Text>
             <Text style={[typography.body, { color: colors.textSecondary }]}>{user?.name || 'User'}</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Wallet')} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+              <Ionicons name="wallet-outline" size={16} color={colors.accentGold} />
+              <Text style={[typography.caption, { color: colors.accentGold, fontWeight: '600' }]}>₹{wallet?.balance || '0'}</Text>
+            </TouchableOpacity>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <TouchableOpacity onPress={() => setTheme(theme === 'dark' ? 'light' : 'dark')} style={{ padding: 8 }}>
@@ -708,6 +715,8 @@ function PasswordInput({ label, value, onChange, placeholder }: { label: string;
 // Profile
 export function ProfileScreen({ navigation }: any) {
   const { user, logout, updateUser, theme, setTheme } = useAuth();
+  const isFocused = useIsFocused();
+  const [wallet, setWallet] = useState<Wallet | null>(null);
   const [pwOpen, setPwOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [currentPw, setCurrentPw] = useState('');
@@ -716,6 +725,12 @@ export function ProfileScreen({ navigation }: any) {
   const [pwError, setPwError] = useState('');
   const [pwSuccess, setPwSuccess] = useState('');
   const [pwLoading, setPwLoading] = useState(false);
+
+  useEffect(() => {
+    if (isFocused) {
+      api.wallet.get().then(w => setWallet(w)).catch(() => {});
+    }
+  }, [isFocused]);
 
   const items = [
     { icon: 'person-outline', label: 'Edit Profile', route: 'EditProfile' },
@@ -775,6 +790,10 @@ export function ProfileScreen({ navigation }: any) {
         <Avatar size={80} uri={user?.avatar} />
         <Text style={[typography.sectionTitle, { marginTop: 12, color: colors.textPrimary }]}>{user?.name}</Text>
         <Text style={[typography.caption, { color: colors.textSecondary }]}>{user?.email}</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Wallet')} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20, backgroundColor: colors.accentGold + '20' }}>
+          <Ionicons name="wallet-outline" size={16} color={colors.accentGold} />
+          <Text style={[typography.caption, { color: colors.accentGold, fontWeight: '700' }]}>₹{wallet?.balance || '0'}</Text>
+        </TouchableOpacity>
       </View>
 
       <GlassCard style={{ marginTop: 24, backgroundColor: colors.glassBg, borderColor: colors.cardBorder }}>

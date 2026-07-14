@@ -4,6 +4,7 @@ import { colors } from '../../shared';
 import { Ionicons } from '@expo/vector-icons';
 import { useCall } from '../../context/CallContext';
 import { useAgora } from '../../shared/useAgora';
+import { api } from '../../shared/api-client';
 
 const isExpoGo = !NativeModules.AgoraRtcNg;
 
@@ -27,6 +28,13 @@ export function ActiveCallScreen() {
   const [seconds, setSeconds] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const joinedRef = useRef(false);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (callState === 'active') {
+      api.wallet.get().then(w => setWalletBalance(Number(w.balance))).catch(() => {});
+    }
+  }, [callState]);
 
   const otherName = callData?.callerName || 'Connected';
   const isVideo = callData?.type === 'video';
@@ -147,6 +155,14 @@ export function ActiveCallScreen() {
                   ? 'Call Ended' 
                   : 'Connecting...'}
             </Text>
+            {walletBalance !== null && (
+              <View style={styles.balanceBadge}>
+                <Ionicons name="wallet-outline" size={14} color={colors.accentGold} />
+                <Text style={[styles.balanceText, walletBalance < 50 && { color: colors.danger }]}>
+                  ₹{walletBalance}
+                </Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -226,4 +242,9 @@ const styles = StyleSheet.create({
   controlIconActive: { backgroundColor: colors.primary },
   controlLabel: { color: colors.white, fontSize: 12, fontWeight: '500' },
   endCallButton: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#EF4444', justifyContent: 'center', alignItems: 'center' },
+  balanceBadge: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, marginTop: 8,
+  },
+  balanceText: { color: colors.accentGold, fontSize: 13, fontWeight: '600', marginLeft: 4 },
 });
