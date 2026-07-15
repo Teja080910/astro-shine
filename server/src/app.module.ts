@@ -40,6 +40,8 @@ import { ConversationsModule } from './modules/conversations/conversations.modul
 import { AstrologerScheduleModule } from './modules/schedule/schedule.module';
 import { RealtimeModule } from './common/realtime.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { MuhuratCategoriesModule } from './modules/muhurat-categories/muhurat-categories.module';
+import { MuhuratModule } from './modules/muhurat/muhurat.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -86,6 +88,8 @@ import { AppService } from './app.service';
     RealtimeModule,
     ScheduleModule.forRoot(),
     PaymentsModule,
+    MuhuratCategoriesModule,
+    MuhuratModule,
   ],
   controllers: [AppController],
   providers: [AppService],

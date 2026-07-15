@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
-import type { AuthResponse, LoginRequest, RegisterRequest, User, Astrologer, Admin, KundliRecord, MatchmakingRecord, HoroscopeRecord, PanchangRecord, Wallet, Transaction, WithdrawalRequest, Commission, CommissionLog, CallLog, ChatMessage, Gift, GiftTransaction, Donation, ShopProduct, Order, OrderItem, Blog, NewsItem, Review, Report, Notification, AppSetting, ApiKey, DynamicLink, WebsiteContent, LiveSession, MandirPooja, PoojaBooking, SupportTicket, TicketReply, AppRelease, Video } from '@astro-shine/shared-types';
+import type { AuthResponse, LoginRequest, RegisterRequest, User, Astrologer, Admin, KundliRecord, MatchmakingRecord, HoroscopeRecord, PanchangRecord, Wallet, Transaction, WithdrawalRequest, Commission, CommissionLog, CallLog, ChatMessage, Gift, GiftTransaction, Donation, ShopProduct, Order, OrderItem, Blog, NewsItem, Review, Report, Notification, AppSetting, ApiKey, DynamicLink, WebsiteContent, LiveSession, MandirPooja, PoojaBooking, SupportTicket, TicketReply, AppRelease, Video, MuhuratCategory, MuhuratItem } from '@astro-shine/shared-types';
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL
   ? `${process.env.EXPO_PUBLIC_API_URL}/api/v1`
@@ -286,6 +286,26 @@ class ApiClient {
     get: (id: string) => this.get<Video>(`/videos/${id}`),
     create: (d: any) => this.post<Video>('/videos', d),
     update: (id: string, d: any) => this.put<Video>(`/videos/${id}`, d),
+  };
+
+  // Muhurat Categories
+  muhuratCategories = {
+    list: () => this.get<MuhuratCategory[]>('/muhurat-categories'),
+    listAdmin: () => this.get<MuhuratCategory[]>('/muhurat-categories/admin'),
+    get: (id: string) => this.get<MuhuratCategory>(`/muhurat-categories/${id}`),
+    create: (d: any) => this.post<MuhuratCategory>('/muhurat-categories', d),
+    update: (id: string, d: any) => this.put<MuhuratCategory>(`/muhurat-categories/${id}`, d),
+  };
+
+  // Muhurat Entries
+  muhurat = {
+    list: (categoryId?: string) => this.get<MuhuratItem[]>('/muhurat', { categoryId }),
+    listAdmin: () => this.get<MuhuratItem[]>('/muhurat/admin'),
+    listMy: () => this.get<MuhuratItem[]>('/muhurat/my'),
+    get: (id: string) => this.get<MuhuratItem>(`/muhurat/${id}`),
+    create: (d: any) => this.post<MuhuratItem>('/muhurat', d),
+    update: (id: string, d: any) => this.put<MuhuratItem>(`/muhurat/${id}`, d),
+    delete: (id: string) => this.del(`/muhurat/${id}`),
   };
 }
 

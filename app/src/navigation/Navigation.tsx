@@ -7,7 +7,7 @@ import { TouchableOpacity } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { FloatingBottomBar, colors } from '../shared';
 
-import { AstrologerConsultationScreen, AstrologerHomeScreen, AstrologerNotificationsScreen, AstrologerProfileScreen, AstrologerReviewsScreen, AstrologerWalletScreen, AstrologerWithdrawalScreen } from '../screens/astrologer/AstrologerScreens';
+import { AstrologerConsultationScreen, AstrologerHomeScreen, AstrologerNotificationsScreen, AstrologerProfileScreen, AstrologerReviewsScreen, AstrologerWalletScreen, AstrologerWithdrawalScreen, AstrologerMuhuratScreen } from '../screens/astrologer/AstrologerScreens';
 import { LoginScreen, OtpLoginScreen, RegisterScreen } from '../screens/auth/AuthScreens';
 import { OnboardingScreen } from '../screens/auth/OnboardingScreen';
 import {
@@ -34,7 +34,7 @@ import { PaymentSuccessScreen } from '../screens/shared/PaymentSuccessScreen';
 import { PaymentFailureScreen } from '../screens/shared/PaymentFailureScreen';
 import { ChatListScreen } from '../screens/user/ChatListScreen';
 import { ChatRoomScreen } from '../screens/user/ChatRoomScreen';
-import { AstrologerDetailScreen, AstrologerListScreen, KundliScreen, MatchmakingScreen, ProfileScreen, ShopScreen, UserHomeScreen, WalletScreen } from '../screens/user/UserScreens';
+import { AstrologerDetailScreen, AstrologerListScreen, KundliScreen, MatchmakingScreen, ProfileScreen, ShopScreen, UserHomeScreen, WalletScreen, MuhuratScreen } from '../screens/user/UserScreens';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -61,6 +61,7 @@ function UserTabs() {
   const tabs = [
     { key: 'Home', icon: 'home-outline', label: 'Home' },
     { key: 'Astrologers', icon: 'people-outline', label: 'Astrologers' },
+    { key: 'Muhurat', icon: 'time-outline', label: 'Muhurat' },
     { key: 'Wallet', icon: 'wallet-outline', label: 'Wallet' },
     { key: 'Chat', icon: 'chatbubbles-outline', label: 'Chat' },
     { key: 'Profile', icon: 'person-outline', label: 'Profile' },
@@ -71,6 +72,7 @@ function UserTabs() {
     >
       <Tab.Screen name="Home" component={UserHomeScreen} />
       <Tab.Screen name="Astrologers" component={AstrologerListScreen} />
+      <Tab.Screen name="Muhurat" component={MuhuratScreen} />
       <Tab.Screen name="Wallet" component={WalletScreen} />
       <Tab.Screen name="Chat" component={ChatListScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
@@ -83,6 +85,7 @@ function AstrologerTabs() {
   const tabs = [
     { key: 'Home', icon: 'home-outline', label: 'Home' },
     { key: 'Requests', icon: 'people-outline', label: 'Requests' },
+    { key: 'Muhurat', icon: 'time-outline', label: 'Muhurat' },
     { key: 'Wallet', icon: 'wallet-outline', label: 'Wallet' },
     { key: 'Chat', icon: 'chatbubbles-outline', label: 'Chat' },
     { key: 'Profile', icon: 'person-outline', label: 'Profile' },
@@ -93,6 +96,7 @@ function AstrologerTabs() {
     >
       <Tab.Screen name="Home" component={AstrologerHomeScreen} />
       <Tab.Screen name="Requests" component={AstrologerRequestsScreen} />
+      <Tab.Screen name="Muhurat" component={AstrologerMuhuratScreen} />
       <Tab.Screen name="Wallet" component={AstrologerWalletScreen} />
       <Tab.Screen name="Chat" component={ChatListScreen} />
       <Tab.Screen name="Profile" component={AstrologerProfileScreen} />
