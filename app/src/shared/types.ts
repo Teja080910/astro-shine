@@ -348,3 +348,28 @@ export interface PaginatedMessages {
   nextCursor: string | null;
   hasMore: boolean;
 }
+
+// ============ Muhurat ============
+export interface MuhuratCategory {
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MuhuratItem {
+  id: string;
+  categoryId: string;
+  categoryName?: string;
+  name: string;
+  date: string;
+  time: string;
+  description?: string;
+  createdBy?: string;
+  createdByName?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}

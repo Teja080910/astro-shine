@@ -43,7 +43,7 @@ export function TimePicker({ value, onChange, label }: Props) {
     return arr;
   }, []);
 
-  const mins = [0, 15, 30, 45];
+  const mins = Array.from({ length: 60 }, (_, i) => i);
 
   useEffect(() => {
     if (open) {

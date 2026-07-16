@@ -22,7 +22,9 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "seed": "ts-node -r tsconfig-paths/register src/seed.ts"
+    "seed": "ts-node -r tsconfig-paths/register src/seed.ts",
+    "seed:muhurat": "ts-node -r tsconfig-paths/register src/seed-muhurat.ts",
+    "seed:muhurat:new": "ts-node -r tsconfig-paths/register src/seed-muhurat-new.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

@@ -4,7 +4,6 @@
     "strict": true,
     "baseUrl": ".",
     "types": ["node"],
-    "ignoreDeprecations": "6.0",
     "paths": {
       "@/*": ["src/*"]
     }
