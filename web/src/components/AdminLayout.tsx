@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Star, Receipt, ArrowDownUp, Percent, MessageSquare, AlertTriangle, Bell, Key, Link2, Globe, FileText, Newspaper, Package, Sparkles, Calendar, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Users, Star, Receipt, ArrowDownUp, Percent, MessageSquare, AlertTriangle, Bell, Key, Link2, Globe, FileText, Newspaper, Package, Sparkles, Calendar, Sun, Moon, Clock } from 'lucide-react';
 
 const menuItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -15,6 +15,8 @@ const menuItems = [
   { href: '/commissions', icon: Percent, label: 'Commissions' },
   { href: '/horoscope', icon: Sparkles, label: 'Horoscopes' },
   { href: '/panchang', icon: Calendar, label: 'Panchang' },
+  { href: '/muhurat', icon: Clock, label: 'Muhurat' },
+  { href: '/muhurat/categories', icon: Calendar, label: 'Muhurat Categories' },
   { href: '/reviews', icon: MessageSquare, label: 'Reviews' },
   { href: '/reports', icon: AlertTriangle, label: 'Reports' },
   { href: '/notifications', icon: Bell, label: 'Notifications' },

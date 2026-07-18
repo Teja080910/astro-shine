@@ -49,8 +49,9 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     const token = client.handshake.query.token as string;
     console.log(`[WS] Connection attempt - socketId: ${client.id}, hasToken: ${!!token}`);
     if (!token) {
-      client.emit('error', { message: 'Authentication required' });
-      client.disconnect();
+      client.data.userId = 'anonymous';
+      client.data.role = 'guest';
+      console.log(`[WS] Guest connection accepted - socketId: ${client.id}`);
       return;
     }
 

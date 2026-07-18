@@ -44,29 +44,29 @@ export function useAgora() {
         });
 
         engine.registerEventHandler({
-          onJoinChannelSuccess: (connection, elapsed) => {
+          onJoinChannelSuccess: (connection: any, elapsed: any) => {
             console.log('[Agora] onJoinChannelSuccess', connection);
             setJoined(true);
           },
-          onUserJoined: (connection, remoteUid, elapsed) => {
+          onUserJoined: (connection: any, remoteUid: any, elapsed: any) => {
             console.log('[Agora] onUserJoined', remoteUid);
             setRemoteUid(remoteUid);
           },
-          onUserOffline: (connection, remoteUid, reason) => {
+          onUserOffline: (connection: any, remoteUid: any, reason: any) => {
             console.log('[Agora] onUserOffline', remoteUid);
             setRemoteUid(null);
             setIsRemoteMuted(false);
             setIsRemoteVideoMuted(false);
           },
-          onUserMuteAudio: (connection, uid, muted) => {
+          onUserMuteAudio: (connection: any, uid: any, muted: any) => {
             console.log('[Agora] onUserMuteAudio', uid, muted);
             setIsRemoteMuted(muted);
           },
-          onUserMuteVideo: (connection, uid, muted) => {
+          onUserMuteVideo: (connection: any, uid: any, muted: any) => {
             console.log('[Agora] onUserMuteVideo', uid, muted);
             setIsRemoteVideoMuted(muted);
           },
-          onError: (err, msg) => {
+          onError: (err: any, msg: any) => {
             console.log('[Agora] onError', err, msg);
           }
         });
