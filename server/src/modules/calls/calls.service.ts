@@ -85,9 +85,11 @@ export class CallsService {
       }
     }
 
-    // Update astrologer total calls count only (earnings handled by commission distribution)
+    // Update astrologer call counters
     await this.db.update(schema.astrologers).set({
       totalCalls: sql`${schema.astrologers.totalCalls} + 1`,
+      totalVideoCalls: call.type === 'video' ? sql`${schema.astrologers.totalVideoCalls} + 1` : undefined,
+      totalAudioCalls: call.type === 'audio' ? sql`${schema.astrologers.totalAudioCalls} + 1` : undefined,
       updatedAt: new Date(),
     }).where(eq(schema.astrologers.id, call.astrologerId));
 

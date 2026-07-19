@@ -209,7 +209,7 @@ export function UserHomeScreen({ navigation }: any) {
                   <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
                   <StarRating rating={parseFloat(item.rating)} size={12} />
                   <Text style={typography.caption}>{item.specialization?.[0] || 'Astrologer'}</Text>
-                  <Text style={typography.price}>₹{item.pricePerMin}/min</Text>
+                  <Text style={typography.price}>₹{item.chatPricePerMin || item.pricePerMin}/min</Text>
                 </GlassCard>
               </TouchableOpacity>
             )} style={{ marginLeft: 8 }} />
@@ -234,7 +234,7 @@ export function UserHomeScreen({ navigation }: any) {
                   <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
                   <StarRating rating={parseFloat(item.rating)} size={12} />
                   <Text style={typography.caption}>{item.specialization?.[0] || 'Astrologer'}</Text>
-                  <Text style={typography.price}>₹{item.pricePerMin}/min</Text>
+                  <Text style={typography.price}>₹{item.chatPricePerMin || item.pricePerMin}/min</Text>
                 </GlassCard>
               </TouchableOpacity>
             )} style={{ marginLeft: 8 }} />
@@ -402,13 +402,13 @@ export function AstrologerListScreen({ route, navigation }: any) {
                 <Avatar size={56} online={getAstrologerOnlineStatus(item, astrologerStatuses)} />
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
-                  <StarRating rating={parseFloat(item.rating)} size={12} reviewCount={item.totalReviews} />
+                  <StarRating rating={parseFloat(item.rating)} size={12} />
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4, gap: 4 }}>
                     {item.specialization?.slice(0, 2).map((s) => <Chip key={s} label={s} />)}
                   </View>
                 </View>
                 <View style={{ alignItems: 'flex-end', marginLeft: 8 }}>
-                  <Text style={typography.price}>₹{item.pricePerMin}/min</Text>
+                  <Text style={typography.price}>₹{item.chatPricePerMin || item.pricePerMin}/min</Text>
                 </View>
               </View>
             </GlassCard>
@@ -427,12 +427,36 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
   const { astrologerStatuses } = useChat();
   const { initiateCall } = useCall();
   const [offlineDialogVisible, setOfflineDialogVisible] = useState(false);
+  const [feedbackVisible, setFeedbackVisible] = useState(false);
+  const [feedbackRating, setFeedbackRating] = useState(0);
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+  const [feedbackSuccessVisible, setFeedbackSuccessVisible] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => { if (isFocused) api.astrologers.get(id).then(setAstro); }, [id, isFocused]);
   if (!astro) return <ScreenWrapper><Text style={typography.body}>Loading...</Text></ScreenWrapper>;
 
   const isVerified = astro.verificationStatus === 'approved';
   const isOnline = getAstrologerOnlineStatus(astro, astrologerStatuses);
+
+  const handleSubmitFeedback = async () => {
+    if (feedbackRating < 1) { Alert.alert('Error', 'Please select a rating'); return; }
+    if (!user?.id) { Alert.alert('Error', 'You must be logged in'); return; }
+    setFeedbackSubmitting(true);
+    try {
+      await api.astrologers.feedback(id, { userId: user.id, ratings: feedbackRating, comments: feedbackComment });
+      setFeedbackVisible(false);
+      setFeedbackSuccessVisible(true);
+      setFeedbackRating(0);
+      setFeedbackComment('');
+      api.astrologers.get(id).then(setAstro);
+    } catch (e) {
+      Alert.alert('Error', 'Failed to submit feedback');
+    } finally {
+      setFeedbackSubmitting(false);
+    }
+  };
 
   const handleChat = async () => {
     if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified. Please choose a verified astrologer.'); return; }
@@ -472,6 +496,10 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
           </View>
         )}
         <Text style={[typography.body, { marginTop: 8, color: colors.textSecondary }]}>{astro.bio || 'Experienced astrologer'}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 }}>
+          <StarRating rating={parseFloat(astro.rating || '0')} size={16} />
+          <Text style={[typography.caption, { color: colors.textMuted }]}>({astro.rating || '0'})</Text>
+        </View>
         {!isVerified && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8, backgroundColor: colors.warning + '20', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8 }}>
             <Ionicons name="warning-outline" size={14} color={colors.warning} />
@@ -479,8 +507,17 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
           </View>
         )}
       </View>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 16, backgroundColor: colors.surfaceLight, borderRadius: radii.card, marginTop: 16 }}>
-        <Stat label="Experience" value={`${astro.experience}y`} /><Stat label="Price" value={`₹${astro.pricePerMin}/min`} />
+      <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12, backgroundColor: colors.surfaceLight, borderRadius: radii.card, marginTop: 16 }}>
+        <Stat label="Experience" value={`${astro.experience}y`} />
+        <Stat label="Chats" value={String(astro.totalChats || 0)} />
+        <Stat label="Audio" value={String(astro.totalAudioCalls || 0)} />
+        <Stat label="Video" value={String(astro.totalVideoCalls || 0)} />
+      </View>
+
+      <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12, backgroundColor: colors.surfaceLight, borderRadius: radii.card, marginTop: 8 }}>
+        <Stat label="Chat/min" value={`₹${astro.chatPricePerMin || astro.pricePerMin}`} />
+        <Stat label="Audio/min" value={`₹${astro.audioCallPricePerMin || astro.pricePerMin}`} />
+        <Stat label="Video/min" value={`₹${astro.videoCallPricePerMin || astro.pricePerMin}`} />
       </View>
 
       <GlassCard style={{ marginTop: 16, padding: 16 }}>
@@ -518,6 +555,52 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
       <View style={{ marginTop: 10 }}>
         <GradientButton title="Video Call" variant="gold" onPress={handleVideoCall} />
       </View>
+      <View style={{ marginTop: 10 }}>
+        <GradientButton title="Submit Feedback" variant="gold" onPress={() => setFeedbackVisible(true)} />
+      </View>
+
+      <CustomModal visible={feedbackVisible} onClose={() => setFeedbackVisible(false)} title={`Rate ${astro.name}`}>
+        <View style={{ padding: 16, gap: 16 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 4 }}>
+            {[1, 2, 3, 4, 5].map(v => (
+              <TouchableOpacity key={v} onPress={() => setFeedbackRating(v)}>
+                <Ionicons
+                  name={feedbackRating >= v ? 'star' : 'star-outline'}
+                  size={32} color={feedbackRating >= v ? colors.accentGold : colors.textMuted}
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
+          {feedbackRating > 0 && (
+            <Text style={[typography.body, { textAlign: 'center', color: colors.textSecondary }]}>
+              {feedbackRating} / 5
+            </Text>
+          )}
+          <TextInput
+            style={[styles.input, { backgroundColor: colors.surfaceLight, color: colors.textPrimary, minHeight: 80, textAlignVertical: 'top' }]}
+            value={feedbackComment}
+            onChangeText={setFeedbackComment}
+            placeholder="Write your comments (optional)"
+            placeholderTextColor={colors.textMuted}
+            multiline
+          />
+          <GradientButton
+            title={feedbackSubmitting ? 'Submitting...' : 'Submit Feedback'}
+            onPress={handleSubmitFeedback}
+            disabled={feedbackSubmitting || feedbackRating === 0}
+          />
+        </View>
+      </CustomModal>
+      <ConfirmDialog
+        visible={feedbackSuccessVisible}
+        title="Thank you!"
+        subtitle="Your feedback has been submitted successfully."
+        icon={<Ionicons name="heart" size={48} color={colors.accentGold} />}
+        actions={[
+          { label: 'OK', onPress: () => setFeedbackSuccessVisible(false), variant: 'primary' },
+        ]}
+        onClose={() => setFeedbackSuccessVisible(false)}
+      />
       <ConfirmDialog
         visible={offlineDialogVisible}
         title="Astrologer Offline"
@@ -609,7 +692,7 @@ export function WalletScreen() {
         </GlassCard>
       )}
 
-      {txns.map((t) => <GlassCard key={t.id} style={{ marginTop: 8, padding: 12 }}><View style={{ flexDirection: 'row', justifyContent: 'space-between' }}><View><Text style={typography.cardTitle}>{t.category?.replace(/_/g, ' ')}</Text><Text style={typography.caption}>{new Date(t.createdAt).toLocaleDateString()}</Text></View><Text style={{ fontWeight: '700', color: t.type === 'credit' ? colors.success : colors.danger }}>{t.type === 'credit' ? '+' : '-'}₹{t.amount}</Text></View></GlassCard>)}
+      {txns.map((t) => <GlassCard key={t.id} style={{ marginTop: 8, padding: 12 }}><View style={{ flexDirection: 'row', justifyContent: 'space-between' }}><View><Text style={typography.cardTitle}>{t.category?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</Text><Text style={typography.caption}>{new Date(t.createdAt).toLocaleDateString()}</Text></View><Text style={{ fontWeight: '700', color: t.type === 'credit' ? colors.success : colors.danger }}>{t.type === 'credit' ? '+' : '-'}₹{t.amount}</Text></View></GlassCard>)}
     </ScreenWrapper>
   );
 }

@@ -59,6 +59,9 @@ class ApiClient {
     verify: (id: string, status: string, note?: string) => this.post<Astrologer>(`/astrologers/${id}/verify`, { status, note }),
     updateStatus: (id: string, status: string) => this.put<Astrologer>(`/astrologers/${id}/online-status`, { status }),
     delete: (id: string) => this.del(`/astrologers/${id}`),
+    feedback: (id: string, data: { userId: string; ratings: number; comments?: string }) =>
+      this.post<any>(`/astrologers/${id}/feedback`, data),
+    getFeedback: (id: string) => this.get<any[]>(`/astrologers/${id}/feedback`),
   };
 
   // Admins

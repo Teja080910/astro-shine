@@ -29,6 +29,16 @@ export class AstrologersController {
     return stripPassword(await this.service.updateOnlineStatus(id, body.status));
   }
 
+  @Post(':id/feedback')
+  async submitFeedback(@Param('id') id: string, @Body() body: { userId: string; ratings: number; comments?: string }) {
+    return this.service.submitFeedback(id, body.userId, body.ratings, body.comments);
+  }
+
+  @Get(':id/feedback')
+  async getFeedback(@Param('id') id: string) {
+    return this.service.getFeedback(id);
+  }
+
   @Delete(':id')
   async delete(@Param('id') id: string) { return stripPassword(await this.service.delete(id)); }
 }

@@ -189,7 +189,9 @@ export function EditProfileScreen() {
   const [specialization, setSpecialization] = useState(((profile as any)?.specialization || []).join(', '));
   const [languages, setLanguages] = useState(((profile as any)?.languages || []).join(', '));
   const [skills, setSkills] = useState(((profile as any)?.skills || []).join(', '));
-  const [pricePerMin, setPricePerMin] = useState((profile as any)?.pricePerMin || '');
+  const [chatPricePerMin, setChatPricePerMin] = useState((profile as any)?.chatPricePerMin || (profile as any)?.pricePerMin || '');
+  const [audioCallPricePerMin, setAudioCallPricePerMin] = useState((profile as any)?.audioCallPricePerMin || (profile as any)?.pricePerMin || '');
+  const [videoCallPricePerMin, setVideoCallPricePerMin] = useState((profile as any)?.videoCallPricePerMin || (profile as any)?.pricePerMin || '');
 
   useEffect(() => {
     if (profile) {
@@ -203,7 +205,9 @@ export function EditProfileScreen() {
         setSpecialization(((profile as any).specialization || []).join(', '));
         setLanguages(((profile as any).languages || []).join(', '));
         setSkills(((profile as any).skills || []).join(', '));
-        setPricePerMin((profile as any).pricePerMin || '');
+        setChatPricePerMin((profile as any).chatPricePerMin || (profile as any).pricePerMin || '');
+        setAudioCallPricePerMin((profile as any).audioCallPricePerMin || (profile as any).pricePerMin || '');
+        setVideoCallPricePerMin((profile as any).videoCallPricePerMin || (profile as any).pricePerMin || '');
       }
     }
   }, [profile]);
@@ -221,7 +225,9 @@ export function EditProfileScreen() {
           specialization: specialization.split(',').map((s: string) => s.trim()).filter(Boolean),
           languages: languages.split(',').map((s: string) => s.trim()).filter(Boolean),
           skills: skills.split(',').map((s: string) => s.trim()).filter(Boolean),
-          pricePerMin,
+          chatPricePerMin,
+          audioCallPricePerMin,
+          videoCallPricePerMin,
         });
       } else if (role === 'admin') {
         updated = await api.admins.update(profile!.id, { name });
@@ -388,12 +394,34 @@ export function EditProfileScreen() {
           </View>
 
           <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Price per minute (₹)</Text>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Chat price per minute (₹)</Text>
             <TextInput
               style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-              value={pricePerMin}
-              onChangeText={setPricePerMin}
+              value={chatPricePerMin}
+              onChangeText={setChatPricePerMin}
+              placeholder="e.g. 10"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="decimal-pad"
+            />
+          </View>
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Audio call price per minute (₹)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={audioCallPricePerMin}
+              onChangeText={setAudioCallPricePerMin}
               placeholder="e.g. 15"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="decimal-pad"
+            />
+          </View>
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Video call price per minute (₹)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={videoCallPricePerMin}
+              onChangeText={setVideoCallPricePerMin}
+              placeholder="e.g. 20"
               placeholderTextColor={colors.textMuted}
               keyboardType="decimal-pad"
             />
