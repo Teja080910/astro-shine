@@ -15,6 +15,8 @@ interface ChatState {
   unreadCounts: Record<string, number>;
   loading: boolean;
   hasMore: boolean;
+  chatBlockedMessage: string | null;
+  clearChatBlocked: () => void;
   astrologerStatuses: Record<string, 'online' | 'offline' | 'busy'>;
   horoscopeVersion: number;
   panchangVersion: number;
@@ -53,6 +55,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [statsVersion, setStatsVersion] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [chatBlockedMessage, setChatBlockedMessage] = useState<string | null>(null);
   const cursorRef = useRef<string | null>(null);
   const typingTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
   const activeConvRef = useRef<Conversation | null>(null);
@@ -187,6 +190,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
     socket.on('astrologer:stats-updated', () => {
       setStatsVersion(v => v + 1);
+    });
+
+    socket.on('chat:blocked', (data: { message: string }) => {
+      setChatBlockedMessage(data.message);
     });
 
     socketRef.current = socket;
@@ -334,6 +341,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         statsVersion,
         loading,
         hasMore,
+        chatBlockedMessage,
+        clearChatBlocked: () => setChatBlockedMessage(null),
         loadConversations,
         openConversation,
         setActiveConversation,

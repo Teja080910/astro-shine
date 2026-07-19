@@ -59,6 +59,9 @@ class ApiClient {
     verify: (id: string, status: string, note?: string) => this.post<Astrologer>(`/astrologers/${id}/verify`, { status, note }),
     updateStatus: (id: string, status: string) => this.put<Astrologer>(`/astrologers/${id}/online-status`, { status }),
     delete: (id: string) => this.del(`/astrologers/${id}`),
+    feedback: (id: string, data: { userId: string; ratings: number; comments?: string }) =>
+      this.post<any>(`/astrologers/${id}/feedback`, data),
+    getFeedback: (id: string) => this.get<any[]>(`/astrologers/${id}/feedback`),
   };
 
   // Admins
@@ -123,6 +126,7 @@ class ApiClient {
   // Commissions
   commissions = {
     list: () => this.get<Commission[]>('/commissions'),
+    findByAstrologer: (astrologerId: string) => this.get<Commission>(`/commissions/by-astrologer/${astrologerId}`),
     create: (d: any) => this.post<Commission>('/commissions', d),
     update: (id: string, d: any) => this.put<Commission>(`/commissions/${id}`, d),
     logs: (astrologerId?: string) => this.get<CommissionLog[]>('/commissions/logs', { astrologerId }),

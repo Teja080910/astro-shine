@@ -17,6 +17,8 @@ import { ConfigService } from '@nestjs/config';
 import { RtcTokenBuilder, RtcRole } from 'agora-access-token';
 import { RealtimeService } from '../../common/realtime.service';
 import { AstrologersService } from '../astrologers/astrologers.service';
+import { WalletService } from '../wallet/wallet.service';
+import { CommissionService } from '../commission/commission.service';
 
 @WebSocketGateway({
   cors: { origin: '*', credentials: true },
@@ -26,6 +28,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   @WebSocketServer() server: Server;
 
   private onlineUsers = new Map<string, { userId: string; role: string; socketId: string }>();
+  private lastChatCharge = new Map<string, number>();
 
   constructor(
     private readonly authService: AuthService,
@@ -35,6 +38,8 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     private readonly configService: ConfigService,
     private readonly realtime: RealtimeService,
     private readonly astrologersService: AstrologersService,
+    private readonly walletService: WalletService,
+    private readonly commissionService: CommissionService,
   ) {}
 
   afterInit() {
@@ -159,6 +164,54 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     );
     console.log(`[WS] Message persisted - messageId: ${message.id}`);
 
+    if (role === 'user') {
+      try {
+        const conversation = await this.conversationsService.findById(data.conversationId);
+        const astrologerId = conversation.participantOneRole === 'astrologer'
+          ? conversation.participantOneId
+          : conversation.participantTwoId;
+        const astrologer = await this.astrologersService.findById(astrologerId);
+        const chatPrice = parseFloat(astrologer?.chatPricePerMin || '5');
+
+        // Per-minute charging: charge chatPrice every 60 seconds
+        const now = Date.now();
+        const lastCharge = this.lastChatCharge.get(data.conversationId) || 0;
+
+        if (lastCharge === 0) {
+          // First message: start the timer without charging
+          this.lastChatCharge.set(data.conversationId, now);
+        } else if (now - lastCharge >= 60000) {
+          // Check balance first
+          const hasBalance = await this.walletService.checkSufficientBalance(userId, chatPrice);
+          if (!hasBalance) {
+            client.emit('chat:blocked', {
+              message: 'Insufficient wallet balance. Please recharge to continue chatting.',
+            });
+            return;
+          }
+
+          this.lastChatCharge.set(data.conversationId, now);
+
+          await this.walletService.deductFundsAtomic({
+            userId,
+            amount: chatPrice,
+            description: 'Chat per minute',
+            category: 'chat_charge',
+            referenceId: message.id,
+          });
+
+          await this.commissionService.distributeChatEarnings(
+            astrologerId,
+            data.conversationId,
+            message.id,
+            chatPrice,
+          );
+        }
+      } catch (e: any) {
+        console.error(`[WS] Failed to deduct chat charge: ${e.message}`);
+      }
+    }
+
     const room = `conversation:${data.conversationId}`;
     const roomSockets = this.server.sockets.adapter.rooms.get(room);
     console.log(`[WS] Room "${room}" members before broadcast:`, roomSockets ? [...roomSockets] : 'room not found');
@@ -258,6 +311,11 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     if (appId && appCert) {
       token = RtcTokenBuilder.buildTokenWithUid(appId, appCert, channelName, uid, RtcRole.PUBLISHER, Math.floor(Date.now() / 1000) + 3600);
     }
+    const astro = await this.astrologersService.findById(data.astrologerId);
+    const ratePerMin = data.type === 'video'
+      ? (astro?.videoCallPricePerMin || astro?.pricePerMin || '0')
+      : (astro?.audioCallPricePerMin || astro?.pricePerMin || '0');
+
     const callLog = await this.callsService.create({
       astrologerId: data.astrologerId,
       userId,
@@ -265,7 +323,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       status: 'initiated',
       agoraChannel: channelName,
       agoraToken: token,
-      ratePerMin: '0',
+      ratePerMin,
     });
     const caller = await this.usersService.findById(userId);
     const callerName = caller?.name || 'User';
@@ -292,6 +350,19 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   ) {
     const call = await this.callsService.findById(data.callId);
     if (!call) return;
+
+    const MIN_BALANCE = 10;
+    const hasBalance = await this.walletService.checkSufficientBalance(call.userId, MIN_BALANCE);
+    if (!hasBalance) {
+      const callerSocket = this.findSocketByUserId(call.userId);
+      if (callerSocket) {
+        callerSocket.emit('call:error', { message: 'Insufficient wallet balance to start call. Please recharge.' });
+      }
+      client.emit('call:error', { message: 'Caller has insufficient wallet balance.' });
+      await this.callsService.updateStatus(data.callId, 'cancelled');
+      return;
+    }
+
     await this.callsService.updateStatus(data.callId, 'ongoing');
     await this.callsService.updateStartedAt(data.callId);
     const callerSocket = this.findSocketByUserId(call.userId);

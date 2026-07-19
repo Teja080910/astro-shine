@@ -11,7 +11,9 @@ export default function AstrologersPage() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Astrologer | null>(null);
   const [verify, setVerify] = useState<Astrologer | null>(null);
-  const [priceInput, setPriceInput] = useState('');
+  const [chatPrice, setChatPrice] = useState('');
+  const [audioPrice, setAudioPrice] = useState('');
+  const [videoPrice, setVideoPrice] = useState('');
   const [rejectionNote, setRejectionNote] = useState('');
 
   useEffect(() => { api.get<Astrologer[]>('/astrologers').then(setData).finally(() => setLoading(false)); }, []);
@@ -29,8 +31,22 @@ export default function AstrologersPage() {
     if (selected?.id === astrologer.id) setSelected(updated);
   };
 
-  const handleSavePrice = async (id: string) => {
-    const updated = await api.put<Astrologer>(`/astrologers/${id}`, { pricePerMin: priceInput });
+  const handleSavePrices = async (id: string) => {
+    const comm = await api.get<any>(`/commissions/by-astrologer/${id}`).catch(() => null);
+    const minCap = comm?.minCap ? parseFloat(comm.minCap) : 0;
+    const maxCap = comm?.maxCap ? parseFloat(comm.maxCap) : 0;
+    const vals = [chatPrice, audioPrice, videoPrice].map(v => parseFloat(v) || 0);
+    if (minCap > 0 && vals.some(v => v < minCap)) {
+      alert(`Prices cannot be below minCap of ₹${minCap}`); return;
+    }
+    if (maxCap > 0 && vals.some(v => v > maxCap)) {
+      alert(`Prices cannot exceed maxCap of ₹${maxCap}`); return;
+    }
+    const updated = await api.put<Astrologer>(`/astrologers/${id}`, {
+      chatPricePerMin: chatPrice,
+      audioCallPricePerMin: audioPrice,
+      videoCallPricePerMin: videoPrice,
+    });
     setData(data.map(a => a.id === id ? updated : a));
     if (selected?.id === id) setSelected(updated);
   };
@@ -41,14 +57,15 @@ export default function AstrologersPage() {
         <h1 className="text-3xl font-extrabold text-text-primary">Astrologers</h1>
         <span className="text-text-secondary">{data.length} total</span>
       </div>
-      <Table headers={['Name', 'Email', 'Specialization', 'Price/min', 'Rating', 'Status', '']} emptyMessage="No astrologers found">
+      <Table headers={['Name', 'Email', 'Specialization', 'Chat/min', 'Audio/min', 'Video/min', 'Status', '']} emptyMessage="No astrologers found">
         {data.map(a => (
           <tr key={a.id} className="border-b border-divider hover:bg-surface-light/50">
             <td className="px-4 py-3 text-text-primary font-medium">{a.name}</td>
             <td className="px-4 py-3 text-text-secondary">{a.email}</td>
             <td className="px-4 py-3 text-text-secondary">{a.specialization?.slice(0, 2).join(', ') || '-'}</td>
-            <td className="px-4 py-3 text-text-secondary">₹{a.pricePerMin}</td>
-            <td className="px-4 py-3 text-text-secondary">{parseFloat(a.rating).toFixed(1)}</td>
+            <td className="px-4 py-3 text-text-secondary">₹{a.chatPricePerMin || a.pricePerMin}</td>
+            <td className="px-4 py-3 text-text-secondary">₹{a.audioCallPricePerMin || a.pricePerMin}</td>
+            <td className="px-4 py-3 text-text-secondary">₹{a.videoCallPricePerMin || a.pricePerMin}</td>
             <td className="px-4 py-3">
               {a.verificationStatus === 'approved' && <Badge variant="success">Verified</Badge>}
               {a.verificationStatus === 'pending' && <Badge variant="warning">Pending</Badge>}
@@ -58,7 +75,9 @@ export default function AstrologersPage() {
               <button
                 onClick={() => {
                   setSelected(a);
-                  setPriceInput(a.pricePerMin);
+                  setChatPrice(a.chatPricePerMin || a.pricePerMin);
+                  setAudioPrice(a.audioCallPricePerMin || a.pricePerMin);
+                  setVideoPrice(a.videoCallPricePerMin || a.pricePerMin);
                 }}
                 className="text-primary-light hover:underline text-sm font-medium"
               >
@@ -97,23 +116,28 @@ export default function AstrologersPage() {
             <p><span className="font-medium text-text-primary">Bio:</span> {selected.bio || '-'}</p>
 
             <div className="border-t border-divider pt-4 mt-2">
-              <label className="block text-text-primary font-medium mb-1">Consultation Pricing (₹/min)</label>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  value={priceInput}
-                  onChange={(e) => setPriceInput(e.target.value)}
-                  className="input-field py-2 px-3 text-sm"
-                  placeholder="Price per minute"
-                />
-                <button
-                  onClick={() => handleSavePrice(selected.id)}
-                  className="gradient-btn py-2 px-4 text-sm font-bold shrink-0"
-                  style={{ borderRadius: '16px' }}
-                >
-                  Save Price
-                </button>
+              <label className="block text-text-primary font-medium mb-2">Pricing (₹/min)</label>
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                <div>
+                  <label className="block text-xs text-text-muted mb-1">Chat</label>
+                  <input type="number" value={chatPrice} onChange={(e) => setChatPrice(e.target.value)}
+                    className="input-field py-2 px-3 text-sm w-full" placeholder="Chat" />
+                </div>
+                <div>
+                  <label className="block text-xs text-text-muted mb-1">Audio Call</label>
+                  <input type="number" value={audioPrice} onChange={(e) => setAudioPrice(e.target.value)}
+                    className="input-field py-2 px-3 text-sm w-full" placeholder="Audio" />
+                </div>
+                <div>
+                  <label className="block text-xs text-text-muted mb-1">Video Call</label>
+                  <input type="number" value={videoPrice} onChange={(e) => setVideoPrice(e.target.value)}
+                    className="input-field py-2 px-3 text-sm w-full" placeholder="Video" />
+                </div>
               </div>
+              <button onClick={() => handleSavePrices(selected.id)}
+                className="gradient-btn py-2 px-4 text-sm font-bold" style={{ borderRadius: '16px' }}>
+                Save Prices
+              </button>
             </div>
 
             <div className="flex gap-3 border-t border-divider pt-4 mt-4">

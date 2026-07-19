@@ -14,11 +14,13 @@ export default function TransactionsPage() {
   return (
     <AdminLayout>
       <h1 className="text-3xl font-extrabold text-text-primary mb-6">Transactions</h1>
-      <Table headers={['Type', 'Category', 'Amount', 'Fee', 'Net', 'Status', 'Date']} emptyMessage="No transactions found">
-        {data.map(t => (
+      <Table headers={['Type', 'Category', 'User', 'Astrologer', 'Amount', 'Fee', 'Net', 'Status', 'Date']} emptyMessage="No transactions found">
+        {data.map((t: any) => (
           <tr key={t.id} className="border-b border-divider hover:bg-surface-light/50">
             <td className="px-4 py-3 text-text-secondary">{t.type}</td>
-            <td className="px-4 py-3 text-text-secondary">{t.category?.replace(/_/g, ' ')}</td>
+            <td className="px-4 py-3 text-text-secondary">{t.category?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</td>
+            <td className="px-4 py-3 text-text-secondary">{(t as any).userName || t.userId?.slice(0, 8) || '-'}</td>
+            <td className="px-4 py-3 text-text-secondary">{(t as any).astrologerName || t.astrologerId?.slice(0, 8) || '-'}</td>
             <td className="px-4 py-3 text-text-primary">₹{t.amount}</td>
             <td className="px-4 py-3 text-text-secondary">₹{t.fee}</td>
             <td className="px-4 py-3 text-text-primary">₹{t.netAmount}</td>

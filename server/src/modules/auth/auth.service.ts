@@ -1,5 +1,7 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import * as schema from '../../db/schemas';
 import { UsersService } from '../users/users.service';
 import { AdminsService } from '../admin/admins.service';
 import { AstrologersService } from '../astrologers/astrologers.service';
@@ -13,6 +15,7 @@ export class AuthService {
   private readonly otpStore: Map<string, { otp: string; expiresAt: number }> = new Map();
 
   constructor(
+    @Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>,
     private configService: ConfigService,
     private usersService: UsersService,
     private adminsService: AdminsService,
@@ -142,6 +145,8 @@ export class AuthService {
       ...data,
       password: hashedPassword,
     });
+
+    await this.db.insert(schema.wallets).values({ userId: user.id }).onConflictDoNothing();
 
     await this.emailService.sendWelcomeEmail(data.email, data.name);
 

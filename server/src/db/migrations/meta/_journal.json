@@ -29,6 +29,34 @@
       "when": 1784132861084,
       "tag": "0003_unique_giant_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784438887468,
+      "tag": "0004_good_betty_ross",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784443815531,
+      "tag": "0005_chemical_reavers",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784446171931,
+      "tag": "0006_complex_puff_adder",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784483504900,
+      "tag": "0007_ambiguous_luminals",
+      "breakpoints": true
     }
   ]
 }

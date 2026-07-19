@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, colors, typography, radii } from '../../shared';
 import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
-import type { Blog, Notification, SupportTicket, NewsItem, Video, PanchangRecord } from '../../shared/types';
+import type { Blog, Notification, SupportTicket, NewsItem, Video, PanchangRecord, CommissionLog } from '../../shared/types';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
@@ -189,7 +189,9 @@ export function EditProfileScreen() {
   const [specialization, setSpecialization] = useState(((profile as any)?.specialization || []).join(', '));
   const [languages, setLanguages] = useState(((profile as any)?.languages || []).join(', '));
   const [skills, setSkills] = useState(((profile as any)?.skills || []).join(', '));
-  const [pricePerMin, setPricePerMin] = useState((profile as any)?.pricePerMin || '');
+  const [chatPricePerMin, setChatPricePerMin] = useState((profile as any)?.chatPricePerMin || (profile as any)?.pricePerMin || '');
+  const [audioCallPricePerMin, setAudioCallPricePerMin] = useState((profile as any)?.audioCallPricePerMin || (profile as any)?.pricePerMin || '');
+  const [videoCallPricePerMin, setVideoCallPricePerMin] = useState((profile as any)?.videoCallPricePerMin || (profile as any)?.pricePerMin || '');
 
   useEffect(() => {
     if (profile) {
@@ -203,7 +205,9 @@ export function EditProfileScreen() {
         setSpecialization(((profile as any).specialization || []).join(', '));
         setLanguages(((profile as any).languages || []).join(', '));
         setSkills(((profile as any).skills || []).join(', '));
-        setPricePerMin((profile as any).pricePerMin || '');
+        setChatPricePerMin((profile as any).chatPricePerMin || (profile as any).pricePerMin || '');
+        setAudioCallPricePerMin((profile as any).audioCallPricePerMin || (profile as any).pricePerMin || '');
+        setVideoCallPricePerMin((profile as any).videoCallPricePerMin || (profile as any).pricePerMin || '');
       }
     }
   }, [profile]);
@@ -221,7 +225,9 @@ export function EditProfileScreen() {
           specialization: specialization.split(',').map((s: string) => s.trim()).filter(Boolean),
           languages: languages.split(',').map((s: string) => s.trim()).filter(Boolean),
           skills: skills.split(',').map((s: string) => s.trim()).filter(Boolean),
-          pricePerMin,
+          chatPricePerMin,
+          audioCallPricePerMin,
+          videoCallPricePerMin,
         });
       } else if (role === 'admin') {
         updated = await api.admins.update(profile!.id, { name });
@@ -388,12 +394,34 @@ export function EditProfileScreen() {
           </View>
 
           <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Price per minute (₹)</Text>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Chat price per minute (₹)</Text>
             <TextInput
               style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-              value={pricePerMin}
-              onChangeText={setPricePerMin}
+              value={chatPricePerMin}
+              onChangeText={setChatPricePerMin}
+              placeholder="e.g. 10"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="decimal-pad"
+            />
+          </View>
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Audio call price per minute (₹)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={audioCallPricePerMin}
+              onChangeText={setAudioCallPricePerMin}
               placeholder="e.g. 15"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="decimal-pad"
+            />
+          </View>
+          <View style={{ marginBottom: 14 }}>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Video call price per minute (₹)</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={videoCallPricePerMin}
+              onChangeText={setVideoCallPricePerMin}
+              placeholder="e.g. 20"
               placeholderTextColor={colors.textMuted}
               keyboardType="decimal-pad"
             />
@@ -656,10 +684,80 @@ export function AstrologerDocumentsScreen() {
 
 // Astrologer: Commission Logs
 export function AstrologerCommissionScreen() {
+  const { astrologer } = useAuth();
+  const [logs, setLogs] = useState<CommissionLog[]>([]);
+  const [commissionPct, setCommissionPct] = useState('0');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadData = useCallback(async () => {
+    if (!astrologer?.id) return;
+    try {
+      const [l, c] = await Promise.all([
+        api.commissions.logs(astrologer.id),
+        api.commissions.findByAstrologer(astrologer.id).catch(() => null),
+      ]);
+      setLogs(l || []);
+      setCommissionPct(c?.value || '0');
+    } catch {}
+  }, [astrologer?.id]);
+
+  useEffect(() => { loadData(); }, [loadData]);
+
+  const onRefresh = async () => { setRefreshing(true); await loadData(); setRefreshing(false); };
+
+  const totalEarned = logs.reduce((s, l) => s + Number(l.totalEarned), 0);
+  const totalFees = logs.reduce((s, l) => s + Number(l.platformFee), 0);
+  const totalRevenue = logs.reduce((s, l) => s + Number(l.amount), 0);
+
   return (
-    <ScreenWrapper scroll>
-      <SectionTitle title="Commission Logs" />
-      <EmptyState icon={<Ionicons name="receipt-outline" size={48} color={colors.textMuted} />} title="No commission logs yet" subtitle="Earnings from calls and chats will appear here" />
+    <ScreenWrapper>
+      <ScrollView contentContainerStyle={{ padding: 16 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+        <GlassCard style={{ alignItems: 'center', padding: 20 }}>
+          <Ionicons name="receipt-outline" size={40} color={colors.accentGold} />
+          <Text style={[typography.sectionTitle, { marginTop: 8, color: colors.textPrimary }]}>Commission Breakdown</Text>
+          <Text style={[typography.body, { color: colors.textSecondary }]}>Your commission rate: {commissionPct}%</Text>
+        </GlassCard>
+
+        <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
+          <GlassCard style={{ flex: 1, alignItems: 'center', padding: 14 }}>
+            <Text style={[typography.cardTitle, { color: colors.success }]}>₹{totalEarned.toFixed(2)}</Text>
+            <Text style={typography.caption}>Your Earnings</Text>
+          </GlassCard>
+          <GlassCard style={{ flex: 1, alignItems: 'center', padding: 14 }}>
+            <Text style={[typography.cardTitle, { color: colors.danger }]}>₹{totalFees.toFixed(2)}</Text>
+            <Text style={typography.caption}>Platform Fees</Text>
+          </GlassCard>
+        </View>
+
+        <GlassCard style={{ marginTop: 10, alignItems: 'center', padding: 14 }}>
+          <Text style={[typography.cardTitle, { color: colors.accentGold }]}>₹{totalRevenue.toFixed(2)}</Text>
+          <Text style={typography.caption}>Total Revenue Generated</Text>
+        </GlassCard>
+
+        <SectionHeader title="Commission Logs" />
+        {logs.length === 0 ? (
+          <EmptyState icon={<Ionicons name="receipt-outline" size={48} color={colors.textMuted} />} title="No logs yet" subtitle="Earnings from calls will appear here" />
+        ) : (
+          logs.map(l => (
+            <GlassCard key={l.id} style={{ marginTop: 6, padding: 14 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.cardTitle, { fontSize: 14, color: colors.textPrimary }]}>Call Earnings</Text>
+                  <Text style={typography.caption}>{new Date(l.createdAt).toLocaleDateString()}</Text>
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={[typography.cardTitle, { fontSize: 14, color: colors.success }]}>+₹{l.totalEarned}</Text>
+                  <Text style={[typography.caption, { color: colors.textMuted }]}>Fee: ₹{l.platformFee}</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 12, marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: colors.divider }}>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>Total: ₹{l.amount}</Text>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>Rate: {l.percentage}%</Text>
+              </View>
+            </GlassCard>
+          ))
+        )}
+      </ScrollView>
     </ScreenWrapper>
   );
 }
