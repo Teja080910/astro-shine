@@ -32,7 +32,7 @@ function WithdrawalsContent() {
   };
 
   return (
-    <AdminLayout>
+    <>
       <h1 className="text-3xl font-extrabold text-text-primary mb-6">Withdrawals</h1>
       <Table headers={['Requester', 'Type', 'Amount', 'Status', 'Date', '']} emptyMessage="No withdrawals found">
         {data.map((w: any) => (
@@ -67,7 +67,7 @@ function WithdrawalsContent() {
           </div>
         )}
       </CustomModal>
-    </AdminLayout>
+    </>
   );
 }
 

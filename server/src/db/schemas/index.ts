@@ -42,4 +42,5 @@ export { paymentEvents } from './payment-events';
 export { muhuratCategories } from './muhurat-categories';
 export { muhurat } from './muhurat';
 export { feedback } from './feedback';
+export { donationLogs } from './donation-logs';
 

@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Users, Star, Receipt, ArrowDownUp, Percent, MessageSquare, AlertTriangle, Bell, Key, Link2, Globe, FileText, Newspaper, Package, Sparkles, Calendar, Sun, Moon, Clock, Wallet, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Star, Receipt, ArrowDownUp, Percent, MessageSquare, AlertTriangle, Bell, Key, Link2, Globe, FileText, Newspaper, Package, Sparkles, Calendar, Sun, Moon, Clock, Wallet, LogOut, Gift } from 'lucide-react';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 
 const menuItems = [
@@ -14,6 +14,7 @@ const menuItems = [
   { href: '/orders', icon: Package, label: 'Orders' },
   { href: '/transactions', icon: Receipt, label: 'Transactions' },
   { href: '/withdrawals', icon: ArrowDownUp, label: 'Withdrawals' },
+  { href: '/donations', icon: Gift, label: 'Donations' },
   { href: '/commissions', icon: Percent, label: 'Commissions' },
   { href: '/horoscope', icon: Sparkles, label: 'Horoscopes' },
   { href: '/panchang', icon: Calendar, label: 'Panchang' },
