@@ -1,10 +1,13 @@
 import { useCallback, useRef, useEffect, useState } from 'react';
+import { Platform, NativeModules } from 'react-native';
 import {
   RTCPeerConnection,
   RTCSessionDescription,
   RTCIceCandidate,
   mediaDevices,
 } from 'react-native-webrtc';
+
+const AudioModule = NativeModules.WebRTCModule || NativeModules.AudioModule;
 
 const ICE_SERVERS = {
   iceServers: [
@@ -62,6 +65,10 @@ export function useWebRTC() {
 
   const startLocalStream = useCallback(async (type: 'audio' | 'video') => {
     try {
+      // Configure audio session for VoIP
+      if (Platform.OS === 'ios' && AudioModule?.audioSessionConfigure) {
+        AudioModule.audioSessionConfigure();
+      }
       const constraints: any = { audio: true };
       if (type === 'video') {
         constraints.video = { facingMode: isCameraFront ? 'user' : 'environment' };
@@ -131,7 +138,17 @@ export function useWebRTC() {
   }, []);
 
   const toggleSpeaker = useCallback(() => {
-    setIsSpeakerOn(prev => !prev);
+    setIsSpeakerOn(prev => {
+      const next = !prev;
+      try {
+        if (Platform.OS === 'android' && AudioModule?.setSpeakerphoneOn) {
+          AudioModule.setSpeakerphoneOn(next);
+        }
+      } catch (e) {
+        console.error('[WebRTC] setSpeakerphoneOn error', e);
+      }
+      return next;
+    });
   }, []);
 
   const toggleCamera = useCallback(() => {
@@ -169,5 +186,6 @@ export function useWebRTC() {
     setRemoteDescription, addIceCandidate, toggleMute, toggleSpeaker,
     toggleCamera, switchCamera, cleanup,
     remoteStream, isMuted, isSpeakerOn, isVideoEnabled, isCameraFront,
+    localStreamRef,
   };
 }
