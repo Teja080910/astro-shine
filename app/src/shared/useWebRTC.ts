@@ -1,5 +1,5 @@
 import { useCallback, useRef, useEffect, useState } from 'react';
-import { Platform, NativeModules } from 'react-native';
+import { Platform } from 'react-native';
 import {
   RTCPeerConnection,
   RTCSessionDescription,
@@ -7,7 +7,8 @@ import {
   mediaDevices,
 } from 'react-native-webrtc';
 
-const AudioModule = NativeModules.WebRTCModule || NativeModules.AudioModule;
+let InCallManager: any = null;
+try { InCallManager = require('react-native-incall-manager').default; } catch {}
 
 const ICE_SERVERS = {
   iceServers: [
@@ -15,30 +16,41 @@ const ICE_SERVERS = {
     { urls: 'stun:stun1.l.google.com:19302' },
     { urls: 'stun:stun2.l.google.com:19302' },
     { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' },
   ],
   iceCandidatePoolSize: 10,
 };
 
-export function useWebRTC(onMuteChange?: (muted: boolean) => void) {
+export function useWebRTC(
+  onMuteChange?: (muted: boolean) => void,
+  onVideoChange?: (enabled: boolean) => void,
+) {
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<any>(null);
   const [remoteStream, setRemoteStream] = useState<any>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [isRemoteMuted, setIsRemoteMuted] = useState(false);
+  const [isRemoteVideoOff, setIsRemoteVideoOff] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(false);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isCameraFront, setIsCameraFront] = useState(true);
 
   useEffect(() => {
     return () => {
+      InCallManager?.stop();
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach((t: any) => t.stop());
       }
-      if (pcRef.current) {
-        pcRef.current.close();
-      }
+      if (pcRef.current) pcRef.current.close();
     };
+  }, []);
+
+  const setAudioSpeaker = useCallback((on: boolean) => {
+    try {
+      InCallManager?.setSpeakerphoneOn(on);
+    } catch (e) {
+      console.error('[WebRTC] setSpeakerphoneOn error', e);
+    }
+    setIsSpeakerOn(on);
   }, []);
 
   const createPeerConnection = useCallback((
@@ -49,7 +61,7 @@ export function useWebRTC(onMuteChange?: (muted: boolean) => void) {
       const pc = new RTCPeerConnection(ICE_SERVERS);
       pcRef.current = pc;
 
-      // @ts-ignore - react-native-webrtc uses addEventListener
+      // @ts-ignore
       pc.addEventListener('icecandidate', (event: any) => {
         if (event.candidate) onIceCandidate(event.candidate);
       });
@@ -70,13 +82,14 @@ export function useWebRTC(onMuteChange?: (muted: boolean) => void) {
 
   const startLocalStream = useCallback(async (type: 'audio' | 'video') => {
     try {
-      // Configure audio session for VoIP
-      if (Platform.OS === 'ios' && AudioModule?.audioSessionConfigure) {
-        AudioModule.audioSessionConfigure();
+      InCallManager?.start({ media: type === 'video' ? 'video' : 'audio' });
+      if (type === 'video') {
+        InCallManager?.setSpeakerphoneOn(true);
+        setIsSpeakerOn(true);
       }
       const constraints: any = { audio: true };
       if (type === 'video') {
-        constraints.video = { facingMode: isCameraFront ? 'user' : 'environment' };
+        constraints.video = { facingMode: isCameraFront ? 'user' : 'environment', width: 640, height: 480 };
       }
       const stream = await mediaDevices.getUserMedia(constraints);
       localStreamRef.current = stream;
@@ -97,8 +110,7 @@ export function useWebRTC(onMuteChange?: (muted: boolean) => void) {
       await pcRef.current.setLocalDescription(offer);
       return { type: offer.type, sdp: offer.sdp };
     } catch (e) {
-      console.error('[WebRTC] createOffer error', e);
-      return null;
+      console.error('[WebRTC] createOffer error', e); return null;
     }
   }, []);
 
@@ -109,8 +121,7 @@ export function useWebRTC(onMuteChange?: (muted: boolean) => void) {
       await pcRef.current.setLocalDescription(answer);
       return { type: answer.type, sdp: answer.sdp };
     } catch (e) {
-      console.error('[WebRTC] createAnswer error', e);
-      return null;
+      console.error('[WebRTC] createAnswer error', e); return null;
     }
   }, []);
 
@@ -118,18 +129,14 @@ export function useWebRTC(onMuteChange?: (muted: boolean) => void) {
     if (!pcRef.current) return;
     try {
       await pcRef.current.setRemoteDescription(new RTCSessionDescription(sdp));
-    } catch (e) {
-      console.error('[WebRTC] setRemoteDescription error', e);
-    }
+    } catch (e) { console.error('[WebRTC] setRemoteDescription error', e); }
   }, []);
 
   const addIceCandidate = useCallback(async (candidate: any) => {
     if (!pcRef.current) return;
     try {
       await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
-    } catch (e) {
-      console.error('[WebRTC] addIceCandidate error', e);
-    }
+    } catch (e) { console.error('[WebRTC] addIceCandidate error', e); }
   }, []);
 
   const toggleMute = useCallback(() => {
@@ -144,18 +151,8 @@ export function useWebRTC(onMuteChange?: (muted: boolean) => void) {
   }, [onMuteChange]);
 
   const toggleSpeaker = useCallback(() => {
-    setIsSpeakerOn(prev => {
-      const next = !prev;
-      try {
-        if (Platform.OS === 'android' && AudioModule?.setSpeakerphoneOn) {
-          AudioModule.setSpeakerphoneOn(next);
-        }
-      } catch (e) {
-        console.error('[WebRTC] setSpeakerphoneOn error', e);
-      }
-      return next;
-    });
-  }, []);
+    setAudioSpeaker(!isSpeakerOn);
+  }, [isSpeakerOn, setAudioSpeaker]);
 
   const toggleCamera = useCallback(() => {
     setIsVideoEnabled(prev => {
@@ -163,25 +160,35 @@ export function useWebRTC(onMuteChange?: (muted: boolean) => void) {
       if (localStreamRef.current) {
         localStreamRef.current.getVideoTracks().forEach((t: any) => { t.enabled = next; });
       }
+      onVideoChange?.(next);
       return next;
     });
-  }, []);
+  }, [onVideoChange]);
 
-  const switchCamera = useCallback(() => {
-    setIsCameraFront(prev => !prev);
+  const switchCamera = useCallback(async () => {
+    if (!localStreamRef.current) return;
+    const videoTrack = localStreamRef.current.getVideoTracks()?.[0];
+    if (videoTrack && videoTrack._switchCamera) {
+      try {
+        await videoTrack._switchCamera();
+        setIsCameraFront(prev => !prev);
+      } catch (e) {
+        console.error('[WebRTC] switchCamera error', e);
+      }
+    }
   }, []);
 
   const cleanup = useCallback(() => {
+    InCallManager?.stop();
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((t: any) => t.stop());
       localStreamRef.current = null;
     }
-    if (pcRef.current) {
-      pcRef.current.close();
-      pcRef.current = null;
-    }
+    if (pcRef.current) { pcRef.current.close(); pcRef.current = null; }
     setRemoteStream(null);
     setIsMuted(false);
+    setIsRemoteMuted(false);
+    setIsRemoteVideoOff(false);
     setIsSpeakerOn(false);
     setIsVideoEnabled(true);
     setIsCameraFront(true);
@@ -191,7 +198,9 @@ export function useWebRTC(onMuteChange?: (muted: boolean) => void) {
     createPeerConnection, startLocalStream, createOffer, createAnswer,
     setRemoteDescription, addIceCandidate, toggleMute, toggleSpeaker,
     toggleCamera, switchCamera, cleanup,
-    remoteStream, isMuted, isRemoteMuted, setIsRemoteMuted, isSpeakerOn,
-    isVideoEnabled, isCameraFront, localStreamRef,
+    remoteStream, isMuted, isRemoteMuted, setIsRemoteMuted,
+    isRemoteVideoOff, setIsRemoteVideoOff,
+    isSpeakerOn, isVideoEnabled, isCameraFront, localStreamRef,
+    setAudioSpeaker,
   };
 }
