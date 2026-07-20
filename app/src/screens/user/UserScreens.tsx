@@ -37,6 +37,17 @@ export function UserHomeScreen({ navigation }: any) {
   const { user, theme, setTheme } = useAuth();
   const { astrologerStatuses, horoscopeVersion } = useChat();
   const isFocused = useIsFocused();
+  const isDark = theme === 'dark';
+
+  const titleColor = isDark ? '#FBBF24' : '#7F1D1D';
+  const iconColor = isDark ? '#F59E0B' : '#7F1D1D';
+  const cardBg = isDark ? '#111827' : '#FFFFFF';
+  const cardLightBg = isDark ? '#1F2937' : '#FFFBEB';
+  const cardBorderColor = isDark ? 'rgba(245, 158, 11, 0.25)' : '#FDE68A';
+  const textPrimaryColor = isDark ? '#F9FAFB' : '#1F2937';
+  const bodyTextColor = isDark ? '#E5E7EB' : '#374151';
+  const mutedTextColor = isDark ? '#9CA3AF' : '#6B7280';
+  const goldTextColor = isDark ? '#FBBF24' : '#D97706';
   const [astrologers, setAstrologers] = useState<Astrologer[]>([]);
   const [horoscope, setHoroscope] = useState<HoroscopeRecord[]>([]);
   const [videos, setVideos] = useState<Video[]>([]);
@@ -103,9 +114,6 @@ export function UserHomeScreen({ navigation }: any) {
       <SkeletonLoader height={180} />
       <View style={{ height: 24 }} />
       <SkeletonLoader height={120} />
-      <View style={{ height: 16 }} />
-      <SkeletonLoader height={48} />
-      <View style={{ height: 16 }} />
       <SkeletonLoader height={160} />
       <View style={{ height: 24 }} />
       <SkeletonLoader height={120} />
@@ -118,51 +126,57 @@ export function UserHomeScreen({ navigation }: any) {
         {/* Top Header Bar */}
         <View style={styles.topHeader}>
           <TouchableOpacity onPress={() => setMenuOpen(true)} style={{ padding: 4 }}>
-            <Ionicons name="menu-outline" size={28} color="#7F1D1D" />
+            <Ionicons name="menu-outline" size={28} color={iconColor} />
           </TouchableOpacity>
           
           <View style={{ alignItems: 'center' }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#7F1D1D', alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: isDark ? '#D97706' : '#7F1D1D', alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ color: '#F59E0B', fontSize: 16, fontWeight: '800' }}>🕉️</Text>
               </View>
-              <Text style={{ fontSize: 22, fontWeight: '900', color: '#7F1D1D', letterSpacing: 0.5 }}>
+              <Text style={{ fontSize: 22, fontWeight: '900', color: titleColor, letterSpacing: 0.5 }}>
                 ASTROŚHINE
               </Text>
             </View>
-            <Text style={{ fontSize: 8.5, fontWeight: '800', color: '#7F1D1D', letterSpacing: 1, marginTop: 1 }}>
+            <Text style={{ fontSize: 8.5, fontWeight: '800', color: titleColor, letterSpacing: 1, marginTop: 1 }}>
               YOUR DESTINY, OUR GUIDANCE
             </Text>
           </View>
 
-          <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ padding: 4, position: 'relative' }}>
-            <Ionicons name="notifications-outline" size={26} color="#7F1D1D" />
-            {unreadCount > 0 && (
-              <View style={styles.headerBadge}>
-                <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <TouchableOpacity onPress={() => setTheme(isDark ? 'light' : 'dark')} style={{ padding: 4 }}>
+              <Ionicons name={isDark ? "sunny-outline" : "moon-outline"} size={24} color={iconColor} />
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ padding: 4, position: 'relative' }}>
+              <Ionicons name="notifications-outline" size={26} color={iconColor} />
+              {unreadCount > 0 && (
+                <View style={styles.headerBadge}>
+                  <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Greeting & Ganesha Banner */}
-        <View style={styles.greetingRow}>
+        <View style={[styles.greetingRow, { backgroundColor: cardLightBg, borderColor: cardBorderColor }]}>
           <View style={{ flex: 1.1 }}>
-            <Text style={{ fontSize: 13, color: '#6B7280', fontWeight: '500' }}>Namaste,</Text>
-            <Text style={{ fontSize: 18, fontWeight: '800', color: '#7F1D1D', marginVertical: 2 }}>
+            <Text style={{ fontSize: 13, color: mutedTextColor, fontWeight: '500' }}>Namaste,</Text>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: titleColor, marginVertical: 2 }}>
               {user?.name || 'Aarav Sharma'} 🙏
             </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Wallet')} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2, marginBottom: 2 }}>
-              <Ionicons name="wallet-outline" size={14} color="#D97706" />
-              <Text style={{ fontSize: 11, color: '#D97706', fontWeight: '700' }}>₹{wallet?.balance || '0'}</Text>
+              <Ionicons name="wallet-outline" size={14} color={goldTextColor} />
+              <Text style={{ fontSize: 11, color: goldTextColor, fontWeight: '700' }}>₹{wallet?.balance || '0'}</Text>
             </TouchableOpacity>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
-              <Ionicons name="calendar-outline" size={13} color="#9CA3AF" />
-              <Text style={{ fontSize: 11, color: '#4B5563', fontWeight: '500' }}>15 July 2026, Wednesday</Text>
+              <Ionicons name="calendar-outline" size={13} color={mutedTextColor} />
+              <Text style={{ fontSize: 11, color: bodyTextColor, fontWeight: '500' }}>15 July 2026, Wednesday</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
-              <Ionicons name="location-outline" size={13} color="#9CA3AF" />
-              <Text style={{ fontSize: 11, color: '#4B5563', fontWeight: '500' }}>Jaipur, Rajasthan</Text>
+              <Ionicons name="location-outline" size={13} color={mutedTextColor} />
+              <Text style={{ fontSize: 11, color: bodyTextColor, fontWeight: '500' }}>Jaipur, Rajasthan</Text>
             </View>
           </View>
 
@@ -174,14 +188,14 @@ export function UserHomeScreen({ navigation }: any) {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Ionicons name="sunny" size={24} color="#F59E0B" />
               <View>
-                <Text style={{ fontSize: 14, fontWeight: '800', color: '#1F2937' }}>28°C</Text>
-                <Text style={{ fontSize: 11, color: '#6B7280' }}>Sunny</Text>
+                <Text style={{ fontSize: 14, fontWeight: '800', color: textPrimaryColor }}>28°C</Text>
+                <Text style={{ fontSize: 11, color: mutedTextColor }}>Sunny</Text>
               </View>
             </View>
             
-            <View style={styles.goodMorningBtn}>
-              <Ionicons name="sunny-outline" size={12} color="#D97706" />
-              <Text style={{ fontSize: 10, fontWeight: '700', color: '#D97706' }}>Good Morning!</Text>
+            <View style={[styles.goodMorningBtn, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7', borderColor: isDark ? 'rgba(245, 158, 11, 0.3)' : '#FCD34D' }]}>
+              <Ionicons name="sunny-outline" size={12} color={goldTextColor} />
+              <Text style={{ fontSize: 10, fontWeight: '700', color: goldTextColor }}>Good Morning!</Text>
             </View>
           </View>
         </View>
@@ -194,7 +208,7 @@ export function UserHomeScreen({ navigation }: any) {
               <TouchableOpacity key={z.sign} onPress={() => handleSignSelect(z.sign)} style={{ alignItems: 'center', width: 52 }}>
                 <View style={[
                   styles.zodiacCircle,
-                  active ? styles.zodiacCircleActive : styles.zodiacCircleInactive
+                  active ? { backgroundColor: isDark ? '#D97706' : '#7F1D1D', borderColor: '#F59E0B' } : { backgroundColor: cardLightBg, borderColor: cardBorderColor }
                 ]}>
                   {z.sign === 'aries' ? (
                     <Image source={require('../../../assets/aries_ram.png')} style={{ width: 36, height: 36, borderRadius: 18 }} />
@@ -202,7 +216,7 @@ export function UserHomeScreen({ navigation }: any) {
                     <Text style={{ fontSize: active ? 22 : 20 }}>{z.emoji}</Text>
                   )}
                 </View>
-                <Text style={{ fontSize: 11, fontWeight: active ? '700' : '500', color: active ? '#990000' : '#4B5563', marginTop: 4 }}>
+                <Text style={{ fontSize: 11, fontWeight: active ? '700' : '500', color: active ? titleColor : bodyTextColor, marginTop: 4 }}>
                   {z.label}
                 </Text>
               </TouchableOpacity>
@@ -211,148 +225,148 @@ export function UserHomeScreen({ navigation }: any) {
         </ScrollView>
 
         {/* Zodiac Horoscope Detailed Card */}
-        <View style={styles.horoscopeCard}>
+        <View style={[styles.horoscopeCard, { backgroundColor: cardBg, borderColor: cardBorderColor }]}>
           <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
             <Image source={require('../../../assets/aries_ram.png')} style={{ width: 76, height: 76, borderRadius: 38 }} />
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-                <Text style={{ fontSize: 22, fontWeight: '800', color: '#990000' }}>
+                <Text style={{ fontSize: 22, fontWeight: '800', color: titleColor }}>
                   {ZODIAC_SIGNS.find(z => z.sign === selectedSign)?.label || 'Aries'}
                 </Text>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: '#EA580C' }}>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: isDark ? '#F59E0B' : '#EA580C' }}>
                   (Mar 21 – Apr 19)
                 </Text>
               </View>
-              <Text style={{ fontSize: 12, color: '#374151', lineHeight: 17, marginVertical: 6 }}>
+              <Text style={{ fontSize: 12, color: bodyTextColor, lineHeight: 17, marginVertical: 6 }}>
                 {horoscope[0]?.prediction || 'Today brings new opportunities in your career. Stay open to unexpected changes. Your confidence will help you achieve important goals.'}
               </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Horoscope')} style={styles.readFullBtn}>
+              <TouchableOpacity onPress={() => navigation.navigate('Horoscope')} style={[styles.readFullBtn, { backgroundColor: isDark ? '#D97706' : '#7F1D1D' }]}>
                 <Text style={{ color: '#FFF', fontSize: 11, fontWeight: '700' }}>Read Full Horoscope</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Lucky Stats Row */}
-          <View style={styles.luckyGrid}>
+          <View style={[styles.luckyGrid, { backgroundColor: cardLightBg, borderColor: cardBorderColor }]}>
             <View style={styles.luckyCol}>
-              <Text style={{ fontSize: 10, color: '#6B7280' }}>Lucky Number</Text>
-              <Text style={{ fontSize: 15, fontWeight: '800', color: '#7F1D1D', marginTop: 2 }}>{horoscope[0]?.luckyNumber || '7'}</Text>
+              <Text style={{ fontSize: 10, color: mutedTextColor }}>Lucky Number</Text>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: titleColor, marginTop: 2 }}>{horoscope[0]?.luckyNumber || '7'}</Text>
             </View>
-            <View style={styles.luckyDivider} />
+            <View style={[styles.luckyDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#FDE68A' }]} />
             <View style={styles.luckyCol}>
-              <Text style={{ fontSize: 10, color: '#6B7280' }}>Lucky Color</Text>
+              <Text style={{ fontSize: 10, color: mutedTextColor }}>Lucky Color</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
                 <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#FBBF24' }} />
-                <Text style={{ fontSize: 11, fontWeight: '700', color: '#1F2937' }}>{horoscope[0]?.luckyColor || 'Bright Yellow'}</Text>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: textPrimaryColor }}>{horoscope[0]?.luckyColor || 'Bright Yellow'}</Text>
               </View>
             </View>
-            <View style={styles.luckyDivider} />
+            <View style={[styles.luckyDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#FDE68A' }]} />
             <View style={styles.luckyCol}>
-              <Text style={{ fontSize: 10, color: '#6B7280' }}>Lucky Time</Text>
-              <Text style={{ fontSize: 10, fontWeight: '700', color: '#1F2937', marginTop: 2 }}>10:30 AM – 12:00 PM</Text>
+              <Text style={{ fontSize: 10, color: mutedTextColor }}>Lucky Time</Text>
+              <Text style={{ fontSize: 10, fontWeight: '700', color: textPrimaryColor, marginTop: 2 }}>10:30 AM – 12:00 PM</Text>
             </View>
-            <View style={styles.luckyDivider} />
+            <View style={[styles.luckyDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#FDE68A' }]} />
             <View style={styles.luckyCol}>
-              <Text style={{ fontSize: 10, color: '#6B7280' }}>Lucky Direction</Text>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: '#1F2937', marginTop: 2 }}>🧭 North</Text>
+              <Text style={{ fontSize: 10, color: mutedTextColor }}>Lucky Direction</Text>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: textPrimaryColor, marginTop: 2 }}>🧭 North</Text>
             </View>
-            <View style={styles.luckyDivider} />
+            <View style={[styles.luckyDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#FDE68A' }]} />
             <View style={styles.luckyCol}>
-              <Text style={{ fontSize: 10, color: '#6B7280' }}>Lucky Alphabet</Text>
-              <Text style={{ fontSize: 14, fontWeight: '800', color: '#7F1D1D', marginTop: 2 }}>A</Text>
+              <Text style={{ fontSize: 10, color: mutedTextColor }}>Lucky Alphabet</Text>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: titleColor, marginTop: 2 }}>A</Text>
             </View>
           </View>
 
           {/* Sub-tabs Row */}
-          <View style={styles.subTabsRow}>
+          <View style={[styles.subTabsRow, { borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : '#FDE68A' }]}>
             <TouchableOpacity onPress={() => setActiveHoroscopeTab('love')} style={styles.subTabItem}>
               <Text style={{ fontSize: 13 }}>❤️</Text>
-              <Text style={{ fontSize: 12, fontWeight: activeHoroscopeTab === 'love' ? '700' : '600', color: activeHoroscopeTab === 'love' ? '#990000' : '#4B5563' }}>Love</Text>
+              <Text style={{ fontSize: 12, fontWeight: activeHoroscopeTab === 'love' ? '700' : '600', color: activeHoroscopeTab === 'love' ? titleColor : bodyTextColor }}>Love</Text>
             </TouchableOpacity>
-            <View style={styles.subTabDivider} />
+            <View style={[styles.subTabDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#FDE68A' }]} />
             <TouchableOpacity onPress={() => setActiveHoroscopeTab('career')} style={styles.subTabItem}>
               <Text style={{ fontSize: 13 }}>💼</Text>
-              <Text style={{ fontSize: 12, fontWeight: activeHoroscopeTab === 'career' ? '700' : '600', color: activeHoroscopeTab === 'career' ? '#990000' : '#4B5563' }}>Career</Text>
+              <Text style={{ fontSize: 12, fontWeight: activeHoroscopeTab === 'career' ? '700' : '600', color: activeHoroscopeTab === 'career' ? titleColor : bodyTextColor }}>Career</Text>
             </TouchableOpacity>
-            <View style={styles.subTabDivider} />
+            <View style={[styles.subTabDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#FDE68A' }]} />
             <TouchableOpacity onPress={() => setActiveHoroscopeTab('finance')} style={styles.subTabItem}>
               <Text style={{ fontSize: 13 }}>🪙</Text>
-              <Text style={{ fontSize: 12, fontWeight: activeHoroscopeTab === 'finance' ? '700' : '600', color: activeHoroscopeTab === 'finance' ? '#990000' : '#4B5563' }}>Finance</Text>
+              <Text style={{ fontSize: 12, fontWeight: activeHoroscopeTab === 'finance' ? '700' : '600', color: activeHoroscopeTab === 'finance' ? titleColor : bodyTextColor }}>Finance</Text>
             </TouchableOpacity>
-            <View style={styles.subTabDivider} />
+            <View style={[styles.subTabDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#FDE68A' }]} />
             <TouchableOpacity onPress={() => setActiveHoroscopeTab('health')} style={styles.subTabItem}>
               <Text style={{ fontSize: 13 }}>➕</Text>
-              <Text style={{ fontSize: 12, fontWeight: activeHoroscopeTab === 'health' ? '700' : '600', color: activeHoroscopeTab === 'health' ? '#990000' : '#4B5563' }}>Health</Text>
+              <Text style={{ fontSize: 12, fontWeight: activeHoroscopeTab === 'health' ? '700' : '600', color: activeHoroscopeTab === 'health' ? titleColor : bodyTextColor }}>Health</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Today's Panchang */}
-        <View style={styles.panchangContainer}>
-          <View style={styles.panchangHeaderBanner}>
+        <View style={[styles.panchangContainer, { borderColor: cardBorderColor }]}>
+          <View style={[styles.panchangHeaderBanner, { backgroundColor: isDark ? '#D97706' : '#7F1D1D' }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Ionicons name="calendar-sharp" size={16} color="#7F1D1D" />
-              <Text style={{ fontSize: 14, fontWeight: '800', color: '#7F1D1D' }}>Today's Panchang</Text>
+              <Ionicons name="calendar-sharp" size={16} color="#F59E0B" />
+              <Text style={{ fontSize: 14, fontWeight: '800', color: '#FFF' }}>Today's Panchang</Text>
             </View>
             <TouchableOpacity onPress={() => navigation.navigate('Panchang')}>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: '#990000' }}>View All</Text>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: '#FDE68A' }}>View All</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.panchangContent}>
+          <View style={[styles.panchangContent, { backgroundColor: cardLightBg }]}>
             {/* Top 4 Panchang factors */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
               <View style={styles.panchangItem}>
-                <Ionicons name="sunny-outline" size={18} color="#D97706" />
+                <Ionicons name="sunny-outline" size={18} color={goldTextColor} />
                 <View>
-                  <Text style={{ fontSize: 10, color: '#6B7280' }}>Tithi</Text>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#1F2937' }}>Shukla Paksha Dashami</Text>
+                  <Text style={{ fontSize: 10, color: mutedTextColor }}>Tithi</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: textPrimaryColor }}>Shukla Paksha Dashami</Text>
                 </View>
               </View>
               <View style={styles.panchangItem}>
-                <Ionicons name="star-outline" size={18} color="#D97706" />
+                <Ionicons name="star-outline" size={18} color={goldTextColor} />
                 <View>
-                  <Text style={{ fontSize: 10, color: '#6B7280' }}>Nakshatra</Text>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#1F2937' }}>Pushya</Text>
+                  <Text style={{ fontSize: 10, color: mutedTextColor }}>Nakshatra</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: textPrimaryColor }}>Pushya</Text>
                 </View>
               </View>
               <View style={styles.panchangItem}>
-                <Ionicons name="ribbon-outline" size={18} color="#D97706" />
+                <Ionicons name="ribbon-outline" size={18} color={goldTextColor} />
                 <View>
-                  <Text style={{ fontSize: 10, color: '#6B7280' }}>Yoga</Text>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#1F2937' }}>Siddhi</Text>
+                  <Text style={{ fontSize: 10, color: mutedTextColor }}>Yoga</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: textPrimaryColor }}>Siddhi</Text>
                 </View>
               </View>
               <View style={styles.panchangItem}>
-                <Ionicons name="compass-outline" size={18} color="#D97706" />
+                <Ionicons name="compass-outline" size={18} color={goldTextColor} />
                 <View>
-                  <Text style={{ fontSize: 10, color: '#6B7280' }}>Karan</Text>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#1F2937' }}>Kaulav</Text>
+                  <Text style={{ fontSize: 10, color: mutedTextColor }}>Karan</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: textPrimaryColor }}>Kaulav</Text>
                 </View>
               </View>
             </View>
 
             {/* Bottom 3 Panchang factors */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingTop: 8, borderTopWidth: 1, borderTopColor: '#F3F4F6' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingTop: 8, borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : '#FDE68A' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Ionicons name="sunny" size={16} color="#F59E0B" />
                 <View>
-                  <Text style={{ fontSize: 10, color: '#6B7280' }}>Sunrise</Text>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#1F2937' }}>05:48 AM</Text>
+                  <Text style={{ fontSize: 10, color: mutedTextColor }}>Sunrise</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: textPrimaryColor }}>05:48 AM</Text>
                 </View>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Ionicons name="partly-sunny" size={16} color="#EA580C" />
                 <View>
-                  <Text style={{ fontSize: 10, color: '#6B7280' }}>Sunset</Text>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#1F2937' }}>07:23 PM</Text>
+                  <Text style={{ fontSize: 10, color: mutedTextColor }}>Sunset</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: textPrimaryColor }}>07:23 PM</Text>
                 </View>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Ionicons name="time-outline" size={16} color="#DC2626" />
                 <View>
-                  <Text style={{ fontSize: 10, color: '#6B7280' }}>Rahukal</Text>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#1F2937' }}>12:30 PM - 02:00 PM</Text>
+                  <Text style={{ fontSize: 10, color: mutedTextColor }}>Rahukal</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: textPrimaryColor }}>12:30 PM - 02:00 PM</Text>
                 </View>
               </View>
             </View>
@@ -361,88 +375,88 @@ export function UserHomeScreen({ navigation }: any) {
 
         {/* Quick Actions Grid */}
         <View style={{ marginHorizontal: 16, marginVertical: 14 }}>
-          <Text style={{ fontSize: 16, fontWeight: '800', color: '#7F1D1D', marginBottom: 12 }}>Quick Actions</Text>
+          <Text style={{ fontSize: 16, fontWeight: '800', color: titleColor, marginBottom: 12 }}>Quick Actions</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' }}>
             <TouchableOpacity onPress={() => navigation.navigate('Kundli')} style={styles.gridActionItem}>
-              <View style={[styles.gridActionIconBg, { backgroundColor: '#FEF3C7' }]}>
-                <Ionicons name="planet" size={22} color="#D97706" />
+              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7', borderColor: cardBorderColor }]}>
+                <Ionicons name="planet" size={22} color={goldTextColor} />
               </View>
-              <Text style={styles.gridActionText}>Kundli</Text>
+              <Text style={[styles.gridActionText, { color: bodyTextColor }]}>Kundli</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => navigation.navigate('Matchmaking')} style={styles.gridActionItem}>
-              <View style={[styles.gridActionIconBg, { backgroundColor: '#FEE2E2' }]}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(220, 38, 38, 0.15)' : '#FEE2E2', borderColor: isDark ? 'rgba(220, 38, 38, 0.3)' : '#FECACA' }]}>
                 <Ionicons name="heart" size={22} color="#DC2626" />
               </View>
-              <Text style={styles.gridActionText}>Matchmaking</Text>
+              <Text style={[styles.gridActionText, { color: bodyTextColor }]}>Matchmaking</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => navigation.navigate('Panchang')} style={styles.gridActionItem}>
-              <View style={[styles.gridActionIconBg, { backgroundColor: '#FFEDD5' }]}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(234, 88, 12, 0.15)' : '#FFEDD5', borderColor: isDark ? 'rgba(234, 88, 12, 0.3)' : '#FDBA74' }]}>
                 <Ionicons name="calendar" size={22} color="#EA580C" />
               </View>
-              <Text style={styles.gridActionText}>Panchang</Text>
+              <Text style={[styles.gridActionText, { color: bodyTextColor }]}>Panchang</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => navigation.navigate('MandirPooja')} style={styles.gridActionItem}>
-              <View style={[styles.gridActionIconBg, { backgroundColor: '#FEF3C7' }]}>
-                <Ionicons name="flame" size={22} color="#D97706" />
+              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7', borderColor: cardBorderColor }]}>
+                <Ionicons name="flame" size={22} color={goldTextColor} />
               </View>
-              <Text style={styles.gridActionText}>Pooja</Text>
+              <Text style={[styles.gridActionText, { color: bodyTextColor }]}>Pooja</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => navigation.navigate('Shop')} style={styles.gridActionItem}>
-              <View style={[styles.gridActionIconBg, { backgroundColor: '#FEF9C3' }]}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(202, 138, 4, 0.15)' : '#FEF9C3', borderColor: isDark ? 'rgba(202, 138, 4, 0.3)' : '#FDE047' }]}>
                 <Ionicons name="bag-handle" size={22} color="#CA8A04" />
               </View>
-              <Text style={styles.gridActionText}>Shop</Text>
+              <Text style={[styles.gridActionText, { color: bodyTextColor }]}>Shop</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => navigation.navigate('Astrologers')} style={styles.gridActionItem}>
-              <View style={[styles.gridActionIconBg, { backgroundColor: '#FFEDD5' }]}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(234, 88, 12, 0.15)' : '#FFEDD5', borderColor: isDark ? 'rgba(234, 88, 12, 0.3)' : '#FDBA74' }]}>
                 <Ionicons name="people" size={22} color="#EA580C" />
               </View>
-              <Text style={styles.gridActionText}>Live Astrologers</Text>
+              <Text style={[styles.gridActionText, { color: bodyTextColor }]}>Live Astrologers</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => navigation.navigate('Astrologers')} style={styles.gridActionItem}>
-              <View style={[styles.gridActionIconBg, { backgroundColor: '#FEE2E2' }]}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(220, 38, 38, 0.15)' : '#FEE2E2', borderColor: isDark ? 'rgba(220, 38, 38, 0.3)' : '#FECACA' }]}>
                 <Ionicons name="square" size={22} color="#DC2626" />
               </View>
-              <Text style={styles.gridActionText}>Tarot</Text>
+              <Text style={[styles.gridActionText, { color: bodyTextColor }]}>Tarot</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => navigation.navigate('Astrologers')} style={styles.gridActionItem}>
-              <View style={[styles.gridActionIconBg, { backgroundColor: '#FEF3C7' }]}>
-                <Ionicons name="keypad" size={22} color="#D97706" />
+              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7', borderColor: cardBorderColor }]}>
+                <Ionicons name="keypad" size={22} color={goldTextColor} />
               </View>
-              <Text style={styles.gridActionText}>Numerology</Text>
+              <Text style={[styles.gridActionText, { color: bodyTextColor }]}>Numerology</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => navigation.navigate('Blogs')} style={styles.gridActionItem}>
-              <View style={[styles.gridActionIconBg, { backgroundColor: '#FEF9C3' }]}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(202, 138, 4, 0.15)' : '#FEF9C3', borderColor: isDark ? 'rgba(202, 138, 4, 0.3)' : '#FDE047' }]}>
                 <Ionicons name="document-text" size={22} color="#CA8A04" />
               </View>
-              <Text style={styles.gridActionText}>Blogs</Text>
+              <Text style={[styles.gridActionText, { color: bodyTextColor }]}>Blogs</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => navigation.navigate('Videos')} style={styles.gridActionItem}>
-              <View style={[styles.gridActionIconBg, { backgroundColor: '#FFEDD5' }]}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(234, 88, 12, 0.15)' : '#FFEDD5', borderColor: isDark ? 'rgba(234, 88, 12, 0.3)' : '#FDBA74' }]}>
                 <Ionicons name="play-circle" size={22} color="#EA580C" />
               </View>
-              <Text style={styles.gridActionText}>Videos</Text>
+              <Text style={[styles.gridActionText, { color: bodyTextColor }]}>Videos</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Shravan Month Special Banner */}
-        <View style={styles.specialBanner}>
+        <View style={[styles.specialBanner, { backgroundColor: cardLightBg, borderColor: cardBorderColor }]}>
           <Image source={require('../../../assets/pooja_kalash.png')} style={{ width: 84, height: 84 }} resizeMode="contain" />
           <View style={{ flex: 1, marginHorizontal: 8 }}>
-            <Text style={{ fontSize: 15, fontWeight: '800', color: '#7F1D1D' }}>Shravan Month Special</Text>
-            <Text style={{ fontSize: 11, color: '#4B5563', marginTop: 2 }}>Get special blessings and discounts on Pooja services</Text>
+            <Text style={{ fontSize: 15, fontWeight: '800', color: titleColor }}>Shravan Month Special</Text>
+            <Text style={{ fontSize: 11, color: bodyTextColor, marginTop: 2 }}>Get special blessings and discounts on Pooja services</Text>
           </View>
-          <TouchableOpacity onPress={() => navigation.navigate('MandirPooja')} style={styles.bookNowBtn}>
+          <TouchableOpacity onPress={() => navigation.navigate('MandirPooja')} style={[styles.bookNowBtn, { backgroundColor: isDark ? '#D97706' : '#7F1D1D' }]}>
             <Text style={{ color: '#FFF', fontSize: 11, fontWeight: '700' }}>Book Now ›</Text>
           </TouchableOpacity>
         </View>
@@ -1049,6 +1063,18 @@ function PasswordInput({ label, value, onChange, placeholder }: { label: string;
 export function ProfileScreen({ navigation }: any) {
   const { user, logout, updateUser, theme, setTheme } = useAuth();
   const isFocused = useIsFocused();
+  const isDark = theme === 'dark';
+
+  const cardBg = isDark ? '#111827' : '#FFFFFF';
+  const cardLightBg = isDark ? '#1F2937' : '#FFFBEB';
+  const cardBorderColor = isDark ? 'rgba(245, 158, 11, 0.25)' : '#FDE68A';
+  const textPrimaryColor = isDark ? '#F9FAFB' : '#7F1D1D';
+  const textSecondaryColor = isDark ? '#E5E7EB' : '#1F2937';
+  const mutedTextColor = isDark ? '#9CA3AF' : '#6B7280';
+  const goldTextColor = isDark ? '#FBBF24' : '#D97706';
+  const iconBgColor = isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7';
+  const rowBorderColor = isDark ? 'rgba(255, 255, 255, 0.08)' : '#F3F4F6';
+
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [pwOpen, setPwOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -1117,9 +1143,9 @@ export function ProfileScreen({ navigation }: any) {
     <ScreenWrapper scroll>
       <View style={{ paddingBottom: 120 }}>
         {/* Hero Header Card */}
-        <View style={styles.profileHeroCard}>
+        <View style={[styles.profileHeroCard, { backgroundColor: cardLightBg, borderColor: cardBorderColor }]}>
           <View style={{ position: 'relative' }}>
-            <View style={styles.avatarRing}>
+            <View style={[styles.avatarRing, { backgroundColor: cardBg, borderColor: '#F59E0B' }]}>
               <Avatar size={76} uri={user?.avatar} />
             </View>
             <View style={styles.verifiedBadge}>
@@ -1127,28 +1153,28 @@ export function ProfileScreen({ navigation }: any) {
             </View>
           </View>
 
-          <Text style={styles.profileName}>{user?.name || 'User Profile'}</Text>
+          <Text style={[styles.profileName, { color: textPrimaryColor }]}>{user?.name || 'User Profile'}</Text>
           
-          <View style={styles.emailPill}>
-            <Ionicons name="mail" size={13} color="#D97706" />
-            <Text style={styles.emailPillText}>{user?.email || 'user@astroshine.com'}</Text>
+          <View style={[styles.emailPill, { backgroundColor: cardBg, borderColor: cardBorderColor }]}>
+            <Ionicons name="mail" size={13} color={goldTextColor} />
+            <Text style={[styles.emailPillText, { color: goldTextColor }]}>{user?.email || 'user@astroshine.com'}</Text>
           </View>
 
           {/* Quick Stats Bar */}
-          <View style={styles.profileStatsRow}>
+          <View style={[styles.profileStatsRow, { backgroundColor: cardBg, borderColor: cardBorderColor }]}>
             <TouchableOpacity onPress={() => navigation.navigate('Wallet')} style={styles.profileStatCol}>
-              <Text style={styles.profileStatVal}>₹{wallet?.balance || '0'}</Text>
-              <Text style={styles.profileStatLab}>Wallet</Text>
+              <Text style={[styles.profileStatVal, { color: goldTextColor }]}>₹{wallet?.balance || '0'}</Text>
+              <Text style={[styles.profileStatLab, { color: mutedTextColor }]}>Wallet</Text>
             </TouchableOpacity>
-            <View style={styles.profileStatDiv} />
+            <View style={[styles.profileStatDiv, { backgroundColor: rowBorderColor }]} />
             <View style={styles.profileStatCol}>
-              <Text style={styles.profileStatVal}>♈ Aries</Text>
-              <Text style={styles.profileStatLab}>Sun Sign</Text>
+              <Text style={[styles.profileStatVal, { color: goldTextColor }]}>♈ Aries</Text>
+              <Text style={[styles.profileStatLab, { color: mutedTextColor }]}>Sun Sign</Text>
             </View>
-            <View style={styles.profileStatDiv} />
+            <View style={[styles.profileStatDiv, { backgroundColor: rowBorderColor }]} />
             <View style={styles.profileStatCol}>
-              <Text style={styles.profileStatVal}>Active</Text>
-              <Text style={styles.profileStatLab}>Status</Text>
+              <Text style={[styles.profileStatVal, { color: goldTextColor }]}>Active</Text>
+              <Text style={[styles.profileStatLab, { color: mutedTextColor }]}>Status</Text>
             </View>
           </View>
         </View>
@@ -1156,56 +1182,56 @@ export function ProfileScreen({ navigation }: any) {
       {/* Main Options Cards */}
       <View style={{ gap: 14, marginTop: 16 }}>
         {/* Account Group */}
-        <View style={styles.menuGroupCard}>
-          <Text style={styles.groupHeaderTitle}>MY ACCOUNT</Text>
+        <View style={[styles.menuGroupCard, { backgroundColor: cardBg, borderColor: cardBorderColor }]}>
+          <Text style={[styles.groupHeaderTitle, { color: goldTextColor }]}>MY ACCOUNT</Text>
           {items.slice(0, 4).map((item, i) => (
-            <TouchableOpacity key={item.label} onPress={() => navigation.navigate(item.route)} style={[styles.menuRowItem, i < 3 && styles.menuRowBorder]}>
-              <View style={styles.menuItemIconBg}>
-                <Ionicons name={item.icon as any} size={20} color="#D97706" />
+            <TouchableOpacity key={item.label} onPress={() => navigation.navigate(item.route)} style={[styles.menuRowItem, { borderBottomColor: rowBorderColor }, i < 3 && styles.menuRowBorder]}>
+              <View style={[styles.menuItemIconBg, { backgroundColor: iconBgColor }]}>
+                <Ionicons name={item.icon as any} size={20} color={goldTextColor} />
               </View>
-              <Text style={styles.menuRowLabel}>{item.label}</Text>
+              <Text style={[styles.menuRowLabel, { color: textSecondaryColor }]}>{item.label}</Text>
               <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Preferences & Security Group */}
-        <View style={styles.menuGroupCard}>
-          <Text style={styles.groupHeaderTitle}>PREFERENCES & SECURITY</Text>
+        <View style={[styles.menuGroupCard, { backgroundColor: cardBg, borderColor: cardBorderColor }]}>
+          <Text style={[styles.groupHeaderTitle, { color: goldTextColor }]}>PREFERENCES & SECURITY</Text>
 
           {/* Dark Mode Toggle Item */}
-          <View style={[styles.menuRowItem, styles.menuRowBorder]}>
-            <View style={styles.menuItemIconBg}>
-              <Ionicons name="moon-outline" size={20} color="#D97706" />
+          <View style={[styles.menuRowItem, styles.menuRowBorder, { borderBottomColor: rowBorderColor }]}>
+            <View style={[styles.menuItemIconBg, { backgroundColor: iconBgColor }]}>
+              <Ionicons name="moon-outline" size={20} color={goldTextColor} />
             </View>
-            <Text style={styles.menuRowLabel}>Dark Mode</Text>
+            <Text style={[styles.menuRowLabel, { color: textSecondaryColor }]}>Dark Mode</Text>
             <Toggle value={theme === 'dark'} onValueChange={toggleTheme} trackColor={{ false: '#D1D5DB', true: '#7F1D1D' }} />
           </View>
 
           {/* Change Password Item */}
-          <TouchableOpacity onPress={() => setPwOpen(true)} style={[styles.menuRowItem, styles.menuRowBorder]}>
-            <View style={styles.menuItemIconBg}>
-              <Ionicons name="key-outline" size={20} color="#D97706" />
+          <TouchableOpacity onPress={() => setPwOpen(true)} style={[styles.menuRowItem, styles.menuRowBorder, { borderBottomColor: rowBorderColor }]}>
+            <View style={[styles.menuItemIconBg, { backgroundColor: iconBgColor }]}>
+              <Ionicons name="key-outline" size={20} color={goldTextColor} />
             </View>
-            <Text style={styles.menuRowLabel}>Change Password</Text>
+            <Text style={[styles.menuRowLabel, { color: textSecondaryColor }]}>Change Password</Text>
             <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
           </TouchableOpacity>
 
           {items.slice(4).map((item, i) => (
-            <TouchableOpacity key={item.label} onPress={() => navigation.navigate(item.route)} style={[styles.menuRowItem, i < 1 && styles.menuRowBorder]}>
-              <View style={styles.menuItemIconBg}>
-                <Ionicons name={item.icon as any} size={20} color="#D97706" />
+            <TouchableOpacity key={item.label} onPress={() => navigation.navigate(item.route)} style={[styles.menuRowItem, { borderBottomColor: rowBorderColor }, i < 1 && styles.menuRowBorder]}>
+              <View style={[styles.menuItemIconBg, { backgroundColor: iconBgColor }]}>
+                <Ionicons name={item.icon as any} size={20} color={goldTextColor} />
               </View>
-              <Text style={styles.menuRowLabel}>{item.label}</Text>
+              <Text style={[styles.menuRowLabel, { color: textSecondaryColor }]}>{item.label}</Text>
               <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Danger Zone Group */}
-        <View style={styles.menuGroupCard}>
+        <View style={[styles.menuGroupCard, { backgroundColor: cardBg, borderColor: cardBorderColor }]}>
           <TouchableOpacity onPress={handleDeleteAccount} style={styles.menuRowItem}>
-            <View style={[styles.menuItemIconBg, { backgroundColor: '#FEE2E2' }]}>
+            <View style={[styles.menuItemIconBg, { backgroundColor: isDark ? 'rgba(220, 38, 38, 0.2)' : '#FEE2E2' }]}>
               <Ionicons name="trash-outline" size={20} color="#DC2626" />
             </View>
             <Text style={[styles.menuRowLabel, { color: '#DC2626' }]}>Delete Account</Text>
@@ -1215,9 +1241,9 @@ export function ProfileScreen({ navigation }: any) {
       </View>
 
       {/* Logout Button */}
-      <TouchableOpacity style={styles.premiumLogoutBtn} onPress={logout}>
-        <Ionicons name="log-out-outline" size={20} color="#DC2626" />
-        <Text style={{ color: '#DC2626', fontSize: 15, fontWeight: '700', marginLeft: 8 }}>Log Out</Text>
+      <TouchableOpacity style={[styles.premiumLogoutBtn, { backgroundColor: isDark ? 'rgba(220, 38, 38, 0.15)' : '#FEF2F2', borderColor: isDark ? 'rgba(220, 38, 38, 0.3)' : '#FECACA' }]} onPress={logout}>
+        <Ionicons name="log-out-outline" size={20} color={isDark ? '#F87171' : '#DC2626'} />
+        <Text style={{ color: isDark ? '#F87171' : '#DC2626', fontSize: 15, fontWeight: '700', marginLeft: 8 }}>Log Out</Text>
       </TouchableOpacity>
       </View>
 
@@ -1300,22 +1326,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFBEB',
     marginHorizontal: 16,
     marginTop: 8,
     marginBottom: 12,
     padding: 12,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: colors.cardBorder,
   },
   goodMorningBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#FEF3C7',
     borderWidth: 1,
-    borderColor: '#FCD34D',
+    borderColor: colors.cardBorder,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -1330,29 +1354,27 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   zodiacCircleActive: {
-    backgroundColor: '#7F1D1D',
-    borderColor: '#F59E0B',
+    backgroundColor: colors.primary,
+    borderColor: colors.accentGold,
   },
   zodiacCircleInactive: {
-    backgroundColor: '#FEF9C3',
-    borderColor: '#FDE047',
+    borderColor: colors.cardBorder,
   },
   horoscopeCard: {
-    backgroundColor: '#FFFFFF',
     marginHorizontal: 16,
     marginVertical: 8,
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#FEF08A',
-    shadowColor: '#7F1D1D',
+    borderColor: colors.cardBorder,
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
     elevation: 3,
   },
   readFullBtn: {
-    backgroundColor: '#EA580C',
+    backgroundColor: colors.secondary,
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 16,
@@ -1363,13 +1385,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFBEB',
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 8,
     marginVertical: 12,
     borderWidth: 1,
-    borderColor: '#FEF08A',
+    borderColor: colors.cardBorder,
   },
   luckyCol: {
     flex: 1,
@@ -1378,7 +1399,7 @@ const styles = StyleSheet.create({
   luckyDivider: {
     width: 1,
     height: 24,
-    backgroundColor: '#FDE68A',
+    backgroundColor: colors.divider,
   },
   subTabsRow: {
     flexDirection: 'row',
@@ -1386,7 +1407,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: colors.divider,
   },
   subTabItem: {
     flexDirection: 'row',
@@ -1398,7 +1419,7 @@ const styles = StyleSheet.create({
   subTabDivider: {
     width: 1,
     height: 16,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: colors.divider,
   },
   panchangContainer: {
     marginHorizontal: 16,
@@ -1406,18 +1427,17 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: colors.cardBorder,
   },
   panchangHeaderBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#F59E0B',
+    backgroundColor: colors.accentGold,
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
   panchangContent: {
-    backgroundColor: '#FFFBEB',
     padding: 12,
   },
   panchangItem: {
@@ -1438,47 +1458,44 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 4,
     borderWidth: 1,
-    borderColor: '#FEF3C7',
+    borderColor: colors.cardBorder,
   },
   gridActionText: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#374151',
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   specialBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#FEF3C7',
     marginHorizontal: 16,
     marginVertical: 12,
     padding: 12,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: colors.cardBorder,
   },
   bookNowBtn: {
-    backgroundColor: '#7F1D1D',
+    backgroundColor: colors.primary,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 16,
   },
   profileHeroCard: {
-    backgroundColor: '#FFFBEB',
     borderRadius: 24,
     padding: 20,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: colors.cardBorder,
     marginTop: 8,
   },
   avatarRing: {
     padding: 3,
     borderRadius: 44,
     borderWidth: 2.5,
-    borderColor: '#F59E0B',
-    backgroundColor: '#FFFFFF',
+    borderColor: colors.accentGold,
   },
   verifiedBadge: {
     position: 'absolute',
@@ -1496,37 +1513,35 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 22,
     fontWeight: '800',
-    color: '#7F1D1D',
+    color: colors.textPrimary,
     marginTop: 10,
   },
   emailPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#FEF3C7',
     paddingHorizontal: 12,
     paddingVertical: 5,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#FCD34D',
+    borderColor: colors.cardBorder,
     marginTop: 6,
   },
   emailPillText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#D97706',
+    color: colors.primaryLight,
   },
   profileStatsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
     width: '100%',
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     paddingVertical: 12,
     marginTop: 16,
     borderWidth: 1,
-    borderColor: '#FEF08A',
+    borderColor: colors.cardBorder,
   },
   profileStatCol: {
     flex: 1,
@@ -1535,30 +1550,29 @@ const styles = StyleSheet.create({
   profileStatVal: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#7F1D1D',
+    color: colors.textPrimary,
   },
   profileStatLab: {
     fontSize: 10,
     fontWeight: '500',
-    color: '#6B7280',
+    color: colors.textMuted,
     marginTop: 2,
   },
   profileStatDiv: {
     width: 1,
     height: 24,
-    backgroundColor: '#FDE68A',
+    backgroundColor: colors.divider,
   },
   menuGroupCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#FEF08A',
+    borderColor: colors.cardBorder,
   },
   groupHeaderTitle: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#D97706',
+    color: colors.primaryLight,
     letterSpacing: 0.8,
     marginBottom: 8,
     marginLeft: 4,
@@ -1570,13 +1584,12 @@ const styles = StyleSheet.create({
   },
   menuRowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: colors.divider,
   },
   menuItemIconBg: {
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: '#FEF3C7',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -1585,7 +1598,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     fontWeight: '600',
-    color: '#1F2937',
+    color: colors.textPrimary,
   },
   premiumLogoutBtn: {
     flexDirection: 'row',

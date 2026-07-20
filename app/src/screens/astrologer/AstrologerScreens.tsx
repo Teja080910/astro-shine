@@ -531,9 +531,9 @@ export function AstrologerProfileScreen({ navigation }: any) {
     <ScreenWrapper scroll>
       <View style={{ paddingBottom: 120 }}>
         {/* Hero Header Card */}
-        <View style={{ backgroundColor: '#FFFBEB', borderRadius: 24, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: '#FDE68A', marginTop: 8 }}>
+        <View style={{ backgroundColor: colors.surfaceLight, borderRadius: 24, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: colors.cardBorder, marginTop: 8 }}>
           <View style={{ position: 'relative' }}>
-            <View style={{ padding: 3, borderRadius: 44, borderWidth: 2.5, borderColor: '#F59E0B', backgroundColor: '#FFFFFF' }}>
+            <View style={{ padding: 3, borderRadius: 44, borderWidth: 2.5, borderColor: colors.accentGold, backgroundColor: colors.surface }}>
               <Avatar size={76} uri={profile?.avatar} />
             </View>
             <View style={{ position: 'absolute', bottom: 2, right: 2, backgroundColor: '#16A34A', width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#FFFFFF' }}>
@@ -541,28 +541,28 @@ export function AstrologerProfileScreen({ navigation }: any) {
             </View>
           </View>
 
-          <Text style={{ fontSize: 22, fontWeight: '800', color: '#7F1D1D', marginTop: 10 }}>{profile?.name || 'Astrologer Profile'}</Text>
+          <Text style={{ fontSize: 22, fontWeight: '800', color: colors.textPrimary, marginTop: 10 }}>{profile?.name || 'Astrologer Profile'}</Text>
           
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FEF3C7', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 16, borderWidth: 1, borderColor: '#FCD34D', marginTop: 6 }}>
-            <Ionicons name="ribbon" size={13} color="#D97706" />
-            <Text style={{ fontSize: 12, fontWeight: '600', color: '#D97706' }}>{profile?.specialization?.join(', ') || 'Vedic Astrologer'}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surface, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 16, borderWidth: 1, borderColor: colors.cardBorder, marginTop: 6 }}>
+            <Ionicons name="ribbon" size={13} color={colors.primaryLight} />
+            <Text style={{ fontSize: 12, fontWeight: '600', color: colors.primaryLight }}>{profile?.specialization?.join(', ') || 'Vedic Astrologer'}</Text>
           </View>
 
           {/* Quick Stats Bar */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', width: '100%', backgroundColor: '#FFFFFF', borderRadius: 16, paddingVertical: 12, marginTop: 16, borderWidth: 1, borderColor: '#FEF08A' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', width: '100%', backgroundColor: colors.surface, borderRadius: 16, paddingVertical: 12, marginTop: 16, borderWidth: 1, borderColor: colors.cardBorder }}>
             <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={{ fontSize: 14, fontWeight: '800', color: '#7F1D1D' }}>₹{profile?.totalEarnings || 0}</Text>
-              <Text style={{ fontSize: 10, fontWeight: '500', color: '#6B7280', marginTop: 2 }}>Earnings</Text>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: colors.textPrimary }}>₹{profile?.totalEarnings || 0}</Text>
+              <Text style={{ fontSize: 10, fontWeight: '500', color: colors.textMuted, marginTop: 2 }}>Earnings</Text>
             </View>
-            <View style={{ width: 1, height: 24, backgroundColor: '#FDE68A' }} />
+            <View style={{ width: 1, height: 24, backgroundColor: colors.divider }} />
             <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={{ fontSize: 14, fontWeight: '800', color: '#7F1D1D' }}>★ {profile?.rating || '4.9'}</Text>
-              <Text style={{ fontSize: 10, fontWeight: '500', color: '#6B7280', marginTop: 2 }}>Rating</Text>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: colors.textPrimary }}>★ {profile?.rating || '4.9'}</Text>
+              <Text style={{ fontSize: 10, fontWeight: '500', color: colors.textMuted, marginTop: 2 }}>Rating</Text>
             </View>
-            <View style={{ width: 1, height: 24, backgroundColor: '#FDE68A' }} />
+            <View style={{ width: 1, height: 24, backgroundColor: colors.divider }} />
             <View style={{ flex: 1, alignItems: 'center' }}>
-              <Text style={{ fontSize: 14, fontWeight: '800', color: '#7F1D1D' }}>{profile?.totalCalls || 0}+</Text>
-              <Text style={{ fontSize: 10, fontWeight: '500', color: '#6B7280', marginTop: 2 }}>Sessions</Text>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: colors.textPrimary }}>{profile?.totalCalls || 0}+</Text>
+              <Text style={{ fontSize: 10, fontWeight: '500', color: colors.textMuted, marginTop: 2 }}>Sessions</Text>
             </View>
           </View>
         </View>
@@ -570,50 +570,50 @@ export function AstrologerProfileScreen({ navigation }: any) {
         {/* Main Options Cards */}
         <View style={{ gap: 14, marginTop: 16 }}>
           {/* Services & Schedule Group */}
-          <View style={{ backgroundColor: '#FFFFFF', borderRadius: 20, padding: 14, borderWidth: 1, borderColor: '#FEF08A' }}>
-            <Text style={{ fontSize: 11, fontWeight: '800', color: '#D97706', letterSpacing: 0.8, marginBottom: 8, marginLeft: 4 }}>SERVICES & MANAGEMENT</Text>
+          <View style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 14, borderWidth: 1, borderColor: colors.cardBorder }}>
+            <Text style={{ fontSize: 11, fontWeight: '800', color: colors.primaryLight, letterSpacing: 0.8, marginBottom: 8, marginLeft: 4 }}>SERVICES & MANAGEMENT</Text>
             {items.slice(0, 5).map((item, i) => (
-              <TouchableOpacity key={item.label} onPress={() => navigation.navigate(item.route)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderBottomWidth: i < 4 ? 1 : 0, borderBottomColor: '#F3F4F6' }}>
-                <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                  <Ionicons name={item.icon as any} size={20} color="#D97706" />
+              <TouchableOpacity key={item.label} onPress={() => navigation.navigate(item.route)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderBottomWidth: i < 4 ? 1 : 0, borderBottomColor: colors.divider }}>
+                <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: colors.surfaceLight, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                  <Ionicons name={item.icon as any} size={20} color={colors.primaryLight} />
                 </View>
-                <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: '#1F2937' }}>{item.label}</Text>
+                <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: colors.textPrimary }}>{item.label}</Text>
                 <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
               </TouchableOpacity>
             ))}
           </View>
 
           {/* History & Earnings Group */}
-          <View style={{ backgroundColor: '#FFFFFF', borderRadius: 20, padding: 14, borderWidth: 1, borderColor: '#FEF08A' }}>
-            <Text style={{ fontSize: 11, fontWeight: '800', color: '#D97706', letterSpacing: 0.8, marginBottom: 8, marginLeft: 4 }}>EARNINGS & HISTORY</Text>
+          <View style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 14, borderWidth: 1, borderColor: colors.cardBorder }}>
+            <Text style={{ fontSize: 11, fontWeight: '800', color: colors.primaryLight, letterSpacing: 0.8, marginBottom: 8, marginLeft: 4 }}>EARNINGS & HISTORY</Text>
             {items.slice(5).map((item, i) => (
-              <TouchableOpacity key={item.label} onPress={() => navigation.navigate(item.route)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderBottomWidth: i < items.slice(5).length - 1 ? 1 : 0, borderBottomColor: '#F3F4F6' }}>
-                <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                  <Ionicons name={item.icon as any} size={20} color="#D97706" />
+              <TouchableOpacity key={item.label} onPress={() => navigation.navigate(item.route)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderBottomWidth: i < items.slice(5).length - 1 ? 1 : 0, borderBottomColor: colors.divider }}>
+                <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: colors.surfaceLight, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                  <Ionicons name={item.icon as any} size={20} color={colors.primaryLight} />
                 </View>
-                <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: '#1F2937' }}>{item.label}</Text>
+                <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: colors.textPrimary }}>{item.label}</Text>
                 <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
               </TouchableOpacity>
             ))}
           </View>
 
           {/* Account & Security Group */}
-          <View style={{ backgroundColor: '#FFFFFF', borderRadius: 20, padding: 14, borderWidth: 1, borderColor: '#FEF08A' }}>
-            <Text style={{ fontSize: 11, fontWeight: '800', color: '#D97706', letterSpacing: 0.8, marginBottom: 8, marginLeft: 4 }}>SECURITY & PREFERENCES</Text>
+          <View style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 14, borderWidth: 1, borderColor: colors.cardBorder }}>
+            <Text style={{ fontSize: 11, fontWeight: '800', color: colors.primaryLight, letterSpacing: 0.8, marginBottom: 8, marginLeft: 4 }}>SECURITY & PREFERENCES</Text>
             
-            <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
-              <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                <Ionicons name="moon-outline" size={20} color="#D97706" />
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: colors.divider }}>
+              <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: colors.surfaceLight, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                <Ionicons name="moon-outline" size={20} color={colors.primaryLight} />
               </View>
-              <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: '#1F2937' }}>Dark Mode</Text>
-              <Toggle value={theme === 'dark'} onValueChange={toggleTheme} trackColor={{ false: '#D1D5DB', true: '#7F1D1D' }} />
+              <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: colors.textPrimary }}>Dark Mode</Text>
+              <Toggle value={theme === 'dark'} onValueChange={toggleTheme} trackColor={{ false: '#D1D5DB', true: colors.primary }} />
             </View>
 
-            <TouchableOpacity onPress={() => setPwOpen(true)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
-              <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                <Ionicons name="key-outline" size={20} color="#D97706" />
+            <TouchableOpacity onPress={() => setPwOpen(true)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: colors.divider }}>
+              <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: colors.surfaceLight, alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                <Ionicons name="key-outline" size={20} color={colors.primaryLight} />
               </View>
-              <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: '#1F2937' }}>Change Password</Text>
+              <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: colors.textPrimary }}>Change Password</Text>
               <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
             </TouchableOpacity>
 
