@@ -130,15 +130,25 @@ export function UserHomeScreen({ navigation }: any) {
           </TouchableOpacity>
           
           <View style={{ alignItems: 'center' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: isDark ? '#D97706' : '#7F1D1D', alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: '#F59E0B', fontSize: 16, fontWeight: '800' }}>🕉️</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                backgroundColor: '#991B1B',
+                borderWidth: 2,
+                borderColor: '#F59E0B',
+                alignItems: 'center',
+                justifyContent: 'center',
+                elevation: 3,
+              }}>
+                <Text style={{ color: '#FBBF24', fontSize: 20, fontWeight: '900', lineHeight: 24, textAlign: 'center' }}>🕉️</Text>
               </View>
-              <Text style={{ fontSize: 22, fontWeight: '900', color: titleColor, letterSpacing: 0.5 }}>
+              <Text style={{ fontSize: 22, fontWeight: '900', color: isDark ? '#FBBF24' : '#7F1D1D', letterSpacing: 0.5 }}>
                 ASTROŚHINE
               </Text>
             </View>
-            <Text style={{ fontSize: 8.5, fontWeight: '800', color: titleColor, letterSpacing: 1, marginTop: 1 }}>
+            <Text style={{ fontSize: 8.5, fontWeight: '800', color: isDark ? '#FBBF24' : '#7F1D1D', letterSpacing: 1, marginTop: 1 }}>
               YOUR DESTINY, OUR GUIDANCE
             </Text>
           </View>
@@ -208,7 +218,7 @@ export function UserHomeScreen({ navigation }: any) {
               <TouchableOpacity key={z.sign} onPress={() => handleSignSelect(z.sign)} style={{ alignItems: 'center', width: 52 }}>
                 <View style={[
                   styles.zodiacCircle,
-                  active ? { backgroundColor: isDark ? '#D97706' : '#7F1D1D', borderColor: '#F59E0B' } : { backgroundColor: cardLightBg, borderColor: cardBorderColor }
+                  active ? { backgroundColor: isDark ? '#D97706' : '#7F1D1D', borderColor: '#F59E0B', borderRadius: 24, overflow: 'hidden' } : { backgroundColor: cardLightBg, borderColor: cardBorderColor, borderRadius: 24, overflow: 'hidden' }
                 ]}>
                   {z.sign === 'aries' ? (
                     <Image source={require('../../../assets/aries_ram.png')} style={{ width: 36, height: 36, borderRadius: 18 }} />
@@ -225,7 +235,7 @@ export function UserHomeScreen({ navigation }: any) {
         </ScrollView>
 
         {/* Zodiac Horoscope Detailed Card */}
-        <View style={[styles.horoscopeCard, { backgroundColor: cardBg, borderColor: cardBorderColor }]}>
+        <View style={[styles.horoscopeCard, { backgroundColor: cardBg, borderColor: cardBorderColor, borderRadius: 20, overflow: 'hidden' }]}>
           <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
             <Image source={require('../../../assets/aries_ram.png')} style={{ width: 76, height: 76, borderRadius: 38 }} />
             <View style={{ flex: 1 }}>
@@ -240,14 +250,14 @@ export function UserHomeScreen({ navigation }: any) {
               <Text style={{ fontSize: 12, color: bodyTextColor, lineHeight: 17, marginVertical: 6 }}>
                 {horoscope[0]?.prediction || 'Today brings new opportunities in your career. Stay open to unexpected changes. Your confidence will help you achieve important goals.'}
               </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Horoscope')} style={[styles.readFullBtn, { backgroundColor: isDark ? '#D97706' : '#7F1D1D' }]}>
+              <TouchableOpacity onPress={() => navigation.navigate('Horoscope')} style={[styles.readFullBtn, { backgroundColor: isDark ? '#D97706' : '#7F1D1D', borderRadius: 16, overflow: 'hidden' }]}>
                 <Text style={{ color: '#FFF', fontSize: 11, fontWeight: '700' }}>Read Full Horoscope</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Lucky Stats Row */}
-          <View style={[styles.luckyGrid, { backgroundColor: cardLightBg, borderColor: cardBorderColor }]}>
+          <View style={[styles.luckyGrid, { backgroundColor: cardLightBg, borderColor: cardBorderColor, borderRadius: 12, overflow: 'hidden' }]}>
             <View style={styles.luckyCol}>
               <Text style={{ fontSize: 10, color: mutedTextColor }}>Lucky Number</Text>
               <Text style={{ fontSize: 15, fontWeight: '800', color: titleColor, marginTop: 2 }}>{horoscope[0]?.luckyNumber || '7'}</Text>
@@ -302,7 +312,7 @@ export function UserHomeScreen({ navigation }: any) {
         </View>
 
         {/* Today's Panchang */}
-        <View style={[styles.panchangContainer, { borderColor: cardBorderColor }]}>
+        <View style={[styles.panchangContainer, { borderColor: cardBorderColor, borderRadius: 16, overflow: 'hidden' }]}>
           <View style={[styles.panchangHeaderBanner, { backgroundColor: isDark ? '#D97706' : '#7F1D1D' }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Ionicons name="calendar-sharp" size={16} color="#F59E0B" />
@@ -378,70 +388,70 @@ export function UserHomeScreen({ navigation }: any) {
           <Text style={{ fontSize: 16, fontWeight: '800', color: titleColor, marginBottom: 12 }}>Quick Actions</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' }}>
             <TouchableOpacity onPress={() => navigation.navigate('Kundli')} style={styles.gridActionItem}>
-              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7', borderColor: cardBorderColor }]}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7', borderColor: cardBorderColor, borderRadius: 16, overflow: 'hidden' }]}>
                 <Ionicons name="planet" size={22} color={goldTextColor} />
               </View>
               <Text style={[styles.gridActionText, { color: bodyTextColor }]}>Kundli</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => navigation.navigate('Matchmaking')} style={styles.gridActionItem}>
-              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(220, 38, 38, 0.15)' : '#FEE2E2', borderColor: isDark ? 'rgba(220, 38, 38, 0.3)' : '#FECACA' }]}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(220, 38, 38, 0.15)' : '#FEE2E2', borderColor: isDark ? 'rgba(220, 38, 38, 0.3)' : '#FECACA', borderRadius: 16, overflow: 'hidden' }]}>
                 <Ionicons name="heart" size={22} color="#DC2626" />
               </View>
               <Text style={[styles.gridActionText, { color: bodyTextColor }]}>Matchmaking</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => navigation.navigate('Panchang')} style={styles.gridActionItem}>
-              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(234, 88, 12, 0.15)' : '#FFEDD5', borderColor: isDark ? 'rgba(234, 88, 12, 0.3)' : '#FDBA74' }]}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(234, 88, 12, 0.15)' : '#FFEDD5', borderColor: isDark ? 'rgba(234, 88, 12, 0.3)' : '#FDBA74', borderRadius: 16, overflow: 'hidden' }]}>
                 <Ionicons name="calendar" size={22} color="#EA580C" />
               </View>
               <Text style={[styles.gridActionText, { color: bodyTextColor }]}>Panchang</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => navigation.navigate('MandirPooja')} style={styles.gridActionItem}>
-              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7', borderColor: cardBorderColor }]}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7', borderColor: cardBorderColor, borderRadius: 16, overflow: 'hidden' }]}>
                 <Ionicons name="flame" size={22} color={goldTextColor} />
               </View>
               <Text style={[styles.gridActionText, { color: bodyTextColor }]}>Pooja</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => navigation.navigate('Shop')} style={styles.gridActionItem}>
-              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(202, 138, 4, 0.15)' : '#FEF9C3', borderColor: isDark ? 'rgba(202, 138, 4, 0.3)' : '#FDE047' }]}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(202, 138, 4, 0.15)' : '#FEF9C3', borderColor: isDark ? 'rgba(202, 138, 4, 0.3)' : '#FDE047', borderRadius: 16, overflow: 'hidden' }]}>
                 <Ionicons name="bag-handle" size={22} color="#CA8A04" />
               </View>
               <Text style={[styles.gridActionText, { color: bodyTextColor }]}>Shop</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => navigation.navigate('Astrologers')} style={styles.gridActionItem}>
-              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(234, 88, 12, 0.15)' : '#FFEDD5', borderColor: isDark ? 'rgba(234, 88, 12, 0.3)' : '#FDBA74' }]}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(234, 88, 12, 0.15)' : '#FFEDD5', borderColor: isDark ? 'rgba(234, 88, 12, 0.3)' : '#FDBA74', borderRadius: 16, overflow: 'hidden' }]}>
                 <Ionicons name="people" size={22} color="#EA580C" />
               </View>
               <Text style={[styles.gridActionText, { color: bodyTextColor }]}>Live Astrologers</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => navigation.navigate('Astrologers')} style={styles.gridActionItem}>
-              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(220, 38, 38, 0.15)' : '#FEE2E2', borderColor: isDark ? 'rgba(220, 38, 38, 0.3)' : '#FECACA' }]}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(220, 38, 38, 0.15)' : '#FEE2E2', borderColor: isDark ? 'rgba(220, 38, 38, 0.3)' : '#FECACA', borderRadius: 16, overflow: 'hidden' }]}>
                 <Ionicons name="square" size={22} color="#DC2626" />
               </View>
               <Text style={[styles.gridActionText, { color: bodyTextColor }]}>Tarot</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => navigation.navigate('Astrologers')} style={styles.gridActionItem}>
-              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7', borderColor: cardBorderColor }]}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7', borderColor: cardBorderColor, borderRadius: 16, overflow: 'hidden' }]}>
                 <Ionicons name="keypad" size={22} color={goldTextColor} />
               </View>
               <Text style={[styles.gridActionText, { color: bodyTextColor }]}>Numerology</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => navigation.navigate('Blogs')} style={styles.gridActionItem}>
-              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(202, 138, 4, 0.15)' : '#FEF9C3', borderColor: isDark ? 'rgba(202, 138, 4, 0.3)' : '#FDE047' }]}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(202, 138, 4, 0.15)' : '#FEF9C3', borderColor: isDark ? 'rgba(202, 138, 4, 0.3)' : '#FDE047', borderRadius: 16, overflow: 'hidden' }]}>
                 <Ionicons name="document-text" size={22} color="#CA8A04" />
               </View>
               <Text style={[styles.gridActionText, { color: bodyTextColor }]}>Blogs</Text>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => navigation.navigate('Videos')} style={styles.gridActionItem}>
-              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(234, 88, 12, 0.15)' : '#FFEDD5', borderColor: isDark ? 'rgba(234, 88, 12, 0.3)' : '#FDBA74' }]}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(234, 88, 12, 0.15)' : '#FFEDD5', borderColor: isDark ? 'rgba(234, 88, 12, 0.3)' : '#FDBA74', borderRadius: 16, overflow: 'hidden' }]}>
                 <Ionicons name="play-circle" size={22} color="#EA580C" />
               </View>
               <Text style={[styles.gridActionText, { color: bodyTextColor }]}>Videos</Text>
@@ -450,13 +460,13 @@ export function UserHomeScreen({ navigation }: any) {
         </View>
 
         {/* Shravan Month Special Banner */}
-        <View style={[styles.specialBanner, { backgroundColor: cardLightBg, borderColor: cardBorderColor }]}>
+        <View style={[styles.specialBanner, { backgroundColor: cardLightBg, borderColor: cardBorderColor, borderRadius: 18, overflow: 'hidden' }]}>
           <Image source={require('../../../assets/pooja_kalash.png')} style={{ width: 84, height: 84 }} resizeMode="contain" />
           <View style={{ flex: 1, marginHorizontal: 8 }}>
             <Text style={{ fontSize: 15, fontWeight: '800', color: titleColor }}>Shravan Month Special</Text>
             <Text style={{ fontSize: 11, color: bodyTextColor, marginTop: 2 }}>Get special blessings and discounts on Pooja services</Text>
           </View>
-          <TouchableOpacity onPress={() => navigation.navigate('MandirPooja')} style={[styles.bookNowBtn, { backgroundColor: isDark ? '#D97706' : '#7F1D1D' }]}>
+          <TouchableOpacity onPress={() => navigation.navigate('MandirPooja')} style={[styles.bookNowBtn, { backgroundColor: isDark ? '#D97706' : '#7F1D1D', borderRadius: 16, overflow: 'hidden' }]}>
             <Text style={{ color: '#FFF', fontSize: 11, fontWeight: '700' }}>Book Now ›</Text>
           </TouchableOpacity>
         </View>
@@ -1451,13 +1461,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   gridActionIconBg: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.cardBorder,
   },
   gridActionText: {

@@ -38,14 +38,16 @@ export const colors = {
 };
 
 export const radii = {
-  button: 18,
+  sm: 8,
+  md: 14,
+  lg: 20,
+  xl: 28,
   card: 24,
+  button: 24,
   bottomSheet: 28,
-  input: 16,
-  avatar: 999,
-  modal: 20,
-  chip: 12,
-  tab: 14,
+  input: 20,
+  chip: 20,
+  full: 999,
 };
 
 export const spacing = {
