@@ -14,8 +14,6 @@ export const callLogs = pgTable('call_logs', {
   duration: integer('duration'),
   cost: decimal('cost', { precision: 10, scale: 2 }),
   ratePerMin: decimal('rate_per_min', { precision: 10, scale: 2 }),
-  agoraChannel: varchar('agora_channel', { length: 255 }),
-  agoraToken: text('agora_token'),
   recordingUrl: text('recording_url'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });

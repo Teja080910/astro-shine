@@ -1,63 +1,85 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, NativeModules } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors } from '../../shared';
 import { Ionicons } from '@expo/vector-icons';
 import { useCall } from '../../context/CallContext';
-import { useAgora } from '../../shared/useAgora';
-import { api } from '../../shared/api-client';
+import { useWebRTC } from '../../shared/useWebRTC';
 
-const isExpoGo = !NativeModules.AgoraRtcNg;
-
-let RtcSurfaceView: any;
-let VideoSourceType: any;
-
-if (!isExpoGo) {
-  try {
-    // @ts-ignore
-    const agora = require('react-native-agora');
-    RtcSurfaceView = agora.RtcSurfaceView;
-    VideoSourceType = agora.VideoSourceType;
-  } catch (e) {
-    console.error('Failed to import react-native-agora in ActiveCallScreen:', e);
-  }
-}
+const WEBRTC_EVENTS = ['webrtc:offer', 'webrtc:answer', 'webrtc:ice-candidate'];
 
 export function ActiveCallScreen() {
-  const { callData, callState, endCall } = useCall();
-  const { joinChannel, leaveChannel, toggleMute, toggleSpeaker, toggleCamera, switchCamera, isMuted, isSpeakerOn, isVideoEnabled, isCameraFront, remoteUid, isRemoteMuted, isRemoteVideoMuted } = useAgora();
+  const { callData, callState, endCall, socketRef } = useCall();
+  const {
+    createPeerConnection, startLocalStream, createOffer, createAnswer,
+    setRemoteDescription, addIceCandidate, toggleMute, toggleSpeaker,
+    toggleCamera, switchCamera, cleanup,
+    remoteStream, isMuted, isSpeakerOn, isVideoEnabled, isCameraFront,
+  } = useWebRTC();
   const [seconds, setSeconds] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const joinedRef = useRef(false);
-  const [walletBalance, setWalletBalance] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (callState === 'active') {
-      api.wallet.get().then(w => setWalletBalance(Number(w.balance))).catch(() => {});
-    }
-  }, [callState]);
 
   const otherName = callData?.callerName || 'Connected';
   const isVideo = callData?.type === 'video';
 
   useEffect(() => {
-    if (callState === 'active' && callData?.channel && callData?.token && !joinedRef.current) {
+    if (callState === 'active' && callData?.callId && !joinedRef.current) {
       joinedRef.current = true;
-      joinChannel(callData.channel, callData.token, callData.uid, callData.type);
+      startCall(callData.callId, callData.type);
     }
-  }, [callState, callData]);
+    return () => {
+      if (callState === 'idle') {
+        cleanup();
+        WEBRTC_EVENTS.forEach(e => socketRef.current?.off(e));
+      }
+    };
+  }, [callState, callData?.callId]);
+
+  const startCall = async (callId: string, type: 'audio' | 'video') => {
+    const socket = socketRef.current;
+    if (!socket) return;
+
+    // Clean up any old WebRTC listeners from previous calls
+    WEBRTC_EVENTS.forEach(e => socket.off(e));
+
+    const pc = createPeerConnection(
+      (candidate) => socket.emit('webrtc:ice-candidate', { callId, candidate }),
+      () => {},
+    );
+    if (!pc) return;
+
+    await startLocalStream(type);
+
+    socket.on('webrtc:offer', async (data: any) => {
+      if (data.callId !== callId) return;
+      await setRemoteDescription(data.sdp);
+      const answer = await createAnswer();
+      if (answer) socket.emit('webrtc:answer', { callId, sdp: answer });
+    });
+
+    socket.on('webrtc:answer', async (data: any) => {
+      if (data.callId !== callId) return;
+      await setRemoteDescription(data.sdp);
+    });
+
+    socket.on('webrtc:ice-candidate', async (data: any) => {
+      if (data.callId !== callId) return;
+      await addIceCandidate(data.candidate);
+    });
+
+    // If this device initiated the call (no callerId means we're the caller), send offer
+    const isCaller = !callData?.callerId;
+    if (isCaller) {
+      const offer = await createOffer();
+      if (offer) socket.emit('webrtc:offer', { callId, sdp: offer });
+    }
+  };
 
   useEffect(() => {
     if (callState === 'active') {
       timerRef.current = setInterval(() => setSeconds(s => s + 1), 1000);
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [callState]);
-
-  useEffect(() => {
-    if (callState === 'ended' || callState === 'idle') {
-      leaveChannel();
-      joinedRef.current = false;
-    }
   }, [callState]);
 
   const formatTime = (totalSec: number) => {
@@ -67,8 +89,7 @@ export function ActiveCallScreen() {
   };
 
   const handleEndCall = () => {
-    leaveChannel();
-    joinedRef.current = false;
+    cleanup();
     endCall();
   };
 
@@ -80,64 +101,20 @@ export function ActiveCallScreen() {
         {isVideo && (
           <View style={styles.videoContainer}>
             <View style={styles.remoteVideo}>
-              {remoteUid && !isRemoteVideoMuted ? (
-                <>
-                  {isExpoGo ? (
-                    <View style={[StyleSheet.absoluteFill, { backgroundColor: '#1C1C1E', justifyContent: 'center', alignItems: 'center' }]}>
-                      <Ionicons name="videocam" size={48} color={colors.primary} />
-                      <Text style={{ color: colors.white, marginTop: 8, fontSize: 12 }}>Remote View (Mock)</Text>
-                    </View>
-                  ) : (
-                    <RtcSurfaceView
-                      canvas={{
-                        uid: remoteUid,
-                        sourceType: VideoSourceType.VideoSourceRemote,
-                      }}
-                      style={StyleSheet.absoluteFill}
-                    />
-                  )}
-                  <View style={styles.remoteNameContainer}>
-                    <Text style={styles.remoteVideoName}>{otherName}</Text>
-                    {isRemoteMuted && (
-                      <Ionicons name="mic-off" size={16} color={colors.danger} style={{ marginLeft: 6 }} />
-                    )}
-                  </View>
-                </>
+              {remoteStream ? (
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: '#1C1C1E', justifyContent: 'center', alignItems: 'center' }]}>
+                  <Ionicons name="videocam" size={48} color={colors.primary} />
+                  <Text style={{ color: colors.white, marginTop: 8 }}>Remote Stream</Text>
+                </View>
               ) : (
                 <>
                   <Ionicons name="person-circle" size={80} color={colors.textMuted} />
                   <Text style={styles.remoteName}>{otherName}</Text>
-                  {isRemoteVideoMuted && (
-                    <Text style={{ color: colors.textMuted, fontSize: 14, marginTop: 8 }}>Camera turned off</Text>
-                  )}
-                  {remoteUid && isRemoteMuted && (
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-                      <Ionicons name="mic-off" size={16} color={colors.danger} />
-                      <Text style={{ color: colors.danger, marginLeft: 4, fontSize: 14 }}>Muted</Text>
-                    </View>
-                  )}
                 </>
               )}
             </View>
             <View style={[styles.localVideo, { opacity: isVideoEnabled ? 1 : 0.4 }]}>
-              {isVideoEnabled ? (
-                isExpoGo ? (
-                  <View style={[StyleSheet.absoluteFill, { backgroundColor: '#2C2C2E', justifyContent: 'center', alignItems: 'center' }]}>
-                    <Ionicons name="person" size={24} color={colors.white} />
-                    <Text style={{ color: colors.textMuted, fontSize: 8, marginTop: 4 }}>Local Mock</Text>
-                  </View>
-                ) : (
-                  <RtcSurfaceView
-                    canvas={{
-                      uid: 0,
-                      sourceType: VideoSourceType.VideoSourceCamera,
-                    }}
-                    style={StyleSheet.absoluteFill}
-                  />
-                )
-              ) : (
-                <Ionicons name="person" size={24} color={colors.white} />
-              )}
+              <Ionicons name="person" size={24} color={colors.white} />
             </View>
           </View>
         )}
@@ -149,20 +126,8 @@ export function ActiveCallScreen() {
             </View>
             <Text style={styles.name}>{otherName}</Text>
             <Text style={styles.status}>
-              {callState === 'active' 
-                ? (isRemoteMuted ? 'Muted' : formatTime(seconds)) 
-                : callState === 'ended' 
-                  ? 'Call Ended' 
-                  : 'Connecting...'}
+              {callState === 'active' ? formatTime(seconds) : callState === 'ended' ? 'Call Ended' : 'Connecting...'}
             </Text>
-            {walletBalance !== null && (
-              <View style={styles.balanceBadge}>
-                <Ionicons name="wallet-outline" size={14} color={colors.accentGold} />
-                <Text style={[styles.balanceText, walletBalance < 50 && { color: colors.danger }]}>
-                  ₹{walletBalance}
-                </Text>
-              </View>
-            )}
           </View>
         )}
 
@@ -189,7 +154,6 @@ export function ActiveCallScreen() {
                 </View>
                 <Text style={styles.controlLabel}>{isVideoEnabled ? 'Video On' : 'Video Off'}</Text>
               </TouchableOpacity>
-
               <TouchableOpacity style={styles.controlButton} onPress={switchCamera}>
                 <View style={styles.controlIcon}>
                   <Ionicons name="camera-reverse" size={24} color={colors.white} />
@@ -218,23 +182,6 @@ const styles = StyleSheet.create({
   videoContainer: { flex: 1, position: 'relative' },
   remoteVideo: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a1a1a' },
   remoteName: { color: colors.white, fontSize: 18, marginTop: 12 },
-  remoteNameContainer: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    zIndex: 10,
-  },
-  remoteVideoName: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: '600',
-  },
   localVideo: { position: 'absolute', top: 50, right: 16, width: 100, height: 140, borderRadius: 12, backgroundColor: colors.surfaceLight, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
   controls: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 20, paddingVertical: 40, paddingBottom: 60, flexWrap: 'wrap' },
   controlButton: { alignItems: 'center' },
@@ -242,9 +189,4 @@ const styles = StyleSheet.create({
   controlIconActive: { backgroundColor: colors.primary },
   controlLabel: { color: colors.white, fontSize: 12, fontWeight: '500' },
   endCallButton: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#EF4444', justifyContent: 'center', alignItems: 'center' },
-  balanceBadge: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, marginTop: 8,
-  },
-  balanceText: { color: colors.accentGold, fontSize: 13, fontWeight: '600', marginLeft: 4 },
 });

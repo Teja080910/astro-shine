@@ -13,14 +13,23 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.astroshine.mobile"
+      "bundleIdentifier": "com.astroshine.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Camera is used for video calls with astrologers",
+        "NSMicrophoneUsageDescription": "Microphone is used for audio/video calls with astrologers"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#09090B"
       },
       "package": "com.astroshine.mobile",
-      "softwareKeyboardLayoutMode": "resize"
+      "softwareKeyboardLayoutMode": "resize",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "plugins": [],
     "extra": {
