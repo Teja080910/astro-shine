@@ -260,6 +260,31 @@ export interface Video {
   isActive: boolean; createdAt: string; updatedAt: string;
 }
 
+// ============ Muhurat ============
+export interface MuhuratCategory {
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MuhuratItem {
+  id: string;
+  categoryId: string;
+  categoryName?: string;
+  name: string;
+  date: string;
+  time: string;
+  description?: string;
+  createdBy?: string;
+  createdByName?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ============ API Response ============
 export interface ApiError { statusCode: number; message: string; timestamp: string; path: string; }
 export interface PaginatedResponse<T> { data: T[]; total: number; page: number; limit: number; }

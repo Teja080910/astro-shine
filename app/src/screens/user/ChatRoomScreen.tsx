@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, Keyboard } from 'react-native';
-import { ScreenWrapper, colors, radii, typography } from '../../shared';
+import { View, Text, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, Keyboard, Alert } from 'react-native';
+import { ScreenWrapper, colors, radii, typography, GradientButton, ConfirmDialog } from '../../shared';
 import { ChatBubble } from '../../shared/components/ChatBubble';
 import { TypingIndicator } from '../../shared/components/TypingIndicator';
 import { Avatar } from '../../shared/components/Avatar';
@@ -8,6 +8,7 @@ import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { api } from '../../shared/api-client';
 
 function formatDateHeader(dateStr: string): string {
   const d = new Date(dateStr);
@@ -39,9 +40,10 @@ function isConsecutive(prev: any, curr: any): boolean {
 
 export function ChatRoomScreen({ route, navigation }: any) {
   const { conversationId, participantId, participantRole, participantName } = route.params;
-  const { messages, loadMessages, loadMoreMessages, sendMessage, startTyping, stopTyping, markAsRead, typingUsers, hasMore, loading, onlineUsers, connected, joinRoom, setActiveConversation, astrologerStatuses } = useChat();
-  const { user, astrologer } = useAuth();
-  const currentUserId = user?.id || astrologer?.id;
+  const { messages, loadMessages, loadMoreMessages, sendMessage, startTyping, stopTyping, markAsRead, typingUsers, hasMore, loading, onlineUsers, connected, joinRoom, setActiveConversation, astrologerStatuses, chatBlockedMessage, clearChatBlocked } = useChat();
+  const { user, astrologer: authAstrologer } = useAuth();
+  const currentUserId = user?.id || authAstrologer?.id;
+  const isUser = !!user?.id;
   const [input, setInput] = useState('');
   const flatListRef = useRef<FlatList>(null);
   const typing = typingUsers[conversationId];
@@ -54,6 +56,29 @@ export function ChatRoomScreen({ route, navigation }: any) {
   const insets = useSafeAreaInsets();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [chatPrice, setChatPrice] = useState(5);
+  const [walletBalance, setWalletBalance] = useState<number | null>(null);
+  const [walletLoading, setWalletLoading] = useState(true);
+
+  useEffect(() => {
+    if (isUser && participantId) {
+      api.astrologers.get(participantId).then(a => {
+        setChatPrice(parseFloat(a.chatPricePerMin || a.pricePerMin || '5'));
+      }).catch(() => {});
+      api.wallet.get().then(w => {
+        setWalletBalance(Number(w.balance));
+        setWalletLoading(false);
+      }).catch(() => setWalletLoading(false));
+    } else {
+      setWalletLoading(false);
+    }
+  }, [isUser, participantId]);
+
+  const needsFunds = isUser && !walletLoading && walletBalance !== null && walletBalance < chatPrice;
+
+  const handleAddFunds = () => {
+    navigation.navigate('Main', { screen: 'Wallet' });
+  };
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -76,7 +101,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
 
   useEffect(() => {
     if (messages.length > prevMsgCount.current && !userScrolledUp.current) {
-      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 50);
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
     }
     prevMsgCount.current = messages.length;
   }, [messages.length]);
@@ -106,11 +131,14 @@ export function ChatRoomScreen({ route, navigation }: any) {
             ) : (
               <Text style={[headerStyles.status, { color: colors.textMuted }]}>{isOnline ? 'Online' : 'Offline'}</Text>
             )}
+            {isUser && (
+              <Text style={[headerStyles.price, { color: colors.accentGold }]}>₹{chatPrice}/min</Text>
+            )}
           </View>
         </TouchableOpacity>
       ),
     });
-  }, [navigation, isOnline, typing, participantId, currentUserId, participantName, participantRole]);
+  }, [navigation, isOnline, typing, participantId, currentUserId, participantName, participantRole, chatPrice, isUser]);
 
   useEffect(() => {
     loadMessages(conversationId);
@@ -139,7 +167,6 @@ export function ChatRoomScreen({ route, navigation }: any) {
     sendMessage(conversationId, input.trim());
     setInput('');
     stopTyping(conversationId);
-    Keyboard.dismiss();
   }, [input, conversationId]);
 
   const handleChangeText = useCallback((text: string) => {
@@ -205,39 +232,66 @@ export function ChatRoomScreen({ route, navigation }: any) {
             }, 100);
           }}
         />
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-        >
-          <View style={[
-            styles.inputBar, 
-            { 
-              borderTopColor: colors.divider, 
-              backgroundColor: colors.background,
-              paddingBottom: keyboardVisible 
-                ? (Platform.OS === 'android' ? keyboardHeight + insets.bottom + 12 : 10) 
-                : Math.max(insets.bottom, 20)
-            }
-          ]}>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.surfaceLight, color: colors.textPrimary }]}
-              placeholder="Type a message..."
-              placeholderTextColor={colors.textMuted}
-              value={input}
-              onChangeText={handleChangeText}
-              multiline
-              maxLength={1000}
-            />
-            <TouchableOpacity
-              style={[styles.sendButton, !input.trim() && styles.sendButtonDisabled]}
-              onPress={handleSend}
-              disabled={!input.trim()}
-            >
-              <Ionicons name="send" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
+        {isUser && !needsFunds && (
+          <View style={styles.chargeIndicator}>
+            <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
+            <Text style={styles.chargeText}>₹{chatPrice}/min — charged per minute</Text>
           </View>
-        </KeyboardAvoidingView>
+        )}
+        {isUser && needsFunds ? (
+          <View style={[styles.inputBar, { flexDirection: 'column', alignItems: 'center', gap: 8, paddingVertical: 16, borderTopColor: colors.divider, borderTopWidth: StyleSheet.hairlineWidth }]}>
+            <Ionicons name="wallet-outline" size={24} color={colors.danger} />
+            <Text style={[typography.body, { color: colors.danger, textAlign: 'center' }]}>
+              Insufficient wallet balance (₹{walletBalance !== null ? walletBalance : 0}) to chat at ₹{chatPrice}/min
+            </Text>
+            <GradientButton title="Add Funds" onPress={handleAddFunds} />
+          </View>
+        ) : (
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+          >
+            <View style={[
+              styles.inputBar, 
+              { 
+                borderTopColor: colors.divider, 
+                backgroundColor: colors.background,
+                paddingBottom: keyboardVisible 
+                  ? (Platform.OS === 'android' ? keyboardHeight + insets.bottom + 12 : 10) 
+                  : Math.max(insets.bottom, 20)
+              }
+            ]}>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.surfaceLight, color: colors.textPrimary }]}
+                placeholder="Type a message..."
+                placeholderTextColor={colors.textMuted}
+                value={input}
+                onChangeText={handleChangeText}
+                multiline
+                maxLength={1000}
+              />
+              <TouchableOpacity
+                style={[styles.sendButton, !input.trim() && styles.sendButtonDisabled]}
+                onPress={handleSend}
+                disabled={!input.trim()}
+              >
+                <Ionicons name="send" size={20} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+          </KeyboardAvoidingView>
+        )}
       </View>
+      <ConfirmDialog
+        visible={!!chatBlockedMessage}
+        title="Chat Blocked"
+        subtitle={chatBlockedMessage || ''}
+        icon={<Ionicons name="wallet-outline" size={48} color={colors.danger} />}
+        actions={[
+          { label: 'Add Funds', onPress: () => { clearChatBlocked(); handleAddFunds(); }, variant: 'primary' },
+          { label: 'Close', onPress: () => clearChatBlocked(), variant: 'secondary' },
+        ]}
+        onClose={() => clearChatBlocked()}
+      />
     </ScreenWrapper>
   );
 }
@@ -248,6 +302,7 @@ const headerStyles = StyleSheet.create({
   name: { fontSize: 16, fontWeight: '600' },
   status: { fontSize: 12 },
   typing: { fontSize: 12, fontStyle: 'italic' },
+  price: { fontSize: 11, fontWeight: '600', marginTop: 2 },
 });
 
 const styles = StyleSheet.create({
@@ -286,4 +341,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sendButtonDisabled: { opacity: 0.5 },
+  chargeIndicator: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    paddingVertical: 6, backgroundColor: colors.surfaceLight, gap: 4,
+  },
+  chargeText: { fontSize: 12, color: colors.textMuted },
 });

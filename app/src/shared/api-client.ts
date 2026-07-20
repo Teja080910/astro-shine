@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import type { AuthResponse, LoginRequest, RegisterRequest, User, Astrologer, Admin, KundliRecord, MatchmakingRecord, HoroscopeRecord, PanchangRecord, Wallet, Transaction, WithdrawalRequest, Commission, CommissionLog, CallLog, ChatMessage, Gift, GiftTransaction, Donation, ShopProduct, Order, OrderItem, Blog, NewsItem, Review, Report, Notification, AppSetting, ApiKey, DynamicLink, WebsiteContent, LiveSession, MandirPooja, PoojaBooking, SupportTicket, TicketReply, AppRelease, Video, Conversation, ConversationMessage, PaginatedMessages } from '../shared/types';
+import type { AuthResponse, LoginRequest, RegisterRequest, User, Astrologer, Admin, KundliRecord, MatchmakingRecord, HoroscopeRecord, PanchangRecord, Wallet, Transaction, WithdrawalRequest, Commission, CommissionLog, CallLog, ChatMessage, Gift, GiftTransaction, Donation, ShopProduct, Order, OrderItem, Blog, NewsItem, Review, Report, Notification, AppSetting, ApiKey, DynamicLink, WebsiteContent, LiveSession, MandirPooja, PoojaBooking, SupportTicket, TicketReply, AppRelease, Video, Conversation, ConversationMessage, PaginatedMessages, PaymentOrderRequest, PaymentOrderResponse, PaymentVerifyRequest, PaymentVerifyResponse, PaymentStatusResponse, PaymentRefundRequest, PaymentRefundResponse, MuhuratCategory, MuhuratItem } from '../shared/types';
 import { config } from '../config';
 
 const BASE_URL = config.apiBaseUrl;
@@ -22,6 +22,14 @@ class ApiClient {
   private async post<T>(path: string, data?: any): Promise<T> { const r = await this.client.post(path, data); return r.data; }
   private async put<T>(path: string, data?: any): Promise<T> { const r = await this.client.put(path, data); return r.data; }
   private async del(path: string): Promise<void> { await this.client.delete(path); }
+
+  // Payments
+  payments = {
+    createOrder: (d: PaymentOrderRequest) => this.post<PaymentOrderResponse>('/payments/create-order', d),
+    verify: (d: PaymentVerifyRequest) => this.post<PaymentVerifyResponse>('/payments/verify', d),
+    getStatus: (id: string) => this.get<PaymentStatusResponse>(`/payments/${id}/status`),
+    refund: (id: string, d?: PaymentRefundRequest) => this.post<PaymentRefundResponse>(`/payments/${id}/refund`, d),
+  };
 
   // Auth
   auth = {
@@ -51,6 +59,9 @@ class ApiClient {
     verify: (id: string, status: string, note?: string) => this.post<Astrologer>(`/astrologers/${id}/verify`, { status, note }),
     updateStatus: (id: string, status: string) => this.put<Astrologer>(`/astrologers/${id}/online-status`, { status }),
     delete: (id: string) => this.del(`/astrologers/${id}`),
+    feedback: (id: string, data: { userId: string; ratings: number; comments?: string }) =>
+      this.post<any>(`/astrologers/${id}/feedback`, data),
+    getFeedback: (id: string) => this.get<any[]>(`/astrologers/${id}/feedback`),
   };
 
   // Admins
@@ -115,6 +126,7 @@ class ApiClient {
   // Commissions
   commissions = {
     list: () => this.get<Commission[]>('/commissions'),
+    findByAstrologer: (astrologerId: string) => this.get<Commission>(`/commissions/by-astrologer/${astrologerId}`),
     create: (d: any) => this.post<Commission>('/commissions', d),
     update: (id: string, d: any) => this.put<Commission>(`/commissions/${id}`, d),
     logs: (astrologerId?: string) => this.get<CommissionLog[]>('/commissions/logs', { astrologerId }),
@@ -309,6 +321,27 @@ class ApiClient {
       this.post<ConversationMessage>(`/conversations/${id}/messages`, { content, type }),
     markAsRead: (id: string) => this.put<{ unreadCount: number }>(`/conversations/${id}/read`),
     delete: (id: string) => this.del(`/conversations/${id}`),
+  };
+
+  // Muhurat Categories
+  muhuratCategories = {
+    list: () => this.get<MuhuratCategory[]>('/muhurat-categories'),
+    listAdmin: () => this.get<MuhuratCategory[]>('/muhurat-categories/admin'),
+    get: (id: string) => this.get<MuhuratCategory>(`/muhurat-categories/${id}`),
+    create: (d: any) => this.post<MuhuratCategory>('/muhurat-categories', d),
+    update: (id: string, d: any) => this.put<MuhuratCategory>(`/muhurat-categories/${id}`, d),
+  };
+
+  // Muhurat Entries
+  muhurat = {
+    list: (categoryId?: string, startDate?: string, endDate?: string) =>
+      this.get<MuhuratItem[]>('/muhurat', { categoryId, startDate, endDate }),
+    listAdmin: () => this.get<MuhuratItem[]>('/muhurat/admin'),
+    listMy: () => this.get<MuhuratItem[]>('/muhurat/my'),
+    get: (id: string) => this.get<MuhuratItem>(`/muhurat/${id}`),
+    create: (d: any) => this.post<MuhuratItem>('/muhurat', d),
+    update: (id: string, d: any) => this.put<MuhuratItem>(`/muhurat/${id}`, d),
+    delete: (id: string) => this.del(`/muhurat/${id}`),
   };
 }
 

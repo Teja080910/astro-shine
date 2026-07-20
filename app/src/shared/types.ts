@@ -42,6 +42,8 @@ export interface Astrologer {
   bio?: string; experience: number; specialization: string[];
   languages: string[]; skills: string[];
   pricePerMin: string; rating: string; totalReviews: number;
+  chatPricePerMin: string; audioCallPricePerMin: string; videoCallPricePerMin: string;
+  totalChats: number; totalAudioCalls: number; totalVideoCalls: number;
   totalCalls: number; totalEarnings: string;
   verificationStatus: VerificationStatus;
   verificationDoc?: string[]; verificationNote?: string;
@@ -262,6 +264,52 @@ export interface Video {
   isActive: boolean; createdAt: string; updatedAt: string;
 }
 
+// ============ Payments ============
+export interface PaymentOrderRequest {
+  amount: number;
+  purpose: 'wallet_recharge' | 'donation' | 'order_payment' | 'pooja_booking';
+  purposeId?: string;
+  metadata?: Record<string, any>;
+}
+export interface PaymentOrderResponse {
+  id: string;
+  razorpayOrderId: string;
+  amount: number;
+  currency: string;
+  key: string;
+  purpose: string;
+  status: string;
+}
+export interface PaymentVerifyRequest {
+  razorpayPaymentId: string;
+  razorpayOrderId: string;
+  razorpaySignature: string;
+}
+export interface PaymentVerifyResponse {
+  success: boolean;
+  transaction?: Transaction;
+  wallet?: Wallet;
+  status?: string;
+}
+export interface PaymentStatusResponse {
+  id: string;
+  razorpayOrderId: string;
+  razorpayPaymentId?: string;
+  amount: number;
+  purpose: string;
+  status: string;
+  transaction?: Transaction;
+}
+export interface PaymentRefundRequest {
+  amount?: number;
+  reason?: string;
+}
+export interface PaymentRefundResponse {
+  refundId: string;
+  status: string;
+  amount: number;
+}
+
 // ============ API Response ============
 export interface ApiError { statusCode: number; message: string; timestamp: string; path: string; }
 export interface PaginatedResponse<T> { data: T[]; total: number; page: number; limit: number; }
@@ -301,4 +349,29 @@ export interface PaginatedMessages {
   data: ConversationMessage[];
   nextCursor: string | null;
   hasMore: boolean;
+}
+
+// ============ Muhurat ============
+export interface MuhuratCategory {
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MuhuratItem {
+  id: string;
+  categoryId: string;
+  categoryName?: string;
+  name: string;
+  date: string;
+  time: string;
+  description?: string;
+  createdBy?: string;
+  createdByName?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }

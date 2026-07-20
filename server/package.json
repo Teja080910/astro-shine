@@ -19,10 +19,12 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "drizzle-kit migrate || true",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "seed": "ts-node -r tsconfig-paths/register src/seed.ts"
+    "seed": "ts-node -r tsconfig-paths/register src/seed.ts",
+    "seed:muhurat": "ts-node -r tsconfig-paths/register src/seed-muhurat.ts",
+    "seed:muhurat:new": "ts-node -r tsconfig-paths/register src/seed-muhurat-new.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -30,6 +32,7 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.1.28",
     "@nestjs/platform-socket.io": "^11.1.28",
+    "@nestjs/schedule": "^6.1.3",
     "@types/multer": "^2.2.0",
     "agora-access-token": "^2.0.4",
     "axios": "^1.18.1",
@@ -40,6 +43,7 @@
     "drizzle-orm": "^0.45.2",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.22.0",
+    "razorpay": "^2.9.6",
     "reflect-metadata": "^0.2.2",
     "resend": "^6.17.2",
     "rxjs": "^7.8.1",

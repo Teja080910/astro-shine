@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Param, Body, Query } from '@nestjs/common';
 import { AdminsService } from './admins.service';
 
 function stripPassword(u: any) { if (!u) return u; const { password, ...r } = u; return r; }
@@ -14,6 +14,20 @@ export class AdminsController {
   async getDashboardStats() {
     return this.service.getDashboardStats();
   }
+
+  @Get('revenue-chart')
+  async getRevenueChart(@Query('period') period: 'daily' | 'weekly' | 'monthly' = 'daily') {
+    return this.service.getRevenueChart(period);
+  }
+
+  @Get('revenue/transactions')
+  async getRevenueTransactions(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) { return this.service.getRevenueTransactions(page || 1, limit || 20); }
+
+  @Get('revenue/summary')
+  async getRevenueSummary() { return this.service.getRevenueSummary(); }
 
   @Get(':id')
   async findOne(@Param('id') id: string) { return stripPassword(await this.service.findById(id)); }

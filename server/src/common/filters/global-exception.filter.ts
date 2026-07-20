@@ -29,6 +29,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           : (responseBody as any).message || message;
     } else if (exception instanceof Error) {
       this.logger.error(exception.message, exception.stack);
+      if ((exception as any).cause) {
+        this.logger.error(`Caused by: ${(exception as any).cause}`, (exception as any).cause?.stack);
+      }
     }
 
     response.status(status).json({

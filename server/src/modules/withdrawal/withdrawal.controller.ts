@@ -11,6 +11,11 @@ export class WithdrawalController {
   @Post()
   async create(@Body() body: any) { return this.service.create(body); }
 
+  @Post('admin')
+  async adminWithdrawal(@Body() body: { adminId: string; amount: number }) {
+    return this.service.createAdminWithdrawal(body.adminId, body.amount);
+  }
+
   @Put(':id/approve')
   async approve(@Param('id') id: string, @Body() body: { adminId: string }) { return this.service.approve(id, body.adminId); }
 

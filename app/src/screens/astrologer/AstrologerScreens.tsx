@@ -117,7 +117,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
               <GlassCard key={t.id} style={{ marginTop: 6, padding: 12 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <View style={{ flex: 1 }}>
-                    <Text style={[typography.cardTitle, { fontSize: 14 }]}>{t.category?.replace(/_/g, ' ')}</Text>
+                    <Text style={[typography.cardTitle, { fontSize: 14 }]}>{t.category?.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}</Text>
                     <Text style={typography.caption}>{new Date(t.createdAt).toLocaleDateString()}</Text>
                   </View>
                   <Text style={{ fontWeight: '700', color: t.type === 'credit' ? colors.success : colors.danger }}>
@@ -212,7 +212,7 @@ export function AstrologerWalletScreen({ navigation }: any) {
             <GlassCard key={t.id} style={{ marginTop: 6, padding: 12 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={[typography.cardTitle, { fontSize: 14 }]}>{t.category?.replace(/_/g, ' ')}</Text>
+                  <Text style={[typography.cardTitle, { fontSize: 14 }]}>{t.category?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</Text>
                   <Text style={typography.caption}>{new Date(t.createdAt).toLocaleDateString()}</Text>
                 </View>
                 <Text style={{ fontWeight: '700', color: t.type === 'credit' ? colors.success : colors.danger }}>
@@ -236,6 +236,8 @@ export function AstrologerWithdrawalScreen() {
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [errorVisible, setErrorVisible] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const loadData = useCallback(async () => {
     try { const r = await api.withdrawals.list(); setRequests(r); } catch { }
@@ -253,7 +255,10 @@ export function AstrologerWithdrawalScreen() {
       setShowForm(false);
       setAmount(''); setBankAc(''); setIfsc('');
       await loadData();
-    } catch (e) { Alert.alert('Error', 'Failed to submit withdrawal request'); }
+    } catch (e: any) {
+      setErrorMsg(e?.response?.data?.message || e?.message || 'Failed to submit withdrawal request');
+      setErrorVisible(true);
+    }
     finally { setLoading(false); }
   };
 
@@ -313,6 +318,14 @@ export function AstrologerWithdrawalScreen() {
           ))
         )}
       </ScrollView>
+      <ConfirmDialog
+        visible={errorVisible}
+        title="Withdrawal Error"
+        subtitle={errorMsg}
+        icon={<Ionicons name="alert-circle" size={48} color={colors.danger} />}
+        actions={[{ label: 'OK', onPress: () => setErrorVisible(false), variant: 'primary' }]}
+        onClose={() => setErrorVisible(false)}
+      />
     </ScreenWrapper>
   );
 }
@@ -672,3 +685,5 @@ const styles = StyleSheet.create({
   dropdownItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
   input: { backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, color: colors.textPrimary, fontSize: 15 },
 });
+
+export { AstrologerMuhuratScreen } from './AstrologerMuhuratScreen';

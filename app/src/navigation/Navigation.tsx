@@ -7,7 +7,7 @@ import { TouchableOpacity } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { FloatingBottomBar, colors } from '../shared';
 
-import { AstrologerConsultationScreen, AstrologerHomeScreen, AstrologerNotificationsScreen, AstrologerProfileScreen, AstrologerReviewsScreen, AstrologerWalletScreen, AstrologerWithdrawalScreen } from '../screens/astrologer/AstrologerScreens';
+import { AstrologerConsultationScreen, AstrologerHomeScreen, AstrologerNotificationsScreen, AstrologerProfileScreen, AstrologerReviewsScreen, AstrologerWalletScreen, AstrologerWithdrawalScreen, AstrologerMuhuratScreen } from '../screens/astrologer/AstrologerScreens';
 import { LoginScreen, OtpLoginScreen, RegisterScreen } from '../screens/auth/AuthScreens';
 import { OnboardingScreen } from '../screens/auth/OnboardingScreen';
 import {
@@ -29,9 +29,12 @@ import {
   TermsConditionsScreen,
   VideosScreen,
 } from '../screens/shared/SharedScreens';
+import { PaymentScreen } from '../screens/shared/PaymentScreen';
+import { PaymentSuccessScreen } from '../screens/shared/PaymentSuccessScreen';
+import { PaymentFailureScreen } from '../screens/shared/PaymentFailureScreen';
 import { ChatListScreen } from '../screens/user/ChatListScreen';
 import { ChatRoomScreen } from '../screens/user/ChatRoomScreen';
-import { AstrologerDetailScreen, AstrologerListScreen, KundliScreen, MatchmakingScreen, ProfileScreen, ShopScreen, UserHomeScreen, WalletScreen } from '../screens/user/UserScreens';
+import { AstrologerDetailScreen, AstrologerListScreen, KundliScreen, MatchmakingScreen, ProfileScreen, ShopScreen, UserHomeScreen, WalletScreen, MuhuratScreen } from '../screens/user/UserScreens';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -57,9 +60,10 @@ function UserTabs() {
   const { theme } = useAuth();
   const tabs = [
     { key: 'Home', icon: 'home-outline', label: 'Home' },
-    { key: 'Horoscope', icon: 'compass-outline', label: 'Horoscope' },
-    { key: 'Astrologers', icon: 'call-outline', label: 'Consult' },
-    { key: 'Kundli', icon: 'planet-outline', label: 'Kundli' },
+    { key: 'Astrologers', icon: 'people-outline', label: 'Astrologers' },
+    { key: 'Muhurat', icon: 'time-outline', label: 'Muhurat' },
+    { key: 'Wallet', icon: 'wallet-outline', label: 'Wallet' },
+    { key: 'Chat', icon: 'chatbubbles-outline', label: 'Chat' },
     { key: 'Profile', icon: 'person-outline', label: 'Profile' },
   ];
   return (
@@ -69,7 +73,9 @@ function UserTabs() {
       <Tab.Screen name="Home" component={UserHomeScreen} />
       <Tab.Screen name="Horoscope" component={PanchangScreen} />
       <Tab.Screen name="Astrologers" component={AstrologerListScreen} />
-      <Tab.Screen name="Kundli" component={KundliScreen} />
+      <Tab.Screen name="Muhurat" component={MuhuratScreen} />
+      <Tab.Screen name="Wallet" component={WalletScreen} />
+      <Tab.Screen name="Chat" component={ChatListScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
@@ -80,6 +86,7 @@ function AstrologerTabs() {
   const tabs = [
     { key: 'Home', icon: 'home-outline', label: 'Home' },
     { key: 'Requests', icon: 'people-outline', label: 'Requests' },
+    { key: 'Muhurat', icon: 'time-outline', label: 'Muhurat' },
     { key: 'Wallet', icon: 'wallet-outline', label: 'Wallet' },
     { key: 'Chat', icon: 'chatbubbles-outline', label: 'Chat' },
     { key: 'Profile', icon: 'person-outline', label: 'Profile' },
@@ -90,6 +97,7 @@ function AstrologerTabs() {
     >
       <Tab.Screen name="Home" component={AstrologerHomeScreen} />
       <Tab.Screen name="Requests" component={AstrologerRequestsScreen} />
+      <Tab.Screen name="Muhurat" component={AstrologerMuhuratScreen} />
       <Tab.Screen name="Wallet" component={AstrologerWalletScreen} />
       <Tab.Screen name="Chat" component={ChatListScreen} />
       <Tab.Screen name="Profile" component={AstrologerProfileScreen} />
@@ -135,6 +143,9 @@ export function Navigation() {
             <Stack.Screen name="TermsConditions" component={TermsConditionsScreen} options={headerOpts('Terms & Conditions')} />
             <Stack.Screen name="AboutApp" component={AboutAppScreen} options={headerOpts('About App')} />
             <Stack.Screen name="ChatRoom" component={ChatRoomScreen} options={headerOpts('Chat')} />
+            <Stack.Screen name="Payment" component={PaymentScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="PaymentFailure" component={PaymentFailureScreen} options={{ headerShown: false }} />
           </>
         ) : (
           <>
@@ -153,6 +164,9 @@ export function Navigation() {
             <Stack.Screen name="Withdrawals" component={AstrologerWithdrawalScreen} options={headerOpts('Withdrawals')} />
             <Stack.Screen name="Reviews" component={AstrologerReviewsScreen} options={headerOpts('Ratings & Reviews')} />
             <Stack.Screen name="Consultations" component={AstrologerConsultationScreen} options={headerOpts('Consultation History')} />
+            <Stack.Screen name="Payment" component={PaymentScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="PaymentFailure" component={PaymentFailureScreen} options={{ headerShown: false }} />
           </>
         )}
       </Stack.Navigator>

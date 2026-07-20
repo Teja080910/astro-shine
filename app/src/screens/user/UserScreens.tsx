@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
@@ -43,6 +43,7 @@ export function UserHomeScreen({ navigation }: any) {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [poojas, setPoojas] = useState<MandirPooja[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [wallet, setWallet] = useState<Wallet | null>(null);
   const [selectedSign, setSelectedSign] = useState('aries');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [loading, setLoading] = useState(true);
@@ -55,13 +56,14 @@ export function UserHomeScreen({ navigation }: any) {
 
   const loadData = useCallback(async () => {
     try {
-      const [a, h, v, b, p, n] = await Promise.all([
+      const [a, h, v, b, p, n, w] = await Promise.all([
         api.astrologers.list(),
         api.horoscope.bySign(selectedSign, todayStr),
         api.videos.list(),
         api.blogs.list(),
         api.mandirPooja.list(),
         api.notifications.list({ userId: user?.id }),
+        api.wallet.get().catch(() => null),
       ]);
       setAstrologers(a);
       setHoroscope(Array.isArray(h) ? h : [h]);
@@ -69,6 +71,7 @@ export function UserHomeScreen({ navigation }: any) {
       setBlogs(b);
       setPoojas(p);
       setNotifications(n);
+      setWallet(w);
     } catch {} finally { setLoading(false); }
   }, [user?.id, selectedSign, todayStr, horoscopeVersion]);
 
@@ -112,33 +115,13 @@ export function UserHomeScreen({ navigation }: any) {
   return (
     <ScreenWrapper style={{ position: 'relative', zIndex: 1 }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
-        {/* Top Header Bar */}
         <View style={styles.topHeader}>
           <TouchableOpacity onPress={() => setMenuOpen(true)} style={{ padding: 4 }}>
-            <Ionicons name="menu-outline" size={28} color="#7F1D1D" />
+            <Ionicons name="menu-outline" size={28} color={colors.textPrimary} />
           </TouchableOpacity>
-          
-          <View style={{ alignItems: 'center' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#7F1D1D', alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: '#F59E0B', fontSize: 16, fontWeight: '800' }}>🕉️</Text>
-              </View>
-              <Text style={{ fontSize: 22, fontWeight: '900', color: '#7F1D1D', letterSpacing: 0.5 }}>
-                ASTROŚHINE
-              </Text>
-            </View>
-            <Text style={{ fontSize: 8.5, fontWeight: '800', color: '#7F1D1D', letterSpacing: 1, marginTop: 1 }}>
-              YOUR DESTINY, OUR GUIDANCE
-            </Text>
-          </View>
-
-          <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ padding: 4, position: 'relative' }}>
-            <Ionicons name="notifications-outline" size={26} color="#7F1D1D" />
-            {unreadCount > 0 && (
-              <View style={styles.headerBadge}>
-                <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
-              </View>
-            )}
+          <Text style={typography.pageTitle}>AstroShine</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ padding: 4 }}>
+            <Ionicons name="notifications-outline" size={28} color={colors.textPrimary} />
           </TouchableOpacity>
         </View>
 
@@ -452,7 +435,7 @@ export function UserHomeScreen({ navigation }: any) {
                   <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
                   <StarRating rating={parseFloat(item.rating)} size={12} />
                   <Text style={typography.caption}>{item.specialization?.[0] || 'Astrologer'}</Text>
-                  <Text style={typography.price}>₹{item.pricePerMin}/min</Text>
+                  <Text style={typography.price}>₹{item.chatPricePerMin || item.pricePerMin}/min</Text>
                 </GlassCard>
               </TouchableOpacity>
             )} style={{ marginLeft: 8 }} />
@@ -477,7 +460,7 @@ export function UserHomeScreen({ navigation }: any) {
                   <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
                   <StarRating rating={parseFloat(item.rating)} size={12} />
                   <Text style={typography.caption}>{item.specialization?.[0] || 'Astrologer'}</Text>
-                  <Text style={typography.price}>₹{item.pricePerMin}/min</Text>
+                  <Text style={typography.price}>₹{item.chatPricePerMin || item.pricePerMin}/min</Text>
                 </GlassCard>
               </TouchableOpacity>
             )} style={{ marginLeft: 8 }} />
@@ -645,13 +628,13 @@ export function AstrologerListScreen({ route, navigation }: any) {
                 <Avatar size={56} online={getAstrologerOnlineStatus(item, astrologerStatuses)} />
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
-                  <StarRating rating={parseFloat(item.rating)} size={12} reviewCount={item.totalReviews} />
+                  <StarRating rating={parseFloat(item.rating)} size={12} />
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4, gap: 4 }}>
                     {item.specialization?.slice(0, 2).map((s) => <Chip key={s} label={s} />)}
                   </View>
                 </View>
                 <View style={{ alignItems: 'flex-end', marginLeft: 8 }}>
-                  <Text style={typography.price}>₹{item.pricePerMin}/min</Text>
+                  <Text style={typography.price}>₹{item.chatPricePerMin || item.pricePerMin}/min</Text>
                 </View>
               </View>
             </GlassCard>
@@ -670,12 +653,36 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
   const { astrologerStatuses } = useChat();
   const { initiateCall } = useCall();
   const [offlineDialogVisible, setOfflineDialogVisible] = useState(false);
+  const [feedbackVisible, setFeedbackVisible] = useState(false);
+  const [feedbackRating, setFeedbackRating] = useState(0);
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+  const [feedbackSuccessVisible, setFeedbackSuccessVisible] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => { if (isFocused) api.astrologers.get(id).then(setAstro); }, [id, isFocused]);
   if (!astro) return <ScreenWrapper><Text style={typography.body}>Loading...</Text></ScreenWrapper>;
 
   const isVerified = astro.verificationStatus === 'approved';
   const isOnline = getAstrologerOnlineStatus(astro, astrologerStatuses);
+
+  const handleSubmitFeedback = async () => {
+    if (feedbackRating < 1) { Alert.alert('Error', 'Please select a rating'); return; }
+    if (!user?.id) { Alert.alert('Error', 'You must be logged in'); return; }
+    setFeedbackSubmitting(true);
+    try {
+      await api.astrologers.feedback(id, { userId: user.id, ratings: feedbackRating, comments: feedbackComment });
+      setFeedbackVisible(false);
+      setFeedbackSuccessVisible(true);
+      setFeedbackRating(0);
+      setFeedbackComment('');
+      api.astrologers.get(id).then(setAstro);
+    } catch (e) {
+      Alert.alert('Error', 'Failed to submit feedback');
+    } finally {
+      setFeedbackSubmitting(false);
+    }
+  };
 
   const handleChat = async () => {
     if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified. Please choose a verified astrologer.'); return; }
@@ -715,6 +722,10 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
           </View>
         )}
         <Text style={[typography.body, { marginTop: 8, color: colors.textSecondary }]}>{astro.bio || 'Experienced astrologer'}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 }}>
+          <StarRating rating={parseFloat(astro.rating || '0')} size={16} />
+          <Text style={[typography.caption, { color: colors.textMuted }]}>({astro.rating || '0'})</Text>
+        </View>
         {!isVerified && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 8, backgroundColor: colors.warning + '20', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8 }}>
             <Ionicons name="warning-outline" size={14} color={colors.warning} />
@@ -722,8 +733,17 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
           </View>
         )}
       </View>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 16, backgroundColor: colors.surfaceLight, borderRadius: radii.card, marginTop: 16 }}>
-        <Stat label="Experience" value={`${astro.experience}y`} /><Stat label="Price" value={`₹${astro.pricePerMin}/min`} />
+      <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12, backgroundColor: colors.surfaceLight, borderRadius: radii.card, marginTop: 16 }}>
+        <Stat label="Experience" value={`${astro.experience}y`} />
+        <Stat label="Chats" value={String(astro.totalChats || 0)} />
+        <Stat label="Audio" value={String(astro.totalAudioCalls || 0)} />
+        <Stat label="Video" value={String(astro.totalVideoCalls || 0)} />
+      </View>
+
+      <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12, backgroundColor: colors.surfaceLight, borderRadius: radii.card, marginTop: 8 }}>
+        <Stat label="Chat/min" value={`₹${astro.chatPricePerMin || astro.pricePerMin}`} />
+        <Stat label="Audio/min" value={`₹${astro.audioCallPricePerMin || astro.pricePerMin}`} />
+        <Stat label="Video/min" value={`₹${astro.videoCallPricePerMin || astro.pricePerMin}`} />
       </View>
 
       <GlassCard style={{ marginTop: 16, padding: 16 }}>
@@ -761,6 +781,52 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
       <View style={{ marginTop: 10 }}>
         <GradientButton title="Video Call" variant="gold" onPress={handleVideoCall} />
       </View>
+      <View style={{ marginTop: 10 }}>
+        <GradientButton title="Submit Feedback" variant="gold" onPress={() => setFeedbackVisible(true)} />
+      </View>
+
+      <CustomModal visible={feedbackVisible} onClose={() => setFeedbackVisible(false)} title={`Rate ${astro.name}`}>
+        <View style={{ padding: 16, gap: 16 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 4 }}>
+            {[1, 2, 3, 4, 5].map(v => (
+              <TouchableOpacity key={v} onPress={() => setFeedbackRating(v)}>
+                <Ionicons
+                  name={feedbackRating >= v ? 'star' : 'star-outline'}
+                  size={32} color={feedbackRating >= v ? colors.accentGold : colors.textMuted}
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
+          {feedbackRating > 0 && (
+            <Text style={[typography.body, { textAlign: 'center', color: colors.textSecondary }]}>
+              {feedbackRating} / 5
+            </Text>
+          )}
+          <TextInput
+            style={[styles.input, { backgroundColor: colors.surfaceLight, color: colors.textPrimary, minHeight: 80, textAlignVertical: 'top' }]}
+            value={feedbackComment}
+            onChangeText={setFeedbackComment}
+            placeholder="Write your comments (optional)"
+            placeholderTextColor={colors.textMuted}
+            multiline
+          />
+          <GradientButton
+            title={feedbackSubmitting ? 'Submitting...' : 'Submit Feedback'}
+            onPress={handleSubmitFeedback}
+            disabled={feedbackSubmitting || feedbackRating === 0}
+          />
+        </View>
+      </CustomModal>
+      <ConfirmDialog
+        visible={feedbackSuccessVisible}
+        title="Thank you!"
+        subtitle="Your feedback has been submitted successfully."
+        icon={<Ionicons name="heart" size={48} color={colors.accentGold} />}
+        actions={[
+          { label: 'OK', onPress: () => setFeedbackSuccessVisible(false), variant: 'primary' },
+        ]}
+        onClose={() => setFeedbackSuccessVisible(false)}
+      />
       <ConfirmDialog
         visible={offlineDialogVisible}
         title="Astrologer Offline"
@@ -781,14 +847,45 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
 
 // Wallet
 export function WalletScreen() {
+  const navigation = useNavigation<any>();
   const isFocused = useIsFocused();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [txns, setTxns] = useState<Transaction[]>([]);
   const [amount, setAmount] = useState('');
   const [showAdd, setShowAdd] = useState(false);
+  const [loadingPayment, setLoadingPayment] = useState(false);
 
   const load = useCallback(async () => { const w = await api.wallet.get(); setWallet(w); const t = await api.transactions.listMy(); setTxns(t); }, []);
   useEffect(() => { if (isFocused) load(); }, [isFocused, load]);
+
+  const handleAddFunds = async () => {
+    const amt = parseFloat(amount);
+    if (!amt || amt <= 0) { Alert.alert('Invalid Amount', 'Please enter a valid amount'); return; }
+    setLoadingPayment(true);
+    try {
+      const order = await api.payments.createOrder({ amount: amt, purpose: 'wallet_recharge' });
+      setShowAdd(false);
+      setAmount('');
+      navigation.navigate('Payment', {
+        razorpayOrderId: order.razorpayOrderId,
+        key: order.key,
+        amount: order.amount,
+        currency: order.currency,
+        purpose: 'wallet_recharge',
+        paymentOrderId: order.id,
+      });
+    } catch (e: any) {
+      const serverMsg = e?.response?.data?.message;
+      const msg = serverMsg || e?.message || 'Failed to initiate payment';
+      Alert.alert('Payment Error', msg);
+    } finally {
+      setLoadingPayment(false);
+    }
+  };
+
+  const handleDonate = () => {
+    navigation.navigate('Donation');
+  };
 
   return (
     <ScreenWrapper scroll>
@@ -797,10 +894,31 @@ export function WalletScreen() {
         <Text style={styles.balance}>₹{wallet?.balance || '0'}</Text>
         <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
           <View style={{ flex: 1 }}><GradientButton title="Add Funds" onPress={() => setShowAdd(true)} small /></View>
-          <View style={{ flex: 1 }}><GradientButton title="Donate" variant="gold" onPress={() => {}} small /></View>
+          <View style={{ flex: 1 }}><GradientButton title="Donate" variant="gold" onPress={handleDonate} small /></View>
         </View>
       </GlassCard>
-      {txns.map((t) => <GlassCard key={t.id} style={{ marginTop: 8, padding: 12 }}><View style={{ flexDirection: 'row', justifyContent: 'space-between' }}><View><Text style={typography.cardTitle}>{t.category?.replace(/_/g, ' ')}</Text><Text style={typography.caption}>{new Date(t.createdAt).toLocaleDateString()}</Text></View><Text style={{ fontWeight: '700', color: t.type === 'credit' ? colors.success : colors.danger }}>{t.type === 'credit' ? '+' : '-'}₹{t.amount}</Text></View></GlassCard>)}
+
+      {showAdd && (
+        <GlassCard style={{ padding: 20, marginTop: 12 }}>
+          <Text style={[typography.cardTitle, { marginBottom: 12 }]}>Enter Amount</Text>
+          <TextInput
+            style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+            value={amount} onChangeText={setAmount}
+            placeholder="Amount in ₹" placeholderTextColor={colors.textMuted}
+            keyboardType="decimal-pad"
+          />
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+            <TouchableOpacity onPress={() => setShowAdd(false)} style={{ flex: 1, height: 48, borderRadius: radii.button, borderWidth: 1, borderColor: colors.cardBorder, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
+            </TouchableOpacity>
+            <View style={{ flex: 1 }}>
+              <GradientButton title={loadingPayment ? 'Processing...' : 'Pay Now'} onPress={handleAddFunds} disabled={loadingPayment} />
+            </View>
+          </View>
+        </GlassCard>
+      )}
+
+      {txns.map((t) => <GlassCard key={t.id} style={{ marginTop: 8, padding: 12 }}><View style={{ flexDirection: 'row', justifyContent: 'space-between' }}><View><Text style={typography.cardTitle}>{t.category?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</Text><Text style={typography.caption}>{new Date(t.createdAt).toLocaleDateString()}</Text></View><Text style={{ fontWeight: '700', color: t.type === 'credit' ? colors.success : colors.danger }}>{t.type === 'credit' ? '+' : '-'}₹{t.amount}</Text></View></GlassCard>)}
     </ScreenWrapper>
   );
 }
@@ -906,6 +1024,8 @@ function PasswordInput({ label, value, onChange, placeholder }: { label: string;
 // Profile
 export function ProfileScreen({ navigation }: any) {
   const { user, logout, updateUser, theme, setTheme } = useAuth();
+  const isFocused = useIsFocused();
+  const [wallet, setWallet] = useState<Wallet | null>(null);
   const [pwOpen, setPwOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [currentPw, setCurrentPw] = useState('');
@@ -914,6 +1034,12 @@ export function ProfileScreen({ navigation }: any) {
   const [pwError, setPwError] = useState('');
   const [pwSuccess, setPwSuccess] = useState('');
   const [pwLoading, setPwLoading] = useState(false);
+
+  useEffect(() => {
+    if (isFocused) {
+      api.wallet.get().then(w => setWallet(w)).catch(() => {});
+    }
+  }, [isFocused]);
 
   const items = [
     { icon: 'person-outline', label: 'Edit Profile', route: 'EditProfile', category: 'Account' },
@@ -986,10 +1112,10 @@ export function ProfileScreen({ navigation }: any) {
 
           {/* Quick Stats Bar */}
           <View style={styles.profileStatsRow}>
-            <View style={styles.profileStatCol}>
-              <Text style={styles.profileStatVal}>₹500</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Wallet')} style={styles.profileStatCol}>
+              <Text style={styles.profileStatVal}>₹{wallet?.balance || '0'}</Text>
               <Text style={styles.profileStatLab}>Wallet</Text>
-            </View>
+            </TouchableOpacity>
             <View style={styles.profileStatDiv} />
             <View style={styles.profileStatCol}>
               <Text style={styles.profileStatVal}>♈ Aries</Text>
@@ -1449,4 +1575,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginBottom: 80,
   },
+  input: { backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, color: colors.textPrimary, fontSize: 15 },
 });
+
+export { MuhuratScreen } from './MuhuratScreen';

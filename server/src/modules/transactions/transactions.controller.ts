@@ -10,7 +10,7 @@ export class TransactionsController {
   @Get('my')
   @UseGuards(AuthGuard)
   async findMyTransactions(@CurrentUser() userId: string) {
-    return this.service.findByUserId(userId);
+    return this.service.findByUserIdOrAstrologerId(userId);
   }
 
   @Get()
