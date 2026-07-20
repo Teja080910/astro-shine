@@ -115,13 +115,33 @@ export function UserHomeScreen({ navigation }: any) {
   return (
     <ScreenWrapper style={{ position: 'relative', zIndex: 1 }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+        {/* Top Header Bar */}
         <View style={styles.topHeader}>
           <TouchableOpacity onPress={() => setMenuOpen(true)} style={{ padding: 4 }}>
-            <Ionicons name="menu-outline" size={28} color={colors.textPrimary} />
+            <Ionicons name="menu-outline" size={28} color="#7F1D1D" />
           </TouchableOpacity>
-          <Text style={typography.pageTitle}>AstroShine</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ padding: 4 }}>
-            <Ionicons name="notifications-outline" size={28} color={colors.textPrimary} />
+          
+          <View style={{ alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#7F1D1D', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: '#F59E0B', fontSize: 16, fontWeight: '800' }}>🕉️</Text>
+              </View>
+              <Text style={{ fontSize: 22, fontWeight: '900', color: '#7F1D1D', letterSpacing: 0.5 }}>
+                ASTROŚHINE
+              </Text>
+            </View>
+            <Text style={{ fontSize: 8.5, fontWeight: '800', color: '#7F1D1D', letterSpacing: 1, marginTop: 1 }}>
+              YOUR DESTINY, OUR GUIDANCE
+            </Text>
+          </View>
+
+          <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ padding: 4, position: 'relative' }}>
+            <Ionicons name="notifications-outline" size={26} color="#7F1D1D" />
+            {unreadCount > 0 && (
+              <View style={styles.headerBadge}>
+                <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -132,7 +152,11 @@ export function UserHomeScreen({ navigation }: any) {
             <Text style={{ fontSize: 18, fontWeight: '800', color: '#7F1D1D', marginVertical: 2 }}>
               {user?.name || 'Aarav Sharma'} 🙏
             </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+            <TouchableOpacity onPress={() => navigation.navigate('Wallet')} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2, marginBottom: 2 }}>
+              <Ionicons name="wallet-outline" size={14} color="#D97706" />
+              <Text style={{ fontSize: 11, color: '#D97706', fontWeight: '700' }}>₹{wallet?.balance || '0'}</Text>
+            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
               <Ionicons name="calendar-outline" size={13} color="#9CA3AF" />
               <Text style={{ fontSize: 11, color: '#4B5563', fontWeight: '500' }}>15 July 2026, Wednesday</Text>
             </View>
