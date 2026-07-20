@@ -57,9 +57,9 @@ function UserTabs() {
   const { theme } = useAuth();
   const tabs = [
     { key: 'Home', icon: 'home-outline', label: 'Home' },
-    { key: 'Astrologers', icon: 'people-outline', label: 'Astrologers' },
-    { key: 'Wallet', icon: 'wallet-outline', label: 'Wallet' },
-    { key: 'Chat', icon: 'chatbubbles-outline', label: 'Chat' },
+    { key: 'Horoscope', icon: 'compass-outline', label: 'Horoscope' },
+    { key: 'Astrologers', icon: 'call-outline', label: 'Consult' },
+    { key: 'Kundli', icon: 'planet-outline', label: 'Kundli' },
     { key: 'Profile', icon: 'person-outline', label: 'Profile' },
   ];
   return (
@@ -67,9 +67,9 @@ function UserTabs() {
       tabBar={(props) => <FloatingBottomBar tabs={tabs} activeTab={props.state.routeNames[props.state.index]} onTabPress={(key) => props.navigation.navigate(key)} />}
     >
       <Tab.Screen name="Home" component={UserHomeScreen} />
+      <Tab.Screen name="Horoscope" component={PanchangScreen} />
       <Tab.Screen name="Astrologers" component={AstrologerListScreen} />
-      <Tab.Screen name="Wallet" component={WalletScreen} />
-      <Tab.Screen name="Chat" component={ChatListScreen} />
+      <Tab.Screen name="Kundli" component={KundliScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );

@@ -16,6 +16,9 @@ export function FloatingBottomBar({ tabs, activeTab, onTabPress }: Props) {
   const totalUnread = Object.values(unreadCounts).reduce((s, c) => s + c, 0);
   const badgeCount = totalUnread > 99 ? 99 : totalUnread;
 
+  const activeColor = '#D97706';
+  const activeBg = isDark ? 'rgba(217, 119, 6, 0.25)' : '#FEF3C7';
+
   return (
     <View style={[styles.wrapper, { borderColor: colors.cardBorder, borderWidth: 1 }]}>
       <View style={[styles.blur, { backgroundColor: isDark ? 'rgba(17, 24, 39, 0.95)' : 'rgba(255, 255, 255, 0.95)' }]}>
@@ -23,18 +26,19 @@ export function FloatingBottomBar({ tabs, activeTab, onTabPress }: Props) {
           {tabs.map((tab) => {
             const active = tab.key === activeTab;
             const isChat = tab.key === 'Chat';
+            const iconName = active ? tab.icon.replace('-outline', '') : tab.icon;
             return (
               <TouchableOpacity key={tab.key} style={styles.tab} onPress={() => onTabPress(tab.key)} activeOpacity={0.7}>
-                <View style={[styles.iconContainer, active && { backgroundColor: isDark ? colors.primary : colors.primary + '20' }]}>
-                  <Ionicons name={tab.icon as any} size={22} color={active ? (isDark ? colors.white : colors.primary) : colors.textMuted} />
+                <View style={[styles.iconContainer, active && { backgroundColor: activeBg }]}>
+                  <Ionicons name={iconName as any} size={22} color={active ? activeColor : colors.textMuted} />
                   {isChat && badgeCount > 0 && (
                     <View style={styles.badge}>
                       <Text style={styles.badgeText}>{badgeCount}{totalUnread > 99 ? '+' : ''}</Text>
                     </View>
                   )}
                 </View>
-                <Text style={[styles.label, active && { color: isDark ? colors.white : colors.primary, fontWeight: '700' }]}>{tab.label}</Text>
-                {active && <View style={[styles.indicator, { backgroundColor: isDark ? colors.white : colors.primary }]} />}
+                <Text style={[styles.label, active && { color: activeColor, fontWeight: '700' }]}>{tab.label}</Text>
+                {active && <View style={[styles.indicator, { backgroundColor: activeColor }]} />}
               </TouchableOpacity>
             );
           })}

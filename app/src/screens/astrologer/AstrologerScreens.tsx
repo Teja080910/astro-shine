@@ -516,45 +516,110 @@ export function AstrologerProfileScreen({ navigation }: any) {
 
   return (
     <ScreenWrapper scroll>
-      <View style={{ alignItems: 'center', marginVertical: 24 }}>
-        <Avatar size={80} uri={profile?.avatar} />
-        <Text style={[typography.sectionTitle, { marginTop: 12, color: colors.textPrimary }]}>{profile?.name}</Text>
-        <Text style={[typography.caption, { color: colors.textSecondary }]}>{profile?.specialization?.join(', ') || 'Astrologer'}</Text>
-      </View>
+      <View style={{ paddingBottom: 120 }}>
+        {/* Hero Header Card */}
+        <View style={{ backgroundColor: '#FFFBEB', borderRadius: 24, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: '#FDE68A', marginTop: 8 }}>
+          <View style={{ position: 'relative' }}>
+            <View style={{ padding: 3, borderRadius: 44, borderWidth: 2.5, borderColor: '#F59E0B', backgroundColor: '#FFFFFF' }}>
+              <Avatar size={76} uri={profile?.avatar} />
+            </View>
+            <View style={{ position: 'absolute', bottom: 2, right: 2, backgroundColor: '#16A34A', width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#FFFFFF' }}>
+              <Ionicons name="checkmark-sharp" size={12} color="#FFF" />
+            </View>
+          </View>
 
-      <GlassCard style={{ marginTop: 24 }}>
-        {items.map((item, i) => (
-          <TouchableOpacity key={item.label} onPress={() => navigation.navigate(item.route)}
-            style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: i < items.length - 1 ? 1 : 0, borderBottomColor: colors.divider }}>
-            <Ionicons name={item.icon as any} size={22} color={colors.textSecondary} />
-            <Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.textPrimary }]}>{item.label}</Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </TouchableOpacity>
-        ))}
+          <Text style={{ fontSize: 22, fontWeight: '800', color: '#7F1D1D', marginTop: 10 }}>{profile?.name || 'Astrologer Profile'}</Text>
+          
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FEF3C7', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 16, borderWidth: 1, borderColor: '#FCD34D', marginTop: 6 }}>
+            <Ionicons name="ribbon" size={13} color="#D97706" />
+            <Text style={{ fontSize: 12, fontWeight: '600', color: '#D97706' }}>{profile?.specialization?.join(', ') || 'Vedic Astrologer'}</Text>
+          </View>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.divider }}>
-          <Ionicons name="moon-outline" size={22} color={colors.textSecondary} />
-          <Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.textPrimary }]}>Dark Mode</Text>
-          <Toggle value={theme === 'dark'} onValueChange={toggleTheme} trackColor={{ false: '#767577', true: colors.primary }} />
+          {/* Quick Stats Bar */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', width: '100%', backgroundColor: '#FFFFFF', borderRadius: 16, paddingVertical: 12, marginTop: 16, borderWidth: 1, borderColor: '#FEF08A' }}>
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: '#7F1D1D' }}>₹{profile?.totalEarnings || 0}</Text>
+              <Text style={{ fontSize: 10, fontWeight: '500', color: '#6B7280', marginTop: 2 }}>Earnings</Text>
+            </View>
+            <View style={{ width: 1, height: 24, backgroundColor: '#FDE68A' }} />
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: '#7F1D1D' }}>★ {profile?.rating || '4.9'}</Text>
+              <Text style={{ fontSize: 10, fontWeight: '500', color: '#6B7280', marginTop: 2 }}>Rating</Text>
+            </View>
+            <View style={{ width: 1, height: 24, backgroundColor: '#FDE68A' }} />
+            <View style={{ flex: 1, alignItems: 'center' }}>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: '#7F1D1D' }}>{profile?.totalCalls || 0}+</Text>
+              <Text style={{ fontSize: 10, fontWeight: '500', color: '#6B7280', marginTop: 2 }}>Sessions</Text>
+            </View>
+          </View>
         </View>
 
-        <TouchableOpacity onPress={() => setPwOpen(true)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.divider }}>
-          <Ionicons name="key-outline" size={22} color={colors.textSecondary} />
-          <Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.textPrimary }]}>Change Password</Text>
-          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-        </TouchableOpacity>
+        {/* Main Options Cards */}
+        <View style={{ gap: 14, marginTop: 16 }}>
+          {/* Services & Schedule Group */}
+          <View style={{ backgroundColor: '#FFFFFF', borderRadius: 20, padding: 14, borderWidth: 1, borderColor: '#FEF08A' }}>
+            <Text style={{ fontSize: 11, fontWeight: '800', color: '#D97706', letterSpacing: 0.8, marginBottom: 8, marginLeft: 4 }}>SERVICES & MANAGEMENT</Text>
+            {items.slice(0, 5).map((item, i) => (
+              <TouchableOpacity key={item.label} onPress={() => navigation.navigate(item.route)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderBottomWidth: i < 4 ? 1 : 0, borderBottomColor: '#F3F4F6' }}>
+                <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                  <Ionicons name={item.icon as any} size={20} color="#D97706" />
+                </View>
+                <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: '#1F2937' }}>{item.label}</Text>
+                <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+              </TouchableOpacity>
+            ))}
+          </View>
 
-        <TouchableOpacity onPress={handleDeleteAccount} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14 }}>
-          <Ionicons name="trash-outline" size={22} color={colors.danger} />
-          <Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.danger }]}>Delete Account</Text>
-          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-        </TouchableOpacity>
-      </GlassCard>
+          {/* History & Earnings Group */}
+          <View style={{ backgroundColor: '#FFFFFF', borderRadius: 20, padding: 14, borderWidth: 1, borderColor: '#FEF08A' }}>
+            <Text style={{ fontSize: 11, fontWeight: '800', color: '#D97706', letterSpacing: 0.8, marginBottom: 8, marginLeft: 4 }}>EARNINGS & HISTORY</Text>
+            {items.slice(5).map((item, i) => (
+              <TouchableOpacity key={item.label} onPress={() => navigation.navigate(item.route)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderBottomWidth: i < items.slice(5).length - 1 ? 1 : 0, borderBottomColor: '#F3F4F6' }}>
+                <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                  <Ionicons name={item.icon as any} size={20} color="#D97706" />
+                </View>
+                <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: '#1F2937' }}>{item.label}</Text>
+                <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+              </TouchableOpacity>
+            ))}
+          </View>
 
-      <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 32, padding: 16, marginBottom: 100 }} onPress={logout}>
-        <Ionicons name="log-out-outline" size={22} color={colors.danger} />
-        <Text style={{ color: colors.danger, fontSize: 16, fontWeight: '600', marginLeft: 8 }}>Logout</Text>
-      </TouchableOpacity>
+          {/* Account & Security Group */}
+          <View style={{ backgroundColor: '#FFFFFF', borderRadius: 20, padding: 14, borderWidth: 1, borderColor: '#FEF08A' }}>
+            <Text style={{ fontSize: 11, fontWeight: '800', color: '#D97706', letterSpacing: 0.8, marginBottom: 8, marginLeft: 4 }}>SECURITY & PREFERENCES</Text>
+            
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
+              <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                <Ionicons name="moon-outline" size={20} color="#D97706" />
+              </View>
+              <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: '#1F2937' }}>Dark Mode</Text>
+              <Toggle value={theme === 'dark'} onValueChange={toggleTheme} trackColor={{ false: '#D1D5DB', true: '#7F1D1D' }} />
+            </View>
+
+            <TouchableOpacity onPress={() => setPwOpen(true)} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
+              <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: '#FEF3C7', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                <Ionicons name="key-outline" size={20} color="#D97706" />
+              </View>
+              <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: '#1F2937' }}>Change Password</Text>
+              <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={handleDeleteAccount} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 11 }}>
+              <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: '#FEE2E2', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
+                <Ionicons name="trash-outline" size={20} color="#DC2626" />
+              </View>
+              <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: '#DC2626' }}>Delete Account</Text>
+              <Ionicons name="chevron-forward" size={18} color="#FCA5A5" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Logout Button */}
+        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA', borderRadius: 18, paddingVertical: 14, marginTop: 24, marginBottom: 80 }} onPress={logout}>
+          <Ionicons name="log-out-outline" size={20} color="#DC2626" />
+          <Text style={{ color: '#DC2626', fontSize: 15, fontWeight: '700', marginLeft: 8 }}>Log Out</Text>
+        </TouchableOpacity>
+      </View>
 
       <CustomModal visible={pwOpen} onClose={() => setPwOpen(false)} title="Change Password">
         <View style={{ paddingHorizontal: 24, paddingBottom: 20 }}>

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useIsFocused } from '@react-navigation/native';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useCall } from '../../context/CallContext';
 import { useChat } from '../../context/ChatContext';
@@ -48,6 +48,7 @@ export function UserHomeScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [horoscopeLoading, setHoroscopeLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [activeHoroscopeTab, setActiveHoroscopeTab] = useState<'love' | 'career' | 'finance' | 'health'>('career');
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const todayStr = new Date().toISOString().split('T')[0];
@@ -111,83 +112,332 @@ export function UserHomeScreen({ navigation }: any) {
   return (
     <ScreenWrapper style={{ position: 'relative', zIndex: 1 }}>
       <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.pageTitle, { marginBottom: 4, color: colors.textPrimary }]}>
-              <Ionicons name="sunny" size={24} color={colors.accentGold} /> Namaste
-            </Text>
-            <Text style={[typography.body, { color: colors.textSecondary }]}>{user?.name || 'User'}</Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <TouchableOpacity onPress={() => setTheme(theme === 'dark' ? 'light' : 'dark')} style={{ padding: 8 }}>
-              <Ionicons name={theme === 'dark' ? 'sunny-outline' : 'moon-outline'} size={28} color={colors.textPrimary} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ padding: 8, position: 'relative' }}>
-              <Ionicons name="notifications-outline" size={28} color={colors.textPrimary} />
-              {unreadCount > 0 && (
-                <View style={styles.notifBadge}>
-                  <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>{unreadCount > 99 ? '99+' : unreadCount}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setMenuOpen(true)} style={{ padding: 8 }}>
-              <Ionicons name="menu-outline" size={28} color={colors.textPrimary} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <SectionHeader title="Today's Horoscope" />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }} contentContainerStyle={{ gap: 8 }}>
-          {ZODIAC_SIGNS.map(z => (
-            <TouchableOpacity key={z.sign} onPress={() => handleSignSelect(z.sign)} style={[
-              styles.zodiacChip,
-              { backgroundColor: selectedSign === z.sign ? colors.primary : colors.surfaceLight, borderColor: selectedSign === z.sign ? colors.primaryLight : colors.cardBorder },
-            ]}>
-              <Text style={{ fontSize: 16 }}>{z.emoji}</Text>
-              <Text style={[typography.caption, { color: selectedSign === z.sign ? colors.white : colors.textSecondary, marginTop: 2 }]}>{z.label.slice(0, 3)}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-        {horoscopeLoading ? (
-          <SkeletonLoader height={120} />
-        ) : horoscope.length > 0 ? (
-          <GlassCard>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <Text style={{ fontSize: 28 }}>
-                {ZODIAC_SIGNS.find(z => z.sign === selectedSign)?.emoji}
-              </Text>
-              <View>
-                <Text style={typography.cardTitle}>{ZODIAC_SIGNS.find(z => z.sign === selectedSign)?.label}</Text>
-                <Text style={typography.caption}>{horoscope[0]?.date ? new Date(horoscope[0].date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) : 'Today'}</Text>
+        {/* Top Header Bar */}
+        <View style={styles.topHeader}>
+          <TouchableOpacity onPress={() => setMenuOpen(true)} style={{ padding: 4 }}>
+            <Ionicons name="menu-outline" size={28} color="#7F1D1D" />
+          </TouchableOpacity>
+          
+          <View style={{ alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: '#7F1D1D', alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: '#F59E0B', fontSize: 16, fontWeight: '800' }}>🕉️</Text>
               </View>
+              <Text style={{ fontSize: 22, fontWeight: '900', color: '#7F1D1D', letterSpacing: 0.5 }}>
+                ASTROŚHINE
+              </Text>
             </View>
-            <Text style={[typography.body, { marginBottom: 8 }]}>{horoscope[0]?.prediction?.slice(0, 200)}{(horoscope[0]?.prediction?.length || 0) > 200 ? '...' : ''}</Text>
-            {horoscope[0]?.mood && (
-              <View style={{ flexDirection: 'row', gap: 12 }}>
-                {horoscope[0].mood && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><Ionicons name="moon" size={14} color={colors.accentGold} /><Text style={typography.caption}>{horoscope[0].mood}</Text></View>}
-                {horoscope[0].luckyNumber && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><Ionicons name="dice" size={14} color={colors.accentGold} /><Text style={typography.caption}>Lucky: {horoscope[0].luckyNumber}</Text></View>}
-                {horoscope[0].luckyColor && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><Ionicons name="color-palette" size={14} color={colors.accentGold} /><Text style={typography.caption}>{horoscope[0].luckyColor}</Text></View>}
+            <Text style={{ fontSize: 8.5, fontWeight: '800', color: '#7F1D1D', letterSpacing: 1, marginTop: 1 }}>
+              YOUR DESTINY, OUR GUIDANCE
+            </Text>
+          </View>
+
+          <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ padding: 4, position: 'relative' }}>
+            <Ionicons name="notifications-outline" size={26} color="#7F1D1D" />
+            {unreadCount > 0 && (
+              <View style={styles.headerBadge}>
+                <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
               </View>
             )}
-          </GlassCard>
-        ) : (
-          <GlassCard><Text style={[typography.body, { textAlign: 'center', marginVertical: 16 }]}>No horoscope available for this sign today. Check back tomorrow!</Text></GlassCard>
-        )}
-
-        <View style={{ height: 24 }} />
-
-        <SectionHeader title="Quick Actions" />
-        <View style={[styles.quickActions, { marginBottom: 8 }]}>
-          <QuickAction icon="planet" label="Kundli" onPress={() => navigation.navigate('Kundli')} />
-          <QuickAction icon="heart" label="Matchmaking" onPress={() => navigation.navigate('Matchmaking')} />
-          <QuickAction icon="calendar" label="Panchang" onPress={() => navigation.navigate('Panchang')} />
-          <QuickAction icon="pricetags" label="Shop" onPress={() => navigation.navigate('Shop')} />
+          </TouchableOpacity>
         </View>
-        <View style={styles.quickActions}>
-          <QuickAction icon="flame" label="Pooja" onPress={() => navigation.navigate('MandirPooja')} />
-          <QuickAction icon="heart-circle" label="Donate" onPress={() => navigation.navigate('Donation')} />
-          <QuickAction icon="newspaper" label="Blogs" onPress={() => navigation.navigate('Blogs')} />
-          <QuickAction icon="videocam" label="Videos" onPress={() => navigation.navigate('Videos')} />
+
+        {/* Greeting & Ganesha Banner */}
+        <View style={styles.greetingRow}>
+          <View style={{ flex: 1.1 }}>
+            <Text style={{ fontSize: 13, color: '#6B7280', fontWeight: '500' }}>Namaste,</Text>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: '#7F1D1D', marginVertical: 2 }}>
+              {user?.name || 'Aarav Sharma'} 🙏
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 }}>
+              <Ionicons name="calendar-outline" size={13} color="#9CA3AF" />
+              <Text style={{ fontSize: 11, color: '#4B5563', fontWeight: '500' }}>15 July 2026, Wednesday</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
+              <Ionicons name="location-outline" size={13} color="#9CA3AF" />
+              <Text style={{ fontSize: 11, color: '#4B5563', fontWeight: '500' }}>Jaipur, Rajasthan</Text>
+            </View>
+          </View>
+
+          <View style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
+            <Image source={require('../../../assets/ganesha_header.png')} style={{ width: 85, height: 95 }} resizeMode="contain" />
+          </View>
+
+          <View style={{ flex: 0.9, alignItems: 'flex-end', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Ionicons name="sunny" size={24} color="#F59E0B" />
+              <View>
+                <Text style={{ fontSize: 14, fontWeight: '800', color: '#1F2937' }}>28°C</Text>
+                <Text style={{ fontSize: 11, color: '#6B7280' }}>Sunny</Text>
+              </View>
+            </View>
+            
+            <View style={styles.goodMorningBtn}>
+              <Ionicons name="sunny-outline" size={12} color="#D97706" />
+              <Text style={{ fontSize: 10, fontWeight: '700', color: '#D97706' }}>Good Morning!</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Zodiac Signs Horizontal Selector */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingHorizontal: 16, paddingVertical: 8 }}>
+          {ZODIAC_SIGNS.map(z => {
+            const active = selectedSign === z.sign;
+            return (
+              <TouchableOpacity key={z.sign} onPress={() => handleSignSelect(z.sign)} style={{ alignItems: 'center', width: 52 }}>
+                <View style={[
+                  styles.zodiacCircle,
+                  active ? styles.zodiacCircleActive : styles.zodiacCircleInactive
+                ]}>
+                  {z.sign === 'aries' ? (
+                    <Image source={require('../../../assets/aries_ram.png')} style={{ width: 36, height: 36, borderRadius: 18 }} />
+                  ) : (
+                    <Text style={{ fontSize: active ? 22 : 20 }}>{z.emoji}</Text>
+                  )}
+                </View>
+                <Text style={{ fontSize: 11, fontWeight: active ? '700' : '500', color: active ? '#990000' : '#4B5563', marginTop: 4 }}>
+                  {z.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {/* Zodiac Horoscope Detailed Card */}
+        <View style={styles.horoscopeCard}>
+          <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
+            <Image source={require('../../../assets/aries_ram.png')} style={{ width: 76, height: 76, borderRadius: 38 }} />
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+                <Text style={{ fontSize: 22, fontWeight: '800', color: '#990000' }}>
+                  {ZODIAC_SIGNS.find(z => z.sign === selectedSign)?.label || 'Aries'}
+                </Text>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: '#EA580C' }}>
+                  (Mar 21 – Apr 19)
+                </Text>
+              </View>
+              <Text style={{ fontSize: 12, color: '#374151', lineHeight: 17, marginVertical: 6 }}>
+                {horoscope[0]?.prediction || 'Today brings new opportunities in your career. Stay open to unexpected changes. Your confidence will help you achieve important goals.'}
+              </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Horoscope')} style={styles.readFullBtn}>
+                <Text style={{ color: '#FFF', fontSize: 11, fontWeight: '700' }}>Read Full Horoscope</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Lucky Stats Row */}
+          <View style={styles.luckyGrid}>
+            <View style={styles.luckyCol}>
+              <Text style={{ fontSize: 10, color: '#6B7280' }}>Lucky Number</Text>
+              <Text style={{ fontSize: 15, fontWeight: '800', color: '#7F1D1D', marginTop: 2 }}>{horoscope[0]?.luckyNumber || '7'}</Text>
+            </View>
+            <View style={styles.luckyDivider} />
+            <View style={styles.luckyCol}>
+              <Text style={{ fontSize: 10, color: '#6B7280' }}>Lucky Color</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#FBBF24' }} />
+                <Text style={{ fontSize: 11, fontWeight: '700', color: '#1F2937' }}>{horoscope[0]?.luckyColor || 'Bright Yellow'}</Text>
+              </View>
+            </View>
+            <View style={styles.luckyDivider} />
+            <View style={styles.luckyCol}>
+              <Text style={{ fontSize: 10, color: '#6B7280' }}>Lucky Time</Text>
+              <Text style={{ fontSize: 10, fontWeight: '700', color: '#1F2937', marginTop: 2 }}>10:30 AM – 12:00 PM</Text>
+            </View>
+            <View style={styles.luckyDivider} />
+            <View style={styles.luckyCol}>
+              <Text style={{ fontSize: 10, color: '#6B7280' }}>Lucky Direction</Text>
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#1F2937', marginTop: 2 }}>🧭 North</Text>
+            </View>
+            <View style={styles.luckyDivider} />
+            <View style={styles.luckyCol}>
+              <Text style={{ fontSize: 10, color: '#6B7280' }}>Lucky Alphabet</Text>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: '#7F1D1D', marginTop: 2 }}>A</Text>
+            </View>
+          </View>
+
+          {/* Sub-tabs Row */}
+          <View style={styles.subTabsRow}>
+            <TouchableOpacity onPress={() => setActiveHoroscopeTab('love')} style={styles.subTabItem}>
+              <Text style={{ fontSize: 13 }}>❤️</Text>
+              <Text style={{ fontSize: 12, fontWeight: activeHoroscopeTab === 'love' ? '700' : '600', color: activeHoroscopeTab === 'love' ? '#990000' : '#4B5563' }}>Love</Text>
+            </TouchableOpacity>
+            <View style={styles.subTabDivider} />
+            <TouchableOpacity onPress={() => setActiveHoroscopeTab('career')} style={styles.subTabItem}>
+              <Text style={{ fontSize: 13 }}>💼</Text>
+              <Text style={{ fontSize: 12, fontWeight: activeHoroscopeTab === 'career' ? '700' : '600', color: activeHoroscopeTab === 'career' ? '#990000' : '#4B5563' }}>Career</Text>
+            </TouchableOpacity>
+            <View style={styles.subTabDivider} />
+            <TouchableOpacity onPress={() => setActiveHoroscopeTab('finance')} style={styles.subTabItem}>
+              <Text style={{ fontSize: 13 }}>🪙</Text>
+              <Text style={{ fontSize: 12, fontWeight: activeHoroscopeTab === 'finance' ? '700' : '600', color: activeHoroscopeTab === 'finance' ? '#990000' : '#4B5563' }}>Finance</Text>
+            </TouchableOpacity>
+            <View style={styles.subTabDivider} />
+            <TouchableOpacity onPress={() => setActiveHoroscopeTab('health')} style={styles.subTabItem}>
+              <Text style={{ fontSize: 13 }}>➕</Text>
+              <Text style={{ fontSize: 12, fontWeight: activeHoroscopeTab === 'health' ? '700' : '600', color: activeHoroscopeTab === 'health' ? '#990000' : '#4B5563' }}>Health</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Today's Panchang */}
+        <View style={styles.panchangContainer}>
+          <View style={styles.panchangHeaderBanner}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Ionicons name="calendar-sharp" size={16} color="#7F1D1D" />
+              <Text style={{ fontSize: 14, fontWeight: '800', color: '#7F1D1D' }}>Today's Panchang</Text>
+            </View>
+            <TouchableOpacity onPress={() => navigation.navigate('Panchang')}>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: '#990000' }}>View All</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.panchangContent}>
+            {/* Top 4 Panchang factors */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+              <View style={styles.panchangItem}>
+                <Ionicons name="sunny-outline" size={18} color="#D97706" />
+                <View>
+                  <Text style={{ fontSize: 10, color: '#6B7280' }}>Tithi</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#1F2937' }}>Shukla Paksha Dashami</Text>
+                </View>
+              </View>
+              <View style={styles.panchangItem}>
+                <Ionicons name="star-outline" size={18} color="#D97706" />
+                <View>
+                  <Text style={{ fontSize: 10, color: '#6B7280' }}>Nakshatra</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#1F2937' }}>Pushya</Text>
+                </View>
+              </View>
+              <View style={styles.panchangItem}>
+                <Ionicons name="ribbon-outline" size={18} color="#D97706" />
+                <View>
+                  <Text style={{ fontSize: 10, color: '#6B7280' }}>Yoga</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#1F2937' }}>Siddhi</Text>
+                </View>
+              </View>
+              <View style={styles.panchangItem}>
+                <Ionicons name="compass-outline" size={18} color="#D97706" />
+                <View>
+                  <Text style={{ fontSize: 10, color: '#6B7280' }}>Karan</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#1F2937' }}>Kaulav</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Bottom 3 Panchang factors */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingTop: 8, borderTopWidth: 1, borderTopColor: '#F3F4F6' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="sunny" size={16} color="#F59E0B" />
+                <View>
+                  <Text style={{ fontSize: 10, color: '#6B7280' }}>Sunrise</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#1F2937' }}>05:48 AM</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="partly-sunny" size={16} color="#EA580C" />
+                <View>
+                  <Text style={{ fontSize: 10, color: '#6B7280' }}>Sunset</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#1F2937' }}>07:23 PM</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="time-outline" size={16} color="#DC2626" />
+                <View>
+                  <Text style={{ fontSize: 10, color: '#6B7280' }}>Rahukal</Text>
+                  <Text style={{ fontSize: 11, fontWeight: '700', color: '#1F2937' }}>12:30 PM - 02:00 PM</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Quick Actions Grid */}
+        <View style={{ marginHorizontal: 16, marginVertical: 14 }}>
+          <Text style={{ fontSize: 16, fontWeight: '800', color: '#7F1D1D', marginBottom: 12 }}>Quick Actions</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' }}>
+            <TouchableOpacity onPress={() => navigation.navigate('Kundli')} style={styles.gridActionItem}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: '#FEF3C7' }]}>
+                <Ionicons name="planet" size={22} color="#D97706" />
+              </View>
+              <Text style={styles.gridActionText}>Kundli</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => navigation.navigate('Matchmaking')} style={styles.gridActionItem}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: '#FEE2E2' }]}>
+                <Ionicons name="heart" size={22} color="#DC2626" />
+              </View>
+              <Text style={styles.gridActionText}>Matchmaking</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => navigation.navigate('Panchang')} style={styles.gridActionItem}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: '#FFEDD5' }]}>
+                <Ionicons name="calendar" size={22} color="#EA580C" />
+              </View>
+              <Text style={styles.gridActionText}>Panchang</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => navigation.navigate('MandirPooja')} style={styles.gridActionItem}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: '#FEF3C7' }]}>
+                <Ionicons name="flame" size={22} color="#D97706" />
+              </View>
+              <Text style={styles.gridActionText}>Pooja</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => navigation.navigate('Shop')} style={styles.gridActionItem}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: '#FEF9C3' }]}>
+                <Ionicons name="bag-handle" size={22} color="#CA8A04" />
+              </View>
+              <Text style={styles.gridActionText}>Shop</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => navigation.navigate('Astrologers')} style={styles.gridActionItem}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: '#FFEDD5' }]}>
+                <Ionicons name="people" size={22} color="#EA580C" />
+              </View>
+              <Text style={styles.gridActionText}>Live Astrologers</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => navigation.navigate('Astrologers')} style={styles.gridActionItem}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: '#FEE2E2' }]}>
+                <Ionicons name="square" size={22} color="#DC2626" />
+              </View>
+              <Text style={styles.gridActionText}>Tarot</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => navigation.navigate('Astrologers')} style={styles.gridActionItem}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: '#FEF3C7' }]}>
+                <Ionicons name="keypad" size={22} color="#D97706" />
+              </View>
+              <Text style={styles.gridActionText}>Numerology</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => navigation.navigate('Blogs')} style={styles.gridActionItem}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: '#FEF9C3' }]}>
+                <Ionicons name="document-text" size={22} color="#CA8A04" />
+              </View>
+              <Text style={styles.gridActionText}>Blogs</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => navigation.navigate('Videos')} style={styles.gridActionItem}>
+              <View style={[styles.gridActionIconBg, { backgroundColor: '#FFEDD5' }]}>
+                <Ionicons name="play-circle" size={22} color="#EA580C" />
+              </View>
+              <Text style={styles.gridActionText}>Videos</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Shravan Month Special Banner */}
+        <View style={styles.specialBanner}>
+          <Image source={require('../../../assets/pooja_kalash.png')} style={{ width: 84, height: 84 }} resizeMode="contain" />
+          <View style={{ flex: 1, marginHorizontal: 8 }}>
+            <Text style={{ fontSize: 15, fontWeight: '800', color: '#7F1D1D' }}>Shravan Month Special</Text>
+            <Text style={{ fontSize: 11, color: '#4B5563', marginTop: 2 }}>Get special blessings and discounts on Pooja services</Text>
+          </View>
+          <TouchableOpacity onPress={() => navigation.navigate('MandirPooja')} style={styles.bookNowBtn}>
+            <Text style={{ color: '#FFF', fontSize: 11, fontWeight: '700' }}>Book Now ›</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={{ height: 24 }} />
@@ -666,12 +916,12 @@ export function ProfileScreen({ navigation }: any) {
   const [pwLoading, setPwLoading] = useState(false);
 
   const items = [
-    { icon: 'person-outline', label: 'Edit Profile', route: 'EditProfile' },
-    { icon: 'document-text-outline', label: 'Order History', route: 'OrderHistory' },
-    { icon: 'wallet-outline', label: 'Transaction History', route: 'Wallet' },
-    { icon: 'notifications-outline', label: 'Notifications', route: 'Notifications' },
-    { icon: 'newspaper-outline', label: 'Blogs', route: 'Blogs' },
-    { icon: 'help-circle-outline', label: 'Help & Support', route: 'Support' },
+    { icon: 'person-outline', label: 'Edit Profile', route: 'EditProfile', category: 'Account' },
+    { icon: 'receipt-outline', label: 'Order History', route: 'OrderHistory', category: 'Account' },
+    { icon: 'wallet-outline', label: 'Transaction History', route: 'Wallet', category: 'Account' },
+    { icon: 'notifications-outline', label: 'Notifications', route: 'Notifications', category: 'Account' },
+    { icon: 'newspaper-outline', label: 'Blogs & Articles', route: 'Blogs', category: 'Preferences' },
+    { icon: 'help-circle-outline', label: 'Help & Support', route: 'Support', category: 'Preferences' },
   ];
 
   const toggleTheme = async (val: boolean) => {
@@ -713,53 +963,113 @@ export function ProfileScreen({ navigation }: any) {
     setDeleteOpen(true);
   };
 
-  const [showCurrent, setShowCurrent] = useState(false);
-  const [showNew, setShowNew] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-
   return (
     <ScreenWrapper scroll>
-      <View style={{ alignItems: 'center', marginVertical: 24 }}>
-        <Avatar size={80} uri={user?.avatar} />
-        <Text style={[typography.sectionTitle, { marginTop: 12, color: colors.textPrimary }]}>{user?.name}</Text>
-        <Text style={[typography.caption, { color: colors.textSecondary }]}>{user?.email}</Text>
-      </View>
+      <View style={{ paddingBottom: 120 }}>
+        {/* Hero Header Card */}
+        <View style={styles.profileHeroCard}>
+          <View style={{ position: 'relative' }}>
+            <View style={styles.avatarRing}>
+              <Avatar size={76} uri={user?.avatar} />
+            </View>
+            <View style={styles.verifiedBadge}>
+              <Ionicons name="checkmark-sharp" size={12} color="#FFF" />
+            </View>
+          </View>
 
-      <GlassCard style={{ marginTop: 24, backgroundColor: colors.glassBg, borderColor: colors.cardBorder }}>
-        {items.map((item, i) => (
-          <TouchableOpacity key={item.label} onPress={() => navigation.navigate(item.route)} style={[styles.menuItem, styles.border, { borderBottomColor: colors.divider }]}>
-            <Ionicons name={item.icon as any} size={22} color={colors.textSecondary} />
-            <Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.textPrimary }]}>{item.label}</Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </TouchableOpacity>
-        ))}
+          <Text style={styles.profileName}>{user?.name || 'User Profile'}</Text>
+          
+          <View style={styles.emailPill}>
+            <Ionicons name="mail" size={13} color="#D97706" />
+            <Text style={styles.emailPillText}>{user?.email || 'user@astroshine.com'}</Text>
+          </View>
 
-        {/* Dark Mode Toggle Item */}
-        <View style={[styles.menuItem, styles.border, { paddingVertical: 8, borderBottomColor: colors.divider }]}>
-          <Ionicons name="moon-outline" size={22} color={colors.textSecondary} />
-          <Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.textPrimary }]}>Dark Mode</Text>
-          <Toggle value={theme === 'dark'} onValueChange={toggleTheme} trackColor={{ false: '#767577', true: colors.primary }} />
+          {/* Quick Stats Bar */}
+          <View style={styles.profileStatsRow}>
+            <View style={styles.profileStatCol}>
+              <Text style={styles.profileStatVal}>₹500</Text>
+              <Text style={styles.profileStatLab}>Wallet</Text>
+            </View>
+            <View style={styles.profileStatDiv} />
+            <View style={styles.profileStatCol}>
+              <Text style={styles.profileStatVal}>♈ Aries</Text>
+              <Text style={styles.profileStatLab}>Sun Sign</Text>
+            </View>
+            <View style={styles.profileStatDiv} />
+            <View style={styles.profileStatCol}>
+              <Text style={styles.profileStatVal}>Active</Text>
+              <Text style={styles.profileStatLab}>Status</Text>
+            </View>
+          </View>
         </View>
 
-        {/* Change Password Item */}
-        <TouchableOpacity onPress={() => setPwOpen(true)} style={[styles.menuItem, styles.border, { borderBottomColor: colors.divider }]}>
-          <Ionicons name="key-outline" size={22} color={colors.textSecondary} />
-          <Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.textPrimary }]}>Change Password</Text>
-          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-        </TouchableOpacity>
+      {/* Main Options Cards */}
+      <View style={{ gap: 14, marginTop: 16 }}>
+        {/* Account Group */}
+        <View style={styles.menuGroupCard}>
+          <Text style={styles.groupHeaderTitle}>MY ACCOUNT</Text>
+          {items.slice(0, 4).map((item, i) => (
+            <TouchableOpacity key={item.label} onPress={() => navigation.navigate(item.route)} style={[styles.menuRowItem, i < 3 && styles.menuRowBorder]}>
+              <View style={styles.menuItemIconBg}>
+                <Ionicons name={item.icon as any} size={20} color="#D97706" />
+              </View>
+              <Text style={styles.menuRowLabel}>{item.label}</Text>
+              <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+            </TouchableOpacity>
+          ))}
+        </View>
 
-        {/* Delete Account Item */}
-        <TouchableOpacity onPress={handleDeleteAccount} style={[styles.menuItem, { borderBottomWidth: 0 }]}>
-          <Ionicons name="trash-outline" size={22} color={colors.danger} />
-          <Text style={[typography.body, { flex: 1, marginLeft: 12, color: colors.danger }]}>Delete Account</Text>
-          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-        </TouchableOpacity>
-      </GlassCard>
+        {/* Preferences & Security Group */}
+        <View style={styles.menuGroupCard}>
+          <Text style={styles.groupHeaderTitle}>PREFERENCES & SECURITY</Text>
 
-      <TouchableOpacity style={styles.logout} onPress={logout}>
-        <Ionicons name="log-out-outline" size={22} color={colors.danger} />
-        <Text style={{ color: colors.danger, fontSize: 16, fontWeight: '600', marginLeft: 8 }}>Logout</Text>
+          {/* Dark Mode Toggle Item */}
+          <View style={[styles.menuRowItem, styles.menuRowBorder]}>
+            <View style={styles.menuItemIconBg}>
+              <Ionicons name="moon-outline" size={20} color="#D97706" />
+            </View>
+            <Text style={styles.menuRowLabel}>Dark Mode</Text>
+            <Toggle value={theme === 'dark'} onValueChange={toggleTheme} trackColor={{ false: '#D1D5DB', true: '#7F1D1D' }} />
+          </View>
+
+          {/* Change Password Item */}
+          <TouchableOpacity onPress={() => setPwOpen(true)} style={[styles.menuRowItem, styles.menuRowBorder]}>
+            <View style={styles.menuItemIconBg}>
+              <Ionicons name="key-outline" size={20} color="#D97706" />
+            </View>
+            <Text style={styles.menuRowLabel}>Change Password</Text>
+            <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+          </TouchableOpacity>
+
+          {items.slice(4).map((item, i) => (
+            <TouchableOpacity key={item.label} onPress={() => navigation.navigate(item.route)} style={[styles.menuRowItem, i < 1 && styles.menuRowBorder]}>
+              <View style={styles.menuItemIconBg}>
+                <Ionicons name={item.icon as any} size={20} color="#D97706" />
+              </View>
+              <Text style={styles.menuRowLabel}>{item.label}</Text>
+              <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Danger Zone Group */}
+        <View style={styles.menuGroupCard}>
+          <TouchableOpacity onPress={handleDeleteAccount} style={styles.menuRowItem}>
+            <View style={[styles.menuItemIconBg, { backgroundColor: '#FEE2E2' }]}>
+              <Ionicons name="trash-outline" size={20} color="#DC2626" />
+            </View>
+            <Text style={[styles.menuRowLabel, { color: '#DC2626' }]}>Delete Account</Text>
+            <Ionicons name="chevron-forward" size={18} color="#FCA5A5" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Logout Button */}
+      <TouchableOpacity style={styles.premiumLogoutBtn} onPress={logout}>
+        <Ionicons name="log-out-outline" size={20} color="#DC2626" />
+        <Text style={{ color: '#DC2626', fontSize: 15, fontWeight: '700', marginLeft: 8 }}>Log Out</Text>
       </TouchableOpacity>
+      </View>
 
       <CustomModal visible={pwOpen} onClose={() => setPwOpen(false)} title="Change Password">
         <View style={{ paddingHorizontal: 24, paddingBottom: 20 }}>
@@ -816,4 +1126,327 @@ const styles = StyleSheet.create({
   dropdownItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
   zodiacChip: { width: 52, height: 52, borderRadius: 26, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   notifBadge: { position: 'absolute', top: 2, right: 2, backgroundColor: colors.danger, borderRadius: 10, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  topHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  headerBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: '#DC2626',
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  greetingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFBEB',
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 12,
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  goodMorningBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FCD34D',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  zodiacCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+  },
+  zodiacCircleActive: {
+    backgroundColor: '#7F1D1D',
+    borderColor: '#F59E0B',
+  },
+  zodiacCircleInactive: {
+    backgroundColor: '#FEF9C3',
+    borderColor: '#FDE047',
+  },
+  horoscopeCard: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#FEF08A',
+    shadowColor: '#7F1D1D',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  readFullBtn: {
+    backgroundColor: '#EA580C',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    alignSelf: 'flex-start',
+    marginTop: 4,
+  },
+  luckyGrid: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFBEB',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    marginVertical: 12,
+    borderWidth: 1,
+    borderColor: '#FEF08A',
+  },
+  luckyCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  luckyDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#FDE68A',
+  },
+  subTabsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  subTabItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  subTabDivider: {
+    width: 1,
+    height: 16,
+    backgroundColor: '#E5E7EB',
+  },
+  panchangContainer: {
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  panchangHeaderBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#F59E0B',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  panchangContent: {
+    backgroundColor: '#FFFBEB',
+    padding: 12,
+  },
+  panchangItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    maxWidth: '24%',
+  },
+  gridActionItem: {
+    width: '18%',
+    alignItems: 'center',
+  },
+  gridActionIconBg: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+    borderWidth: 1,
+    borderColor: '#FEF3C7',
+  },
+  gridActionText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#374151',
+    textAlign: 'center',
+  },
+  specialBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FEF3C7',
+    marginHorizontal: 16,
+    marginVertical: 12,
+    padding: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  bookNowBtn: {
+    backgroundColor: '#7F1D1D',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+  },
+  profileHeroCard: {
+    backgroundColor: '#FFFBEB',
+    borderRadius: 24,
+    padding: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    marginTop: 8,
+  },
+  avatarRing: {
+    padding: 3,
+    borderRadius: 44,
+    borderWidth: 2.5,
+    borderColor: '#F59E0B',
+    backgroundColor: '#FFFFFF',
+  },
+  verifiedBadge: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    backgroundColor: '#16A34A',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  profileName: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#7F1D1D',
+    marginTop: 10,
+  },
+  emailPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#FCD34D',
+    marginTop: 6,
+  },
+  emailPillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#D97706',
+  },
+  profileStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingVertical: 12,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#FEF08A',
+  },
+  profileStatCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  profileStatVal: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#7F1D1D',
+  },
+  profileStatLab: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  profileStatDiv: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#FDE68A',
+  },
+  menuGroupCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#FEF08A',
+  },
+  groupHeaderTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#D97706',
+    letterSpacing: 0.8,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  menuRowItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 11,
+  },
+  menuRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  menuItemIconBg: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: '#FEF3C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  menuRowLabel: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  premiumLogoutBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 18,
+    paddingVertical: 14,
+    marginTop: 24,
+    marginBottom: 80,
+  },
 });
