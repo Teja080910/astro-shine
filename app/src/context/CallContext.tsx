@@ -9,9 +9,6 @@ export type CallState = 'idle' | 'calling' | 'ringing' | 'active' | 'ended';
 
 interface CallData {
   callId: string;
-  channel: string;
-  token: string;
-  uid: number;
   callerId?: string;
   callerRole?: string;
   callerName?: string;
@@ -28,35 +25,27 @@ interface CallContextType {
   endCall: () => void;
   incomingCall: CallData | null;
   setIncomingCall: (data: CallData | null) => void;
+  socketRef: React.MutableRefObject<Socket | null>;
 }
 
 async function requestCallPermissions(type: 'audio' | 'video'): Promise<boolean> {
   if (Platform.OS !== 'android') return true;
-
   try {
     const permissions = [PermissionsAndroid.PERMISSIONS.RECORD_AUDIO];
     if (type === 'video') {
       permissions.push(PermissionsAndroid.PERMISSIONS.CAMERA);
     }
-
     const granted = await PermissionsAndroid.requestMultiple(permissions);
     const audioGranted = granted[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] === PermissionsAndroid.RESULTS.GRANTED;
     const cameraGranted = type === 'video'
       ? granted[PermissionsAndroid.PERMISSIONS.CAMERA] === PermissionsAndroid.RESULTS.GRANTED
       : true;
-
     if (!audioGranted || !cameraGranted) {
-      Alert.alert(
-        'Permissions Required',
-        `Please grant ${type === 'video' ? 'microphone and camera' : 'microphone'} permissions to make calls.`
-      );
+      Alert.alert('Permissions Required', `Please grant ${type === 'video' ? 'microphone and camera' : 'microphone'} permissions.`);
       return false;
     }
     return true;
-  } catch (err) {
-    console.warn(err);
-    return false;
-  }
+  } catch { return false; }
 }
 
 const CallContext = createContext<CallContextType>(null!);
@@ -80,9 +69,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     socket.on('call:incoming', (data: any) => {
       setIncomingCall({
         callId: data.callId,
-        channel: data.channel,
-        token: data.token,
-        uid: data.uid,
         callerId: data.callerId,
         callerRole: data.callerRole,
         callerName: data.callerName,
@@ -92,12 +78,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     });
 
     socket.on('call:initiated', (data: any) => {
-      setCallData(prev => prev ? { ...prev, callId: data.callId, channel: data.channel, token: data.token, uid: data.uid } : null);
+      setCallData(prev => prev ? { ...prev, callId: data.callId } : null);
     });
 
-    socket.on('call:accepted', (data: any) => {
+    socket.on('call:accepted', () => {
       setCallState('active');
-      setCallData(prev => prev ? { ...prev, channel: data.channel, token: data.token } : null);
     });
 
     socket.on('call:rejected', () => {
@@ -122,9 +107,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const initiateCall = useCallback(async (astrologerId: string, astrologerName: string, type: CallType) => {
     const hasPermission = await requestCallPermissions(type);
     if (!hasPermission) return;
-
     setCallState('calling');
-    setCallData({ callId: '', channel: '', token: '', uid: 0, type, callerName: astrologerName });
+    setCallData({ callId: '', type, callerName: astrologerName });
     socketRef.current?.emit('call:initiate', { astrologerId, type });
     setTimeout(() => {
       setCallState(prev => prev === 'calling' ? 'idle' : prev);
@@ -142,10 +126,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const acceptCall = useCallback(async () => {
     if (!incomingCall) return;
     const hasPermission = await requestCallPermissions(incomingCall.type);
-    if (!hasPermission) {
-      rejectCall();
-      return;
-    }
+    if (!hasPermission) { rejectCall(); return; }
     socketRef.current?.emit('call:accept', { callId: incomingCall.callId });
     setCallState('active');
     setCallData(incomingCall);
@@ -160,7 +141,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   }, [callData]);
 
   return (
-    <CallContext.Provider value={{ callState, callData, initiateCall, acceptCall, rejectCall, endCall, incomingCall, setIncomingCall }}>
+    <CallContext.Provider value={{ callState, callData, initiateCall, acceptCall, rejectCall, endCall, incomingCall, setIncomingCall, socketRef }}>
       {children}
     </CallContext.Provider>
   );

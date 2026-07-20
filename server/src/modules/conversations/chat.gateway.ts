@@ -14,7 +14,6 @@ import { ConversationsService } from './conversations.service';
 import { CallsService } from '../calls/calls.service';
 import { UsersService } from '../users/users.service';
 import { ConfigService } from '@nestjs/config';
-import { RtcTokenBuilder, RtcRole } from 'agora-access-token';
 import { RealtimeService } from '../../common/realtime.service';
 import { AstrologersService } from '../astrologers/astrologers.service';
 import { WalletService } from '../wallet/wallet.service';
@@ -303,14 +302,6 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     @MessageBody() data: { astrologerId: string; type: 'audio' | 'video' },
   ) {
     const { userId, role } = client.data;
-    const channelName = `call_${userId}_${data.astrologerId}_${Date.now()}`;
-    const appId = this.configService.get<string>('AGORA_APP_ID', '');
-    const appCert = this.configService.get<string>('AGORA_APP_CERTIFICATE', '');
-    const uid = Math.floor(Math.random() * 100000);
-    let token = '';
-    if (appId && appCert) {
-      token = RtcTokenBuilder.buildTokenWithUid(appId, appCert, channelName, uid, RtcRole.PUBLISHER, Math.floor(Date.now() / 1000) + 3600);
-    }
     const astro = await this.astrologersService.findById(data.astrologerId);
     const ratePerMin = data.type === 'video'
       ? (astro?.videoCallPricePerMin || astro?.pricePerMin || '0')
@@ -321,8 +312,6 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       userId,
       type: data.type,
       status: 'initiated',
-      agoraChannel: channelName,
-      agoraToken: token,
       ratePerMin,
     });
     const caller = await this.usersService.findById(userId);
@@ -335,12 +324,9 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         callerRole: role,
         callerName,
         type: data.type,
-        channel: channelName,
-        token,
-        uid,
       });
     }
-    client.emit('call:initiated', { callId: callLog.id, channel: channelName, token, uid });
+    client.emit('call:initiated', { callId: callLog.id });
   }
 
   @SubscribeMessage('call:accept')
@@ -367,7 +353,51 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     await this.callsService.updateStartedAt(data.callId);
     const callerSocket = this.findSocketByUserId(call.userId);
     if (callerSocket) {
-      callerSocket.emit('call:accepted', { callId: data.callId, channel: call.agoraChannel, token: call.agoraToken });
+      callerSocket.emit('call:accepted', { callId: data.callId });
+    }
+  }
+
+  // ─── WebRTC Signaling ───
+
+  @SubscribeMessage('webrtc:offer')
+  async handleWebRTCOffer(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { callId: string; sdp: any },
+  ) {
+    const call = await this.callsService.findById(data.callId);
+    if (!call) return;
+    const targetId = call.userId === client.data.userId ? call.astrologerId : call.userId;
+    const targetSocket = this.findSocketByUserId(targetId);
+    if (targetSocket) {
+      targetSocket.emit('webrtc:offer', { callId: data.callId, sdp: data.sdp });
+    }
+  }
+
+  @SubscribeMessage('webrtc:answer')
+  async handleWebRTCAnswer(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { callId: string; sdp: any },
+  ) {
+    const call = await this.callsService.findById(data.callId);
+    if (!call) return;
+    const targetId = call.userId === client.data.userId ? call.astrologerId : call.userId;
+    const targetSocket = this.findSocketByUserId(targetId);
+    if (targetSocket) {
+      targetSocket.emit('webrtc:answer', { callId: data.callId, sdp: data.sdp });
+    }
+  }
+
+  @SubscribeMessage('webrtc:ice-candidate')
+  async handleWebRTCIceCandidate(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { callId: string; candidate: any },
+  ) {
+    const call = await this.callsService.findById(data.callId);
+    if (!call) return;
+    const targetId = call.userId === client.data.userId ? call.astrologerId : call.userId;
+    const targetSocket = this.findSocketByUserId(targetId);
+    if (targetSocket) {
+      targetSocket.emit('webrtc:ice-candidate', { callId: data.callId, candidate: data.candidate });
     }
   }
 
