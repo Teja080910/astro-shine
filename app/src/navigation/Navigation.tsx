@@ -67,10 +67,20 @@ function UserTabs() {
     { key: 'Profile', icon: 'person-outline', label: 'Profile' },
   ];
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false }}
+    <Tab.Navigator screenOptions={{
+      headerShown: false,
+      tabBarStyle: {
+        position: 'absolute',
+        backgroundColor: 'transparent',
+        borderTopWidth: 0,
+        elevation: 0,
+        shadowOpacity: 0,
+      },
+    }}
       tabBar={(props) => <FloatingBottomBar tabs={tabs} activeTab={props.state.routeNames[props.state.index]} onTabPress={(key) => props.navigation.navigate(key)} />}
     >
       <Tab.Screen name="Home" component={UserHomeScreen} />
+      <Tab.Screen name="Horoscope" component={PanchangScreen} />
       <Tab.Screen name="Astrologers" component={AstrologerListScreen} />
       <Tab.Screen name="Muhurat" component={MuhuratScreen} />
       <Tab.Screen name="Wallet" component={WalletScreen} />
@@ -91,7 +101,16 @@ function AstrologerTabs() {
     { key: 'Profile', icon: 'person-outline', label: 'Profile' },
   ];
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false }}
+    <Tab.Navigator screenOptions={{
+      headerShown: false,
+      tabBarStyle: {
+        position: 'absolute',
+        backgroundColor: 'transparent',
+        borderTopWidth: 0,
+        elevation: 0,
+        shadowOpacity: 0,
+      },
+    }}
       tabBar={(props) => <FloatingBottomBar tabs={tabs} activeTab={props.state.routeNames[props.state.index]} onTabPress={(key) => props.navigation.navigate(key)} />}
     >
       <Tab.Screen name="Home" component={AstrologerHomeScreen} />

@@ -288,7 +288,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
         icon={<Ionicons name="wallet-outline" size={48} color={colors.danger} />}
         actions={[
           { label: 'Add Funds', onPress: () => { clearChatBlocked(); handleAddFunds(); }, variant: 'primary' },
-          { label: 'Close', onPress: () => clearChatBlocked(), variant: 'default' },
+          { label: 'Close', onPress: () => clearChatBlocked(), variant: 'secondary' },
         ]}
         onClose={() => clearChatBlocked()}
       />
