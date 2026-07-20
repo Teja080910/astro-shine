@@ -357,6 +357,20 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     }
   }
 
+  @SubscribeMessage('call:mute-status')
+  async handleMuteStatus(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { callId: string; muted: boolean },
+  ) {
+    const call = await this.callsService.findById(data.callId);
+    if (!call) return;
+    const targetId = call.userId === client.data.userId ? call.astrologerId : call.userId;
+    const targetSocket = this.findSocketByUserId(targetId);
+    if (targetSocket) {
+      targetSocket.emit('call:mute-status', { callId: data.callId, muted: data.muted });
+    }
+  }
+
   // ─── WebRTC Signaling ───
 
   @SubscribeMessage('webrtc:offer')

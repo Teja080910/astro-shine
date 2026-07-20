@@ -13,14 +13,19 @@ const ICE_SERVERS = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
   ],
+  iceCandidatePoolSize: 10,
 };
 
-export function useWebRTC() {
+export function useWebRTC(onMuteChange?: (muted: boolean) => void) {
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<any>(null);
   const [remoteStream, setRemoteStream] = useState<any>(null);
   const [isMuted, setIsMuted] = useState(false);
+  const [isRemoteMuted, setIsRemoteMuted] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(false);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   const [isCameraFront, setIsCameraFront] = useState(true);
@@ -133,9 +138,10 @@ export function useWebRTC() {
       if (localStreamRef.current) {
         localStreamRef.current.getAudioTracks().forEach((t: any) => { t.enabled = !next; });
       }
+      onMuteChange?.(next);
       return next;
     });
-  }, []);
+  }, [onMuteChange]);
 
   const toggleSpeaker = useCallback(() => {
     setIsSpeakerOn(prev => {
@@ -185,7 +191,7 @@ export function useWebRTC() {
     createPeerConnection, startLocalStream, createOffer, createAnswer,
     setRemoteDescription, addIceCandidate, toggleMute, toggleSpeaker,
     toggleCamera, switchCamera, cleanup,
-    remoteStream, isMuted, isSpeakerOn, isVideoEnabled, isCameraFront,
-    localStreamRef,
+    remoteStream, isMuted, isRemoteMuted, setIsRemoteMuted, isSpeakerOn,
+    isVideoEnabled, isCameraFront, localStreamRef,
   };
 }
