@@ -77,6 +77,13 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       setCallState('ringing');
     });
 
+    socket.on('call:error', (data: any) => {
+      Alert.alert('Call Error', data.message || 'Call failed');
+      setCallState('idle');
+      setCallData(null);
+      setIncomingCall(null);
+    });
+
     socket.on('call:initiated', (data: any) => {
       setCallData(prev => prev ? { ...prev, callId: data.callId } : null);
     });

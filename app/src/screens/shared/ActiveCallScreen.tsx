@@ -4,6 +4,7 @@ import { colors } from '../../shared';
 import { Ionicons } from '@expo/vector-icons';
 import { useCall } from '../../context/CallContext';
 import { useWebRTC } from '../../shared/useWebRTC';
+import { RTCView } from 'react-native-webrtc';
 
 const WEBRTC_EVENTS = ['webrtc:offer', 'webrtc:answer', 'webrtc:ice-candidate'];
 
@@ -14,6 +15,7 @@ export function ActiveCallScreen() {
     setRemoteDescription, addIceCandidate, toggleMute, toggleSpeaker,
     toggleCamera, switchCamera, cleanup,
     remoteStream, isMuted, isSpeakerOn, isVideoEnabled, isCameraFront,
+    localStreamRef,
   } = useWebRTC();
   const [seconds, setSeconds] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -102,10 +104,7 @@ export function ActiveCallScreen() {
           <View style={styles.videoContainer}>
             <View style={styles.remoteVideo}>
               {remoteStream ? (
-                <View style={[StyleSheet.absoluteFill, { backgroundColor: '#1C1C1E', justifyContent: 'center', alignItems: 'center' }]}>
-                  <Ionicons name="videocam" size={48} color={colors.primary} />
-                  <Text style={{ color: colors.white, marginTop: 8 }}>Remote Stream</Text>
-                </View>
+                <RTCView streamURL={remoteStream.toURL()} style={StyleSheet.absoluteFill} objectFit="cover" />
               ) : (
                 <>
                   <Ionicons name="person-circle" size={80} color={colors.textMuted} />
@@ -113,9 +112,11 @@ export function ActiveCallScreen() {
                 </>
               )}
             </View>
-            <View style={[styles.localVideo, { opacity: isVideoEnabled ? 1 : 0.4 }]}>
-              <Ionicons name="person" size={24} color={colors.white} />
-            </View>
+            {localStreamRef.current && isVideoEnabled && (
+              <View style={styles.localVideo}>
+                <RTCView streamURL={localStreamRef.current.toURL()} style={{ flex: 1 }} objectFit="cover" />
+              </View>
+            )}
           </View>
         )}
 
