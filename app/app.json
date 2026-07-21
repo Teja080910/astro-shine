@@ -28,10 +28,13 @@
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.CAMERA",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.INTERNET"
       ]
     },
-    "plugins": [],
+    "plugins": [
+      "expo-build-properties"
+    ],
     "extra": {
       "eas": {
         "projectId": "2718ae98-737a-4e1f-a144-bc7caaf39d26"

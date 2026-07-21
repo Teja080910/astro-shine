@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated, Vibration } from 'react-native';
 import { colors } from '../../shared';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,8 +7,17 @@ import { Audio } from 'expo-av';
 
 export function IncomingCallScreen() {
   const { incomingCall, acceptCall, rejectCall } = useCall();
+  const [accepting, setAccepting] = useState(false);
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const soundRef = useRef<Audio.Sound | null>(null);
+
+  const handleAccept = async () => {
+    if (accepting) return;
+    setAccepting(true);
+    await acceptCall();
+    // Reset guard after a short delay in case accept didn't succeed
+    setTimeout(() => setAccepting(false), 3000);
+  };
 
   useEffect(() => {
     const pulse = Animated.loop(

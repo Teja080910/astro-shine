@@ -4,7 +4,9 @@ import { colors } from '../../shared';
 import { Ionicons } from '@expo/vector-icons';
 import { useCall } from '../../context/CallContext';
 import { useWebRTC } from '../../shared/useWebRTC';
-import { RTCView } from 'react-native-webrtc';
+
+let RTCView: any = null;
+try { RTCView = require('react-native-webrtc').RTCView; } catch {}
 
 const WEBRTC_EVENTS = ['webrtc:offer', 'webrtc:answer', 'webrtc:ice-candidate'];
 
@@ -12,15 +14,17 @@ export function ActiveCallScreen() {
   const { callData, callState, endCall, socketRef } = useCall();
   const [remoteMuted, setRemoteMuted] = useState(false);
   const [remoteVideoOff, setRemoteVideoOff] = useState(false);
+  const startCallGuardRef = useRef(false);
+  const unmountedRef = useRef(false);
   const socket = socketRef.current;
   const callId = callData?.callId;
 
   const handleMuteChange = useCallback((muted: boolean) => {
-    if (callId && socket) socket.emit('call:mute-status', { callId, muted });
+    if (callId && socket && !unmountedRef.current) socket.emit('call:mute-status', { callId, muted });
   }, [callId, socket]);
 
   const handleVideoChange = useCallback((enabled: boolean) => {
-    if (callId && socket) socket.emit('call:video-status', { callId, enabled });
+    if (callId && socket && !unmountedRef.current) socket.emit('call:video-status', { callId, enabled });
   }, [callId, socket]);
 
   const {
@@ -28,79 +32,90 @@ export function ActiveCallScreen() {
     setRemoteDescription, addIceCandidate, toggleMute, toggleSpeaker,
     toggleCamera, switchCamera, cleanup,
     remoteStream, isMuted, isSpeakerOn, isVideoEnabled, isCameraFront,
-    localStreamRef,
+    localStreamRef, destroyedRef,
   } = useWebRTC(handleMuteChange, handleVideoChange);
 
   const [seconds, setSeconds] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const joinedRef = useRef(false);
 
   const otherName = callData?.callerName || 'Connected';
   const isVideo = callData?.type === 'video';
 
+  // Lifecycle: cancelled on unmount
+  useEffect(() => {
+    unmountedRef.current = false;
+    return () => { unmountedRef.current = true; };
+  }, []);
+
+  // Socket event listeners for mute/video status
   useEffect(() => {
     if (!socket || !callId) return;
-    socket.on('call:mute-status', (data: any) => {
-      if (data.callId === callId) setRemoteMuted(data.muted);
-    });
-    socket.on('call:video-status', (data: any) => {
-      if (data.callId === callId) setRemoteVideoOff(!data.enabled);
-    });
-    return () => {
-      socket.off('call:mute-status');
-      socket.off('call:video-status');
-    };
+    const onMute = (d: any) => { if (d.callId === callId) setRemoteMuted(d.muted); };
+    const onVideo = (d: any) => { if (d.callId === callId) setRemoteVideoOff(!d.enabled); };
+    socket.on('call:mute-status', onMute);
+    socket.on('call:video-status', onVideo);
+    return () => { socket.off('call:mute-status', onMute); socket.off('call:video-status', onVideo); };
   }, [socket, callId]);
 
+  // Singleton startCall — guarded by ref, lifecycle-safe
   useEffect(() => {
-    if (callState === 'active' && callId && !joinedRef.current) {
-      joinedRef.current = true;
-      startCall(callId, callData!.type);
-    }
+    if (callState !== 'active' || !callId || startCallGuardRef.current) return;
+    if (unmountedRef.current) return;
+    startCallGuardRef.current = true;
+
+    const run = async () => {
+      if (!socket || unmountedRef.current || destroyedRef.current) return;
+      try {
+        // Clean old WebRTC listeners
+        WEBRTC_EVENTS.forEach(e => socket.off(e));
+
+        const pc = createPeerConnection(
+          (candidate) => { if (!unmountedRef.current) socket.emit('webrtc:ice-candidate', { callId, candidate }); },
+          () => {},
+        );
+        if (!pc || unmountedRef.current || destroyedRef.current) return;
+
+        await startLocalStream(callData!.type);
+        if (unmountedRef.current || destroyedRef.current) return;
+
+        socket.on('webrtc:offer', async (data: any) => {
+          if (data.callId !== callId || unmountedRef.current || destroyedRef.current) return;
+          await setRemoteDescription(data.sdp);
+          const answer = await createAnswer();
+          if (answer && !unmountedRef.current) socket.emit('webrtc:answer', { callId, sdp: answer });
+        });
+
+        socket.on('webrtc:answer', async (data: any) => {
+          if (data.callId !== callId || unmountedRef.current || destroyedRef.current) return;
+          await setRemoteDescription(data.sdp);
+        });
+
+        socket.on('webrtc:ice-candidate', async (data: any) => {
+          if (data.callId !== callId || unmountedRef.current || destroyedRef.current) return;
+          await addIceCandidate(data.candidate);
+        });
+
+        const isCaller = !callData?.callerId;
+        if (isCaller) {
+          const offer = await createOffer();
+          if (offer && !unmountedRef.current) socket.emit('webrtc:offer', { callId, sdp: offer });
+        }
+      } catch (e) {
+        console.error('[ActiveCall] startCall error:', e);
+      }
+    };
+
+    run();
+
     return () => {
-      if (callState === 'idle') {
+      if (callState as any === 'idle' && !unmountedRef.current) {
         cleanup();
         WEBRTC_EVENTS.forEach(e => socket?.off(e));
       }
     };
   }, [callState, callId]);
 
-  const startCall = async (cid: string, type: 'audio' | 'video') => {
-    if (!socket) return;
-    WEBRTC_EVENTS.forEach(e => socket.off(e));
-
-    const pc = createPeerConnection(
-      (candidate) => socket.emit('webrtc:ice-candidate', { callId: cid, candidate }),
-      () => {},
-    );
-    if (!pc) return;
-
-    await startLocalStream(type);
-
-    socket.on('webrtc:offer', async (data: any) => {
-      if (data.callId !== cid) return;
-      await setRemoteDescription(data.sdp);
-      const answer = await createAnswer();
-      if (answer) socket.emit('webrtc:answer', { callId: cid, sdp: answer });
-    });
-
-    socket.on('webrtc:answer', async (data: any) => {
-      if (data.callId !== cid) return;
-      await setRemoteDescription(data.sdp);
-    });
-
-    socket.on('webrtc:ice-candidate', async (data: any) => {
-      if (data.callId !== cid) return;
-      await addIceCandidate(data.candidate);
-    });
-
-    const isCaller = !callData?.callerId;
-    if (isCaller) {
-      const offer = await createOffer();
-      if (offer) socket.emit('webrtc:offer', { callId: cid, sdp: offer });
-    }
-  };
-
+  // Timer
   useEffect(() => {
     if (callState === 'active') {
       timerRef.current = setInterval(() => setSeconds(s => s + 1), 1000);
@@ -115,6 +130,7 @@ export function ActiveCallScreen() {
   };
 
   const handleEndCall = () => {
+    unmountedRef.current = true;
     cleanup();
     endCall();
   };
@@ -127,7 +143,7 @@ export function ActiveCallScreen() {
         {isVideo && (
           <View style={styles.videoContainer}>
             <View style={styles.remoteVideo}>
-              {remoteStream && !remoteVideoOff ? (
+              {remoteStream && !remoteVideoOff && RTCView ? (
                 <RTCView streamURL={remoteStream.toURL()} style={StyleSheet.absoluteFill} objectFit="cover" />
               ) : (
                 <View style={{ alignItems: 'center' }}>
@@ -143,7 +159,7 @@ export function ActiveCallScreen() {
                 </View>
               )}
             </View>
-            {localStreamRef.current && isVideoEnabled && (
+            {localStreamRef.current && isVideoEnabled && RTCView && (
               <View style={styles.localVideo}>
                 <RTCView streamURL={localStreamRef.current.toURL()} style={{ flex: 1 }} objectFit="cover" />
               </View>

@@ -7,6 +7,9 @@ import { useWebRTC } from '../../shared/useWebRTC';
 
 const WEBRTC_EVENTS = ['webrtc:offer', 'webrtc:answer', 'webrtc:ice-candidate'];
 
+let RTCView: any = null;
+try { RTCView = require('react-native-webrtc').RTCView; } catch {}
+
 export function ActiveCallScreen() {
   const { callData, callState, endCall, socketRef } = useCall();
   const {

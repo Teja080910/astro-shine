@@ -32,15 +32,13 @@ async function requestCallPermissions(type: 'audio' | 'video'): Promise<boolean>
   if (Platform.OS !== 'android') return true;
   try {
     const permissions = [PermissionsAndroid.PERMISSIONS.RECORD_AUDIO];
-    if (type === 'video') {
-      permissions.push(PermissionsAndroid.PERMISSIONS.CAMERA);
-    }
+    if (type === 'video') permissions.push(PermissionsAndroid.PERMISSIONS.CAMERA);
     const granted = await PermissionsAndroid.requestMultiple(permissions);
-    const audioGranted = granted[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] === PermissionsAndroid.RESULTS.GRANTED;
-    const cameraGranted = type === 'video'
+    const audioOk = granted[PermissionsAndroid.PERMISSIONS.RECORD_AUDIO] === PermissionsAndroid.RESULTS.GRANTED;
+    const cameraOk = type === 'video'
       ? granted[PermissionsAndroid.PERMISSIONS.CAMERA] === PermissionsAndroid.RESULTS.GRANTED
       : true;
-    if (!audioGranted || !cameraGranted) {
+    if (!audioOk || !cameraOk) {
       Alert.alert('Permissions Required', `Please grant ${type === 'video' ? 'microphone and camera' : 'microphone'} permissions.`);
       return false;
     }
@@ -51,14 +49,23 @@ async function requestCallPermissions(type: 'audio' | 'video'): Promise<boolean>
 const CallContext = createContext<CallContextType>(null!);
 
 export function CallProvider({ children }: { children: React.ReactNode }) {
-  const { token, user, astrologer } = useAuth();
+  const { token } = useAuth();
   const socketRef = useRef<Socket | null>(null);
+  const acceptGuardRef = useRef(false);
+  const pendingTimersRef = useRef<NodeJS.Timeout[]>([]);
   const [callState, setCallState] = useState<CallState>('idle');
   const [callData, setCallData] = useState<CallData | null>(null);
   const [incomingCall, setIncomingCall] = useState<CallData | null>(null);
 
+  const clearTimers = useCallback(() => {
+    pendingTimersRef.current.forEach(clearTimeout);
+    pendingTimersRef.current = [];
+  }, []);
+
+  // Socket lifecycle — disconnect old before connecting new
   useEffect(() => {
     if (!token) return;
+    socketRef.current?.disconnect();
     const socket = io(config.socketUrl, {
       path: config.socketPath,
       query: { token },
@@ -67,18 +74,14 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     socketRef.current = socket;
 
     socket.on('call:incoming', (data: any) => {
-      setIncomingCall({
-        callId: data.callId,
-        callerId: data.callerId,
-        callerRole: data.callerRole,
-        callerName: data.callerName,
-        type: data.type,
-      });
+      acceptGuardRef.current = false;
+      setIncomingCall({ callId: data.callId, callerId: data.callerId, callerRole: data.callerRole, callerName: data.callerName, type: data.type });
       setCallState('ringing');
     });
 
     socket.on('call:error', (data: any) => {
       Alert.alert('Call Error', data.message || 'Call failed');
+      clearTimers();
       setCallState('idle');
       setCallData(null);
       setIncomingCall(null);
@@ -93,34 +96,39 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     });
 
     socket.on('call:rejected', () => {
+      clearTimers();
       setCallState('idle');
       setCallData(null);
     });
 
     socket.on('call:missed', () => {
+      clearTimers();
       setCallState('idle');
       setCallData(null);
     });
 
     socket.on('call:ended', (data: any) => {
+      clearTimers();
       setCallState('ended');
       setCallData(prev => prev ? { ...prev, duration: data.duration } : null);
-      setTimeout(() => { setCallState('idle'); setCallData(null); }, 2000);
+      const t = setTimeout(() => { setCallState('idle'); setCallData(null); }, 2000);
+      pendingTimersRef.current.push(t);
     });
 
-    return () => { socket.disconnect(); };
-  }, [token]);
+    return () => { clearTimers(); socket.disconnect(); };
+  }, [token, clearTimers]);
 
   const initiateCall = useCallback(async (astrologerId: string, astrologerName: string, type: CallType) => {
-    const hasPermission = await requestCallPermissions(type);
-    if (!hasPermission) return;
+    const ok = await requestCallPermissions(type);
+    if (!ok) return;
     setCallState('calling');
     setCallData({ callId: '', type, callerName: astrologerName });
     socketRef.current?.emit('call:initiate', { astrologerId, type });
-    setTimeout(() => {
+    const t = setTimeout(() => {
       setCallState(prev => prev === 'calling' ? 'idle' : prev);
       setCallData(prev => prev && !prev.callId ? null : prev);
     }, 60000);
+    pendingTimersRef.current.push(t);
   }, []);
 
   const rejectCall = useCallback(() => {
@@ -131,21 +139,30 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   }, [incomingCall]);
 
   const acceptCall = useCallback(async () => {
-    if (!incomingCall) return;
-    const hasPermission = await requestCallPermissions(incomingCall.type);
-    if (!hasPermission) { rejectCall(); return; }
-    socketRef.current?.emit('call:accept', { callId: incomingCall.callId });
-    setCallState('active');
-    setCallData(incomingCall);
-    setIncomingCall(null);
+    // Idempotency guard — prevent double-tap
+    if (acceptGuardRef.current || !incomingCall) return;
+    acceptGuardRef.current = true;
+
+    try {
+      const ok = await requestCallPermissions(incomingCall.type);
+      if (!ok) { acceptGuardRef.current = false; rejectCall(); return; }
+      socketRef.current?.emit('call:accept', { callId: incomingCall.callId });
+      setCallState('active');
+      setCallData(incomingCall);
+      setIncomingCall(null);
+    } catch {
+      acceptGuardRef.current = false;
+    }
   }, [incomingCall, rejectCall]);
 
   const endCall = useCallback(() => {
-    if (!callData || !callData.callId) return;
+    if (!callData?.callId) return;
     socketRef.current?.emit('call:end', { callId: callData.callId });
+    clearTimers();
     setCallState('ended');
-    setTimeout(() => { setCallState('idle'); setCallData(null); }, 2000);
-  }, [callData]);
+    const t = setTimeout(() => { setCallState('idle'); setCallData(null); }, 2000);
+    pendingTimersRef.current.push(t);
+  }, [callData, clearTimers]);
 
   return (
     <CallContext.Provider value={{ callState, callData, initiateCall, acceptCall, rejectCall, endCall, incomingCall, setIncomingCall, socketRef }}>
