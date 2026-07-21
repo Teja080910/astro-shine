@@ -9,9 +9,9 @@ export const setThemeState = (theme: 'light' | 'dark') => {
 export const getCurrentTheme = () => activeTheme;
 
 export const colors = {
-  primary: '#7F1D1D',
-  primaryLight: '#D97706',
-  primaryDark: '#990000',
+  primary: '#D97706',
+  primaryLight: '#F59E0B',
+  primaryDark: '#B45309',
   secondary: '#EA580C',
   accentGold: '#F59E0B',
   success: '#22C55E',
@@ -20,20 +20,20 @@ export const colors = {
   white: '#FFFFFF',
   black: '#000000',
 
-  get background() { return activeTheme === 'dark' ? '#09090B' : '#FCFAF2'; },
+  get background() { return activeTheme === 'dark' ? '#09090B' : '#FFFFFF'; },
   get surface() { return activeTheme === 'dark' ? '#111827' : '#FFFFFF'; },
   get surfaceLight() { return activeTheme === 'dark' ? '#1F2937' : '#FFFBEB'; },
   get card() { return activeTheme === 'dark' ? '#1F2937' : '#FFFBEB'; },
   get cardBorder() { return activeTheme === 'dark' ? 'rgba(245, 158, 11, 0.25)' : '#FDE68A'; },
-  get textPrimary() { return activeTheme === 'dark' ? '#F9FAFB' : '#7F1D1D'; },
+  get textPrimary() { return activeTheme === 'dark' ? '#F9FAFB' : '#D97706'; },
   get textSecondary() { return activeTheme === 'dark' ? '#E5E7EB' : '#374151'; },
   get textMuted() { return activeTheme === 'dark' ? '#9CA3AF' : '#6B7280'; },
   get divider() { return activeTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#FDE68A'; },
   get inputBorder() { return activeTheme === 'dark' ? 'rgba(245, 158, 11, 0.3)' : '#FCD34D'; },
   get glassBg() { return activeTheme === 'dark' ? 'rgba(17, 24, 39, 0.85)' : 'rgba(255, 255, 255, 0.95)'; },
-  gradientStart: '#7F1D1D',
-  gradientMid: '#B91C1C',
-  gradientEnd: '#D97706',
+  gradientStart: '#D97706',
+  gradientMid: '#F59E0B',
+  gradientEnd: '#FBBF24',
   overlay: 'rgba(0,0,0,0.6)',
 };
 
@@ -71,7 +71,7 @@ export const shadows = {
   },
   get button() {
     return activeTheme === 'dark' ? {
-      shadowColor: '#7F1D1D',
+      shadowColor: '#D97706',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.3,
       shadowRadius: 8,
@@ -126,12 +126,12 @@ export const lightTheme = {
     primary: colors.primary,
     primaryContainer: colors.primaryLight,
     secondary: colors.secondary,
-    background: '#FCFAF2',
+    background: '#FFFFFF',
     surface: '#FFFFFF',
     surfaceVariant: '#FFFBEB',
     error: colors.danger,
     onPrimary: colors.white,
-    onBackground: '#7F1D1D',
+    onBackground: '#D97706',
     onSurface: '#374151',
     outline: '#FDE68A',
     outlineVariant: '#FCD34D',

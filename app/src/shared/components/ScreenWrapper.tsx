@@ -16,7 +16,7 @@ interface Props {
 export function ScreenWrapper({ children, scroll, style, noPadding, edges = ['top'], backgroundColor }: Props) {
   const { theme } = useAuth();
   const isDark = theme === 'dark';
-  const bg = backgroundColor || (isDark ? '#09090B' : '#FCFAF2');
+  const bg = backgroundColor || (isDark ? '#09090B' : '#FFFFFF');
   const isDarkBar = backgroundColor ? true : isDark;
   const bgOpacity = isDark ? 0.08 : 0.16;
 
