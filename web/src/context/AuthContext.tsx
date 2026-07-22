@@ -40,6 +40,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     api.setToken(res.token);
     localStorage.setItem('admin-token', res.token);
     localStorage.setItem('admin-user', JSON.stringify(res.user));
+    if (typeof document !== 'undefined') {
+      document.cookie = `admin-token=${res.token}; path=/; SameSite=Lax`;
+    }
   }, []);
 
   const logout = useCallback(() => {
@@ -48,6 +51,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     api.setToken(null);
     localStorage.removeItem('admin-token');
     localStorage.removeItem('admin-user');
+    if (typeof document !== 'undefined') {
+      document.cookie = 'admin-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    }
   }, []);
 
   return (

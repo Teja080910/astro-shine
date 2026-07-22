@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
 import { eq } from 'drizzle-orm';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class UsersService {
@@ -75,29 +76,33 @@ export class UsersService {
     return this.checkPassword(password, account.password);
   }
 
-  async updatePassword(id: string, newPassword: string): Promise<void> {
+  async updatePassword(id: string, newPassword: string, role: string = 'user'): Promise<void> {
     const hashedPassword = await this.hashPassword(newPassword);
 
-    const userResult = await this.db
-      .update(schema.users)
-      .set({ password: hashedPassword, updatedAt: new Date() })
-      .where(eq(schema.users.id, id))
-      .returning();
+    if (role === 'user') {
+      const userResult = await this.db
+        .update(schema.users)
+        .set({ password: hashedPassword, updatedAt: new Date() })
+        .where(eq(schema.users.id, id))
+        .returning();
+      if (userResult.length > 0) return;
+    }
 
-    if (userResult.length > 0) return;
+    if (role === 'admin') {
+      const adminResult = await this.db
+        .update(schema.admins)
+        .set({ password: hashedPassword, updatedAt: new Date() })
+        .where(eq(schema.admins.id, id))
+        .returning();
+      if (adminResult.length > 0) return;
+    }
 
-    const adminResult = await this.db
-      .update(schema.admins)
-      .set({ password: hashedPassword, updatedAt: new Date() })
-      .where(eq(schema.admins.id, id))
-      .returning();
-
-    if (adminResult.length > 0) return;
-
-    await this.db
-      .update(schema.astrologers)
-      .set({ password: hashedPassword, updatedAt: new Date() })
-      .where(eq(schema.astrologers.id, id));
+    if (role === 'astrologer') {
+      await this.db
+        .update(schema.astrologers)
+        .set({ password: hashedPassword, updatedAt: new Date() })
+        .where(eq(schema.astrologers.id, id));
+    }
   }
 
   private async hashPassword(password: string): Promise<string> {
@@ -120,4 +125,4 @@ export class UsersService {
     });
   }
 }
-import * as crypto from 'crypto';
+

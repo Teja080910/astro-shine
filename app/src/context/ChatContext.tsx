@@ -57,7 +57,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [hasMore, setHasMore] = useState(true);
   const [chatBlockedMessage, setChatBlockedMessage] = useState<string | null>(null);
   const cursorRef = useRef<string | null>(null);
-  const typingTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
+  const typingTimeoutRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const activeConvRef = useRef<Conversation | null>(null);
 
   useEffect(() => {
@@ -199,6 +199,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     socketRef.current = socket;
 
     return () => {
+      Object.values(typingTimeoutRef.current).forEach(clearTimeout);
+      typingTimeoutRef.current = {};
       socket.disconnect();
     };
   }, [token]);
@@ -208,9 +210,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       const res = await api.conversations.list();
       setConversations(res.data);
       const counts: Record<string, number> = {};
-      res.data.forEach((c) => { counts[c.id] = c.unreadCount; });
+      res.data.forEach((c: any) => { counts[c.id] = c.unreadCount; });
       setUnreadCounts(counts);
-    } catch {}
+    } catch { console.log('Failed to load conversations'); }
   }, []);
 
   const loadConversationsRef = useRef(loadConversations);
@@ -254,7 +256,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setMessages((prev) => [...res.data, ...prev]);
       cursorRef.current = res.nextCursor;
       setHasMore(res.hasMore);
-    } catch {} finally {
+    } catch { console.log('Failed to load more messages'); } finally {
       setLoading(false);
     }
   }, [activeConversation, hasMore, loading]);
@@ -279,8 +281,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     if (socket?.connected) {
       socket.emit('message:send', { conversationId, content });
     } else {
-      const msg = await api.conversations.sendMessage(conversationId, content);
-      setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? msg : m)));
+      try {
+        const msg = await api.conversations.sendMessage(conversationId, content);
+        setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? msg : m)));
+      } catch { console.log('Failed to send message via HTTP fallback'); }
     }
   }, [currentRole]);
 
@@ -314,7 +318,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
     try {
       await api.conversations.markAsRead(conversationId);
-    } catch {}
+    } catch { console.log('Failed to mark conversation as read'); }
     loadConversationsRef.current();
   }, []);
 

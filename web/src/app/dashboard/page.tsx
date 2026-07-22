@@ -33,11 +33,12 @@ interface DashboardStats {
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     api.get<DashboardStats>('/admins/dashboard-stats')
       .then(setStats)
-      .catch(console.error)
+      .catch((e) => setError(e.message || 'Failed to load dashboard'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -52,6 +53,14 @@ export default function DashboardPage() {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center h-64 text-text-secondary">Loading dashboard stats...</div>
+      </AdminLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AdminLayout>
+        <div className="bg-red-900/20 border border-red-800 text-red-400 rounded-lg px-4 py-3 text-sm">{error}</div>
       </AdminLayout>
     );
   }

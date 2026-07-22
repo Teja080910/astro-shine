@@ -167,11 +167,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const switchRole = (r: AppRole) => setRole(r);
 
-  const updateUser = async (u: any) => {
+  const updateUser = async (u: User | Astrologer) => {
     if (role === "astrologer") {
-      setAstrologer(u);
+      setAstrologer(u as Astrologer);
     } else {
-      setUser(u);
+      setUser(u as User);
     }
     try {
       const stored = await AsyncStorage.getItem("auth");
@@ -184,7 +184,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         await AsyncStorage.setItem("auth", JSON.stringify(data));
       }
-    } catch {}
+    } catch { console.log('Failed to persist auth update'); }
   };
 
   return (

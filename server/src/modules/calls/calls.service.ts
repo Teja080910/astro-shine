@@ -1,13 +1,14 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Logger } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, inArray } from 'drizzle-orm';
 import { RealtimeService } from '../../common/realtime.service';
 import { WalletService } from '../wallet/wallet.service';
 import { CommissionService } from '../commission/commission.service';
 
 @Injectable()
 export class CallsService {
+  private readonly logger = new Logger(CallsService.name);
   constructor(
     @Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>,
     private readonly realtime: RealtimeService,
@@ -21,11 +22,11 @@ export class CallsService {
 
   async findByAstrologerId(astrologerId: string) {
     const calls = await this.db.query.callLogs.findMany({ where: eq(schema.callLogs.astrologerId, astrologerId) });
-    const enriched = await Promise.all(calls.map(async (call) => {
-      const user = await this.db.query.users.findFirst({ where: eq(schema.users.id, call.userId) });
-      return { ...call, userName: user?.name || 'Unknown User' };
-    }));
-    return enriched;
+    const userIds = [...new Set(calls.map(c => c.userId).filter(Boolean))];
+    if (userIds.length === 0) return calls.map(c => ({ ...c, userName: 'Unknown User' }));
+    const users = await this.db.query.users.findMany({ where: inArray(schema.users.id, userIds as string[]) });
+    const userMap = new Map(users.map(u => [u.id, u.name]));
+    return calls.map(call => ({ ...call, userName: userMap.get(call.userId) || 'Unknown User' }));
   }
 
   async create(data: typeof schema.callLogs.$inferInsert) {
@@ -68,7 +69,16 @@ export class CallsService {
           referenceId: call.id,
         });
       } catch (e: any) {
-        console.error(`[CallsService] Failed to deduct wallet for call ${id}: ${e.message}`);
+        this.logger.error(`[CallsService] Failed to deduct wallet for call ${id}: ${e.message}`);
+        await this.db.update(schema.callLogs).set({
+          status: 'failed',
+          failedReason: `Wallet deduction failed: ${e.message}`,
+          endedAt: now,
+          duration,
+          cost,
+        }).where(eq(schema.callLogs.id, id));
+        this.realtime.broadcast('call:error', { callId: id, message: 'Payment processing failed' });
+        return null;
       }
     }
 
@@ -81,7 +91,7 @@ export class CallsService {
           costNum,
         );
       } catch (e: any) {
-        console.error(`[CallsService] Failed to distribute earnings for call ${id}: ${e.message}`);
+        this.logger.error(`[CallsService] Failed to distribute earnings for call ${id}: ${e.message}`);
       }
     }
 

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export function useAgora() {
   const [joined, setJoined] = useState(false);
@@ -9,12 +9,18 @@ export function useAgora() {
   const [isCameraFront, setIsCameraFront] = useState(true);
   const [isRemoteMuted, setIsRemoteMuted] = useState(false);
   const [isRemoteVideoMuted, setIsRemoteVideoMuted] = useState(false);
+  const simulateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (simulateTimerRef.current) clearTimeout(simulateTimerRef.current);
+    };
+  }, []);
 
   const joinChannel = useCallback(async (channel: string, token: string, uid: number, type: 'audio' | 'video') => {
     console.log('[Web Agora Mock] Joining channel:', channel);
     setJoined(true);
-    // Simulate a remote user joining after 2 seconds for testing on web
-    setTimeout(() => {
+    simulateTimerRef.current = setTimeout(() => {
       setRemoteUid(12345);
     }, 2000);
   }, []);
@@ -23,6 +29,10 @@ export function useAgora() {
     console.log('[Web Agora Mock] Leaving channel');
     setJoined(false);
     setRemoteUid(null);
+    if (simulateTimerRef.current) {
+      clearTimeout(simulateTimerRef.current);
+      simulateTimerRef.current = null;
+    }
   }, []);
 
   const toggleMute = useCallback(() => {

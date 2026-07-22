@@ -8,6 +8,7 @@ import {
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
+import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { AuthService } from '../auth/auth.service';
 import { ConversationsService } from './conversations.service';
@@ -21,12 +22,13 @@ import { WalletService } from '../wallet/wallet.service';
 import { CommissionService } from '../commission/commission.service';
 
 @WebSocketGateway({
-  cors: { origin: '*', credentials: true },
+  cors: { origin: process.env.CORS_ORIGIN || 'http://localhost:3000', credentials: true },
   path: '/ws',
 })
 export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
 
+  private readonly logger = new Logger(ChatGateway.name);
   private onlineUsers = new Map<string, { userId: string; role: string; socketId: string }>();
   private lastChatCharge = new Map<string, number>();
 
@@ -50,9 +52,8 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     const token = client.handshake.query.token as string;
     console.log(`[WS] Connection attempt - socketId: ${client.id}, hasToken: ${!!token}`);
     if (!token) {
-      client.data.userId = 'anonymous';
-      client.data.role = 'guest';
-      console.log(`[WS] Guest connection accepted - socketId: ${client.id}`);
+      client.emit('error', { message: 'Authentication required' });
+      client.disconnect();
       return;
     }
 
@@ -208,7 +209,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
           );
         }
       } catch (e: any) {
-        console.error(`[WS] Failed to deduct chat charge: ${e.message}`);
+        this.logger.error(`[WS] Failed to deduct chat charge: ${e.message}`);
       }
     }
 

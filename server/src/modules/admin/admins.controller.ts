@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Put, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { AdminsService } from './admins.service';
+import { AuthGuard } from '../../common/guards/auth.guard';
 
 function stripPassword(u: any) { if (!u) return u; const { password, ...r } = u; return r; }
 
 @Controller('admins')
+@UseGuards(AuthGuard)
 export class AdminsController {
   constructor(private readonly service: AdminsService) {}
 

@@ -1,7 +1,10 @@
-import { Controller, Get, Post, Put, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Param, Body, Query, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { ReviewsService } from './reviews.service';
+import { AuthGuard } from '../../common/guards/auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @Controller('reviews')
+@UseGuards(AuthGuard)
 export class ReviewsController {
   constructor(private readonly service: ReviewsService) {}
 
@@ -16,8 +19,14 @@ export class ReviewsController {
   async findOne(@Param('id') id: string) { return this.service.findById(id); }
 
   @Post()
-  async create(@Body() body: any) { return this.service.create(body); }
+  async create(@Body() body: any, @Req() req: any) {
+    body.userId = req.userId;
+    return this.service.create(body);
+  }
 
   @Put(':id/visibility')
-  async toggleVisibility(@Param('id') id: string, @Body() body: { isVisible: boolean }) { return this.service.toggleVisibility(id, body.isVisible); }
+  async toggleVisibility(@Param('id') id: string, @Body() body: { isVisible: boolean }, @Req() req: any) {
+    if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can toggle review visibility');
+    return this.service.toggleVisibility(id, body.isVisible);
+  }
 }

@@ -481,7 +481,7 @@ export function UserHomeScreen({ navigation }: any) {
                 <GlassCard style={styles.astroInner}>
                   <Avatar size={56} online={getAstrologerOnlineStatus(item, astrologerStatuses)} />
                   <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
-                  <StarRating rating={parseFloat(item.rating)} size={12} />
+                  <StarRating rating={typeof item.rating === 'string' ? parseFloat(item.rating) : item.rating} size={12} />
                   <Text style={typography.caption}>{item.specialization?.[0] || 'Astrologer'}</Text>
                   <Text style={typography.price}>₹{item.chatPricePerMin || item.pricePerMin}/min</Text>
                 </GlassCard>
@@ -506,7 +506,7 @@ export function UserHomeScreen({ navigation }: any) {
                 <GlassCard style={styles.astroInner}>
                   <Avatar size={56} online={getAstrologerOnlineStatus(item, astrologerStatuses)} />
                   <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
-                  <StarRating rating={parseFloat(item.rating)} size={12} />
+                  <StarRating rating={typeof item.rating === 'string' ? parseFloat(item.rating) : item.rating} size={12} />
                   <Text style={typography.caption}>{item.specialization?.[0] || 'Astrologer'}</Text>
                   <Text style={typography.price}>₹{item.chatPricePerMin || item.pricePerMin}/min</Text>
                 </GlassCard>
@@ -680,7 +680,7 @@ export function AstrologerListScreen({ route, navigation }: any) {
                   <Avatar size={56} online={isOnline} />
                   <View style={{ flex: 1, marginLeft: 12 }}>
                     <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
-                    <StarRating rating={parseFloat(item.rating)} size={12} />
+                    <StarRating rating={typeof item.rating === 'string' ? parseFloat(item.rating) : item.rating} size={12} />
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4, gap: 4 }}>
                       {item.specialization?.slice(0, 2).map((s) => <Chip key={s} label={s} />)}
                     </View>

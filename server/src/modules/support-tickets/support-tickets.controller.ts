@@ -25,14 +25,22 @@ export class SupportTicketsController {
   }
 
   @Put('tickets/:id/assign')
-  async assign(@Param('id') id: string, @Body() body: { adminId: string }) { return this.service.assign(id, body.adminId); }
+  @UseGuards(AuthGuard)
+  async assign(@Param('id') id: string, @Req() req: any) {
+    return this.service.assign(id, req.userId);
+  }
 
   @Put('tickets/:id/resolve')
+  @UseGuards(AuthGuard)
   async resolve(@Param('id') id: string) { return this.service.resolve(id); }
 
   @Get('tickets/:id/replies')
+  @UseGuards(AuthGuard)
   async getReplies(@Param('id') id: string) { return this.service.getReplies(id); }
 
   @Post('tickets/:id/replies')
-  async addReply(@Param('id') id: string, @Body() body: any) { return this.service.addReply({ ...body, ticketId: id }); }
+  @UseGuards(AuthGuard)
+  async addReply(@Param('id') id: string, @Body() body: any, @Req() req: any) {
+    return this.service.addReply({ ...body, ticketId: id, userId: req.userId });
+  }
 }

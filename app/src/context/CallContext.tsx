@@ -64,6 +64,7 @@ const CallContext = createContext<CallContextType>(null!);
 export function CallProvider({ children }: { children: React.ReactNode }) {
   const { token, user, astrologer } = useAuth();
   const socketRef = useRef<Socket | null>(null);
+  const cleanupTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const [callState, setCallState] = useState<CallState>('idle');
   const [callData, setCallData] = useState<CallData | null>(null);
   const [incomingCall, setIncomingCall] = useState<CallData | null>(null);
@@ -113,10 +114,15 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     socket.on('call:ended', (data: any) => {
       setCallState('ended');
       setCallData(prev => prev ? { ...prev, duration: data.duration } : null);
-      setTimeout(() => { setCallState('idle'); setCallData(null); }, 2000);
+      const cleanupTimer = setTimeout(() => { setCallState('idle'); setCallData(null); }, 2000);
+      cleanupTimersRef.current.push(cleanupTimer);
     });
 
-    return () => { socket.disconnect(); };
+    return () => {
+      cleanupTimersRef.current.forEach(clearTimeout);
+      cleanupTimersRef.current = [];
+      socket.disconnect();
+    };
   }, [token]);
 
   const initiateCall = useCallback(async (astrologerId: string, astrologerName: string, type: CallType) => {
@@ -126,10 +132,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     setCallState('calling');
     setCallData({ callId: '', channel: '', token: '', uid: 0, type, callerName: astrologerName });
     socketRef.current?.emit('call:initiate', { astrologerId, type });
-    setTimeout(() => {
+    const callTimer = setTimeout(() => {
       setCallState(prev => prev === 'calling' ? 'idle' : prev);
       setCallData(prev => prev && !prev.callId ? null : prev);
     }, 60000);
+    cleanupTimersRef.current.push(callTimer);
   }, []);
 
   const rejectCall = useCallback(() => {
@@ -156,7 +163,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     if (!callData || !callData.callId) return;
     socketRef.current?.emit('call:end', { callId: callData.callId });
     setCallState('ended');
-    setTimeout(() => { setCallState('idle'); setCallData(null); }, 2000);
+    const endTimer = setTimeout(() => { setCallState('idle'); setCallData(null); }, 2000);
+    cleanupTimersRef.current.push(endTimer);
   }, [callData]);
 
   return (

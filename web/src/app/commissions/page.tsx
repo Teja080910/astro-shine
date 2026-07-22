@@ -17,8 +17,15 @@ export default function CommissionsPage() {
   const [minAmount, setMinAmount] = useState('');
   const [maxCap, setMaxCap] = useState('');
   const [isActive, setIsActive] = useState(true);
+  const [formError, setFormError] = useState('');
 
-  useEffect(() => { api.get<Commission[]>('/commissions').then(setData).catch(() => {}); }, []);
+  const [formError, setFormError] = useState('');
+
+  useEffect(() => {
+    api.get<Commission[]>('/commissions')
+      .then(setData)
+      .catch((e) => console.error('Failed to load commissions:', e));
+  }, []);
 
   const openEdit = (c: Commission) => {
     setSelected(c);
@@ -31,6 +38,14 @@ export default function CommissionsPage() {
   };
 
   const handleSave = async () => {
+    if (!astrologerId.trim()) { setFormError('Astrologer ID is required'); return; }
+    const numValue = parseFloat(value);
+    if (!value || isNaN(numValue) || numValue <= 0) { setFormError('Value must be a positive number'); return; }
+    if (commissionType === 'percentage' && numValue > 100) { setFormError('Percentage cannot exceed 100'); return; }
+    if (minAmount && (isNaN(parseFloat(minAmount)) || parseFloat(minAmount) < 0)) { setFormError('Min amount must be non-negative'); return; }
+    if (maxCap && (isNaN(parseFloat(maxCap)) || parseFloat(maxCap) < 0)) { setFormError('Max cap must be non-negative'); return; }
+    setFormError('');
+
     const payload = {
       astrologerId,
       type: commissionType,
@@ -40,14 +55,18 @@ export default function CommissionsPage() {
       isActive,
     };
 
-    if (selected?.id) {
-      const updated = await api.put<Commission>(`/commissions/${selected.id}`, payload);
-      setData(data.map(c => c.id === selected.id ? updated : c));
-    } else {
-      const created = await api.post<Commission>('/commissions', payload);
-      setData([...data, created]);
+    try {
+      if (selected?.id) {
+        const updated = await api.put<Commission>(`/commissions/${selected.id}`, payload);
+        setData(data.map(c => c.id === selected.id ? updated : c));
+      } else {
+        const created = await api.post<Commission>('/commissions', payload);
+        setData([...data, created]);
+      }
+      setSelected(null);
+    } catch (e: any) {
+      setFormError(e.message || 'Failed to save commission');
     }
-    setSelected(null);
   };
 
   return (
@@ -72,8 +91,9 @@ export default function CommissionsPage() {
 
       <CustomModal open={!!selected} onClose={() => setSelected(null)} title={selected?.id ? 'Edit Commission' : 'Add Commission'}>
         <div className="space-y-4 text-text-secondary text-sm">
+          {formError && <div className="text-sm text-red-400 font-medium">{formError}</div>}
           <div>
-            <label className="block text-text-primary font-medium mb-1">Astrologer ID</label>
+            <label className="block text-text-primary font-medium mb-1">Astrologer ID *</label>
             <input
               type="text"
               disabled={!!selected?.id}

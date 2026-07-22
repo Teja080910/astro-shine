@@ -40,7 +40,7 @@ export interface Astrologer {
   avatar?: string; gender?: Gender; dateOfBirth?: string;
   bio?: string; experience: number; specialization: string[];
   languages: string[]; skills: string[];
-  pricePerMin: string; rating: string; totalReviews: number;
+  pricePerMin: string; chatPricePerMin?: string; audioCallPricePerMin?: string; videoCallPricePerMin?: string; rating: number; totalReviews: number;
   totalCalls: number; totalEarnings: string;
   verificationStatus: VerificationStatus;
   verificationDoc?: string[]; verificationNote?: string;
@@ -52,7 +52,8 @@ export interface Astrologer {
 // ============ Admin ============
 export interface Admin {
   id: string; name: string; email: string;
-  role: string; avatar?: string; isActive: boolean;
+  role: 'superadmin' | 'moderator' | 'support';
+  avatar?: string; isActive: boolean;
   lastLoginAt?: string; createdAt: string; updatedAt: string;
 }
 
@@ -202,7 +203,7 @@ export interface Report {
 
 // ============ Notifications ============
 export interface Notification {
-  id: string; userId?: string; astrologerId?: string;
+  id: string; userId: string; astrologerId?: string;
   type: NotificationType; title: string; body: string;
   data?: any; isRead: boolean; readAt?: string; image?: string;
   createdAt: string;
@@ -287,4 +288,24 @@ export interface MuhuratItem {
 
 // ============ API Response ============
 export interface ApiError { statusCode: number; message: string; timestamp: string; path: string; }
-export interface PaginatedResponse<T> { data: T[]; total: number; page: number; limit: number; }
+export interface PaginatedMessages { data: ConversationMessage[]; nextCursor: string | null; hasMore: boolean; }
+
+// ============ Payments ============
+export interface PaymentOrderRequest { amount: number; userId?: string; astrologerId?: string; description?: string; metadata?: any; }
+export interface PaymentOrderResponse { orderId: string; amount: number; currency: string; receipt?: string; }
+export interface PaymentVerifyRequest { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; }
+export interface PaymentVerifyResponse { success: boolean; transactionId?: string; }
+export interface PaymentStatusResponse { orderId: string; status: string; amount: number; currency: string; }
+export interface PaymentRefundRequest { amount?: number; notes?: Record<string, string>; }
+export interface PaymentRefundResponse { refundId: string; status: string; amount: number; }
+
+// ============ File Upload ============
+export interface FileUploadResponse { filename: string; url: string; }
+
+// ============ Schedule ============
+export interface ScheduleSlot {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+}

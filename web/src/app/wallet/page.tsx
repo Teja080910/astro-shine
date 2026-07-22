@@ -32,7 +32,7 @@ export default function WalletPage() {
       setData(enriched);
       setAdminWallet(enriched.find((w: any) => w.ownerType === 'Admin') || null);
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch(() => { setLoading(false); setWithdrawError('Failed to load wallet data'); });
   }, []);
 
   const handleWithdraw = async () => {

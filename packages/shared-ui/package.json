@@ -5,6 +5,8 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "peerDependencies": {
+    "@expo/vector-icons": "*",
+    "expo-linear-gradient": "*",
     "react": "*",
     "react-native": "*",
     "react-native-paper": "*",

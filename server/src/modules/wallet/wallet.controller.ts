@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -29,7 +29,9 @@ export class WalletController {
   }
 
   @Get('all')
-  async getAllWallets() {
+  @UseGuards(AuthGuard)
+  async getAllWallets(@Req() req: any) {
+    if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can view all wallets');
     return this.walletService.findAll();
   }
 }

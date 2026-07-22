@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import type { AuthResponse, LoginRequest, RegisterRequest, User, Astrologer, Admin, KundliRecord, MatchmakingRecord, HoroscopeRecord, PanchangRecord, Wallet, Transaction, WithdrawalRequest, Commission, CommissionLog, CallLog, ChatMessage, Gift, GiftTransaction, Donation, ShopProduct, Order, OrderItem, Blog, NewsItem, Review, Report, Notification, AppSetting, ApiKey, DynamicLink, WebsiteContent, LiveSession, MandirPooja, PoojaBooking, SupportTicket, TicketReply, AppRelease, Video, Conversation, ConversationMessage, PaginatedMessages, PaymentOrderRequest, PaymentOrderResponse, PaymentVerifyRequest, PaymentVerifyResponse, PaymentStatusResponse, PaymentRefundRequest, PaymentRefundResponse, MuhuratCategory, MuhuratItem } from '../shared/types';
+import type { AuthResponse, LoginRequest, RegisterRequest, User, Astrologer, Admin, KundliRecord, MatchmakingRecord, HoroscopeRecord, PanchangRecord, Wallet, Transaction, WithdrawalRequest, Commission, CommissionLog, CallLog, ChatMessage, Gift, GiftTransaction, Donation, ShopProduct, Order, OrderItem, Blog, NewsItem, Review, Report, Notification, AppSetting, ApiKey, DynamicLink, WebsiteContent, LiveSession, MandirPooja, PoojaBooking, SupportTicket, TicketReply, AppRelease, Video, Conversation, ConversationMessage, PaginatedMessages, PaymentOrderRequest, PaymentOrderResponse, PaymentVerifyRequest, PaymentVerifyResponse, PaymentStatusResponse, PaymentRefundRequest, PaymentRefundResponse, MuhuratCategory, MuhuratItem, FileUploadResponse, ScheduleSlot } from '../shared/types';
 import { config } from '../config';
 
 const BASE_URL = config.apiBaseUrl;
@@ -14,6 +14,20 @@ class ApiClient {
       if (this.token) config.headers.Authorization = `Bearer ${this.token}`;
       return config;
     });
+    this.client.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          this.token = null;
+          if (typeof window !== 'undefined') {
+            import('@react-native-async-storage/async-storage')
+              .then((AsyncStorage) => AsyncStorage.default.removeItem('auth'))
+              .catch(() => {});
+          }
+        }
+        return Promise.reject(error);
+      },
+    );
   }
 
   setToken(token: string | null) { this.token = token; }

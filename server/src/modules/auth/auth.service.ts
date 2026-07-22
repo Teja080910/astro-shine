@@ -22,7 +22,10 @@ export class AuthService {
     private astrologersService: AstrologersService,
     private emailService: EmailService,
   ) {
-    this.jwtSecret = this.configService.get<string>('JWT_SECRET', 'default-secret');
+    this.jwtSecret = this.configService.get<string>('JWT_SECRET') || '';
+    if (!this.jwtSecret) {
+      throw new Error('JWT_SECRET environment variable is required');
+    }
   }
 
   async sendEmailOtp(email: string): Promise<{ message: string }> {
@@ -35,7 +38,12 @@ export class AuthService {
     }
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     this.otpStore.set(`email:${email}`, { otp, expiresAt: Date.now() + 600000 });
-    await this.emailService.sendOtpEmail(email, otp);
+    try {
+      await this.emailService.sendOtpEmail(email, otp);
+    } catch (e) {
+      this.otpStore.delete(`email:${email}`);
+      throw new BadRequestException('Failed to send OTP email');
+    }
     return { message: 'OTP sent to email' };
   }
 

@@ -153,6 +153,30 @@ export class CommissionService {
         platformFee: platformFee.toFixed(2),
       });
 
+      if (platformFee > 0) {
+        const adminWallet = await this.walletService.getOrCreateAdminWallet();
+        const feeStr = platformFee.toFixed(2);
+        await tx
+          .update(schema.wallets)
+          .set({
+            balance: sql`${schema.wallets.balance} + ${feeStr}::decimal`,
+            totalAdded: sql`${schema.wallets.totalAdded} + ${feeStr}::decimal`,
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.wallets.id, adminWallet.id));
+        await tx.insert(schema.transactions).values({
+          walletId: adminWallet.id,
+          type: 'credit',
+          category: 'commission',
+          amount: feeStr,
+          fee: '0',
+          netAmount: feeStr,
+          status: 'success',
+          description: `Platform fee from call ${callId}`,
+          referenceId: callId,
+        });
+      }
+
       await tx
         .update(schema.astrologers)
         .set({

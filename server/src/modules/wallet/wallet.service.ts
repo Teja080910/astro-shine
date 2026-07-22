@@ -75,11 +75,14 @@ export class WalletService {
   }
 
   async addFunds(walletId: string, amount: string) {
+    const parsed = parseFloat(amount);
+    if (isNaN(parsed) || parsed <= 0) throw new BadRequestException('Invalid amount');
+    const amountStr = parsed.toFixed(2);
     const [wallet] = await this.db
       .update(schema.wallets)
       .set({
-        balance: sql`${schema.wallets.balance} + ${amount}::decimal`,
-        totalAdded: sql`${schema.wallets.totalAdded} + ${amount}::decimal`,
+        balance: sql`${schema.wallets.balance} + ${amountStr}::decimal`,
+        totalAdded: sql`${schema.wallets.totalAdded} + ${amountStr}::decimal`,
         updatedAt: new Date(),
       })
       .where(eq(schema.wallets.id, walletId))
@@ -88,11 +91,14 @@ export class WalletService {
   }
 
   async deductFunds(walletId: string, amount: string) {
+    const parsed = parseFloat(amount);
+    if (isNaN(parsed) || parsed <= 0) throw new BadRequestException('Invalid amount');
+    const amountStr = parsed.toFixed(2);
     const [wallet] = await this.db
       .update(schema.wallets)
       .set({
-        balance: sql`${schema.wallets.balance} - ${amount}::decimal`,
-        totalDeducted: sql`${schema.wallets.totalDeducted} + ${amount}::decimal`,
+        balance: sql`${schema.wallets.balance} - ${amountStr}::decimal`,
+        totalDeducted: sql`${schema.wallets.totalDeducted} + ${amountStr}::decimal`,
         updatedAt: new Date(),
       })
       .where(eq(schema.wallets.id, walletId))

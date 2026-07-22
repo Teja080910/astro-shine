@@ -149,6 +149,26 @@ export class ConversationsService {
     return Number(result[0]?.count ?? 0);
   }
 
+  async getUnreadCounts(conversationIds: string[], userId: string): Promise<Record<string, number>> {
+    if (conversationIds.length === 0) return {};
+    const result = await this.db.select({
+      conversationId: schema.conversationMessages.conversationId,
+      count: sql<number>`count(*)`,
+    })
+      .from(schema.conversationMessages)
+      .where(
+        and(
+          sql`${schema.conversationMessages.conversationId} = ANY(${conversationIds})`,
+          eq(schema.conversationMessages.isRead, false),
+          sql`${schema.conversationMessages.senderId} != ${userId}`,
+        ),
+      )
+      .groupBy(schema.conversationMessages.conversationId);
+    const map: Record<string, number> = {};
+    for (const row of result) map[row.conversationId] = Number(row.count);
+    return map;
+  }
+
   async deleteConversation(id: string) {
     await this.db.delete(schema.conversations).where(eq(schema.conversations.id, id));
   }

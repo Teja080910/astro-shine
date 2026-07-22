@@ -3,6 +3,7 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { Sun, Moon, Eye, EyeOff, Lock, Mail, Sparkles } from 'lucide-react';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
@@ -12,6 +13,22 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const { login, token } = useAuth();
   const router = useRouter();
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('admin-theme') as 'dark' | 'light';
+    if (saved) {
+      setTheme(saved);
+      document.documentElement.setAttribute('data-theme', saved);
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    localStorage.setItem('admin-theme', next);
+    document.documentElement.setAttribute('data-theme', next);
+  };
 
   useEffect(() => {
     if (token) router.replace('/dashboard');
@@ -33,52 +50,103 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm bg-surface-light rounded-2xl p-8 border border-divider shadow-lg">
+    <div className="min-h-screen relative flex items-center justify-center bg-background px-4 overflow-hidden transition-colors duration-200">
+      {/* Dynamic Background Gradients */}
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] rounded-full bg-accent-gold/10 blur-[120px] pointer-events-none" />
+
+      {/* Floating Theme Switcher */}
+      <button 
+        onClick={toggleTheme}
+        className="absolute top-6 right-6 p-3 rounded-xl border border-card-border bg-card-bg backdrop-blur-md text-text-secondary hover:text-text-primary transition-all duration-200 hover:scale-105 shadow-sm"
+      >
+        {theme === 'dark' ? <Sun size={20} className="text-accent-gold" /> : <Moon size={20} className="text-primary" />}
+      </button>
+
+      {/* Login Card */}
+      <div className="w-full max-w-md bg-card-bg border border-card-border backdrop-blur-xl rounded-[28px] p-10 shadow-2xl relative z-10 transition-all duration-300">
+        
+        {/* Header Logo & Subtitle */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-extrabold text-text-primary">Astro Shine</h1>
-          <p className="text-text-muted text-sm mt-1">Admin Panel</p>
+          <div className="mx-auto w-20 h-20 rounded-2xl overflow-hidden bg-gradient-to-tr from-primary/10 to-accent-gold/10 flex items-center justify-center border border-card-border shadow-lg mb-4">
+            <img 
+              src="/logo_transparent.png" 
+              alt="Astro Shine Logo" 
+              className="w-16 h-16 object-contain"
+              onError={(e) => {
+                e.currentTarget.src = '/logo.png';
+              }}
+            />
+          </div>
+          <h1 className="text-3xl font-black tracking-tight text-text-primary">
+            ASTRO <span className="text-accent-gold">SHINE</span>
+          </h1>
+          <p className="text-text-secondary text-sm font-semibold tracking-wider uppercase mt-1.5 opacity-80">
+            Admin Portal
+          </p>
         </div>
 
         {error && (
-          <div className="bg-danger/10 border border-danger/30 text-danger text-sm rounded-lg px-4 py-2 mb-4">
-            {error}
+          <div className="bg-danger/10 border border-danger/20 text-danger text-sm rounded-2xl px-4 py-3 mb-6 flex items-center gap-2">
+            <span className="text-base">⚠️</span>
+            <span className="font-medium">{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Email Field */}
           <div>
-            <label className="block text-text-secondary text-sm font-medium mb-1">Email</label>
-            <input
-              type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-              className="input-field w-full" placeholder="admin@example.com" required
-            />
-          </div>
-          <div>
-            <label className="block text-text-secondary text-sm font-medium mb-1">Password</label>
+            <label className="block text-text-secondary text-sm font-bold mb-2">
+              Email Address
+            </label>
             <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
+                <Mail size={18} />
+              </span>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="input-field w-full pl-12 pr-4 py-3.5 focus:border-primary transition-colors duration-200"
+                placeholder="admin@example.com"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Password Field */}
+          <div>
+            <label className="block text-text-secondary text-sm font-bold mb-2">
+              Password
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
+                <Lock size={18} />
+              </span>
               <input
                 type={showPassword ? 'text' : 'password'}
-                value={password} onChange={(e) => setPassword(e.target.value)}
-                className="input-field w-full pr-10" placeholder="Enter your password" required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input-field w-full pl-12 pr-12 py-3.5 focus:border-primary transition-colors duration-200"
+                placeholder="••••••••"
+                required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors duration-150"
               >
-                {showPassword ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                )}
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>
+
+          {/* Submit Button */}
           <button
-            type="submit" disabled={loading}
-            className="gradient-btn w-full py-3 text-sm font-bold"
-            style={{ borderRadius: '16px' }}
+            type="submit"
+            disabled={loading}
+            className="gradient-btn w-full py-4 text-base font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transform active:scale-[0.98] transition-all duration-150"
+            style={{ borderRadius: '18px' }}
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
