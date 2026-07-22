@@ -2,7 +2,7 @@
 
 import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { useAuthStore } from '@/store/auth';
 import { Sun, Moon, Eye, EyeOff, Lock, Mail, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import logoImg from '../../assets/logo.png';
@@ -13,7 +13,7 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, token } = useAuth();
+  const { login, token } = useAuthStore();
   const router = useRouter();
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
@@ -157,9 +157,5 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
-  return (
-    <AuthProvider>
-      <LoginForm />
-    </AuthProvider>
-  );
+  return <LoginForm />;
 }

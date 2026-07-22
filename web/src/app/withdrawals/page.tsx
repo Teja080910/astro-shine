@@ -6,10 +6,10 @@ import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
 import { api } from '@/lib/api';
 import { useSocket } from '@/hooks/useSocket';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthStore } from '@/store/auth';
 
 function WithdrawalsContent() {
-  const { admin } = useAuth();
+  const { admin } = useAuthStore();
   const [data, setData] = useState<any[]>([]);
   const [selected, setSelected] = useState<any | null>(null);
 

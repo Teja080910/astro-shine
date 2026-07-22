@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthStore } from '@/store/auth';
 import { Table, Badge } from '@/components/UIComponents';
 import { api } from '@/lib/api';
 import type { Report } from '@astro-shine/shared-types';
@@ -12,7 +12,7 @@ export default function ReportsPage() {
   const [data, setData] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { admin } = useAuth();
+  const { admin } = useAuthStore();
 
   const fetchReports = useCallback(() => {
     api.get<Report[]>('/reports')
