@@ -72,7 +72,6 @@ export class CallsService {
         this.logger.error(`[CallsService] Failed to deduct wallet for call ${id}: ${e.message}`);
         await this.db.update(schema.callLogs).set({
           status: 'failed',
-          failedReason: `Wallet deduction failed: ${e.message}`,
           endedAt: now,
           duration,
           cost,

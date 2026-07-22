@@ -560,7 +560,7 @@ export function MandirPoojaScreen({ navigation }: any) {
         <Ionicons name="flame" size={48} color={colors.accentGold} />
         <Text style={[typography.cardTitle, { marginTop: 12 }]}>Book a Sacred Pooja</Text>
         <Text style={[typography.body, { textAlign: 'center', marginTop: 8 }]}>Satyanarayan Pooja, Rudrabhishek, Navgraha Shanti and more</Text>
-        <GradientButton title="View Pooja List" onPress={() => navigation.navigate('MandirPoojaList')} variant="gold" style={{ marginTop: 16 }} />
+        <GradientButton title="View Pooja List" onPress={() => navigation.navigate('MandirPooja')} variant="gold" style={{ marginTop: 16 }} />
       </GlassCard>
     </ScreenWrapper>
   );
