@@ -221,15 +221,20 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   }, [loadConversations]);
 
   const openConversation = useCallback(async (participantId: string, participantRole: string) => {
-    const conv = await api.conversations.create(participantId, participantRole);
-    setActiveConversationState(conv);
-    cursorRef.current = null;
-    setHasMore(true);
-    setMessages([]);
-    if (socketRef.current?.connected) {
-      socketRef.current.emit('join:conversation', { conversationId: conv.id });
+    try {
+      const conv = await api.conversations.create(participantId, participantRole);
+      setActiveConversationState(conv);
+      cursorRef.current = null;
+      setHasMore(true);
+      setMessages([]);
+      if (socketRef.current?.connected) {
+        socketRef.current.emit('join:conversation', { conversationId: conv.id });
+      }
+      return conv.id;
+    } catch (e: any) {
+      console.log('Failed to open conversation:', e.message);
+      throw e;
     }
-    return conv.id;
   }, []);
 
   const setActiveConversation = useCallback((conv: Conversation | null) => {

@@ -47,7 +47,7 @@ function WithdrawalsContent() {
             </td>
             <td className="px-4 py-3 text-text-muted text-sm">{formatDate(w.createdAt)}</td>
             <td className="px-4 py-3">
-              {w.status === 'pending' && !w.adminId && (
+              {w.status === 'pending' && (
                 <button onClick={() => setSelected(w)} className="text-primary-light hover:underline text-sm">Review</button>
               )}
             </td>

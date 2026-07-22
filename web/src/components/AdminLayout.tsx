@@ -104,8 +104,6 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <AuthProvider>
-      <ProtectedLayout>{children}</ProtectedLayout>
-    </AuthProvider>
+    <ProtectedLayout>{children}</ProtectedLayout>
   );
 }

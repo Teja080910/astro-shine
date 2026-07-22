@@ -4,6 +4,8 @@ import { useState, FormEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { Sun, Moon, Eye, EyeOff, Lock, Mail, Sparkles } from 'lucide-react';
+import Image from 'next/image';
+import logoImg from '../../assets/logo.png';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
@@ -68,14 +70,12 @@ function LoginForm() {
         
         {/* Header Logo & Subtitle */}
         <div className="text-center mb-8">
-          <div className="mx-auto w-20 h-20 rounded-2xl overflow-hidden bg-gradient-to-tr from-primary/10 to-accent-gold/10 flex items-center justify-center border border-card-border shadow-lg mb-4">
-            <img 
-              src="/logo_transparent.png" 
+          <div className="mx-auto w-24 h-24 flex items-center justify-center mb-4">
+            <Image 
+              src={logoImg} 
               alt="Astro Shine Logo" 
-              className="w-16 h-16 object-contain"
-              onError={(e) => {
-                e.currentTarget.src = '/logo.png';
-              }}
+              className="w-full h-full object-contain"
+              priority
             />
           </div>
           <h1 className="text-3xl font-black tracking-tight text-text-primary">
@@ -158,8 +158,6 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <AuthProvider>
-      <LoginForm />
-    </AuthProvider>
+    <LoginForm />
   );
 }

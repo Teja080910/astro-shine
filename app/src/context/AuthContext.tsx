@@ -32,7 +32,7 @@ interface AuthState {
   loginWithOtp: (identifier: string, otp: string, role: AppRole, type?: 'phone' | 'email') => Promise<void>;
   logout: () => Promise<void>;
   switchRole: (role: AppRole) => void;
-  updateUser: (u: any) => Promise<void>;
+  updateUser: (u: User | Astrologer) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState>(null!);
@@ -73,6 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setThemeState(systemScheme);
         }
       } catch {
+        console.log('Failed to restore auth state');
       } finally {
         setLoading(false);
       }
@@ -84,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setThemeState(t);
     try {
       await AsyncStorage.setItem("theme_preference", t);
-    } catch {}
+    } catch { console.log('Failed to persist theme preference'); }
   };
 
   const persist = async (t: string, u?: User, a?: Astrologer, r?: AppRole) => {

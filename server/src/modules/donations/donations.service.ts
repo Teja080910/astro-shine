@@ -63,16 +63,7 @@ export class DonationsService {
   }
 
   async createWithdrawn(data: { adminId: string; amount: number; note?: string }) {
-    const stats = await this.getStats();
-    if (data.amount > stats.pending) {
-      throw new BadRequestException('Insufficient donation balance');
-    }
-
     const amountStr = data.amount.toFixed(2);
-    const adminWallet = await this.walletService.getWalletByAdminId(data.adminId);
-    if (!adminWallet) {
-      throw new BadRequestException('Admin wallet not found');
-    }
 
     await this.db.transaction(async (tx) => {
       const wResult = await tx.execute<{ id: string; balance: string }>(
@@ -80,6 +71,18 @@ export class DonationsService {
       );
       const w = wResult.rows?.[0];
       if (!w) throw new BadRequestException('Admin wallet not found');
+
+      const receivedResult = await tx.execute<{ sum: string }>(
+        sql`SELECT COALESCE(SUM(amount::decimal), 0) as sum FROM donation_logs WHERE type = 'received'`,
+      );
+      const withdrawnResult = await tx.execute<{ sum: string }>(
+        sql`SELECT COALESCE(SUM(amount::decimal), 0) as sum FROM donation_logs WHERE type = 'withdrawn'`,
+      );
+      const pending = Number(receivedResult.rows[0].sum) - Number(withdrawnResult.rows[0].sum);
+
+      if (data.amount > pending) {
+        throw new BadRequestException('Insufficient donation balance');
+      }
 
       await tx
         .update(schema.wallets)

@@ -19,8 +19,6 @@ export default function CommissionsPage() {
   const [isActive, setIsActive] = useState(true);
   const [formError, setFormError] = useState('');
 
-  const [formError, setFormError] = useState('');
-
   useEffect(() => {
     api.get<Commission[]>('/commissions')
       .then(setData)

@@ -59,14 +59,16 @@ export class UsersService {
       .where(eq(schema.users.id, id));
   }
 
-  async verifyPassword(id: string, password: string): Promise<boolean> {
-    let account: any = await this.findById(id);
-    if (!account) {
+  async verifyPassword(id: string, password: string, role: string = 'user'): Promise<boolean> {
+    let account: any = null;
+
+    if (role === 'user') {
+      account = await this.findById(id);
+    } else if (role === 'admin') {
       account = await this.db.query.admins.findFirst({
         where: eq(schema.admins.id, id),
       });
-    }
-    if (!account) {
+    } else if (role === 'astrologer') {
       account = await this.db.query.astrologers.findFirst({
         where: eq(schema.astrologers.id, id),
       });

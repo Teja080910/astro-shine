@@ -288,7 +288,7 @@ export interface MuhuratItem {
 
 // ============ API Response ============
 export interface ApiError { statusCode: number; message: string; timestamp: string; path: string; }
-export interface PaginatedMessages { data: ConversationMessage[]; nextCursor: string | null; hasMore: boolean; }
+export interface PaginatedMessages { data: ChatMessage[]; nextCursor: string | null; hasMore: boolean; }
 
 // ============ Payments ============
 export interface PaymentOrderRequest { amount: number; userId?: string; astrologerId?: string; description?: string; metadata?: any; }

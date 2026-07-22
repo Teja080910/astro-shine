@@ -234,7 +234,7 @@ export function EditProfileScreen() {
       } else {
         updated = await api.users.update(profile!.id, { name, phone, gender, dateOfBirth });
       }
-      await updateUser(updated);
+      await updateUser(updated as any);
       navigation.goBack();
     } catch (e) {
       console.log(e);
@@ -519,21 +519,40 @@ export function DonationScreen() {
 export function ReportScreen({ route, navigation }: any) {
   const [reason, setReason] = useState('');
   const [desc, setDesc] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const reasons = ['spam', 'harassment', 'fake_profile', 'inappropriate', 'other'];
+  const { reportedUserId, reportedAstrologerId } = route.params || {};
+
+  const handleSubmitReport = async () => {
+    try {
+      setSubmitting(true);
+      await api.reports.create({ reason, description: desc, reportedUserId, reportedAstrologerId });
+      Alert.alert('Reported', 'Your report has been submitted successfully.');
+      navigation.goBack();
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.message || e?.message || 'Failed to submit report');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Report" />
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 14 }}>
-        {reasons.map(r => <Chip key={r} label={r.replace('_', ' ')} selected={reason === r} onPress={() => setReason(r)} />)}
+        {reasons.map(r => <Chip key={r} label={r.replace(/_/g, ' ')} selected={reason === r} onPress={() => setReason(r)} />)}
       </View>
       <View style={{ marginBottom: 14 }}><TextInput style={[styles.input, { height: 80, backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]} value={desc} onChangeText={setDesc} placeholder="Additional details..." placeholderTextColor={colors.textMuted} multiline textAlignVertical="top" /></View>
-      <GradientButton title="Submit Report" variant="danger" onPress={() => {}} />
+      <GradientButton title={submitting ? 'Submitting...' : 'Submit Report'} variant="danger" disabled={submitting} onPress={() => {
+        if (!reason) { Alert.alert('Required', 'Please select a reason'); return; }
+        handleSubmitReport();
+      }} />
     </ScreenWrapper>
   );
 }
 
 // Mandir Pooja
-export function MandirPoojaScreen() {
+export function MandirPoojaScreen({ navigation }: any) {
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Mandir Pooja" />
@@ -541,7 +560,7 @@ export function MandirPoojaScreen() {
         <Ionicons name="flame" size={48} color={colors.accentGold} />
         <Text style={[typography.cardTitle, { marginTop: 12 }]}>Book a Sacred Pooja</Text>
         <Text style={[typography.body, { textAlign: 'center', marginTop: 8 }]}>Satyanarayan Pooja, Rudrabhishek, Navgraha Shanti and more</Text>
-        <GradientButton title="View Pooja List" onPress={() => {}} variant="gold" style={{ marginTop: 16 }} />
+        <GradientButton title="View Pooja List" onPress={() => navigation.navigate('MandirPoojaList')} variant="gold" style={{ marginTop: 16 }} />
       </GlassCard>
     </ScreenWrapper>
   );
@@ -763,7 +782,7 @@ export function AstrologerCommissionScreen() {
 }
 
 // Astrologer: Go Live
-export function AstrologerGoLiveScreen() {
+export function AstrologerGoLiveScreen({ navigation }: any) {
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Go Live" />
@@ -771,7 +790,7 @@ export function AstrologerGoLiveScreen() {
         <Ionicons name="radio" size={48} color={colors.danger} />
         <Text style={[typography.cardTitle, { marginTop: 12 }]}>Start a Live Session</Text>
         <Text style={[typography.body, { textAlign: 'center', marginTop: 8 }]}>Stream to your followers in real-time. Share predictions, answer questions, and grow your audience.</Text>
-        <GradientButton title="Go Live Now" variant="gold" onPress={() => {}} style={{ marginTop: 16 }} />
+        <GradientButton title="Go Live Now" onPress={() => navigation.navigate('GoLive')} variant="gold" style={{ marginTop: 16 }} />
       </GlassCard>
     </ScreenWrapper>
   );

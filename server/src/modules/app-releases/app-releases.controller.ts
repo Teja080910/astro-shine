@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Put, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Param, Body, Query, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { AppReleasesService } from './app-releases.service';
+import { AuthGuard } from '../../common/guards/auth.guard';
 
 @Controller('releases')
 export class AppReleasesController {
@@ -15,8 +16,16 @@ export class AppReleasesController {
   async findOne(@Param('id') id: string) { return this.service.findById(id); }
 
   @Post()
-  async create(@Body() body: any) { return this.service.create(body); }
+  @UseGuards(AuthGuard)
+  async create(@Body() body: any, @Req() req: any) {
+    if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can create releases');
+    return this.service.create(body);
+  }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() body: any) { return this.service.update(id, body); }
+  @UseGuards(AuthGuard)
+  async update(@Param('id') id: string, @Body() body: any, @Req() req: any) {
+    if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can update releases');
+    return this.service.update(id, body);
+  }
 }

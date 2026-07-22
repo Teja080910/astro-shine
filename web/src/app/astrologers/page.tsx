@@ -111,7 +111,7 @@ export default function AstrologersPage() {
             <p><span className="font-medium text-text-primary">Specialization:</span> {selected.specialization?.join(', ') || '-'}</p>
             <p><span className="font-medium text-text-primary">Languages:</span> {selected.languages?.join(', ') || '-'}</p>
             <p><span className="font-medium text-text-primary">Skills:</span> {selected.skills?.join(', ') || '-'}</p>
-            <p><span className="font-medium text-text-primary">Rating:</span> {parseFloat(selected.rating).toFixed(2)} ({selected.totalReviews} reviews)</p>
+            <p><span className="font-medium text-text-primary">Rating:</span> {Number(selected.rating).toFixed(2)} ({selected.totalReviews} reviews)</p>
             <p><span className="font-medium text-text-primary">Total Earnings:</span> ₹{selected.totalEarnings}</p>
             <p><span className="font-medium text-text-primary">Bio:</span> {selected.bio || '-'}</p>
 
