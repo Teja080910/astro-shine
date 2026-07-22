@@ -73,7 +73,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     if (!token) return;
     const socket = io(config.socketUrl, {
       path: config.socketPath,
-      query: { token },
+      auth: { token },
       transports: ['websocket', 'polling'],
     });
     socketRef.current = socket;

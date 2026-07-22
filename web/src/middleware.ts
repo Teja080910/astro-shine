@@ -19,6 +19,18 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  try {
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+    if (!payload.sub || !payload.role || payload.exp * 1000 < Date.now()) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+    if (payload.role !== 'admin' && payload.role !== 'superadmin') {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
+  } catch {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
   return NextResponse.next();
 }
 

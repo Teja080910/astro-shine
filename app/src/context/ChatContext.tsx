@@ -76,7 +76,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
     const socket = io(config.socketUrl, {
       path: config.socketPath,
-      query: { token },
+      auth: { token },
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: Infinity,
@@ -85,44 +85,34 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     });
 
     socket.on('connect', () => {
-      console.log(`[WS Client] Connected - socketId: ${socket.id}`);
+      if (__DEV__) console.log(`[WS] Connected`);
       setConnected(true);
       loadConversationsRef.current();
     });
     socket.on('disconnect', (reason) => {
-      console.log(`[WS Client] Disconnected - reason: ${reason}`);
+      if (__DEV__) console.log(`[WS] Disconnected: ${reason}`);
       setConnected(false);
     });
     socket.on('connect_error', (err) => {
-      console.log('[WS Client] Connect error:', err.message);
+      console.error('[WS] Connect error:', err.message);
     });
 
     socket.on('message:new', (message: ConversationMessage) => {
-      console.log(`[WS Client] message:new RECEIVED - id: ${message.id}, conversationId: ${message.conversationId}, senderId: ${message.senderId}, content: "${message.content}"`);
-      console.log(`[WS Client] Active conversation:`, activeConvRef.current?.id);
       const active = activeConvRef.current;
       if (active?.id === message.conversationId) {
-        console.log(`[WS Client] Message matches active conversation, adding to messages`);
         setMessages((prev) => {
           const exists = prev.some((m) => m.id === message.id);
-          if (exists) {
-            console.log(`[WS Client] Message already exists in state, skipping`);
-            return prev;
-          }
+          if (exists) return prev;
           const hasOptimistic = prev.some((m) => m.id.startsWith('temp-') && m.senderId === message.senderId && m.conversationId === message.conversationId);
           if (hasOptimistic) {
-            console.log(`[WS Client] Replacing optimistic message with server message`);
             return prev.map((m) =>
               m.id.startsWith('temp-') && m.senderId === message.senderId && m.conversationId === message.conversationId
                 ? message
                 : m,
             );
           }
-          console.log(`[WS Client] Adding message to state. Current count: ${prev.length}`);
           return [...prev, message];
         });
-      } else {
-        console.log(`[WS Client] Message NOT for active conversation (active: ${active?.id}, msg: ${message.conversationId})`);
       }
       loadConversationsRef.current();
     });
@@ -212,7 +202,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       const counts: Record<string, number> = {};
       res.data.forEach((c: any) => { counts[c.id] = c.unreadCount; });
       setUnreadCounts(counts);
-    } catch { console.log('Failed to load conversations'); }
+    } catch {
+      console.error('Failed to load conversations');
+    }
   }, []);
 
   const loadConversationsRef = useRef(loadConversations);
@@ -232,7 +224,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       }
       return conv.id;
     } catch (e: any) {
-      console.log('Failed to open conversation:', e.message);
+      console.error('Failed to open conversation:', e.message);
       throw e;
     }
   }, []);
@@ -261,7 +253,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setMessages((prev) => [...res.data, ...prev]);
       cursorRef.current = res.nextCursor;
       setHasMore(res.hasMore);
-    } catch { console.log('Failed to load more messages'); } finally {
+    } catch { console.error('Failed to load more messages'); } finally {
       setLoading(false);
     }
   }, [activeConversation, hasMore, loading]);
@@ -289,7 +281,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       try {
         const msg = await api.conversations.sendMessage(conversationId, content);
         setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? msg : m)));
-      } catch { console.log('Failed to send message via HTTP fallback'); }
+      } catch { console.error('Failed to send message via HTTP fallback'); }
     }
   }, [currentRole]);
 
@@ -323,7 +315,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
     try {
       await api.conversations.markAsRead(conversationId);
-    } catch { console.log('Failed to mark conversation as read'); }
+    } catch { console.error('Failed to mark conversation as read'); }
     loadConversationsRef.current();
   }, []);
 

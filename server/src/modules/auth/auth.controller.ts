@@ -23,10 +23,17 @@ export class AuthController {
     return this.authService.checkPhone(phone);
   }
 
-  @Post('phone-login')
-  async phoneLogin(@Body('phone') phone: string) {
+  @Post('send-phone-otp')
+  async sendPhoneOtp(@Body('phone') phone: string) {
     if (!phone || phone.length < 10) throw new BadRequestException('Valid phone number is required');
-    return this.authService.loginWithPhone(phone);
+    return this.authService.sendPhoneOtp(phone);
+  }
+
+  @Post('phone-login')
+  async phoneLogin(@Body() body: { phone: string; otp: string }) {
+    if (!body.phone || body.phone.length < 10) throw new BadRequestException('Valid phone number is required');
+    if (!body.otp) throw new BadRequestException('OTP is required');
+    return this.authService.loginWithPhone(body.phone, body.otp);
   }
 
   @Post('register')

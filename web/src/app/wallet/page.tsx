@@ -44,8 +44,21 @@ export default function WalletPage() {
       setWithdrawModal(false);
       setWithdrawAmount('');
       const updated = await api.get<any[]>('/wallet/all');
-      setData(data.map(w => updated.find((u: any) => u.id === w.id) || w));
-      setAdminWallet(updated.find((w: any) => w.adminId === adminWallet.adminId));
+      const [updatedUsers, updatedAstros, updatedAdmins] = await Promise.all([
+        api.get<any[]>('/users').catch(() => []),
+        api.get<any[]>('/astrologers').catch(() => []),
+        api.get<any[]>('/admins').catch(() => []),
+      ]);
+      const userMap = Object.fromEntries(updatedUsers.map((u: any) => [u.id, u.name]));
+      const astroMap = Object.fromEntries(updatedAstros.map((a: any) => [a.id, a.name]));
+      const adminMap = Object.fromEntries(updatedAdmins.map((a: any) => [a.id, a.name]));
+      const enriched = updated.map((w: any) => ({
+        ...w,
+        ownerName: w.adminId ? adminMap[w.adminId] || 'Admin' : w.astrologerId ? astroMap[w.astrologerId] : userMap[w.userId] || 'Unknown',
+        ownerType: w.adminId ? 'Admin' : w.astrologerId ? 'Astrologer' : 'User',
+      }));
+      setData(enriched);
+      setAdminWallet(enriched.find((w: any) => w.adminId === adminWallet.adminId) || null);
     } catch (e: any) {
       setWithdrawError(e.message || 'Withdrawal failed');
     } finally {

@@ -33,6 +33,9 @@ export default function AstrologersPage() {
 
   const handleSavePrices = async (id: string) => {
     const comm = await api.get<any>(`/commissions/by-astrologer/${id}`).catch(() => null);
+    if (comm === null) {
+      alert('Failed to fetch commission rules. Please try again.'); return;
+    }
     const minCap = comm?.minCap ? parseFloat(comm.minCap) : 0;
     const maxCap = comm?.maxCap ? parseFloat(comm.maxCap) : 0;
     const vals = [chatPrice, audioPrice, videoPrice].map(v => parseFloat(v) || 0);

@@ -16,14 +16,25 @@ class ApiClient {
     });
     this.client.interceptors.response.use(
       (response) => response,
-      (error) => {
-        if (error.response?.status === 401) {
+      async (error) => {
+        if (error.response?.status === 401 && !error.config._retry) {
+          error.config._retry = true;
+          try {
+            const AsyncStorage = await import('@react-native-async-storage/async-storage');
+            const stored = await AsyncStorage.default.getItem('auth');
+            if (stored) {
+              const { token: savedToken } = JSON.parse(stored);
+              if (savedToken && savedToken !== this.token) {
+                this.token = savedToken;
+                error.config.headers.Authorization = `Bearer ${savedToken}`;
+                return this.client.request(error.config);
+              }
+            }
+          } catch {}
           this.token = null;
-          if (typeof window !== 'undefined') {
-            import('@react-native-async-storage/async-storage')
-              .then((AsyncStorage) => AsyncStorage.default.removeItem('auth'))
-              .catch(() => {});
-          }
+          await import('@react-native-async-storage/async-storage')
+            .then((AsyncStorage) => AsyncStorage.default.removeItem('auth'))
+            .catch(() => {});
         }
         return Promise.reject(error);
       },
@@ -50,7 +61,8 @@ class ApiClient {
     register: (d: RegisterRequest) => this.post<AuthResponse>('/auth/register', d),
     login: (d: LoginRequest) => this.post<AuthResponse>('/auth/login', d),
     checkPhone: (phone: string) => this.post<{ exists: boolean }>('/auth/check-phone', { phone }),
-    phoneLogin: (phone: string) => this.post<AuthResponse>('/auth/phone-login', { phone }),
+    phoneLogin: (phone: string, otp: string) => this.post<AuthResponse>('/auth/phone-login', { phone, otp }),
+    sendPhoneOtp: (phone: string) => this.post<{ message: string }>('/auth/send-phone-otp', { phone }),
     sendEmailOtp: (email: string) => this.post<{ message: string }>('/auth/send-email-otp', { email }),
     verifyEmailOtp: (email: string, otp: string) => this.post<AuthResponse>('/auth/verify-email-otp', { email, otp }),
   };

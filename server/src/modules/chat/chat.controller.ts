@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Param, Body, Query, Put } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Query, Put, UseGuards } from '@nestjs/common';
 import { ChatService } from './chat.service';
+import { AuthGuard } from '../../common/guards/auth.guard';
 
 @Controller('chat')
+@UseGuards(AuthGuard)
 export class ChatController {
   constructor(private readonly service: ChatService) {}
 

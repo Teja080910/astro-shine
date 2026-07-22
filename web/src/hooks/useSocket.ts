@@ -12,11 +12,15 @@ export function useSocket(events: Record<string, EventHandler>) {
   eventsRef.current = events;
 
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('admin-token') : null;
+    const cookieToken = typeof window !== 'undefined'
+      ? document.cookie.split('; ').find(row => row.startsWith('admin-token='))?.split('=')[1]
+      : null;
+    if (!cookieToken) return;
+
     const socket = io(config.apiUrl, {
       path: '/ws',
       transports: ['websocket', 'polling'],
-      query: { token: token || '' },
+      auth: { token: cookieToken },
     });
     socketRef.current = socket;
 

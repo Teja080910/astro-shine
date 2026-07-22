@@ -7,18 +7,20 @@ export function setToken(token: string | null) {
 }
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options?.headers as Record<string, string>),
+  };
   if (authToken) {
     headers['Authorization'] = `Bearer ${authToken}`;
   }
   const res = await fetch(`${config.apiBaseUrl}${path}`, {
-    headers: { ...headers, ...options?.headers as Record<string, string> },
     ...options,
+    headers,
   });
   if (res.status === 401) {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('admin-token');
-      localStorage.removeItem('admin-user');
+      document.cookie = 'admin-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
       window.location.href = '/login';
     }
     throw new Error('Unauthorized');

@@ -1,13 +1,13 @@
-import { Injectable, UnauthorizedException, BadRequestException, Inject } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import * as jwt from 'jsonwebtoken';
 import * as schema from '../../db/schemas';
-import { UsersService } from '../users/users.service';
 import { AdminsService } from '../admin/admins.service';
 import { AstrologersService } from '../astrologers/astrologers.service';
 import { EmailService } from '../email/email.service';
-import * as crypto from 'crypto';
-import * as jwt from 'jsonwebtoken';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class AuthService {
@@ -73,7 +73,26 @@ export class AuthService {
     return { exists: !!user };
   }
 
-  async loginWithPhone(phone: string): Promise<{ token: string; user: any }> {
+  async sendPhoneOtp(phone: string): Promise<{ message: string }> {
+    const user = await this.usersService.findByPhone(phone);
+    if (!user) {
+      throw new UnauthorizedException('USER_NOT_FOUND');
+    }
+    if (!user.isActive || user.deletedAt) {
+      throw new UnauthorizedException('Account has been deleted or deactivated');
+    }
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    this.otpStore.set(`phone:${phone}`, { otp, expiresAt: Date.now() + 600000 });
+    return { message: 'OTP sent to phone' };
+  }
+
+  async loginWithPhone(phone: string, otp: string): Promise<{ token: string; user: any }> {
+    const stored = this.otpStore.get(`phone:${phone}`);
+    if (!stored || stored.otp !== otp || stored.expiresAt < Date.now()) {
+      throw new UnauthorizedException('Invalid or expired OTP');
+    }
+    this.otpStore.delete(`phone:${phone}`);
+
     const user = await this.usersService.findByPhone(phone);
     if (!user) {
       throw new UnauthorizedException('USER_NOT_FOUND');

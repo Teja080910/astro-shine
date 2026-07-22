@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { api } from '@/lib/api';
+import { useRouter } from 'next/navigation';
 
 interface AdminUser {
   id: string; name: string; email: string; role: string;
@@ -23,12 +24,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const saved = localStorage.getItem('admin-token');
-    const savedAdmin = localStorage.getItem('admin-user');
-    if (saved && savedAdmin) {
-      setToken(saved);
-      try { setAdmin(JSON.parse(savedAdmin)); } catch { localStorage.removeItem('admin-user'); }
-      api.setToken(saved);
+    const cookieToken = document.cookie.split('; ').find(row => row.startsWith('admin-token='))?.split('=')[1];
+    if (cookieToken) {
+      try {
+        const payload = JSON.parse(atob(cookieToken.split('.')[1]));
+        if (payload.exp * 1000 > Date.now()) {
+          setToken(cookieToken);
+          setAdmin({ id: payload.sub, name: '', email: '', role: payload.role });
+          api.setToken(cookieToken);
+        } else {
+          document.cookie = 'admin-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+        }
+      } catch {}
     }
     setLoading(false);
   }, []);
@@ -38,22 +45,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(res.token);
     setAdmin(res.user);
     api.setToken(res.token);
-    localStorage.setItem('admin-token', res.token);
-    localStorage.setItem('admin-user', JSON.stringify(res.user));
-    if (typeof document !== 'undefined') {
-      document.cookie = `admin-token=${res.token}; path=/; SameSite=Lax`;
-    }
+    document.cookie = `admin-token=${res.token}; path=/; SameSite=Lax; Secure`;
   }, []);
 
   const logout = useCallback(() => {
     setToken(null);
     setAdmin(null);
     api.setToken(null);
-    localStorage.removeItem('admin-token');
-    localStorage.removeItem('admin-user');
-    if (typeof document !== 'undefined') {
-      document.cookie = 'admin-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    }
+    document.cookie = 'admin-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
   }, []);
 
   return (

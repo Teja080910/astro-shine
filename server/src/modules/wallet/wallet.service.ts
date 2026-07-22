@@ -93,8 +93,13 @@ export class WalletService {
   async deductFunds(walletId: string, amount: string) {
     const parsed = parseFloat(amount);
     if (isNaN(parsed) || parsed <= 0) throw new BadRequestException('Invalid amount');
+
+    const wallet = await this.getWalletById(walletId);
+    if (!wallet) throw new NotFoundException('Wallet not found');
+    if (Number(wallet.balance) < parsed) throw new BadRequestException('Insufficient balance');
+
     const amountStr = parsed.toFixed(2);
-    const [wallet] = await this.db
+    const [updated] = await this.db
       .update(schema.wallets)
       .set({
         balance: sql`${schema.wallets.balance} - ${amountStr}::decimal`,
@@ -103,6 +108,15 @@ export class WalletService {
       })
       .where(eq(schema.wallets.id, walletId))
       .returning();
+    return updated;
+  }
+
+  async getWalletById(walletId: string) {
+    const [wallet] = await this.db
+      .select()
+      .from(schema.wallets)
+      .where(eq(schema.wallets.id, walletId))
+      .limit(1);
     return wallet;
   }
 

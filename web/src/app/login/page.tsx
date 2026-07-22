@@ -158,6 +158,8 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <LoginForm />
+    <AuthProvider>
+      <LoginForm />
+    </AuthProvider>
   );
 }
