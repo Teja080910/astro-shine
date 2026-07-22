@@ -11,8 +11,8 @@ import { EmailModule } from '../email/email.module';
 @Module({
   imports: [
     forwardRef(() => UsersModule),
-    AdminsModule,
-    AstrologersModule,
+    forwardRef(() => AdminsModule),
+    forwardRef(() => AstrologersModule),
     EmailModule,
   ],
   controllers: [AuthController],
