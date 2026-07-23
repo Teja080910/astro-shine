@@ -42,7 +42,7 @@ async function seedMuhuratNew() {
   }
 
   const astrologer = await db.query.astrologers.findFirst();
-  const createdBy = astrologer?.id || null;
+  const createdBy = astrologer?.userId || null;
 
   const entries = [
     {

@@ -21,7 +21,7 @@ export type NotificationType = 'system' | 'promotional' | 'transactional' | 'rem
 // ============ Auth ============
 export interface LoginRequest { email: string; password: string; }
 export interface RegisterRequest { name: string; email: string; password: string; phone?: string; }
-export interface AuthResponse { token: string; user: User; }
+export interface AuthResponse { token: string; user: User; astrologer?: Astrologer; admin?: Admin; }
 export interface OtpResponse { otp: string; }
 export interface VerifyOtpRequest { phone: string; otp: string; }
 
@@ -29,32 +29,30 @@ export interface VerifyOtpRequest { phone: string; otp: string; }
 export interface User {
   id: string; name: string; email: string; phone?: string;
   avatar?: string; gender?: Gender; dateOfBirth?: string;
-  authProvider: AuthProvider; isActive: boolean;
+  role: UserRole; authProvider: AuthProvider; isActive: boolean;
   fcmToken?: string; onboardingCompleted: boolean;
   lastLoginAt?: string; createdAt: string; updatedAt: string; deletedAt?: string;
 }
 
 // ============ Astrologer ============
 export interface Astrologer {
-  id: string; name: string; email: string; phone?: string;
-  avatar?: string; gender?: Gender; dateOfBirth?: string;
+  userId: string; id?: string;
+  name?: string; email?: string; phone?: string; isActive?: boolean;
   bio?: string; experience: number; specialization: string[];
   languages: string[]; skills: string[];
   pricePerMin: string; chatPricePerMin?: string; audioCallPricePerMin?: string; videoCallPricePerMin?: string; rating: number; totalReviews: number;
   totalCalls: number; totalEarnings: string;
   verificationStatus: VerificationStatus;
   verificationDoc?: string[]; verificationNote?: string;
-  onlineStatus: OnlineStatus; isActive: boolean;
-  fcmToken?: string; onboardingCompleted: boolean;
-  lastLoginAt?: string; createdAt: string; updatedAt: string;
+  onlineStatus: OnlineStatus;
+  createdAt: string; updatedAt: string;
 }
 
 // ============ Admin ============
 export interface Admin {
-  id: string; name: string; email: string;
+  userId: string; id?: string;
   role: 'superadmin' | 'moderator' | 'support';
-  avatar?: string; isActive: boolean;
-  lastLoginAt?: string; createdAt: string; updatedAt: string;
+  createdAt: string; updatedAt: string;
 }
 
 // ============ Kundli ============

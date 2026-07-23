@@ -20,15 +20,15 @@ export default function AstrologersPage() {
 
   const handleVerify = async (id: string, status: 'approved' | 'rejected') => {
     await api.post<any>(`/astrologers/${id}/verify`, { status, note: rejectionNote });
-    setData(data.map(a => a.id === id ? { ...a, verificationStatus: status, verificationNote: rejectionNote } : a));
+    setData(data.map(a => a.userId === id ? { ...a, verificationStatus: status, verificationNote: rejectionNote } : a));
     setVerify(null);
     setRejectionNote('');
   };
 
   const handleToggleActive = async (astrologer: Astrologer) => {
-    const updated = await api.put<Astrologer>(`/astrologers/${astrologer.id}`, { isActive: !astrologer.isActive });
-    setData(data.map(a => a.id === astrologer.id ? updated : a));
-    if (selected?.id === astrologer.id) setSelected(updated);
+    const updated = await api.put<Astrologer>(`/astrologers/${astrologer.userId}`, { isActive: !(astrologer as any).isActive });
+    setData(data.map(a => a.userId === astrologer.userId ? updated : a));
+    if (selected?.userId === astrologer.userId) setSelected(updated);
   };
 
   const handleSavePrices = async (id: string) => {
@@ -50,8 +50,8 @@ export default function AstrologersPage() {
       audioCallPricePerMin: audioPrice,
       videoCallPricePerMin: videoPrice,
     });
-    setData(data.map(a => a.id === id ? updated : a));
-    if (selected?.id === id) setSelected(updated);
+    setData(data.map(a => a.userId === id ? updated : a));
+    if (selected?.userId === id) setSelected(updated);
   };
 
   return (
@@ -62,7 +62,7 @@ export default function AstrologersPage() {
       </div>
       <Table headers={['Name', 'Email', 'Specialization', 'Chat/min', 'Audio/min', 'Video/min', 'Status', '']} emptyMessage="No astrologers found">
         {data.map(a => (
-          <tr key={a.id} className="border-b border-divider hover:bg-surface-light/50">
+          <tr key={a.userId || a.id} className="border-b border-divider hover:bg-surface-light/50">
             <td className="px-4 py-3 text-text-primary font-medium">{a.name}</td>
             <td className="px-4 py-3 text-text-secondary">{a.email}</td>
             <td className="px-4 py-3 text-text-secondary">{a.specialization?.slice(0, 2).join(', ') || '-'}</td>
@@ -101,7 +101,7 @@ export default function AstrologersPage() {
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="text-lg font-bold text-text-primary">{selected.name}</h3>
-                <p className="text-xs text-text-muted">{selected.id}</p>
+                <p className="text-xs text-text-muted">{selected.userId}</p>
               </div>
               <Badge variant={selected.isActive ? 'success' : 'danger'}>
                 {selected.isActive ? 'Active' : 'Inactive'}
@@ -137,7 +137,7 @@ export default function AstrologersPage() {
                     className="input-field py-2 px-3 text-sm w-full" placeholder="Video" />
                 </div>
               </div>
-              <button onClick={() => handleSavePrices(selected.id)}
+              <button onClick={() => handleSavePrices(selected.userId)}
                 className="gradient-btn py-2 px-4 text-sm font-bold" style={{ borderRadius: '16px' }}>
                 Save Prices
               </button>
@@ -189,8 +189,8 @@ export default function AstrologersPage() {
             </div>
 
             <div className="flex gap-3 mt-4">
-              <GradientButton onClick={() => handleVerify(verify.id, 'approved')}>Approve</GradientButton>
-              <GradientButton variant="danger" onClick={() => handleVerify(verify.id, 'rejected')}>Reject</GradientButton>
+              <GradientButton onClick={() => handleVerify(verify.userId, 'approved')}>Approve</GradientButton>
+              <GradientButton variant="danger" onClick={() => handleVerify(verify.userId, 'rejected')}>Reject</GradientButton>
             </div>
           </div>
         )}

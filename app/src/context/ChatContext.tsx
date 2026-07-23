@@ -37,7 +37,7 @@ const ChatContext = createContext<ChatState>(null!);
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const { token, user, astrologer } = useAuth();
-  const currentUserId = user?.id || astrologer?.id || '';
+  const currentUserId = user?.id || astrologer?.userId || '';
   const currentRole = user ? 'user' : astrologer ? 'astrologer' : 'user';
   const socketRef = useRef<Socket | null>(null);
   const userIdRef = useRef(currentUserId);

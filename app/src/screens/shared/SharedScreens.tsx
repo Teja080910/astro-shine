@@ -134,9 +134,9 @@ export function NotificationsScreen({ route }: any) {
 
   useEffect(() => {
     if (!isFocused) return;
-    const uid = route?.params?.userId || user?.id || astrologer?.id;
+    const uid = route?.params?.userId || user?.id || astrologer?.userId;
     if (uid) api.notifications.list({ userId: uid }).then(setNotifs).catch(() => {});
-  }, [isFocused, route?.params?.userId, user?.id, astrologer?.id]);
+  }, [isFocused, route?.params?.userId, user?.id, astrologer?.userId]);
 
   const markRead = async (id: string) => {
     try { await api.notifications.markRead(id); setNotifs(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n)); } catch {}
@@ -196,7 +196,7 @@ export function EditProfileScreen() {
 
   useEffect(() => {
     if (profile) {
-      setName(profile.name);
+      setName(profile.name || '');
       setPhone(profile.phone || '');
       setGender((profile as any).gender || 'male');
       setDateOfBirth((profile as any).dateOfBirth ? (profile as any).dateOfBirth.split('T')[0] : '');
@@ -219,7 +219,7 @@ export function EditProfileScreen() {
     try {
       let updated;
       if (role === 'astrologer') {
-        updated = await api.astrologers.update(profile!.id, {
+        updated = await api.astrologers.update(profile!.id || (profile as any).userId, {
           name, phone, gender, dateOfBirth,
           bio,
           experience: parseInt(experience) || 0,
@@ -231,9 +231,9 @@ export function EditProfileScreen() {
           videoCallPricePerMin,
         });
       } else if (role === 'admin') {
-        updated = await api.admins.update(profile!.id, { name });
+        updated = await api.admins.update(profile!.id || (profile as any).userId, { name });
       } else {
-        updated = await api.users.update(profile!.id, { name, phone, gender, dateOfBirth });
+        updated = await api.users.update(profile!.id || (profile as any).userId, { name, phone, gender, dateOfBirth });
       }
       await updateUser(updated as any);
       navigation.goBack();
@@ -625,26 +625,26 @@ export function AstrologerScheduleScreen() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!astrologer?.id) return;
-    api.schedule.byAstrologer(astrologer.id).then((data: any[]) => {
+    if (!astrologer?.userId) return;
+    api.schedule.byAstrologer(astrologer.userId).then((data: any[]) => {
       const map: Record<number, any> = {};
       data.forEach(s => { map[s.dayOfWeek] = { startTime: s.startTime.slice(0, 5), endTime: s.endTime.slice(0, 5), isAvailable: s.isAvailable }; });
       setSchedules(map);
     }).catch(() => {});
-  }, [astrologer?.id]);
+  }, [astrologer?.userId]);
 
   const updateDay = (day: number, field: string, value: string | boolean) => {
     setSchedules(prev => ({ ...prev, [day]: { ...prev[day] || { startTime: '09:00', endTime: '18:00', isAvailable: true }, [field]: value } }));
   };
 
   const saveAll = async () => {
-    if (!astrologer?.id) return;
+    if (!astrologer?.userId) return;
     setLoading(true);
     try {
       const bulk = Object.entries(schedules).map(([day, s]) => ({
         dayOfWeek: Number(day), startTime: s.startTime, endTime: s.endTime, isAvailable: s.isAvailable,
       }));
-      await api.schedule.bulkUpsert(astrologer.id, bulk);
+      await api.schedule.bulkUpsert(astrologer.userId, bulk);
       Alert.alert('Saved', 'Schedule updated successfully');
     } catch { Alert.alert('Error', 'Failed to save schedule'); }
     finally { setLoading(false); }
@@ -696,13 +696,13 @@ export function AstrologerDocumentsScreen() {
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    if (!astrologer?.id) return;
-    api.astrologers.get(astrologer.id).then((fresh) => {
+    if (!astrologer?.userId) return;
+    api.astrologers.get(astrologer.userId).then((fresh) => {
       setDocs(fresh.verificationDoc || []);
       setStatus(fresh.verificationStatus || 'pending');
       setNote(fresh.verificationNote || '');
     }).catch(() => {});
-  }, [astrologer?.id]);
+  }, [astrologer?.userId]);
 
   const pickAndUpload = async () => {
     try {
@@ -713,7 +713,7 @@ export function AstrologerDocumentsScreen() {
       const uploaded = await api.uploadFile({ uri: file.uri, name: file.name, mimeType: file.mimeType });
       const newDocs = [...docs, uploaded.url];
       setDocs(newDocs);
-      await api.astrologers.update(astrologer!.id, { verificationDoc: newDocs });
+      await api.astrologers.update((astrologer!.userId || astrologer!.id) as string, { verificationDoc: newDocs });
       updateUser({ ...astrologer!, verificationDoc: newDocs });
     } catch (e: any) {
       Alert.alert('Error', e?.response?.data?.message || e?.message || 'Upload failed');
@@ -725,7 +725,7 @@ export function AstrologerDocumentsScreen() {
   const removeDoc = async (index: number) => {
     const newDocs = docs.filter((_, i) => i !== index);
     setDocs(newDocs);
-    await api.astrologers.update(astrologer!.id, { verificationDoc: newDocs });
+    await api.astrologers.update((astrologer!.userId || astrologer!.id) as string, { verificationDoc: newDocs });
     updateUser({ ...astrologer!, verificationDoc: newDocs });
   };
 
@@ -789,16 +789,16 @@ export function AstrologerCommissionScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = useCallback(async () => {
-    if (!astrologer?.id) return;
+    if (!astrologer?.userId) return;
     try {
       const [l, c] = await Promise.all([
-        api.commissions.logs(astrologer.id),
-        api.commissions.findByAstrologer(astrologer.id).catch(() => null),
+        api.commissions.logs(astrologer.userId),
+        api.commissions.findByAstrologer(astrologer.userId).catch(() => null),
       ]);
       setLogs(l || []);
       setCommissionPct(c?.value || '0');
     } catch {}
-  }, [astrologer?.id]);
+  }, [astrologer?.userId]);
 
   useEffect(() => { loadData(); }, [loadData]);
 

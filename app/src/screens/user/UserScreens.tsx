@@ -27,7 +27,7 @@ const ZODIAC_SIGNS = [
 const ASTRO_CATEGORIES = ['All', 'Vedic', 'Tarot', 'Numerology', 'Palmistry', 'Vastu'];
 
 function getAstrologerOnlineStatus(astro: Astrologer, astrologerStatuses: Record<string, 'online' | 'offline' | 'busy'>) {
-  const wsStatus = astrologerStatuses[astro.id];
+  const wsStatus = astrologerStatuses[astro.userId];
   if (wsStatus) return wsStatus === 'online';
   return astro.onlineStatus === 'online';
 }
@@ -475,9 +475,9 @@ export function UserHomeScreen({ navigation }: any) {
 
         <SectionHeader title="Live Astrologers" onSeeAll={() => navigation.navigate('AstrologerList', { onlyLive: true })} />
         {astrologers.length > 0 ? (
-          <FlatList horizontal showsHorizontalScrollIndicator={false} data={astrologers.filter(a => getAstrologerOnlineStatus(a, astrologerStatuses)).slice(0, 6)} keyExtractor={(a) => a.id}
+          <FlatList horizontal showsHorizontalScrollIndicator={false} data={astrologers.filter(a => getAstrologerOnlineStatus(a, astrologerStatuses)).slice(0, 6)} keyExtractor={(a) => a.userId}
             renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.id })} style={styles.astroCard}>
+              <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.userId })} style={styles.astroCard}>
                 <GlassCard style={styles.astroInner}>
                   <Avatar size={56} online={getAstrologerOnlineStatus(item, astrologerStatuses)} />
                   <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
@@ -500,9 +500,9 @@ export function UserHomeScreen({ navigation }: any) {
           ))}
         </ScrollView>
         {filteredCategoryAstro.length > 0 ? (
-          <FlatList horizontal showsHorizontalScrollIndicator={false} data={filteredCategoryAstro.slice(0, 6)} keyExtractor={(a) => a.id}
+          <FlatList horizontal showsHorizontalScrollIndicator={false} data={filteredCategoryAstro.slice(0, 6)} keyExtractor={(a) => a.userId}
             renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.id })} style={styles.astroCard}>
+              <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.userId })} style={styles.astroCard}>
                 <GlassCard style={styles.astroInner}>
                   <Avatar size={56} online={getAstrologerOnlineStatus(item, astrologerStatuses)} />
                   <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
@@ -642,7 +642,7 @@ export function AstrologerListScreen({ route, navigation }: any) {
   useEffect(() => { if (isFocused) api.astrologers.list().then(setData).finally(() => setLoading(false)); }, [isFocused]);
   
   const filtered = data.filter(a => {
-    const matchesSearch = !search || a.name.toLowerCase().includes(search.toLowerCase()) || a.specialization?.some(s => s.toLowerCase().includes(search.toLowerCase()));
+    const matchesSearch = !search || a.name!.toLowerCase().includes(search.toLowerCase()) || a.specialization?.some(s => s.toLowerCase().includes(search.toLowerCase()));
     const matchesCategory = selectedCat === 'All' || a.specialization?.some(s => s.toLowerCase() === selectedCat.toLowerCase());
     const matchesLive = !onlyLive || getAstrologerOnlineStatus(a, astrologerStatuses);
     return matchesSearch && matchesCategory && matchesLive;
@@ -668,13 +668,13 @@ export function AstrologerListScreen({ route, navigation }: any) {
         )} 
         keyExtractor={(c) => c} 
       />
-      <FlatList data={filtered} keyExtractor={(a) => a.id} contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+      <FlatList data={filtered} keyExtractor={(a) => a.userId} contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
         ListEmptyComponent={<EmptyState icon={<Ionicons name="people-outline" size={48} color={colors.textMuted} />} title="No astrologers" />}
         renderItem={({ item }) => {
           const isOnline = getAstrologerOnlineStatus(item, astrologerStatuses);
           const isVerified = item.verificationStatus === 'approved';
           return (
-            <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.id })} style={{ marginBottom: 12 }}>
+            <TouchableOpacity onPress={() => navigation.navigate('AstrologerDetail', { id: item.userId })} style={{ marginBottom: 12 }}>
               <GlassCard>
                 <View style={styles.row}>
                   <Avatar size={56} online={isOnline} />
@@ -695,8 +695,8 @@ export function AstrologerListScreen({ route, navigation }: any) {
                   <TouchableOpacity
                     onPress={async () => {
                       if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified.'); return; }
-                      const convId = await openConversation(item.id, 'astrologer');
-                      navigation.navigate('ChatRoom', { conversationId: convId, participantId: item.id, participantRole: 'astrologer', participantName: item.name });
+                      const convId = await openConversation(item.userId, 'astrologer');
+                      navigation.navigate('ChatRoom', { conversationId: convId, participantId: item.userId, participantRole: 'astrologer', participantName: item.name });
                     }}
                     style={{ flex: 1, height: 36, borderRadius: 12, backgroundColor: '#2563EB', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 }}
                   >
@@ -708,7 +708,7 @@ export function AstrologerListScreen({ route, navigation }: any) {
                     onPress={() => {
                       if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified.'); return; }
                       if (!isOnline) { Alert.alert('Offline', `${item.name} is currently offline.`); return; }
-                      initiateCall(item.id, item.name, 'audio');
+                      initiateCall((item.userId || item.id) as string, item.name || '', 'audio');
                     }}
                     style={{ flex: 1, height: 36, borderRadius: 12, backgroundColor: '#16A34A', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 }}
                   >
@@ -720,7 +720,7 @@ export function AstrologerListScreen({ route, navigation }: any) {
                     onPress={() => {
                       if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified.'); return; }
                       if (!isOnline) { Alert.alert('Offline', `${item.name} is currently offline.`); return; }
-                      initiateCall(item.id, item.name, 'video');
+                      initiateCall((item.userId || item.id) as string, item.name || '', 'video');
                     }}
                     style={{ flex: 1, height: 36, borderRadius: 12, backgroundColor: '#7C3AED', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 }}
                   >
@@ -795,13 +795,13 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
   const handleAudioCall = () => {
     if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified.'); return; }
     if (!isOnline) { setOfflineDialogVisible(true); return; }
-    initiateCall(id, astro.name, 'audio');
+    initiateCall(id as string, astro.name || '', 'audio');
   };
 
   const handleVideoCall = () => {
     if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified.'); return; }
     if (!isOnline) { setOfflineDialogVisible(true); return; }
-    initiateCall(id, astro.name, 'video');
+    initiateCall(id as string, astro.name || '', 'video');
   };
 
   return (

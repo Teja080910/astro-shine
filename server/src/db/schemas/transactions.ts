@@ -8,7 +8,7 @@ export const transactions = pgTable('transactions', {
   id: uuid('id').defaultRandom().primaryKey(),
   walletId: uuid('wallet_id').notNull().references(() => wallets.id, { onDelete: 'cascade' }),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
-  astrologerId: uuid('astrologer_id').references(() => astrologers.id, { onDelete: 'set null' }),
+  astrologerId: uuid('astrologer_id').references(() => astrologers.userId, { onDelete: 'set null' }),
   type: transactionType('type').notNull(),
   category: transactionCategory('category').notNull(),
   amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),

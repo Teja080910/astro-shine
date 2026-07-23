@@ -11,24 +11,86 @@ export class AstrologersService {
     private readonly realtime: RealtimeService,
   ) {}
 
-  async findAll() { return this.db.query.astrologers.findMany(); }
+  async findAll() {
+    return this.db
+      .select({
+        userId: schema.astrologers.userId,
+        bio: schema.astrologers.bio,
+        experience: schema.astrologers.experience,
+        specialization: schema.astrologers.specialization,
+        languages: schema.astrologers.languages,
+        skills: schema.astrologers.skills,
+        pricePerMin: schema.astrologers.pricePerMin,
+        rating: schema.astrologers.rating,
+        totalReviews: schema.astrologers.totalReviews,
+        chatPricePerMin: schema.astrologers.chatPricePerMin,
+        audioCallPricePerMin: schema.astrologers.audioCallPricePerMin,
+        videoCallPricePerMin: schema.astrologers.videoCallPricePerMin,
+        totalChats: schema.astrologers.totalChats,
+        totalAudioCalls: schema.astrologers.totalAudioCalls,
+        totalVideoCalls: schema.astrologers.totalVideoCalls,
+        totalCalls: schema.astrologers.totalCalls,
+        totalEarnings: schema.astrologers.totalEarnings,
+        verificationStatus: schema.astrologers.verificationStatus,
+        verificationDoc: schema.astrologers.verificationDoc,
+        verificationNote: schema.astrologers.verificationNote,
+        onlineStatus: schema.astrologers.onlineStatus,
+        createdAt: schema.astrologers.createdAt,
+        updatedAt: schema.astrologers.updatedAt,
+        name: schema.users.name,
+        email: schema.users.email,
+        phone: schema.users.phone,
+        isActive: schema.users.isActive,
+      })
+      .from(schema.astrologers)
+      .leftJoin(schema.users, eq(schema.astrologers.userId, schema.users.id));
+  }
+
+  async findByUserId(userId: string) {
+    const [astro] = await this.db
+      .select({
+        userId: schema.astrologers.userId,
+        bio: schema.astrologers.bio,
+        experience: schema.astrologers.experience,
+        specialization: schema.astrologers.specialization,
+        languages: schema.astrologers.languages,
+        skills: schema.astrologers.skills,
+        pricePerMin: schema.astrologers.pricePerMin,
+        rating: schema.astrologers.rating,
+        totalReviews: schema.astrologers.totalReviews,
+        chatPricePerMin: schema.astrologers.chatPricePerMin,
+        audioCallPricePerMin: schema.astrologers.audioCallPricePerMin,
+        videoCallPricePerMin: schema.astrologers.videoCallPricePerMin,
+        totalChats: schema.astrologers.totalChats,
+        totalAudioCalls: schema.astrologers.totalAudioCalls,
+        totalVideoCalls: schema.astrologers.totalVideoCalls,
+        totalCalls: schema.astrologers.totalCalls,
+        totalEarnings: schema.astrologers.totalEarnings,
+        verificationStatus: schema.astrologers.verificationStatus,
+        verificationDoc: schema.astrologers.verificationDoc,
+        verificationNote: schema.astrologers.verificationNote,
+        onlineStatus: schema.astrologers.onlineStatus,
+        createdAt: schema.astrologers.createdAt,
+        updatedAt: schema.astrologers.updatedAt,
+        name: schema.users.name,
+        email: schema.users.email,
+        phone: schema.users.phone,
+        isActive: schema.users.isActive,
+      })
+      .from(schema.astrologers)
+      .leftJoin(schema.users, eq(schema.astrologers.userId, schema.users.id))
+      .where(eq(schema.astrologers.userId, userId));
+    return astro || null;
+  }
 
   async findById(id: string) {
-    const astro = await this.db.query.astrologers.findFirst({ where: eq(schema.astrologers.id, id) });
+    const astro = await this.findByUserId(id);
     if (!astro) return null;
     const [ratingResult] = await this.db
       .select({ avg: sql<string>`COALESCE(AVG(ratings::decimal), 0)` })
       .from(schema.feedback)
       .where(eq(schema.feedback.astrologerId, id));
     return { ...astro, rating: Number(ratingResult?.avg || 0).toFixed(1) };
-  }
-
-  async findByEmail(email: string) {
-    return this.db.query.astrologers.findFirst({ where: eq(schema.astrologers.email, email) });
-  }
-
-  async findByPhone(phone: string) {
-    return this.db.query.astrologers.findFirst({ where: eq(schema.astrologers.phone, phone) });
   }
 
   async create(data: typeof schema.astrologers.$inferInsert) {
@@ -38,7 +100,7 @@ export class AstrologersService {
 
   async update(id: string, data: Partial<typeof schema.astrologers.$inferInsert>) {
     const [result] = await this.db.update(schema.astrologers)
-      .set({ ...data, updatedAt: new Date() }).where(eq(schema.astrologers.id, id)).returning();
+      .set({ ...data, updatedAt: new Date() }).where(eq(schema.astrologers.userId, id)).returning();
     return result;
   }
 
@@ -53,8 +115,8 @@ export class AstrologersService {
   }
 
   async delete(id: string) {
-    const [result] = await this.db.update(schema.astrologers)
-      .set({ isActive: false }).where(eq(schema.astrologers.id, id)).returning();
+    const [result] = await this.db.update(schema.users)
+      .set({ isActive: false, updatedAt: new Date() }).where(eq(schema.users.id, id)).returning();
     return result;
   }
 

@@ -1,5 +1,5 @@
 {
-  "id": "2f8d89fd-ef71-4316-8671-6d5afbe8aeb9",
+  "id": "4b621f65-b453-4abb-9290-e5123dcfdca7",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -8,29 +8,10 @@
       "name": "admins",
       "schema": "",
       "columns": {
-        "id": {
-          "name": "id",
+        "user_id": {
+          "name": "user_id",
           "type": "uuid",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "name": {
-          "name": "name",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "email": {
-          "name": "email",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "password": {
-          "name": "password",
-          "type": "varchar(255)",
-          "primaryKey": false,
           "notNull": true
         },
         "role": {
@@ -39,25 +20,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'admin'"
-        },
-        "avatar": {
-          "name": "avatar",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "is_active": {
-          "name": "is_active",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
-        "last_login_at": {
-          "name": "last_login_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -75,17 +37,23 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "admins_email_unique": {
-          "name": "admins_email_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+      "foreignKeys": {
+        "admins_user_id_users_id_fk": {
+          "name": "admins_user_id_users_id_fk",
+          "tableFrom": "admins",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -297,15 +265,15 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "app_settings_updated_by_admins_id_fk": {
-          "name": "app_settings_updated_by_admins_id_fk",
+        "app_settings_updated_by_admins_user_id_fk": {
+          "name": "app_settings_updated_by_admins_user_id_fk",
           "tableFrom": "app_settings",
           "tableTo": "admins",
           "columnsFrom": [
             "updated_by"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "set null",
           "onUpdate": "no action"
@@ -384,15 +352,15 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "astrologer_schedules_astrologer_id_astrologers_id_fk": {
-          "name": "astrologer_schedules_astrologer_id_astrologers_id_fk",
+        "astrologer_schedules_astrologer_id_astrologers_user_id_fk": {
+          "name": "astrologer_schedules_astrologer_id_astrologers_user_id_fk",
           "tableFrom": "astrologer_schedules",
           "tableTo": "astrologers",
           "columnsFrom": [
             "astrologer_id"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -408,69 +376,11 @@
       "name": "astrologers",
       "schema": "",
       "columns": {
-        "id": {
-          "name": "id",
+        "user_id": {
+          "name": "user_id",
           "type": "uuid",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "name": {
-          "name": "name",
-          "type": "varchar(255)",
-          "primaryKey": false,
           "notNull": true
-        },
-        "email": {
-          "name": "email",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "phone": {
-          "name": "phone",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "password": {
-          "name": "password",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "avatar": {
-          "name": "avatar",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "gender": {
-          "name": "gender",
-          "type": "gender",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "date_of_birth": {
-          "name": "date_of_birth",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "auth_provider": {
-          "name": "auth_provider",
-          "type": "auth_provider",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'email'"
-        },
-        "auth_provider_id": {
-          "name": "auth_provider_id",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
         },
         "bio": {
           "name": "bio",
@@ -527,6 +437,48 @@
           "notNull": true,
           "default": 0
         },
+        "chat_price_per_min": {
+          "name": "chat_price_per_min",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        },
+        "audio_call_price_per_min": {
+          "name": "audio_call_price_per_min",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        },
+        "video_call_price_per_min": {
+          "name": "video_call_price_per_min",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        },
+        "total_chats": {
+          "name": "total_chats",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_audio_calls": {
+          "name": "total_audio_calls",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_video_calls": {
+          "name": "total_video_calls",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
         "total_calls": {
           "name": "total_calls",
           "type": "integer",
@@ -569,32 +521,6 @@
           "notNull": true,
           "default": "'offline'"
         },
-        "is_active": {
-          "name": "is_active",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
-        "fcm_token": {
-          "name": "fcm_token",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "last_login_at": {
-          "name": "last_login_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "onboarding_completed": {
-          "name": "onboarding_completed",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -608,33 +534,26 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "astrologers_email_unique": {
-          "name": "astrologers_email_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
-        },
-        "astrologers_phone_unique": {
-          "name": "astrologers_phone_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "phone"
-          ]
+      "foreignKeys": {
+        "astrologers_user_id_users_id_fk": {
+          "name": "astrologers_user_id_users_id_fk",
+          "tableFrom": "astrologers",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -848,15 +767,15 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "call_logs_astrologer_id_astrologers_id_fk": {
-          "name": "call_logs_astrologer_id_astrologers_id_fk",
+        "call_logs_astrologer_id_astrologers_user_id_fk": {
+          "name": "call_logs_astrologer_id_astrologers_user_id_fk",
           "tableFrom": "call_logs",
           "tableTo": "astrologers",
           "columnsFrom": [
             "astrologer_id"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -1043,15 +962,15 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "commission_logs_astrologer_id_astrologers_id_fk": {
-          "name": "commission_logs_astrologer_id_astrologers_id_fk",
+        "commission_logs_astrologer_id_astrologers_user_id_fk": {
+          "name": "commission_logs_astrologer_id_astrologers_user_id_fk",
           "tableFrom": "commission_logs",
           "tableTo": "astrologers",
           "columnsFrom": [
             "astrologer_id"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -1156,15 +1075,15 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "commissions_astrologer_id_astrologers_id_fk": {
-          "name": "commissions_astrologer_id_astrologers_id_fk",
+        "commissions_astrologer_id_astrologers_user_id_fk": {
+          "name": "commissions_astrologer_id_astrologers_user_id_fk",
           "tableFrom": "commissions",
           "tableTo": "astrologers",
           "columnsFrom": [
             "astrologer_id"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -1180,6 +1099,378 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.conversation_messages": {
+      "name": "conversation_messages",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sender_id": {
+          "name": "sender_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sender_role": {
+          "name": "sender_role",
+          "type": "user_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "message_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'text'"
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "media_url": {
+          "name": "media_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_delivered": {
+          "name": "is_delivered",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_read": {
+          "name": "is_read",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "read_at": {
+          "name": "read_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_conv_messages_conv_created": {
+          "name": "idx_conv_messages_conv_created",
+          "columns": [
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_conv_messages_unread": {
+          "name": "idx_conv_messages_unread",
+          "columns": [
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "is_read",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"conversation_messages\".\"is_read\" = false",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "conversation_messages_conversation_id_conversations_id_fk": {
+          "name": "conversation_messages_conversation_id_conversations_id_fk",
+          "tableFrom": "conversation_messages",
+          "tableTo": "conversations",
+          "columnsFrom": [
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.conversations": {
+      "name": "conversations",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "participant_one_id": {
+          "name": "participant_one_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "participant_one_role": {
+          "name": "participant_one_role",
+          "type": "user_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "participant_two_id": {
+          "name": "participant_two_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "participant_two_role": {
+          "name": "participant_two_role",
+          "type": "user_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_message_at": {
+          "name": "last_message_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_message_preview": {
+          "name": "last_message_preview",
+          "type": "varchar(200)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "unique_participants": {
+          "name": "unique_participants",
+          "columns": [
+            {
+              "expression": "participant_one_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "participant_two_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_conversations_p1_lastmsg": {
+          "name": "idx_conversations_p1_lastmsg",
+          "columns": [
+            {
+              "expression": "participant_one_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "last_message_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_conversations_p2_lastmsg": {
+          "name": "idx_conversations_p2_lastmsg",
+          "columns": [
+            {
+              "expression": "participant_two_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "last_message_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.donation_logs": {
+      "name": "donation_logs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "admin_id": {
+          "name": "admin_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "type": {
+          "name": "type",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'received'"
+        },
+        "amount": {
+          "name": "amount",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'completed'"
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "donation_logs_user_id_users_id_fk": {
+          "name": "donation_logs_user_id_users_id_fk",
+          "tableFrom": "donation_logs",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "donation_logs_admin_id_admins_user_id_fk": {
+          "name": "donation_logs_admin_id_admins_user_id_fk",
+          "tableFrom": "donation_logs",
+          "tableTo": "admins",
+          "columnsFrom": [
+            "admin_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1315,15 +1606,15 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "dynamic_links_updated_by_admins_id_fk": {
-          "name": "dynamic_links_updated_by_admins_id_fk",
+        "dynamic_links_updated_by_admins_user_id_fk": {
+          "name": "dynamic_links_updated_by_admins_user_id_fk",
           "tableFrom": "dynamic_links",
           "tableTo": "admins",
           "columnsFrom": [
             "updated_by"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "set null",
           "onUpdate": "no action"
@@ -1339,6 +1630,91 @@
           ]
         }
       },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.feedback": {
+      "name": "feedback",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "astrologer_id": {
+          "name": "astrologer_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ratings": {
+          "name": "ratings",
+          "type": "numeric(2, 1)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "comments": {
+          "name": "comments",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "feedback_astrologer_id_astrologers_user_id_fk": {
+          "name": "feedback_astrologer_id_astrologers_user_id_fk",
+          "tableFrom": "feedback",
+          "tableTo": "astrologers",
+          "columnsFrom": [
+            "astrologer_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "feedback_user_id_users_id_fk": {
+          "name": "feedback_user_id_users_id_fk",
+          "tableFrom": "feedback",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1427,15 +1803,15 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "gift_transactions_receiver_id_astrologers_id_fk": {
-          "name": "gift_transactions_receiver_id_astrologers_id_fk",
+        "gift_transactions_receiver_id_astrologers_user_id_fk": {
+          "name": "gift_transactions_receiver_id_astrologers_user_id_fk",
           "tableFrom": "gift_transactions",
           "tableTo": "astrologers",
           "columnsFrom": [
             "receiver_id"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -1786,15 +2162,15 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "live_sessions_astrologer_id_astrologers_id_fk": {
-          "name": "live_sessions_astrologer_id_astrologers_id_fk",
+        "live_sessions_astrologer_id_astrologers_user_id_fk": {
+          "name": "live_sessions_astrologer_id_astrologers_user_id_fk",
           "tableFrom": "live_sessions",
           "tableTo": "astrologers",
           "columnsFrom": [
             "astrologer_id"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -1978,6 +2354,180 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.muhurat": {
+      "name": "muhurat",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "category_id": {
+          "name": "category_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "time": {
+          "name": "time",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "unique_date_time": {
+          "name": "unique_date_time",
+          "columns": [
+            {
+              "expression": "date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "time",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "muhurat_category_id_muhurat_categories_id_fk": {
+          "name": "muhurat_category_id_muhurat_categories_id_fk",
+          "tableFrom": "muhurat",
+          "tableTo": "muhurat_categories",
+          "columnsFrom": [
+            "category_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.muhurat_categories": {
+      "name": "muhurat_categories",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_active": {
+          "name": "is_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "muhurat_categories_name_unique": {
+          "name": "muhurat_categories_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.news": {
       "name": "news",
       "schema": "",
@@ -2127,15 +2677,15 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "notifications_astrologer_id_astrologers_id_fk": {
-          "name": "notifications_astrologer_id_astrologers_id_fk",
+        "notifications_astrologer_id_astrologers_user_id_fk": {
+          "name": "notifications_astrologer_id_astrologers_user_id_fk",
           "tableFrom": "notifications",
           "tableTo": "astrologers",
           "columnsFrom": [
             "astrologer_id"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -2425,6 +2975,242 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.payment_events": {
+      "name": "payment_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "payment_order_id": {
+          "name": "payment_order_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "event_id": {
+          "name": "event_id",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "event_type": {
+          "name": "event_type",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "razorpay_event_id": {
+          "name": "razorpay_event_id",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payload": {
+          "name": "payload",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'received'"
+        },
+        "error_message": {
+          "name": "error_message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "processed_at": {
+          "name": "processed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "payment_events_payment_order_id_payment_orders_id_fk": {
+          "name": "payment_events_payment_order_id_payment_orders_id_fk",
+          "tableFrom": "payment_events",
+          "tableTo": "payment_orders",
+          "columnsFrom": [
+            "payment_order_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "payment_events_event_id_unique": {
+          "name": "payment_events_event_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "event_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.payment_orders": {
+      "name": "payment_orders",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "razorpay_order_id": {
+          "name": "razorpay_order_id",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "razorpay_payment_id": {
+          "name": "razorpay_payment_id",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "razorpay_signature": {
+          "name": "razorpay_signature",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount": {
+          "name": "amount",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency": {
+          "name": "currency",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'INR'"
+        },
+        "purpose": {
+          "name": "purpose",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'created'"
+        },
+        "failed_reason": {
+          "name": "failed_reason",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "metadata": {
+          "name": "metadata",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "transaction_id": {
+          "name": "transaction_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "payment_orders_user_id_users_id_fk": {
+          "name": "payment_orders_user_id_users_id_fk",
+          "tableFrom": "payment_orders",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "payment_orders_transaction_id_transactions_id_fk": {
+          "name": "payment_orders_transaction_id_transactions_id_fk",
+          "tableFrom": "payment_orders",
+          "tableTo": "transactions",
+          "columnsFrom": [
+            "transaction_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "payment_orders_razorpay_order_id_unique": {
+          "name": "payment_orders_razorpay_order_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "razorpay_order_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.pooja_bookings": {
       "name": "pooja_bookings",
       "schema": "",
@@ -2627,6 +3413,19 @@
       },
       "indexes": {},
       "foreignKeys": {
+        "reports_reporter_id_users_id_fk": {
+          "name": "reports_reporter_id_users_id_fk",
+          "tableFrom": "reports",
+          "tableTo": "users",
+          "columnsFrom": [
+            "reporter_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
         "reports_reported_user_id_users_id_fk": {
           "name": "reports_reported_user_id_users_id_fk",
           "tableFrom": "reports",
@@ -2640,28 +3439,28 @@
           "onDelete": "set null",
           "onUpdate": "no action"
         },
-        "reports_reported_astrologer_id_astrologers_id_fk": {
-          "name": "reports_reported_astrologer_id_astrologers_id_fk",
+        "reports_reported_astrologer_id_astrologers_user_id_fk": {
+          "name": "reports_reported_astrologer_id_astrologers_user_id_fk",
           "tableFrom": "reports",
           "tableTo": "astrologers",
           "columnsFrom": [
             "reported_astrologer_id"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
-        "reports_resolved_by_admins_id_fk": {
-          "name": "reports_resolved_by_admins_id_fk",
+        "reports_resolved_by_admins_user_id_fk": {
+          "name": "reports_resolved_by_admins_user_id_fk",
           "tableFrom": "reports",
           "tableTo": "admins",
           "columnsFrom": [
             "resolved_by"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "set null",
           "onUpdate": "no action"
@@ -2751,15 +3550,15 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "reviews_astrologer_id_astrologers_id_fk": {
-          "name": "reviews_astrologer_id_astrologers_id_fk",
+        "reviews_astrologer_id_astrologers_user_id_fk": {
+          "name": "reviews_astrologer_id_astrologers_user_id_fk",
           "tableFrom": "reviews",
           "tableTo": "astrologers",
           "columnsFrom": [
             "astrologer_id"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -2960,28 +3759,28 @@
           "onDelete": "set null",
           "onUpdate": "no action"
         },
-        "support_tickets_astrologer_id_astrologers_id_fk": {
-          "name": "support_tickets_astrologer_id_astrologers_id_fk",
+        "support_tickets_astrologer_id_astrologers_user_id_fk": {
+          "name": "support_tickets_astrologer_id_astrologers_user_id_fk",
           "tableFrom": "support_tickets",
           "tableTo": "astrologers",
           "columnsFrom": [
             "astrologer_id"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
-        "support_tickets_assigned_to_admins_id_fk": {
-          "name": "support_tickets_assigned_to_admins_id_fk",
+        "support_tickets_assigned_to_admins_user_id_fk": {
+          "name": "support_tickets_assigned_to_admins_user_id_fk",
           "tableFrom": "support_tickets",
           "tableTo": "admins",
           "columnsFrom": [
             "assigned_to"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "set null",
           "onUpdate": "no action"
@@ -3202,15 +4001,15 @@
           "onDelete": "set null",
           "onUpdate": "no action"
         },
-        "transactions_astrologer_id_astrologers_id_fk": {
-          "name": "transactions_astrologer_id_astrologers_id_fk",
+        "transactions_astrologer_id_astrologers_user_id_fk": {
+          "name": "transactions_astrologer_id_astrologers_user_id_fk",
           "tableFrom": "transactions",
           "tableTo": "astrologers",
           "columnsFrom": [
             "astrologer_id"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "set null",
           "onUpdate": "no action"
@@ -3232,6 +4031,14 @@
           "primaryKey": true,
           "notNull": true,
           "default": "gen_random_uuid()"
+        },
+        "role": {
+          "name": "role",
+          "type": "user_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'user'"
         },
         "name": {
           "name": "name",
@@ -3460,6 +4267,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "admin_id": {
+          "name": "admin_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "balance": {
           "name": "balance",
           "type": "numeric(12, 2)",
@@ -3518,15 +4331,28 @@
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "wallets_astrologer_id_astrologers_id_fk": {
-          "name": "wallets_astrologer_id_astrologers_id_fk",
+        "wallets_astrologer_id_astrologers_user_id_fk": {
+          "name": "wallets_astrologer_id_astrologers_user_id_fk",
           "tableFrom": "wallets",
           "tableTo": "astrologers",
           "columnsFrom": [
             "astrologer_id"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "wallets_admin_id_admins_user_id_fk": {
+          "name": "wallets_admin_id_admins_user_id_fk",
+          "tableFrom": "wallets",
+          "tableTo": "admins",
+          "columnsFrom": [
+            "admin_id"
+          ],
+          "columnsTo": [
+            "user_id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -3591,15 +4417,15 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "website_content_updated_by_admins_id_fk": {
-          "name": "website_content_updated_by_admins_id_fk",
+        "website_content_updated_by_admins_user_id_fk": {
+          "name": "website_content_updated_by_admins_user_id_fk",
           "tableFrom": "website_content",
           "tableTo": "admins",
           "columnsFrom": [
             "updated_by"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "set null",
           "onUpdate": "no action"
@@ -3634,7 +4460,13 @@
           "name": "astrologer_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "admin_id": {
+          "name": "admin_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
         },
         "amount": {
           "name": "amount",
@@ -3654,7 +4486,7 @@
           "name": "bank_account",
           "type": "jsonb",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "admin_note": {
           "name": "admin_note",
@@ -3691,28 +4523,41 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "withdrawal_requests_astrologer_id_astrologers_id_fk": {
-          "name": "withdrawal_requests_astrologer_id_astrologers_id_fk",
+        "withdrawal_requests_astrologer_id_astrologers_user_id_fk": {
+          "name": "withdrawal_requests_astrologer_id_astrologers_user_id_fk",
           "tableFrom": "withdrawal_requests",
           "tableTo": "astrologers",
           "columnsFrom": [
             "astrologer_id"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
-        "withdrawal_requests_processed_by_admins_id_fk": {
-          "name": "withdrawal_requests_processed_by_admins_id_fk",
+        "withdrawal_requests_admin_id_admins_user_id_fk": {
+          "name": "withdrawal_requests_admin_id_admins_user_id_fk",
+          "tableFrom": "withdrawal_requests",
+          "tableTo": "admins",
+          "columnsFrom": [
+            "admin_id"
+          ],
+          "columnsTo": [
+            "user_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "withdrawal_requests_processed_by_admins_user_id_fk": {
+          "name": "withdrawal_requests_processed_by_admins_user_id_fk",
           "tableFrom": "withdrawal_requests",
           "tableTo": "admins",
           "columnsFrom": [
             "processed_by"
           ],
           "columnsTo": [
-            "id"
+            "user_id"
           ],
           "onDelete": "set null",
           "onUpdate": "no action"

@@ -18,7 +18,7 @@ export class CommissionService {
       .select({
         id: schema.commissions.id,
         astrologerId: schema.commissions.astrologerId,
-        astrologerName: schema.astrologers.name,
+        astrologerName: schema.users.name,
         type: schema.commissions.type,
         value: schema.commissions.value,
         minAmount: schema.commissions.minAmount,
@@ -28,7 +28,8 @@ export class CommissionService {
         updatedAt: schema.commissions.updatedAt,
       })
       .from(schema.commissions)
-      .leftJoin(schema.astrologers, eq(schema.commissions.astrologerId, schema.astrologers.id));
+      .leftJoin(schema.astrologers, eq(schema.commissions.astrologerId, schema.astrologers.userId))
+      .leftJoin(schema.users, eq(schema.astrologers.userId, schema.users.id));
   }
   async findByAstrologerId(astrologerId: string) { return this.db.query.commissions.findFirst({ where: eq(schema.commissions.astrologerId, astrologerId) }); }
 
@@ -183,7 +184,7 @@ export class CommissionService {
           totalEarnings: sql`${schema.astrologers.totalEarnings} + ${amountStr}::decimal`,
           updatedAt: new Date(),
         })
-        .where(eq(schema.astrologers.id, astrologerId));
+        .where(eq(schema.astrologers.userId, astrologerId));
     });
   }
 

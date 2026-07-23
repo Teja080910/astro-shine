@@ -20,16 +20,22 @@ export class MuhuratService {
     let createdByName = 'System';
     if (entry.createdBy) {
       const astrologer = await this.db.query.astrologers.findFirst({
-        where: eq(schema.astrologers.id, entry.createdBy),
+        where: eq(schema.astrologers.userId, entry.createdBy),
       });
       if (astrologer) {
-        createdByName = astrologer.name;
+        const astroUser = await this.db.query.users.findFirst({
+          where: eq(schema.users.id, entry.createdBy),
+        });
+        createdByName = astroUser?.name || 'Astrologer';
       } else {
         const admin = await this.db.query.admins.findFirst({
-          where: eq(schema.admins.id, entry.createdBy),
+          where: eq(schema.admins.userId, entry.createdBy),
         });
         if (admin) {
-          createdByName = admin.name;
+          const adminUser = await this.db.query.users.findFirst({
+            where: eq(schema.users.id, entry.createdBy),
+          });
+          createdByName = adminUser?.name || 'Admin';
         }
       }
     }
