@@ -27,6 +27,10 @@ export class AstrologersService {
     return this.db.query.astrologers.findFirst({ where: eq(schema.astrologers.email, email) });
   }
 
+  async findByPhone(phone: string) {
+    return this.db.query.astrologers.findFirst({ where: eq(schema.astrologers.phone, phone) });
+  }
+
   async create(data: typeof schema.astrologers.$inferInsert) {
     const [result] = await this.db.insert(schema.astrologers).values(data).returning();
     return result;

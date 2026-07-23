@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
-import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, colors, typography, radii } from '../../shared';
+import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, colors, typography, radii, shadows } from '../../shared';
 import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
 import type { Blog, Notification, SupportTicket, NewsItem, Video, PanchangRecord, CommissionLog } from '../../shared/types';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
+import * as DocumentPicker from 'expo-document-picker';
 
 function SectionTitle({ title }: { title: string }) {
   return <Text style={[typography.pageTitle, { marginBottom: 16 }]}>{title}</Text>;
@@ -688,15 +689,94 @@ export function AstrologerScheduleScreen() {
 
 // Astrologer: Documents
 export function AstrologerDocumentsScreen() {
+  const { astrologer, updateUser } = useAuth();
+  const [docs, setDocs] = useState<string[]>(astrologer?.verificationDoc || []);
+  const [status, setStatus] = useState(astrologer?.verificationStatus || 'pending');
+  const [note, setNote] = useState(astrologer?.verificationNote || '');
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    if (!astrologer?.id) return;
+    api.astrologers.get(astrologer.id).then((fresh) => {
+      setDocs(fresh.verificationDoc || []);
+      setStatus(fresh.verificationStatus || 'pending');
+      setNote(fresh.verificationNote || '');
+    }).catch(() => {});
+  }, [astrologer?.id]);
+
+  const pickAndUpload = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({ type: ['image/*', 'application/pdf'], copyToCacheDirectory: true });
+      if (result.canceled || !result.assets?.[0]) return;
+      const file = result.assets[0];
+      setUploading(true);
+      const uploaded = await api.uploadFile({ uri: file.uri, name: file.name, mimeType: file.mimeType });
+      const newDocs = [...docs, uploaded.url];
+      setDocs(newDocs);
+      await api.astrologers.update(astrologer!.id, { verificationDoc: newDocs });
+      updateUser({ ...astrologer!, verificationDoc: newDocs });
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.message || e?.message || 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeDoc = async (index: number) => {
+    const newDocs = docs.filter((_, i) => i !== index);
+    setDocs(newDocs);
+    await api.astrologers.update(astrologer!.id, { verificationDoc: newDocs });
+    updateUser({ ...astrologer!, verificationDoc: newDocs });
+  };
+
+  const statusBadge = { pending: { color: '#F59E0B', label: 'Pending Review' }, approved: { color: '#22C55E', label: 'Approved' }, rejected: { color: '#EF4444', label: 'Rejected' } } as const;
+  const badge = statusBadge[status as keyof typeof statusBadge] || statusBadge.pending;
+
   return (
     <ScreenWrapper scroll>
-      <SectionTitle title="Documents & Verification" />
+      <SectionTitle title="Verification Documents" />
+
+      <View style={{ backgroundColor: badge.color + '20', borderColor: badge.color, borderWidth: 1, borderRadius: 12, padding: 16, marginBottom: 20 }}>
+        <Text style={[typography.cardTitle, { color: badge.color, marginBottom: 4 }]}>{badge.label}</Text>
+        {note ? <Text style={[typography.body, { color: colors.textSecondary }]}>{note}</Text> : null}
+        <Text style={[typography.caption, { color: colors.textMuted, marginTop: 4 }]}>
+          {status === 'pending' && 'Your documents are being reviewed by the admin team.'}
+          {status === 'approved' && 'Your profile has been verified. You can now receive consultation requests.'}
+          {status === 'rejected' && 'Your verification was rejected. Please re-upload valid documents.'}
+        </Text>
+      </View>
+
+      {docs.length > 0 && (
+        <View style={{ marginBottom: 20 }}>
+          <Text style={[typography.sectionTitle, { marginBottom: 8 }]}>Uploaded Documents</Text>
+          {docs.map((doc, i) => (
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.glassBg, borderColor: colors.cardBorder, borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 8 }}>
+              <Ionicons name="document-text-outline" size={20} color={colors.primaryLight} style={{ marginRight: 10 }} />
+              <Text style={[typography.body, { color: colors.textPrimary, flex: 1 }]} numberOfLines={1}>
+                {doc.split('/').pop()?.substring(14) || `Document ${i + 1}`}
+              </Text>
+              <TouchableOpacity onPress={() => removeDoc(i)} style={{ padding: 6 }}>
+                <Ionicons name="trash-outline" size={18} color={colors.danger} />
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+      )}
+
       <GlassCard style={{ alignItems: 'center', padding: 24 }}>
-        <Ionicons name="document-attach-outline" size={48} color={colors.textMuted} />
-        <Text style={[typography.body, { textAlign: 'center', marginTop: 12 }]}>Upload your ID proof and certificates for verification</Text>
-        <GradientButton title="Upload Document" onPress={() => {}} style={{ marginTop: 16 }} />
+        <Ionicons name="cloud-upload-outline" size={48} color={colors.primaryLight} />
+        <Text style={[typography.body, { textAlign: 'center', marginTop: 12, color: colors.textSecondary }]}>
+          Upload ID proof, certificates, or degree documents for verification
+        </Text>
+        <Text style={[typography.caption, { color: colors.textMuted, marginTop: 4, marginBottom: 16 }]}>
+          Supported: JPG, PNG, PDF
+        </Text>
+        <GradientButton
+          title={uploading ? 'Uploading...' : 'Upload Document'}
+          onPress={pickAndUpload}
+          disabled={uploading}
+        />
       </GlassCard>
-      <Text style={[typography.caption, { marginTop: 16, textAlign: 'center' }]}>Verification Status: Pending</Text>
     </ScreenWrapper>
   );
 }

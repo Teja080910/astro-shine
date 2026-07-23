@@ -206,8 +206,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       const counts: Record<string, number> = {};
       res.data.forEach((c: any) => { counts[c.id] = c.unreadCount; });
       setUnreadCounts(counts);
-    } catch {
-      console.error('Failed to load conversations');
+    } catch (e: any) {
+      console.error('Failed to load conversations:', e?.response?.data?.message || e?.message || e);
     }
   }, []);
 

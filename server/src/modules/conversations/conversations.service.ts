@@ -1,6 +1,6 @@
 import { Injectable, Inject, NotFoundException, ConflictException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { and, eq, or, desc, sql, lt } from 'drizzle-orm';
+import { and, eq, or, desc, sql, lt, inArray } from 'drizzle-orm';
 import * as schema from '../../db/schemas';
 
 @Injectable()
@@ -158,7 +158,7 @@ export class ConversationsService {
       .from(schema.conversationMessages)
       .where(
         and(
-          sql`${schema.conversationMessages.conversationId} = ANY(${conversationIds})`,
+          inArray(schema.conversationMessages.conversationId, conversationIds),
           eq(schema.conversationMessages.isRead, false),
           sql`${schema.conversationMessages.senderId} != ${userId}`,
         ),

@@ -53,19 +53,23 @@ export class AuthService {
   }
 
   async sendForgotPasswordOtp(identifier: string, type: 'email' | 'phone'): Promise<{ message: string }> {
+    let user: any = null;
     if (type === 'email') {
-      const user = await this.usersService.findByEmail(identifier);
-      if (!user) throw new UnauthorizedException('USER_NOT_FOUND');
-      if (!user.isActive || user.deletedAt) throw new UnauthorizedException('Account has been deleted or deactivated');
-      return this.generateAndSendOtp(`reset:${identifier}`, identifier);
+      user = await this.usersService.findByEmail(identifier);
+      if (!user) user = await this.astrologersService.findByEmail(identifier);
     } else {
-      const user = await this.usersService.findByPhone(identifier);
-      if (!user) throw new UnauthorizedException('USER_NOT_FOUND');
-      if (!user.isActive || user.deletedAt) throw new UnauthorizedException('Account has been deleted or deactivated');
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      this.otpStore.set(`reset:phone:${identifier}`, { otp, expiresAt: Date.now() + 600000 });
-      return { message: 'OTP sent to phone' };
+      user = await this.usersService.findByPhone(identifier);
+      if (!user) user = await this.astrologersService.findByPhone(identifier);
     }
+    if (!user) throw new UnauthorizedException('USER_NOT_FOUND');
+    if (!user.isActive || user.deletedAt) throw new UnauthorizedException('Account has been deleted or deactivated');
+
+    if (type === 'email') {
+      return this.generateAndSendOtp(`reset:${identifier}`, identifier);
+    }
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    this.otpStore.set(`reset:phone:${identifier}`, { otp, expiresAt: Date.now() + 600000 });
+    return { message: 'OTP sent to phone' };
   }
 
   async resetPassword(identifier: string, otp: string, newPassword: string, type: 'email' | 'phone' = 'email'): Promise<{ success: boolean }> {
@@ -81,11 +85,18 @@ export class AuthService {
     }
 
     const user = type === 'email'
-      ? await this.usersService.findByEmail(identifier)
-      : await this.usersService.findByPhone(identifier);
+      ? (await this.usersService.findByEmail(identifier) || await this.astrologersService.findByEmail(identifier))
+      : (await this.usersService.findByPhone(identifier) || await this.astrologersService.findByPhone(identifier));
     if (!user) throw new UnauthorizedException('USER_NOT_FOUND');
 
     await this.usersService.updatePassword(user.id, newPassword, 'user');
+
+    const astrologer = await this.astrologersService.findByEmail(identifier) || 
+      (type === 'phone' ? await this.astrologersService.findByPhone(identifier) : null);
+    if (astrologer) {
+      await this.usersService.updatePassword(astrologer.id, newPassword, 'astrologer');
+    }
+
     return { success: true };
   }
 
@@ -187,12 +198,12 @@ export class AuthService {
     let user: any = null;
     let role = 'user';
 
-    const regularUser = await this.usersService.findByEmail(email);
-    if (regularUser && regularUser.isActive && !regularUser.deletedAt && regularUser.password) {
-      const isValid = await this.verifyPassword(password, regularUser.password);
+    const astrologerUser = await this.astrologersService.findByEmail(email);
+    if (astrologerUser && astrologerUser.isActive !== false && astrologerUser.password) {
+      const isValid = await this.verifyPassword(password, astrologerUser.password);
       if (isValid) {
-        user = regularUser;
-        role = 'user';
+        user = astrologerUser;
+        role = 'astrologer';
       }
     }
 
@@ -208,12 +219,12 @@ export class AuthService {
     }
 
     if (!user) {
-      const astrologerUser = await this.astrologersService.findByEmail(email);
-      if (astrologerUser && astrologerUser.isActive !== false && astrologerUser.password) {
-        const isValid = await this.verifyPassword(password, astrologerUser.password);
+      const regularUser = await this.usersService.findByEmail(email);
+      if (regularUser && regularUser.isActive && !regularUser.deletedAt && regularUser.password) {
+        const isValid = await this.verifyPassword(password, regularUser.password);
         if (isValid) {
-          user = astrologerUser;
-          role = 'astrologer';
+          user = regularUser;
+          role = 'user';
         }
       }
     }
