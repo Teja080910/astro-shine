@@ -15,16 +15,16 @@ interface Props {
 
 export function ScreenWrapper({ children, scroll, style, noPadding, edges = ['top'], backgroundColor }: Props) {
   const { theme } = useAuth();
+  const isDark = theme === 'dark';
+  const bg = backgroundColor || (isDark ? '#09090B' : '#FFFFFF');
+  const isDarkBar = backgroundColor ? true : isDark;
+  const bgOpacity = isDark ? 0.08 : 0.16;
+
   const content = (
     <View style={[!noPadding && styles.padding, { flex: 1 }, style]}>
       {children}
     </View>
   );
-
-  const bg = backgroundColor || colors.background;
-  const isDarkBar = backgroundColor ? true : (theme === 'dark');
-  const isBackgroundDark = backgroundColor === '#09090B' || (theme === 'dark' && !backgroundColor);
-  const bgOpacity = isBackgroundDark ? 0.08 : 0.16;
 
   return (
     <SafeAreaView edges={edges} style={[styles.container, { backgroundColor: bg }]}>
@@ -51,6 +51,6 @@ export function ScreenWrapper({ children, scroll, style, noPadding, edges = ['to
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+  container: { flex: 1 },
   padding: { padding: 16 },
 });

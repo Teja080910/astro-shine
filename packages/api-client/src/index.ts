@@ -3,7 +3,7 @@ import type { AuthResponse, LoginRequest, RegisterRequest, User, Astrologer, Adm
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL
   ? `${process.env.EXPO_PUBLIC_API_URL}/api/v1`
-  : 'http://10.19.202.221:3067/api/v1';
+  : (() => { throw new Error('EXPO_PUBLIC_API_URL environment variable is not set'); })();
 
 class ApiClient {
   private client: AxiosInstance;

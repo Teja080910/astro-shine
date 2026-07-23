@@ -50,6 +50,9 @@ export default function HoroscopePage() {
   };
 
   const handleSave = async () => {
+    if (!prediction.trim()) { alert('Prediction is required'); return; }
+    const num = parseInt(luckyNumber);
+    if (luckyNumber && (isNaN(num) || num < 1 || num > 99)) { alert('Lucky number must be between 1 and 99'); return; }
     const payload = {
       zodiacSign,
       date,

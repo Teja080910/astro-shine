@@ -255,7 +255,7 @@ export function AstrologerMuhuratScreen() {
             placeholderTextColor={colors.textMuted}
             value={formName}
             onChangeText={setFormName}
-            style={[styles.inputField, { color: colors.textPrimary, borderColor: colors.cardBorder, backgroundColor: isDark ? '#1F2937' : '#F9FAFB' }]}
+            style={[styles.inputField, { color: colors.textPrimary, borderColor: colors.cardBorder, backgroundColor: isDark ? '#1F2937' : '#FFFFFF' }]}
           />
 
           <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Category</Text>
@@ -268,7 +268,7 @@ export function AstrologerMuhuratScreen() {
           <View style={styles.dateTimeRow}>
             <View style={{ flex: 1, marginRight: 8 }}>
               <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Date</Text>
-              <TouchableOpacity onPress={() => setShowDatePicker(true)} style={[styles.selectorBtn, { borderColor: colors.cardBorder, backgroundColor: isDark ? '#1F2937' : '#F9FAFB' }]}>
+              <TouchableOpacity onPress={() => setShowDatePicker(true)} style={[styles.selectorBtn, { borderColor: colors.cardBorder, backgroundColor: isDark ? '#1F2937' : '#FFFFFF' }]}>
                 <Ionicons name="calendar-outline" size={16} color={colors.primary} style={{ marginRight: 6 }} />
                 <Text style={{ color: colors.textPrimary }}>{formatDateString(formDate)}</Text>
               </TouchableOpacity>
@@ -303,7 +303,7 @@ export function AstrologerMuhuratScreen() {
             onChangeText={setFormDesc}
             multiline
             numberOfLines={4}
-            style={[styles.inputField, { height: 80, textAlignVertical: 'top', color: colors.textPrimary, borderColor: colors.cardBorder, backgroundColor: isDark ? '#1F2937' : '#F9FAFB' }]}
+            style={[styles.inputField, { height: 80, textAlignVertical: 'top', color: colors.textPrimary, borderColor: colors.cardBorder, backgroundColor: isDark ? '#1F2937' : '#FFFFFF' }]}
           />
 
           <View style={styles.toggleRow}>

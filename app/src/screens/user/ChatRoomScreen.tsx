@@ -6,6 +6,7 @@ import { TypingIndicator } from '../../shared/components/TypingIndicator';
 import { Avatar } from '../../shared/components/Avatar';
 import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/AuthContext';
+import { useCall } from '../../context/CallContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../../shared/api-client';
@@ -41,6 +42,7 @@ function isConsecutive(prev: any, curr: any): boolean {
 export function ChatRoomScreen({ route, navigation }: any) {
   const { conversationId, participantId, participantRole, participantName } = route.params;
   const { messages, loadMessages, loadMoreMessages, sendMessage, startTyping, stopTyping, markAsRead, typingUsers, hasMore, loading, onlineUsers, connected, joinRoom, setActiveConversation, astrologerStatuses, chatBlockedMessage, clearChatBlocked } = useChat();
+  const { initiateCall } = useCall();
   const { user, astrologer: authAstrologer } = useAuth();
   const currentUserId = user?.id || authAstrologer?.id;
   const isUser = !!user?.id;
@@ -137,8 +139,36 @@ export function ChatRoomScreen({ route, navigation }: any) {
           </View>
         </TouchableOpacity>
       ),
+      headerRight: () => isUser && participantRole === 'astrologer' ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginRight: 8 }}>
+          <TouchableOpacity
+            onPress={() => {
+              if (!isOnline) {
+                Alert.alert('Astrologer Offline', `${participantName || 'Astrologer'} is currently offline.`);
+                return;
+              }
+              initiateCall(participantId, participantName || 'Astrologer', 'audio');
+            }}
+            style={{ padding: 6 }}
+          >
+            <Ionicons name="call" size={20} color={colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              if (!isOnline) {
+                Alert.alert('Astrologer Offline', `${participantName || 'Astrologer'} is currently offline.`);
+                return;
+              }
+              initiateCall(participantId, participantName || 'Astrologer', 'video');
+            }}
+            style={{ padding: 6 }}
+          >
+            <Ionicons name="videocam" size={22} color="#7C3AED" />
+          </TouchableOpacity>
+        </View>
+      ) : null,
     });
-  }, [navigation, isOnline, typing, participantId, currentUserId, participantName, participantRole, chatPrice, isUser]);
+  }, [navigation, isOnline, typing, participantId, currentUserId, participantName, participantRole, chatPrice, isUser, initiateCall]);
 
   useEffect(() => {
     loadMessages(conversationId);
@@ -288,7 +318,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
         icon={<Ionicons name="wallet-outline" size={48} color={colors.danger} />}
         actions={[
           { label: 'Add Funds', onPress: () => { clearChatBlocked(); handleAddFunds(); }, variant: 'primary' },
-          { label: 'Close', onPress: () => clearChatBlocked(), variant: 'default' },
+          { label: 'Close', onPress: () => clearChatBlocked(), variant: 'secondary' },
         ]}
         onClose={() => clearChatBlocked()}
       />

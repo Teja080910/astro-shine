@@ -32,7 +32,7 @@ interface AuthState {
   loginWithOtp: (identifier: string, otp: string, role: AppRole, type?: 'phone' | 'email') => Promise<void>;
   logout: () => Promise<void>;
   switchRole: (role: AppRole) => void;
-  updateUser: (u: any) => Promise<void>;
+  updateUser: (u: User | Astrologer) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState>(null!);
@@ -73,6 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setThemeState(systemScheme);
         }
       } catch {
+        console.log('Failed to restore auth state');
       } finally {
         setLoading(false);
       }
@@ -84,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setThemeState(t);
     try {
       await AsyncStorage.setItem("theme_preference", t);
-    } catch {}
+    } catch { console.log('Failed to persist theme preference'); }
   };
 
   const persist = async (t: string, u?: User, a?: Astrologer, r?: AppRole) => {
@@ -145,6 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password,
       phone,
     });
+    api.setToken(token);
     const a = await api.astrologers.create({ name, email, password, phone });
     await persist(token, undefined, a, "astrologer");
   };
@@ -152,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginWithOtp = async (identifier: string, otp: string, role: AppRole, type: 'phone' | 'email' = 'phone') => {
     const { token, user: u } = type === 'email'
       ? await api.auth.verifyEmailOtp(identifier, otp)
-      : await api.auth.phoneLogin(identifier);
+      : await api.auth.phoneLogin(identifier, otp);
     await persist(token, u as User, undefined, role);
   };
 
@@ -167,11 +169,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const switchRole = (r: AppRole) => setRole(r);
 
-  const updateUser = async (u: any) => {
+  const updateUser = async (u: User | Astrologer) => {
     if (role === "astrologer") {
-      setAstrologer(u);
+      setAstrologer(u as Astrologer);
     } else {
-      setUser(u);
+      setUser(u as User);
     }
     try {
       const stored = await AsyncStorage.getItem("auth");
@@ -184,7 +186,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         await AsyncStorage.setItem("auth", JSON.stringify(data));
       }
-    } catch {}
+    } catch { console.log('Failed to persist auth update'); }
   };
 
   return (

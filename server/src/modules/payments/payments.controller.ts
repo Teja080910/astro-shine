@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Body, Param, Headers, Req,
-  UseGuards, HttpCode, HttpStatus, Logger,
+  UseGuards, HttpCode, HttpStatus, Logger, ForbiddenException,
 } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
@@ -58,9 +58,12 @@ export class PaymentsController {
   @Post(':id/refund')
   @UseGuards(AuthGuard)
   async refundPayment(
+    @CurrentUser() userId: string,
     @Param('id') id: string,
     @Body() body: { amount?: number; reason?: string },
+    @Req() req: any,
   ) {
+    if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can process refunds');
     return this.paymentsService.refundPayment(id, body.amount, body.reason);
   }
 }

@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import type { AuthResponse, LoginRequest, RegisterRequest, User, Astrologer, Admin, KundliRecord, MatchmakingRecord, HoroscopeRecord, PanchangRecord, Wallet, Transaction, WithdrawalRequest, Commission, CommissionLog, CallLog, ChatMessage, Gift, GiftTransaction, Donation, ShopProduct, Order, OrderItem, Blog, NewsItem, Review, Report, Notification, AppSetting, ApiKey, DynamicLink, WebsiteContent, LiveSession, MandirPooja, PoojaBooking, SupportTicket, TicketReply, AppRelease, Video, Conversation, ConversationMessage, PaginatedMessages, PaymentOrderRequest, PaymentOrderResponse, PaymentVerifyRequest, PaymentVerifyResponse, PaymentStatusResponse, PaymentRefundRequest, PaymentRefundResponse, MuhuratCategory, MuhuratItem } from '../shared/types';
+import type { AuthResponse, LoginRequest, RegisterRequest, User, Astrologer, Admin, KundliRecord, MatchmakingRecord, HoroscopeRecord, PanchangRecord, Wallet, Transaction, WithdrawalRequest, Commission, CommissionLog, CallLog, ChatMessage, Gift, GiftTransaction, Donation, ShopProduct, Order, OrderItem, Blog, NewsItem, Review, Report, Notification, AppSetting, ApiKey, DynamicLink, WebsiteContent, LiveSession, MandirPooja, PoojaBooking, SupportTicket, TicketReply, AppRelease, Video, Conversation, ConversationMessage, PaginatedMessages, PaymentOrderRequest, PaymentOrderResponse, PaymentVerifyRequest, PaymentVerifyResponse, PaymentStatusResponse, PaymentRefundRequest, PaymentRefundResponse, MuhuratCategory, MuhuratItem, FileUploadResponse, ScheduleSlot } from '../shared/types';
 import { config } from '../config';
 
 const BASE_URL = config.apiBaseUrl;
@@ -14,6 +14,31 @@ class ApiClient {
       if (this.token) config.headers.Authorization = `Bearer ${this.token}`;
       return config;
     });
+    this.client.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        if (error.response?.status === 401 && !error.config._retry) {
+          error.config._retry = true;
+          try {
+            const AsyncStorage = await import('@react-native-async-storage/async-storage');
+            const stored = await AsyncStorage.default.getItem('auth');
+            if (stored) {
+              const { token: savedToken } = JSON.parse(stored);
+              if (savedToken && savedToken !== this.token) {
+                this.token = savedToken;
+                error.config.headers.Authorization = `Bearer ${savedToken}`;
+                return this.client.request(error.config);
+              }
+            }
+          } catch {}
+          this.token = null;
+          await import('@react-native-async-storage/async-storage')
+            .then((AsyncStorage) => AsyncStorage.default.removeItem('auth'))
+            .catch(() => {});
+        }
+        return Promise.reject(error);
+      },
+    );
   }
 
   setToken(token: string | null) { this.token = token; }
@@ -22,6 +47,15 @@ class ApiClient {
   private async post<T>(path: string, data?: any): Promise<T> { const r = await this.client.post(path, data); return r.data; }
   private async put<T>(path: string, data?: any): Promise<T> { const r = await this.client.put(path, data); return r.data; }
   private async del(path: string): Promise<void> { await this.client.delete(path); }
+
+  async uploadFile(file: { uri: string; name: string; mimeType?: string }): Promise<{ filename: string; url: string }> {
+    const formData = new FormData();
+    formData.append('file', { uri: file.uri, name: file.name, type: file.mimeType || 'application/octet-stream' } as any);
+    const r = await this.client.post('/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return r.data;
+  }
 
   // Payments
   payments = {
@@ -36,9 +70,18 @@ class ApiClient {
     register: (d: RegisterRequest) => this.post<AuthResponse>('/auth/register', d),
     login: (d: LoginRequest) => this.post<AuthResponse>('/auth/login', d),
     checkPhone: (phone: string) => this.post<{ exists: boolean }>('/auth/check-phone', { phone }),
-    phoneLogin: (phone: string) => this.post<AuthResponse>('/auth/phone-login', { phone }),
+    phoneLogin: (phone: string, otp: string) => this.post<AuthResponse>('/auth/phone-login', { phone, otp }),
+    sendPhoneOtp: (phone: string) => this.post<{ message: string }>('/auth/send-phone-otp', { phone }),
     sendEmailOtp: (email: string) => this.post<{ message: string }>('/auth/send-email-otp', { email }),
     verifyEmailOtp: (email: string, otp: string) => this.post<AuthResponse>('/auth/verify-email-otp', { email, otp }),
+    sendRegistrationOtp: (identifier: string, type: 'email' | 'phone') =>
+      this.post<{ message: string }>('/auth/send-registration-otp', { identifier, type }),
+    verifyRegistrationOtp: (identifier: string, type: 'email' | 'phone', otp: string) =>
+      this.post<{ verified: true }>('/auth/verify-registration-otp', { identifier, type, otp }),
+    sendForgotPasswordOtp: (identifier: string, type: 'email' | 'phone') =>
+      this.post<{ message: string }>('/auth/forgot-password/send-otp', { identifier, type }),
+    resetPassword: (identifier: string, type: 'email' | 'phone', otp: string, newPassword: string) =>
+      this.post<{ success: boolean }>('/auth/forgot-password/reset', { identifier, type, otp, newPassword }),
   };
 
   // Users

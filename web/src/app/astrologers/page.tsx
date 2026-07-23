@@ -33,6 +33,9 @@ export default function AstrologersPage() {
 
   const handleSavePrices = async (id: string) => {
     const comm = await api.get<any>(`/commissions/by-astrologer/${id}`).catch(() => null);
+    if (comm === null) {
+      alert('Failed to fetch commission rules. Please try again.'); return;
+    }
     const minCap = comm?.minCap ? parseFloat(comm.minCap) : 0;
     const maxCap = comm?.maxCap ? parseFloat(comm.maxCap) : 0;
     const vals = [chatPrice, audioPrice, videoPrice].map(v => parseFloat(v) || 0);
@@ -63,9 +66,9 @@ export default function AstrologersPage() {
             <td className="px-4 py-3 text-text-primary font-medium">{a.name}</td>
             <td className="px-4 py-3 text-text-secondary">{a.email}</td>
             <td className="px-4 py-3 text-text-secondary">{a.specialization?.slice(0, 2).join(', ') || '-'}</td>
-            <td className="px-4 py-3 text-text-secondary">₹{a.chatPricePerMin || a.pricePerMin}</td>
-            <td className="px-4 py-3 text-text-secondary">₹{a.audioCallPricePerMin || a.pricePerMin}</td>
-            <td className="px-4 py-3 text-text-secondary">₹{a.videoCallPricePerMin || a.pricePerMin}</td>
+            <td className="px-4 py-3 text-text-secondary">₹{(a as any).chatPricePerMin || a.pricePerMin}</td>
+            <td className="px-4 py-3 text-text-secondary">₹{(a as any).audioCallPricePerMin || a.pricePerMin}</td>
+            <td className="px-4 py-3 text-text-secondary">₹{(a as any).videoCallPricePerMin || a.pricePerMin}</td>
             <td className="px-4 py-3">
               {a.verificationStatus === 'approved' && <Badge variant="success">Verified</Badge>}
               {a.verificationStatus === 'pending' && <Badge variant="warning">Pending</Badge>}
@@ -75,9 +78,9 @@ export default function AstrologersPage() {
               <button
                 onClick={() => {
                   setSelected(a);
-                  setChatPrice(a.chatPricePerMin || a.pricePerMin);
-                  setAudioPrice(a.audioCallPricePerMin || a.pricePerMin);
-                  setVideoPrice(a.videoCallPricePerMin || a.pricePerMin);
+                  setChatPrice((a as any).chatPricePerMin || a.pricePerMin);
+                  setAudioPrice((a as any).audioCallPricePerMin || a.pricePerMin);
+                  setVideoPrice((a as any).videoCallPricePerMin || a.pricePerMin);
                 }}
                 className="text-primary-light hover:underline text-sm font-medium"
               >
@@ -111,7 +114,7 @@ export default function AstrologersPage() {
             <p><span className="font-medium text-text-primary">Specialization:</span> {selected.specialization?.join(', ') || '-'}</p>
             <p><span className="font-medium text-text-primary">Languages:</span> {selected.languages?.join(', ') || '-'}</p>
             <p><span className="font-medium text-text-primary">Skills:</span> {selected.skills?.join(', ') || '-'}</p>
-            <p><span className="font-medium text-text-primary">Rating:</span> {parseFloat(selected.rating).toFixed(2)} ({selected.totalReviews} reviews)</p>
+            <p><span className="font-medium text-text-primary">Rating:</span> {Number(selected.rating).toFixed(2)} ({selected.totalReviews} reviews)</p>
             <p><span className="font-medium text-text-primary">Total Earnings:</span> ₹{selected.totalEarnings}</p>
             <p><span className="font-medium text-text-primary">Bio:</span> {selected.bio || '-'}</p>
 

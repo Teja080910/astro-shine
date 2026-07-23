@@ -375,3 +375,16 @@ export interface MuhuratItem {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface FileUploadResponse {
+  url: string;
+}
+
+export interface ScheduleSlot {
+  id: string;
+  astrologerId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isActive: boolean;
+}

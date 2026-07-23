@@ -549,7 +549,9 @@ export class PaymentsService {
         });
         const matchingPayments = payments.items.filter((p: any) => p.order_id === razorpayOrder.id && p.status === 'captured');
         if (matchingPayments.length > 0) {
-          await this.processSuccessfulPayment(paymentOrder, matchingPayments[0].id, '');
+          if (!FINAL_STATES.includes(paymentOrder.status as any)) {
+            await this.processSuccessfulPayment(paymentOrder, matchingPayments[0].id, '');
+          }
           return;
         }
       }

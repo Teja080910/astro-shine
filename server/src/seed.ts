@@ -31,7 +31,7 @@ async function seed() {
       name: a.name,
       email: a.email,
       phone: a.phone,
-      password: hashPassword('password123'),
+      password: hashPassword(crypto.randomUUID()),
       gender: a.name.includes(' ') ? (a.name.split(' ')[0].endsWith('a') ? 'female' : 'male') as 'male' | 'female' : 'male',
       dateOfBirth: '1985-06-15',
       bio: a.bio,

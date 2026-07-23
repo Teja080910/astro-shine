@@ -57,7 +57,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [hasMore, setHasMore] = useState(true);
   const [chatBlockedMessage, setChatBlockedMessage] = useState<string | null>(null);
   const cursorRef = useRef<string | null>(null);
-  const typingTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
+  const typingTimeoutRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const activeConvRef = useRef<Conversation | null>(null);
 
   useEffect(() => {
@@ -76,7 +76,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
     const socket = io(config.socketUrl, {
       path: config.socketPath,
-      query: { token },
+      auth: { token },
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: Infinity,
@@ -85,44 +85,38 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     });
 
     socket.on('connect', () => {
-      console.log(`[WS Client] Connected - socketId: ${socket.id}`);
+      if (__DEV__) console.log(`[WS] Connected`);
       setConnected(true);
       loadConversationsRef.current();
     });
     socket.on('disconnect', (reason) => {
-      console.log(`[WS Client] Disconnected - reason: ${reason}`);
+      if (__DEV__) console.log(`[WS] Disconnected: ${reason}`);
       setConnected(false);
     });
     socket.on('connect_error', (err) => {
-      console.log('[WS Client] Connect error:', err.message);
+      console.error('[WS] Connect error:', err.message);
+    });
+
+    socket.on('error', (data: { message: string }) => {
+      console.error('[WS] Server error:', data.message);
     });
 
     socket.on('message:new', (message: ConversationMessage) => {
-      console.log(`[WS Client] message:new RECEIVED - id: ${message.id}, conversationId: ${message.conversationId}, senderId: ${message.senderId}, content: "${message.content}"`);
-      console.log(`[WS Client] Active conversation:`, activeConvRef.current?.id);
       const active = activeConvRef.current;
       if (active?.id === message.conversationId) {
-        console.log(`[WS Client] Message matches active conversation, adding to messages`);
         setMessages((prev) => {
           const exists = prev.some((m) => m.id === message.id);
-          if (exists) {
-            console.log(`[WS Client] Message already exists in state, skipping`);
-            return prev;
-          }
+          if (exists) return prev;
           const hasOptimistic = prev.some((m) => m.id.startsWith('temp-') && m.senderId === message.senderId && m.conversationId === message.conversationId);
           if (hasOptimistic) {
-            console.log(`[WS Client] Replacing optimistic message with server message`);
             return prev.map((m) =>
               m.id.startsWith('temp-') && m.senderId === message.senderId && m.conversationId === message.conversationId
                 ? message
                 : m,
             );
           }
-          console.log(`[WS Client] Adding message to state. Current count: ${prev.length}`);
           return [...prev, message];
         });
-      } else {
-        console.log(`[WS Client] Message NOT for active conversation (active: ${active?.id}, msg: ${message.conversationId})`);
       }
       loadConversationsRef.current();
     });
@@ -199,6 +193,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     socketRef.current = socket;
 
     return () => {
+      Object.values(typingTimeoutRef.current).forEach(clearTimeout);
+      typingTimeoutRef.current = {};
       socket.disconnect();
     };
   }, [token]);
@@ -208,9 +204,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       const res = await api.conversations.list();
       setConversations(res.data);
       const counts: Record<string, number> = {};
-      res.data.forEach((c) => { counts[c.id] = c.unreadCount; });
+      res.data.forEach((c: any) => { counts[c.id] = c.unreadCount; });
       setUnreadCounts(counts);
-    } catch {}
+    } catch (e: any) {
+      console.error('Failed to load conversations:', e?.response?.data?.message || e?.message || e);
+    }
   }, []);
 
   const loadConversationsRef = useRef(loadConversations);
@@ -219,15 +217,20 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   }, [loadConversations]);
 
   const openConversation = useCallback(async (participantId: string, participantRole: string) => {
-    const conv = await api.conversations.create(participantId, participantRole);
-    setActiveConversationState(conv);
-    cursorRef.current = null;
-    setHasMore(true);
-    setMessages([]);
-    if (socketRef.current?.connected) {
-      socketRef.current.emit('join:conversation', { conversationId: conv.id });
+    try {
+      const conv = await api.conversations.create(participantId, participantRole);
+      setActiveConversationState(conv);
+      cursorRef.current = null;
+      setHasMore(true);
+      setMessages([]);
+      if (socketRef.current?.connected) {
+        socketRef.current.emit('join:conversation', { conversationId: conv.id });
+      }
+      return conv.id;
+    } catch (e: any) {
+      console.error('Failed to open conversation:', e.message);
+      throw e;
     }
-    return conv.id;
   }, []);
 
   const setActiveConversation = useCallback((conv: Conversation | null) => {
@@ -254,7 +257,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setMessages((prev) => [...res.data, ...prev]);
       cursorRef.current = res.nextCursor;
       setHasMore(res.hasMore);
-    } catch {} finally {
+    } catch { console.error('Failed to load more messages'); } finally {
       setLoading(false);
     }
   }, [activeConversation, hasMore, loading]);
@@ -279,8 +282,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     if (socket?.connected) {
       socket.emit('message:send', { conversationId, content });
     } else {
-      const msg = await api.conversations.sendMessage(conversationId, content);
-      setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? msg : m)));
+      try {
+        const msg = await api.conversations.sendMessage(conversationId, content);
+        setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? msg : m)));
+      } catch { console.error('Failed to send message via HTTP fallback'); }
     }
   }, [currentRole]);
 
@@ -314,7 +319,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
     try {
       await api.conversations.markAsRead(conversationId);
-    } catch {}
+    } catch { console.error('Failed to mark conversation as read'); }
     loadConversationsRef.current();
   }, []);
 

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, KeyboardAvoidingView, ScrollView, Platform, Image, Modal } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, KeyboardAvoidingView, ScrollView, Platform, Image, Modal, Keyboard } from 'react-native';
 import { ScreenWrapper, GradientButton } from '../../shared';
 import { colors, radii, typography, shadows } from '../../shared/theme';
 import { useAuth } from '../../context/AuthContext';
@@ -8,8 +8,29 @@ import { api } from '../../shared/api-client';
 import { OTPWidget } from '../../shared/msg91-otp-widget';
 import { LinearGradient } from 'expo-linear-gradient';
 
+function useKeyboard() {
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSubscription = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSubscription = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  return keyboardVisible;
+}
+
 export function LoginScreen({ navigation }: any) {
   const { loginAsUser, theme, setTheme } = useAuth();
+  const keyboardVisible = useKeyboard();
+  const scrollViewRef = useRef<ScrollView>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -19,8 +40,7 @@ export function LoginScreen({ navigation }: any) {
   const handleLogin = async () => {
     if (!email || !password) { setError('Please fill all fields'); return; }
     setLoading(true); setError('');
-    try { await loginAsUser(email, password); } catch (e: any) { setError(e?.response?.data?.message || 'Login failed'); }
-    finally { setLoading(false); }
+    try { await loginAsUser(email, password); } catch (e: any) { setError(e?.response?.data?.message || 'Login failed'); setLoading(false); }
   };
 
   const isDark = theme === 'dark';
@@ -28,13 +48,15 @@ export function LoginScreen({ navigation }: any) {
 
   return (
     <ScreenWrapper edges={['top', 'bottom']} noPadding>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <TouchableOpacity style={[styles.themeToggle, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder }]} onPress={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
           <Ionicons name={theme === 'dark' ? 'sunny-outline' : 'moon-outline'} size={22} color={colors.textPrimary} />
         </TouchableOpacity>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <ScrollView ref={scrollViewRef} style={{ flex: 1 }} contentContainerStyle={[styles.container, keyboardVisible && { paddingBottom: 90 }]} keyboardShouldPersistTaps="always" showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <Image source={require('../../../assets/logo_clean.png')} style={styles.headerLogo} resizeMode="contain" />
+            {!keyboardVisible && (
+              <Image source={require('../../../assets/logo_clean.png')} style={styles.headerLogo} resizeMode="contain" />
+            )}
             <Text style={[typography.hero, { color: colors.textPrimary }]}>Welcome Back</Text>
             <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>Sign in to continue your cosmic journey</Text>
           </View>
@@ -42,7 +64,7 @@ export function LoginScreen({ navigation }: any) {
           
           <View style={[styles.formCard, { backgroundColor: colors.glassBg, borderColor: colors.inputBorder }, shadows.card]}>
             <Input icon="mail-outline" placeholder="Email" value={email} onChange={setEmail} keyboardType="email-address" />
-            <Input icon="lock-closed-outline" placeholder="Password" value={password} onChange={setPassword} secure={!showPw} right={<Ionicons name={showPw ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textMuted} onPress={() => setShowPw(!showPw)} />} />
+            <Input icon="lock-closed-outline" placeholder="Password" value={password} onChange={setPassword} secure={!showPw} right={<Ionicons name={showPw ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textMuted} onPress={() => setShowPw(!showPw)} />} onFocus={() => { if (!keyboardVisible) { setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100); } }} />
             <GradientButton title={loading ? 'Signing in...' : 'Sign In'} onPress={handleLogin} disabled={loading} />
             
             <View style={styles.orDivider}>
@@ -63,6 +85,10 @@ export function LoginScreen({ navigation }: any) {
           <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('Register')}>
             <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Don't have an account? <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>Register</Text></Text>
           </TouchableOpacity>
+
+          <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('ForgotPassword')}>
+            <Text style={[styles.linkTextStatic, { color: colors.textMuted, fontSize: 13 }]}>Forgot Password?</Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </ScreenWrapper>
@@ -71,6 +97,8 @@ export function LoginScreen({ navigation }: any) {
 
 export function RegisterScreen({ navigation }: any) {
   const { registerUser, registerAstrologer, theme, setTheme } = useAuth();
+  const keyboardVisible = useKeyboard();
+  const scrollViewRef = useRef<ScrollView>(null);
   const [step, setStep] = useState<0 | 1>(0);
   const [selectedRole, setSelectedRole] = useState<'user' | 'astrologer'>('user');
   const [verMode, setVerMode] = useState<'email' | 'phone'>('email');
@@ -78,15 +106,53 @@ export function RegisterScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
 
-  const handleRegister = async () => {
+  const sendRegistrationOtp = async () => {
     if (!name || !email || !phone || !password) {
       setError('Please fill in all mandatory fields');
       return;
     }
+    setError(''); setSendingOtp(true);
+    try {
+      if (verMode === 'email') {
+        await api.auth.sendRegistrationOtp(email, 'email');
+      } else {
+        await api.auth.sendRegistrationOtp(phone, 'phone');
+      }
+      setOtpSent(true);
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 150);
+    } catch (e: any) {
+      setError(e?.response?.data?.message || 'Failed to send OTP');
+    } finally {
+      setSendingOtp(false);
+    }
+  };
 
+  const verifyOtp = async () => {
+    if (!otp) { setError('Please enter OTP'); return; }
+    setError(''); setVerifyingOtp(true);
+    try {
+      const identifier = verMode === 'email' ? email : phone;
+      await api.auth.verifyRegistrationOtp(identifier, verMode, otp);
+      setOtpVerified(true);
+    } catch (e: any) {
+      setError(e?.response?.data?.message || 'Invalid OTP');
+    } finally {
+      setVerifyingOtp(false);
+    }
+  };
+
+  const handleRegister = async () => {
     setLoading(true); setError('');
     try {
       if (selectedRole === 'astrologer') {
@@ -96,7 +162,6 @@ export function RegisterScreen({ navigation }: any) {
       }
     } catch (e: any) {
       setError(e?.response?.data?.message || 'Registration failed');
-    } finally {
       setLoading(false);
     }
   };
@@ -106,17 +171,18 @@ export function RegisterScreen({ navigation }: any) {
 
   return (
     <ScreenWrapper edges={['top', 'bottom']} noPadding>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <TouchableOpacity style={[styles.themeToggle, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder }]} onPress={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
           <Ionicons name={theme === 'dark' ? 'sunny-outline' : 'moon-outline'} size={22} color={colors.textPrimary} />
         </TouchableOpacity>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          
+        <ScrollView ref={scrollViewRef} style={{ flex: 1 }} contentContainerStyle={[styles.container, keyboardVisible && { paddingBottom: 90 }]} keyboardShouldPersistTaps="always" showsVerticalScrollIndicator={false}>
           {step === 0 ? (
             // STEP 0: Role Selection Cards
             <>
               <View style={styles.header}>
-                <Image source={require('../../../assets/logo_clean.png')} style={styles.headerLogo} resizeMode="contain" />
+                {!keyboardVisible && (
+                  <Image source={require('../../../assets/logo_clean.png')} style={styles.headerLogo} resizeMode="contain" />
+                )}
                 <Text style={[typography.hero, { color: colors.textPrimary }]}>Join Us</Text>
                 <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>Select how you want to join our cosmic community</Text>
               </View>
@@ -149,7 +215,9 @@ export function RegisterScreen({ navigation }: any) {
             // STEP 1: Registration Form
             <>
               <View style={styles.header}>
-                <Image source={require('../../../assets/logo_clean.png')} style={styles.headerLogo} resizeMode="contain" />
+                {!keyboardVisible && (
+                  <Image source={require('../../../assets/logo_clean.png')} style={styles.headerLogo} resizeMode="contain" />
+                )}
                 <Text style={[typography.hero, { color: colors.textPrimary }]}>{selectedRole === 'user' ? 'User Signup' : 'Astrologer Signup'}</Text>
                 <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>{selectedRole === 'user' ? 'Begin your spiritual journey' : 'Register your advisor account'}</Text>
               </View>
@@ -163,39 +231,42 @@ export function RegisterScreen({ navigation }: any) {
               <View style={[styles.formCard, { backgroundColor: colors.glassBg, borderColor: colors.inputBorder }, shadows.card]}>
                 <Input icon="person-outline" placeholder="Full Name" value={name} onChange={setName} />
                 <Input icon="mail-outline" placeholder="Email Address" value={email} onChange={setEmail} keyboardType="email-address" />
-                <Input icon="call-outline" placeholder="Phone Number" value={phone} onChange={setPhone} keyboardType="phone-pad" />
-                <Input icon="lock-closed-outline" placeholder="Password" value={password} onChange={setPassword} secure />
+                <Input icon="call-outline" placeholder="Phone Number" value={phone} onChange={setPhone} keyboardType="phone-pad" onFocus={() => { if (!keyboardVisible) { setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100); } }} />
+                <Input icon="lock-closed-outline" placeholder="Password" value={password} onChange={setPassword} secure={!showPw} right={<Ionicons name={showPw ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textMuted} onPress={() => setShowPw(!showPw)} />} onFocus={() => { if (!keyboardVisible) { setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100); } }} />
 
-                {/* Verification Choice Selector */}
                 <Text style={[styles.verLabel, { color: colors.textPrimary }]}>Verify Account Via:</Text>
                 <View style={[styles.roleContainer, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, marginBottom: 16 }]}>
                   <TouchableOpacity 
                     style={[styles.roleButton, verMode === 'email' && styles.roleButtonActive]} 
-                    onPress={() => { setVerMode('email'); setError(''); }}
+                    onPress={() => { if (!otpSent) { setVerMode('email'); setError(''); } }}
+                    disabled={otpSent}
                   >
-                    <Ionicons 
-                      name="mail-outline" 
-                      size={16} 
-                      color={verMode === 'email' ? '#FFFFFF' : colors.textMuted} 
-                      style={{ marginRight: 6 }} 
-                    />
+                    <Ionicons name="mail-outline" size={16} color={verMode === 'email' ? '#FFFFFF' : colors.textMuted} style={{ marginRight: 6 }} />
                     <Text style={[styles.roleText, { color: verMode === 'email' ? '#FFFFFF' : colors.textMuted }]}>Email</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={[styles.roleButton, verMode === 'phone' && styles.roleButtonActive]} 
-                    onPress={() => { setVerMode('phone'); setError(''); }}
+                    onPress={() => { if (!otpSent) { setVerMode('phone'); setError(''); } }}
+                    disabled={otpSent}
                   >
-                    <Ionicons 
-                      name="call-outline" 
-                      size={16} 
-                      color={verMode === 'phone' ? '#FFFFFF' : colors.textMuted} 
-                      style={{ marginRight: 6 }} 
-                    />
+                    <Ionicons name="call-outline" size={16} color={verMode === 'phone' ? '#FFFFFF' : colors.textMuted} style={{ marginRight: 6 }} />
                     <Text style={[styles.roleText, { color: verMode === 'phone' ? '#FFFFFF' : colors.textMuted }]}>Phone OTP</Text>
                   </TouchableOpacity>
                 </View>
 
-                <GradientButton title={loading ? 'Creating...' : 'Create Account'} onPress={handleRegister} disabled={loading} />
+                {!otpSent ? (
+                  <GradientButton title={sendingOtp ? 'Sending OTP...' : 'Send OTP'} onPress={sendRegistrationOtp} disabled={sendingOtp} />
+                ) : !otpVerified ? (
+                  <>
+                    <Input icon="key-outline" placeholder="Enter OTP" value={otp} onChange={setOtp} keyboardType="number-pad" onFocus={() => { if (!keyboardVisible) { setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100); } }} />
+                    <GradientButton title={verifyingOtp ? 'Verifying...' : 'Verify OTP'} onPress={verifyOtp} disabled={verifyingOtp} />
+                    <Text style={[styles.resend, sendingOtp && { opacity: 0.5 }]} onPress={sendingOtp ? undefined : sendRegistrationOtp}>
+                      {sendingOtp ? 'Resending OTP...' : 'Resend OTP'}
+                    </Text>
+                  </>
+                ) : (
+                  <GradientButton title={loading ? 'Creating...' : 'Create Account'} onPress={handleRegister} disabled={loading} />
+                )}
               </View>
             </>
           )}
@@ -211,6 +282,8 @@ export function RegisterScreen({ navigation }: any) {
 
 export function OtpLoginScreen({ navigation }: any) {
   const { loginWithOtp, theme, setTheme } = useAuth();
+  const keyboardVisible = useKeyboard();
+  const scrollViewRef = useRef<ScrollView>(null);
   const [verType, setVerType] = useState<'phone' | 'email'>('phone');
   const [identifier, setIdentifier] = useState('');
   const [otp, setOtp] = useState('');
@@ -254,6 +327,9 @@ export function OtpLoginScreen({ navigation }: any) {
         setReqId(res.message);
       }
       setSent(true);
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 150);
     } catch (e: any) {
       const detail = e?.response?.data?.message || e?.message || e?.toString() || 'Failed to send OTP';
       setError(detail);
@@ -306,13 +382,15 @@ export function OtpLoginScreen({ navigation }: any) {
 
   return (
     <ScreenWrapper edges={['top', 'bottom']} noPadding>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <TouchableOpacity style={[styles.themeToggle, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder }]} onPress={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
           <Ionicons name={theme === 'dark' ? 'sunny-outline' : 'moon-outline'} size={22} color={colors.textPrimary} />
         </TouchableOpacity>
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+        <ScrollView ref={scrollViewRef} style={{ flex: 1 }} contentContainerStyle={[styles.container, keyboardVisible && { paddingBottom: 90 }]} keyboardShouldPersistTaps="always" showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            <Image source={require('../../../assets/logo_clean.png')} style={styles.headerLogo} resizeMode="contain" />
+            {!keyboardVisible && (
+              <Image source={require('../../../assets/logo_clean.png')} style={styles.headerLogo} resizeMode="contain" />
+            )}
             <Text style={[typography.hero, { color: colors.textPrimary }]}>OTP Login</Text>
             {sent ? (
               <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', lineHeight: 22 }]}>
@@ -387,12 +465,13 @@ export function OtpLoginScreen({ navigation }: any) {
               onChange={setIdentifier} 
               keyboardType={verType === 'email' ? 'email-address' : 'phone-pad'} 
               editable={!sent} 
+              onFocus={() => { if (!keyboardVisible) { setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100); } }}
             />
             {!sent ? (
               <GradientButton title={sending ? 'Sending...' : 'Send OTP'} onPress={sendOtp} disabled={sending} />
             ) : (
               <>
-                <Input icon="key-outline" placeholder="OTP Code" value={otp} onChange={setOtp} keyboardType="number-pad" />
+                <Input icon="key-outline" placeholder="OTP Code" value={otp} onChange={setOtp} keyboardType="number-pad" onFocus={() => { if (!keyboardVisible) { setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100); } }} />
                 <GradientButton title={loading ? 'Verifying...' : 'Verify & Login'} onPress={verify} disabled={loading} />
                 <Text 
                   style={[styles.resend, sending && { opacity: 0.5 }]} 
@@ -435,7 +514,114 @@ export function OtpLoginScreen({ navigation }: any) {
   );
 }
 
-function Input({ icon, placeholder, value, onChange, secure, keyboardType, right, editable = true }: any) {
+export function ForgotPasswordScreen({ navigation }: any) {
+  const { theme, setTheme } = useAuth();
+  const keyboardVisible = useKeyboard();
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [verType, setVerType] = useState<'email' | 'phone'>('email');
+  const [step, setStep] = useState<'id' | 'otp' | 'reset'>('id');
+  const [identifier, setIdentifier] = useState('');
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const sendOtp = async () => {
+    if (!identifier) { setError('Please enter your ' + (verType === 'email' ? 'email' : 'phone number')); return; }
+    setLoading(true); setError('');
+    try {
+      await api.auth.sendForgotPasswordOtp(identifier, verType);
+      setStep('otp');
+      setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+    } catch (e: any) {
+      setError(e?.response?.data?.message || 'Failed to send OTP');
+    } finally { setLoading(false); }
+  };
+
+  const verifyAndReset = async () => {
+    if (!otp || !newPassword) { setError('Please enter OTP and new password'); return; }
+    if (newPassword.length < 6) { setError('Password must be at least 6 characters'); return; }
+    setLoading(true); setError('');
+    try {
+      await api.auth.resetPassword(identifier, verType, otp, newPassword);
+      setStep('reset');
+      setSuccess('Password reset successfully!');
+    } catch (e: any) {
+      setError(e?.response?.data?.message || 'Failed to reset password');
+    } finally { setLoading(false); }
+  };
+
+  const placeholders = verType === 'email' ? { icon: 'mail-outline', label: 'Email Address', keyboard: 'email-address' } : { icon: 'call-outline', label: 'Phone Number', keyboard: 'phone-pad' };
+
+  return (
+    <ScreenWrapper edges={['top', 'bottom']} noPadding>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+        <TouchableOpacity style={[styles.themeToggle, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder }]} onPress={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+          <Ionicons name={theme === 'dark' ? 'sunny-outline' : 'moon-outline'} size={22} color={colors.textPrimary} />
+        </TouchableOpacity>
+        <ScrollView ref={scrollViewRef} style={{ flex: 1 }} contentContainerStyle={[styles.container, keyboardVisible && { paddingBottom: 90 }]} keyboardShouldPersistTaps="always" showsVerticalScrollIndicator={false}>
+          <View style={styles.header}>
+            {!keyboardVisible && (
+              <Image source={require('../../../assets/logo_clean.png')} style={styles.headerLogo} resizeMode="contain" />
+            )}
+            <Text style={[typography.hero, { color: colors.textPrimary }]}>Reset Password</Text>
+            <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>
+              {step === 'id' ? 'Choose how to receive your reset OTP' :
+               step === 'otp' ? 'Enter the OTP and your new password' :
+               'Your password has been updated'}
+            </Text>
+          </View>
+
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {success ? <Text style={[styles.error, { color: colors.success }]}>{success}</Text> : null}
+
+          <View style={[styles.formCard, { backgroundColor: colors.glassBg, borderColor: colors.inputBorder }, shadows.card]}>
+            {step === 'id' && (
+              <>
+                <View style={[styles.roleContainer, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder }]}>
+                  <TouchableOpacity style={[styles.roleButton, verType === 'email' && styles.roleButtonActive]}
+                    onPress={() => { setVerType('email'); setError(''); }}>
+                    <Ionicons name="mail-outline" size={16} color={verType === 'email' ? '#FFFFFF' : colors.textMuted} style={{ marginRight: 6 }} />
+                    <Text style={[styles.roleText, { color: verType === 'email' ? '#FFFFFF' : colors.textMuted }]}>Email</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.roleButton, verType === 'phone' && styles.roleButtonActive]}
+                    onPress={() => { setVerType('phone'); setError(''); }}>
+                    <Ionicons name="call-outline" size={16} color={verType === 'phone' ? '#FFFFFF' : colors.textMuted} style={{ marginRight: 6 }} />
+                    <Text style={[styles.roleText, { color: verType === 'phone' ? '#FFFFFF' : colors.textMuted }]}>Phone</Text>
+                  </TouchableOpacity>
+                </View>
+                <Input icon={placeholders.icon as any} placeholder={placeholders.label} value={identifier} onChange={setIdentifier} keyboardType={placeholders.keyboard as any} onFocus={() => { if (!keyboardVisible) { setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100); } }} />
+                <GradientButton title={loading ? 'Sending...' : 'Send OTP'} onPress={sendOtp} disabled={loading} />
+              </>
+            )}
+
+            {step === 'otp' && (
+              <>
+                <Input icon={placeholders.icon as any} placeholder={placeholders.label} value={identifier} onChange={setIdentifier} editable={false} />
+                <Input icon="key-outline" placeholder="OTP Code" value={otp} onChange={setOtp} keyboardType="number-pad" onFocus={() => { if (!keyboardVisible) { setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100); } }} />
+                <Input icon="lock-closed-outline" placeholder="New Password" value={newPassword} onChange={setNewPassword} secure={!showPw}
+                  right={<Ionicons name={showPw ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.textMuted} onPress={() => setShowPw(!showPw)} />} onFocus={() => { if (!keyboardVisible) { setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100); } }} />
+                <GradientButton title={loading ? 'Resetting...' : 'Reset Password'} onPress={verifyAndReset} disabled={loading} />
+              </>
+            )}
+
+            {step === 'reset' && (
+              <GradientButton title="Back to Login" onPress={() => navigation.navigate('Login')} />
+            )}
+          </View>
+
+          <TouchableOpacity style={styles.link} onPress={() => navigation.goBack()}>
+            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Back to <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>Login</Text></Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ScreenWrapper>
+  );
+}
+
+function Input({ icon, placeholder, value, onChange, secure, keyboardType, right, editable = true, onFocus }: any) {
   return (
     <View style={[styles.inputContainer, { backgroundColor: colors.surfaceLight, borderColor: colors.inputBorder }]}>
       <Ionicons name={icon} size={20} color={colors.textMuted} style={{ marginRight: 10 }} />
@@ -449,6 +635,7 @@ function Input({ icon, placeholder, value, onChange, secure, keyboardType, right
         keyboardType={keyboardType} 
         autoCapitalize="none" 
         editable={editable} 
+        onFocus={onFocus}
       />
       {right && <View style={{ marginLeft: 4 }}>{right}</View>}
     </View>
@@ -456,7 +643,7 @@ function Input({ icon, placeholder, value, onChange, secure, keyboardType, right
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, justifyContent: 'center', padding: 24 },
+  container: { flexGrow: 1, padding: 24 },
   backgroundImage: {
     position: 'absolute',
     top: 0,

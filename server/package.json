@@ -24,7 +24,8 @@
     "db:studio": "drizzle-kit studio",
     "seed": "ts-node -r tsconfig-paths/register src/seed.ts",
     "seed:muhurat": "ts-node -r tsconfig-paths/register src/seed-muhurat.ts",
-    "seed:muhurat:new": "ts-node -r tsconfig-paths/register src/seed-muhurat-new.ts"
+    "seed:muhurat:new": "ts-node -r tsconfig-paths/register src/seed-muhurat-new.ts",
+    "seed:user": "ts-node -r tsconfig-paths/register src/seed-user.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

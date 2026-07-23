@@ -8,7 +8,8 @@ import { CallProvider, useCall } from './src/context/CallContext';
 import { Navigation } from './src/navigation/Navigation';
 import { IncomingCallScreen } from './src/screens/shared/IncomingCallScreen';
 import { ActiveCallScreen } from './src/screens/shared/ActiveCallScreen';
-import { darkTheme, lightTheme, setThemeState } from './src/shared';
+import { darkTheme, lightTheme, setThemeState, GlobalAlert } from './src/shared';
+import { ErrorBoundary } from './src/shared/components/ErrorBoundary';
 
 function ThemeWrapper({ children }: { children: React.ReactNode }) {
   const { theme } = useAuth();
@@ -29,22 +30,25 @@ function AppContent() {
       <Navigation />
       {incomingCall && <IncomingCallScreen />}
       {showActive && <ActiveCallScreen />}
+      <GlobalAlert />
     </View>
   );
 }
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <ChatProvider>
-          <CallProvider>
-            <ThemeWrapper>
-              <AppContent />
-            </ThemeWrapper>
-          </CallProvider>
-        </ChatProvider>
-      </AuthProvider>
-    </SafeAreaProvider>
+      <SafeAreaProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <ChatProvider>
+              <CallProvider>
+                <ThemeWrapper>
+                  <AppContent />
+                </ThemeWrapper>
+              </CallProvider>
+            </ChatProvider>
+          </AuthProvider>
+        </ErrorBoundary>
+      </SafeAreaProvider>
   );
 }

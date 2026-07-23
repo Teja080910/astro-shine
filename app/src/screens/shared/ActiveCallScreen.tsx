@@ -26,7 +26,7 @@ export function ActiveCallScreen() {
   const { callData, callState, endCall } = useCall();
   const { joinChannel, leaveChannel, toggleMute, toggleSpeaker, toggleCamera, switchCamera, isMuted, isSpeakerOn, isVideoEnabled, isCameraFront, remoteUid, isRemoteMuted, isRemoteVideoMuted } = useAgora();
   const [seconds, setSeconds] = useState(0);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const joinedRef = useRef(false);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
 
@@ -50,7 +50,12 @@ export function ActiveCallScreen() {
     if (callState === 'active') {
       timerRef.current = setInterval(() => setSeconds(s => s + 1), 1000);
     }
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
   }, [callState]);
 
   useEffect(() => {

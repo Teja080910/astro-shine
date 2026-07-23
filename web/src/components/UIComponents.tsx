@@ -31,14 +31,23 @@ export function StatCard({ label, value, iconName, color }: { label: string; val
   );
 }
 
-export function Table({ headers, children, emptyMessage }: { headers: string[]; children: React.ReactNode; emptyMessage?: string }) {
+export function Table({ headers, children, emptyMessage, sortIndex, sortDir, onSort }: { headers: string[]; children: React.ReactNode; emptyMessage?: string; sortIndex?: number; sortDir?: 'asc' | 'desc'; onSort?: (index: number) => void }) {
   const hasRows = React.Children.toArray(children).filter(Boolean).length > 0;
   return (
     <div className="overflow-x-auto glass-card-solid p-0">
       <table className="w-full">
         <thead>
           <tr className="border-b border-divider">
-            {headers.map(h => <th key={h} className="text-left text-sm text-text-secondary font-medium px-4 py-3">{h}</th>)}
+            {headers.map((h, i) => (
+              <th key={h} className={`text-left text-sm font-medium px-4 py-3 ${onSort ? 'cursor-pointer select-none hover:text-text-primary transition-colors' : ''} ${sortIndex === i ? 'text-text-primary' : 'text-text-secondary'}`} onClick={() => onSort?.(i)}>
+                <span className="inline-flex items-center gap-1">
+                  {h}
+                  {onSort && sortIndex === i && (
+                    <span className="text-xs">{sortDir === 'asc' ? '▲' : '▼'}</span>
+                  )}
+                </span>
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>

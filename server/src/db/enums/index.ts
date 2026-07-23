@@ -20,7 +20,7 @@ export const transactionCategory = pgEnum('transaction_category', [
 ]);
 export const withdrawalStatus = pgEnum('withdrawal_status', ['pending', 'approved', 'rejected', 'completed']);
 export const commissionType = pgEnum('commission_type', ['percentage', 'fixed']);
-export const callStatus = pgEnum('call_status', ['initiated', 'ongoing', 'completed', 'missed', 'cancelled']);
+export const callStatus = pgEnum('call_status', ['initiated', 'ongoing', 'completed', 'missed', 'cancelled', 'failed']);
 export const callType = pgEnum('call_type', ['audio', 'video']);
 export const messageType = pgEnum('message_type', ['text', 'image', 'voice', 'file']);
 export const blogStatus = pgEnum('blog_status', ['draft', 'published', 'archived']);
