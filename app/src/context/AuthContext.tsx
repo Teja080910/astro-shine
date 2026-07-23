@@ -146,6 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password,
       phone,
     });
+    api.setToken(token);
     const a = await api.astrologers.create({ name, email, password, phone });
     await persist(token, undefined, a, "astrologer");
   };

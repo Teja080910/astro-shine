@@ -36,6 +36,20 @@ export class AuthController {
     return this.authService.loginWithPhone(body.phone, body.otp);
   }
 
+  @Post('send-registration-otp')
+  async sendRegistrationOtp(@Body() body: { identifier: string; type: 'email' | 'phone' }) {
+    if (!body.identifier) throw new BadRequestException('Identifier is required');
+    if (!['email', 'phone'].includes(body.type)) throw new BadRequestException('Type must be email or phone');
+    return this.authService.sendRegistrationOtp(body.identifier, body.type);
+  }
+
+  @Post('verify-registration-otp')
+  async verifyRegistrationOtp(@Body() body: { identifier: string; type: 'email' | 'phone'; otp: string }) {
+    if (!body.identifier || !body.otp) throw new BadRequestException('Identifier and OTP are required');
+    if (!['email', 'phone'].includes(body.type)) throw new BadRequestException('Type must be email or phone');
+    return this.authService.verifyRegistrationOtp(body.identifier, body.type, body.otp);
+  }
+
   @Post('register')
   async register(@Body() body: { name: string; email: string; password: string; phone?: string }) {
     if (!body.name || body.name.length < 2) throw new BadRequestException('Name must be at least 2 characters');
@@ -53,5 +67,21 @@ export class AuthController {
   @Post('logout')
   async logout() {
     return { success: true, message: 'Logged out successfully' };
+  }
+
+  @Post('forgot-password/send-otp')
+  async sendForgotPasswordOtp(@Body() body: { identifier: string; type: 'email' | 'phone' }) {
+    if (!body.identifier) throw new BadRequestException('Identifier is required');
+    if (!['email', 'phone'].includes(body.type)) throw new BadRequestException('Type must be email or phone');
+    if (body.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.identifier)) throw new BadRequestException('Valid email is required');
+    if (body.type === 'phone' && body.identifier.length < 10) throw new BadRequestException('Valid phone number is required');
+    return this.authService.sendForgotPasswordOtp(body.identifier, body.type);
+  }
+
+  @Post('forgot-password/reset')
+  async resetPassword(@Body() body: { identifier: string; type: 'email' | 'phone'; otp: string; newPassword: string }) {
+    if (!body.identifier || !body.otp || !body.newPassword) throw new BadRequestException('Identifier, OTP and new password are required');
+    if (!['email', 'phone'].includes(body.type)) throw new BadRequestException('Type must be email or phone');
+    return this.authService.resetPassword(body.identifier, body.otp, body.newPassword, body.type);
   }
 }

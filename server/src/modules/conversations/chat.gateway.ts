@@ -22,7 +22,10 @@ import { WalletService } from '../wallet/wallet.service';
 import { CommissionService } from '../commission/commission.service';
 
 @WebSocketGateway({
-  cors: { origin: 'http://localhost:3000', credentials: true },
+  cors: {
+    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : true,
+    credentials: true,
+  },
   path: '/ws',
 })
 export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {

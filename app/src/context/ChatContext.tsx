@@ -97,6 +97,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       console.error('[WS] Connect error:', err.message);
     });
 
+    socket.on('error', (data: { message: string }) => {
+      console.error('[WS] Server error:', data.message);
+    });
+
     socket.on('message:new', (message: ConversationMessage) => {
       const active = activeConvRef.current;
       if (active?.id === message.conversationId) {

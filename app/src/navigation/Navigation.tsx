@@ -3,12 +3,12 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
-import { TouchableOpacity } from 'react-native';
+import { TouchableOpacity, View, Image, ActivityIndicator } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { FloatingBottomBar, colors } from '../shared';
 
 import { AstrologerConsultationScreen, AstrologerHomeScreen, AstrologerNotificationsScreen, AstrologerProfileScreen, AstrologerReviewsScreen, AstrologerWalletScreen, AstrologerWithdrawalScreen, AstrologerMuhuratScreen } from '../screens/astrologer/AstrologerScreens';
-import { LoginScreen, OtpLoginScreen, RegisterScreen } from '../screens/auth/AuthScreens';
+import { LoginScreen, OtpLoginScreen, RegisterScreen, ForgotPasswordScreen } from '../screens/auth/AuthScreens';
 import { OnboardingScreen } from '../screens/auth/OnboardingScreen';
 import {
   AboutAppScreen,
@@ -125,7 +125,19 @@ function AstrologerTabs() {
 
 export function Navigation() {
   const { role, loading, theme } = useAuth();
-  if (loading) return null;
+  if (loading) {
+    const bg = theme === 'dark' ? '#09090B' : '#FFFFFF';
+    return (
+      <View style={{ flex: 1, backgroundColor: bg, justifyContent: 'center', alignItems: 'center' }}>
+        <Image 
+          source={require('../../assets/logo_clean.png')} 
+          style={{ width: 200, height: 145 }} 
+          resizeMode="contain" 
+        />
+        <ActivityIndicator size="small" color={theme === 'dark' ? '#D97706' : '#F59E0B'} style={{ marginTop: 24 }} />
+      </View>
+    );
+  }
 
   const screenOptions = { headerShown: false, contentStyle: { backgroundColor: colors.background } };
 
@@ -138,6 +150,7 @@ export function Navigation() {
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="OtpLogin" component={OtpLoginScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           </>
         ) : role === 'user' ? (
           <>

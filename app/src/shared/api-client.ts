@@ -65,6 +65,14 @@ class ApiClient {
     sendPhoneOtp: (phone: string) => this.post<{ message: string }>('/auth/send-phone-otp', { phone }),
     sendEmailOtp: (email: string) => this.post<{ message: string }>('/auth/send-email-otp', { email }),
     verifyEmailOtp: (email: string, otp: string) => this.post<AuthResponse>('/auth/verify-email-otp', { email, otp }),
+    sendRegistrationOtp: (identifier: string, type: 'email' | 'phone') =>
+      this.post<{ message: string }>('/auth/send-registration-otp', { identifier, type }),
+    verifyRegistrationOtp: (identifier: string, type: 'email' | 'phone', otp: string) =>
+      this.post<{ verified: true }>('/auth/verify-registration-otp', { identifier, type, otp }),
+    sendForgotPasswordOtp: (identifier: string, type: 'email' | 'phone') =>
+      this.post<{ message: string }>('/auth/forgot-password/send-otp', { identifier, type }),
+    resetPassword: (identifier: string, type: 'email' | 'phone', otp: string, newPassword: string) =>
+      this.post<{ success: boolean }>('/auth/forgot-password/reset', { identifier, type, otp, newPassword }),
   };
 
   // Users

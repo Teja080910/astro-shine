@@ -8,6 +8,7 @@
     "userInterfaceStyle": "dark",
     "backgroundColor": "#09090B",
     "splash": {
+      "image": "./assets/logo_clean.png",
       "backgroundColor": "#09090B",
       "resizeMode": "contain"
     },
@@ -17,6 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
+        "foregroundImage": "./assets/logo_clean.png",
         "backgroundColor": "#09090B"
       },
       "package": "com.astroshine.mobile",
