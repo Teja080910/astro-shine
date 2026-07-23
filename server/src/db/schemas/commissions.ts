@@ -4,7 +4,7 @@ import { commissionType } from '../enums';
 
 export const commissions = pgTable('commissions', {
   id: uuid('id').defaultRandom().primaryKey(),
-  astrologerId: uuid('astrologer_id').notNull().unique().references(() => astrologers.id, { onDelete: 'cascade' }),
+  astrologerId: uuid('astrologer_id').notNull().unique().references(() => astrologers.userId, { onDelete: 'cascade' }),
   type: commissionType('type').notNull().default('percentage'),
   value: decimal('value', { precision: 5, scale: 2 }).notNull(),
   minAmount: decimal('min_amount', { precision: 10, scale: 2 }),

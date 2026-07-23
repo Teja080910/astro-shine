@@ -4,7 +4,7 @@ import { users } from './users';
 
 export const feedback = pgTable('feedback', {
   id: uuid('id').defaultRandom().primaryKey(),
-  astrologerId: uuid('astrologer_id').notNull().references(() => astrologers.id, { onDelete: 'cascade' }),
+  astrologerId: uuid('astrologer_id').notNull().references(() => astrologers.userId, { onDelete: 'cascade' }),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'set null' }),
   ratings: decimal('ratings', { precision: 2, scale: 1 }).notNull(),
   comments: text('comments'),

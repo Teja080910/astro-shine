@@ -1,5 +1,6 @@
 import { Controller, Get, Param, Body, Post, Put, Delete, HttpCode, HttpStatus, UseGuards, BadRequestException, UnauthorizedException, ForbiddenException, Req } from '@nestjs/common';
 import { UsersService } from './users.service';
+import { AuthService } from '../auth/auth.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
@@ -11,7 +12,10 @@ function stripPassword(user: any) {
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly authService: AuthService,
+  ) {}
 
   @Get('profile')
   @UseGuards(AuthGuard)
@@ -45,11 +49,11 @@ export class UsersController {
     if (newPassword.length < 6) {
       throw new BadRequestException('New password must be at least 6 characters');
     }
-    const isCorrect = await this.usersService.verifyPassword(userId, currentPassword);
+    const isCorrect = await this.authService.checkPassword(userId, currentPassword);
     if (!isCorrect) {
       throw new UnauthorizedException('Incorrect current password');
     }
-    await this.usersService.updatePassword(userId, newPassword, req.userRole);
+    await this.authService.updatePasswordInDb(userId, newPassword, req.userRole);
     return { success: true, message: 'Password changed successfully' };
   }
 

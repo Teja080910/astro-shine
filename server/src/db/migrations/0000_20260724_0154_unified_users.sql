@@ -1,32 +1,40 @@
 CREATE TYPE "user_role" AS ENUM ('user', 'astrologer', 'admin');
+--> statement-breakpoint
 CREATE TYPE "auth_provider" AS ENUM ('email', 'google', 'apple');
+--> statement-breakpoint
 CREATE TYPE "gender" AS ENUM ('male', 'female', 'other');
+--> statement-breakpoint
 CREATE TYPE "verification_status" AS ENUM ('pending', 'approved', 'rejected');
+--> statement-breakpoint
 CREATE TYPE "online_status" AS ENUM ('online', 'offline', 'busy');
+--> statement-breakpoint
 CREATE TYPE "transaction_type" AS ENUM ('credit', 'debit');
+--> statement-breakpoint
 CREATE TYPE "transaction_status" AS ENUM ('pending', 'success', 'failed', 'refunded');
+--> statement-breakpoint
 CREATE TYPE "transaction_category" AS ENUM ('add_funds', 'withdrawal', 'call_charge', 'chat_charge', 'gift', 'donation', 'commission', 'order_payment', 'refund');
+--> statement-breakpoint
 CREATE TYPE "withdrawal_status" AS ENUM ('pending', 'approved', 'rejected', 'completed');
+--> statement-breakpoint
 CREATE TYPE "commission_type" AS ENUM ('percentage', 'fixed');
-CREATE TYPE "call_status" AS ENUM ('initiated', 'ongoing', 'completed', 'missed', 'cancelled');
+--> statement-breakpoint
+CREATE TYPE "call_status" AS ENUM ('initiated', 'ongoing', 'completed', 'missed', 'cancelled', 'failed');
+--> statement-breakpoint
 CREATE TYPE "call_type" AS ENUM ('audio', 'video');
+--> statement-breakpoint
 CREATE TYPE "message_type" AS ENUM ('text', 'image', 'voice', 'file');
+--> statement-breakpoint
 CREATE TYPE "blog_status" AS ENUM ('draft', 'published', 'archived');
+--> statement-breakpoint
 CREATE TYPE "report_reason" AS ENUM ('spam', 'harassment', 'fake_profile', 'inappropriate', 'other');
+--> statement-breakpoint
 CREATE TYPE "notification_type" AS ENUM ('system', 'promotional', 'transactional', 'reminder');
-
+--> statement-breakpoint
 CREATE TABLE "admins" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"name" varchar(255) NOT NULL,
-	"email" varchar(255) NOT NULL,
-	"password" varchar(255) NOT NULL,
+	"user_id" uuid PRIMARY KEY NOT NULL,
 	"role" varchar(50) DEFAULT 'admin' NOT NULL,
-	"avatar" text,
-	"is_active" boolean DEFAULT true NOT NULL,
-	"last_login_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "admins_email_unique" UNIQUE("email")
+	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "api_keys" (
@@ -78,16 +86,7 @@ CREATE TABLE "astrologer_schedules" (
 );
 --> statement-breakpoint
 CREATE TABLE "astrologers" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"name" varchar(255) NOT NULL,
-	"email" varchar(255) NOT NULL,
-	"phone" varchar(20),
-	"password" varchar(255),
-	"avatar" text,
-	"gender" "gender",
-	"date_of_birth" date,
-	"auth_provider" "auth_provider" DEFAULT 'email' NOT NULL,
-	"auth_provider_id" varchar(255),
+	"user_id" uuid PRIMARY KEY NOT NULL,
 	"bio" text,
 	"experience" integer DEFAULT 0 NOT NULL,
 	"specialization" text[] DEFAULT '{}' NOT NULL,
@@ -96,21 +95,20 @@ CREATE TABLE "astrologers" (
 	"price_per_min" numeric(10, 2) DEFAULT '0' NOT NULL,
 	"rating" numeric(3, 2) DEFAULT '0' NOT NULL,
 	"total_reviews" integer DEFAULT 0 NOT NULL,
+	"chat_price_per_min" numeric(10, 2) DEFAULT '0' NOT NULL,
+	"audio_call_price_per_min" numeric(10, 2) DEFAULT '0' NOT NULL,
+	"video_call_price_per_min" numeric(10, 2) DEFAULT '0' NOT NULL,
+	"total_chats" integer DEFAULT 0 NOT NULL,
+	"total_audio_calls" integer DEFAULT 0 NOT NULL,
+	"total_video_calls" integer DEFAULT 0 NOT NULL,
 	"total_calls" integer DEFAULT 0 NOT NULL,
 	"total_earnings" numeric(12, 2) DEFAULT '0' NOT NULL,
 	"verification_status" "verification_status" DEFAULT 'pending' NOT NULL,
 	"verification_doc" text[],
 	"verification_note" text,
 	"online_status" "online_status" DEFAULT 'offline' NOT NULL,
-	"is_active" boolean DEFAULT true NOT NULL,
-	"fcm_token" text,
-	"last_login_at" timestamp,
-	"onboarding_completed" boolean DEFAULT false NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"deleted_at" timestamp,
-	CONSTRAINT "astrologers_email_unique" UNIQUE("email"),
-	CONSTRAINT "astrologers_phone_unique" UNIQUE("phone")
+	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "blogs" (
@@ -187,6 +185,43 @@ CREATE TABLE "commissions" (
 	CONSTRAINT "commissions_astrologer_id_unique" UNIQUE("astrologer_id")
 );
 --> statement-breakpoint
+CREATE TABLE "conversation_messages" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"conversation_id" uuid NOT NULL,
+	"sender_id" uuid NOT NULL,
+	"sender_role" "user_role" NOT NULL,
+	"type" "message_type" DEFAULT 'text' NOT NULL,
+	"content" text,
+	"media_url" text,
+	"is_delivered" boolean DEFAULT false NOT NULL,
+	"is_read" boolean DEFAULT false NOT NULL,
+	"read_at" timestamp,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "conversations" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"participant_one_id" uuid NOT NULL,
+	"participant_one_role" "user_role" NOT NULL,
+	"participant_two_id" uuid NOT NULL,
+	"participant_two_role" "user_role" NOT NULL,
+	"last_message_at" timestamp,
+	"last_message_preview" varchar(200),
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "donation_logs" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid,
+	"admin_id" uuid,
+	"type" varchar(20) DEFAULT 'received' NOT NULL,
+	"amount" numeric(12, 2) NOT NULL,
+	"status" varchar(20) DEFAULT 'completed' NOT NULL,
+	"note" text,
+	"created_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "donations" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid,
@@ -205,6 +240,16 @@ CREATE TABLE "dynamic_links" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "dynamic_links_page_name_unique" UNIQUE("page_name")
+);
+--> statement-breakpoint
+CREATE TABLE "feedback" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"astrologer_id" uuid NOT NULL,
+	"user_id" uuid NOT NULL,
+	"ratings" numeric(2, 1) NOT NULL,
+	"comments" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "gift_transactions" (
@@ -299,6 +344,29 @@ CREATE TABLE "matchmaking_records" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "muhurat" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"category_id" uuid NOT NULL,
+	"name" varchar(255) NOT NULL,
+	"date" date NOT NULL,
+	"time" time NOT NULL,
+	"description" text,
+	"created_by" uuid,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "muhurat_categories" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"name" varchar(255) NOT NULL,
+	"description" text,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "muhurat_categories_name_unique" UNIQUE("name")
+);
+--> statement-breakpoint
 CREATE TABLE "news" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"title" varchar(255) NOT NULL,
@@ -359,6 +427,38 @@ CREATE TABLE "panchang_records" (
 	"data" jsonb,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "panchang_records_date_unique" UNIQUE("date")
+);
+--> statement-breakpoint
+CREATE TABLE "payment_events" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"payment_order_id" uuid,
+	"event_id" varchar(100),
+	"event_type" varchar(100) NOT NULL,
+	"razorpay_event_id" varchar(100),
+	"payload" jsonb NOT NULL,
+	"status" varchar(20) DEFAULT 'received' NOT NULL,
+	"error_message" text,
+	"processed_at" timestamp,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "payment_events_event_id_unique" UNIQUE("event_id")
+);
+--> statement-breakpoint
+CREATE TABLE "payment_orders" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"razorpay_order_id" varchar(100),
+	"razorpay_payment_id" varchar(100),
+	"razorpay_signature" varchar(255),
+	"amount" numeric(12, 2) NOT NULL,
+	"currency" varchar(10) DEFAULT 'INR' NOT NULL,
+	"purpose" varchar(50) NOT NULL,
+	"status" varchar(30) DEFAULT 'created' NOT NULL,
+	"failed_reason" varchar(255),
+	"metadata" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"transaction_id" uuid,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "payment_orders_razorpay_order_id_unique" UNIQUE("razorpay_order_id")
 );
 --> statement-breakpoint
 CREATE TABLE "pooja_bookings" (
@@ -460,6 +560,7 @@ CREATE TABLE "transactions" (
 --> statement-breakpoint
 CREATE TABLE "users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"role" "user_role" DEFAULT 'user' NOT NULL,
 	"name" varchar(255) NOT NULL,
 	"email" varchar(255) NOT NULL,
 	"phone" varchar(20),
@@ -497,6 +598,7 @@ CREATE TABLE "wallets" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"user_id" uuid,
 	"astrologer_id" uuid,
+	"admin_id" uuid,
 	"balance" numeric(12, 2) DEFAULT '0' NOT NULL,
 	"total_added" numeric(12, 2) DEFAULT '0' NOT NULL,
 	"total_deducted" numeric(12, 2) DEFAULT '0' NOT NULL,
@@ -518,10 +620,11 @@ CREATE TABLE "website_content" (
 --> statement-breakpoint
 CREATE TABLE "withdrawal_requests" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"astrologer_id" uuid NOT NULL,
+	"astrologer_id" uuid,
+	"admin_id" uuid,
 	"amount" numeric(12, 2) NOT NULL,
 	"status" "withdrawal_status" DEFAULT 'pending' NOT NULL,
-	"bank_account" jsonb NOT NULL,
+	"bank_account" jsonb,
 	"admin_note" text,
 	"processed_by" uuid,
 	"processed_at" timestamp,
@@ -529,49 +632,69 @@ CREATE TABLE "withdrawal_requests" (
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "app_settings" ADD CONSTRAINT "app_settings_updated_by_admins_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."admins"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "astrologer_schedules" ADD CONSTRAINT "astrologer_schedules_astrologer_id_astrologers_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "call_logs" ADD CONSTRAINT "call_logs_astrologer_id_astrologers_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "admins" ADD CONSTRAINT "admins_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "app_settings" ADD CONSTRAINT "app_settings_updated_by_admins_user_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."admins"("user_id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "astrologer_schedules" ADD CONSTRAINT "astrologer_schedules_astrologer_id_astrologers_user_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "astrologers" ADD CONSTRAINT "astrologers_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "call_logs" ADD CONSTRAINT "call_logs_astrologer_id_astrologers_user_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "call_logs" ADD CONSTRAINT "call_logs_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chat_messages" ADD CONSTRAINT "chat_messages_call_id_call_logs_id_fk" FOREIGN KEY ("call_id") REFERENCES "public"."call_logs"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "commission_logs" ADD CONSTRAINT "commission_logs_astrologer_id_astrologers_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "commission_logs" ADD CONSTRAINT "commission_logs_astrologer_id_astrologers_user_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "commission_logs" ADD CONSTRAINT "commission_logs_transaction_id_transactions_id_fk" FOREIGN KEY ("transaction_id") REFERENCES "public"."transactions"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "commission_logs" ADD CONSTRAINT "commission_logs_call_id_call_logs_id_fk" FOREIGN KEY ("call_id") REFERENCES "public"."call_logs"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "commissions" ADD CONSTRAINT "commissions_astrologer_id_astrologers_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "commissions" ADD CONSTRAINT "commissions_astrologer_id_astrologers_user_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "conversation_messages" ADD CONSTRAINT "conversation_messages_conversation_id_conversations_id_fk" FOREIGN KEY ("conversation_id") REFERENCES "public"."conversations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "donation_logs" ADD CONSTRAINT "donation_logs_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "donation_logs" ADD CONSTRAINT "donation_logs_admin_id_admins_user_id_fk" FOREIGN KEY ("admin_id") REFERENCES "public"."admins"("user_id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "donations" ADD CONSTRAINT "donations_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "donations" ADD CONSTRAINT "donations_transaction_id_transactions_id_fk" FOREIGN KEY ("transaction_id") REFERENCES "public"."transactions"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "dynamic_links" ADD CONSTRAINT "dynamic_links_updated_by_admins_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."admins"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "dynamic_links" ADD CONSTRAINT "dynamic_links_updated_by_admins_user_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."admins"("user_id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "feedback" ADD CONSTRAINT "feedback_astrologer_id_astrologers_user_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "feedback" ADD CONSTRAINT "feedback_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "gift_transactions" ADD CONSTRAINT "gift_transactions_gift_id_gifts_id_fk" FOREIGN KEY ("gift_id") REFERENCES "public"."gifts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "gift_transactions" ADD CONSTRAINT "gift_transactions_sender_id_users_id_fk" FOREIGN KEY ("sender_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "gift_transactions" ADD CONSTRAINT "gift_transactions_receiver_id_astrologers_id_fk" FOREIGN KEY ("receiver_id") REFERENCES "public"."astrologers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "gift_transactions" ADD CONSTRAINT "gift_transactions_receiver_id_astrologers_user_id_fk" FOREIGN KEY ("receiver_id") REFERENCES "public"."astrologers"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "gift_transactions" ADD CONSTRAINT "gift_transactions_transaction_id_transactions_id_fk" FOREIGN KEY ("transaction_id") REFERENCES "public"."transactions"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "kundli_records" ADD CONSTRAINT "kundli_records_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "live_sessions" ADD CONSTRAINT "live_sessions_astrologer_id_astrologers_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "live_sessions" ADD CONSTRAINT "live_sessions_astrologer_id_astrologers_user_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "matchmaking_records" ADD CONSTRAINT "matchmaking_records_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "muhurat" ADD CONSTRAINT "muhurat_category_id_muhurat_categories_id_fk" FOREIGN KEY ("category_id") REFERENCES "public"."muhurat_categories"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "notifications" ADD CONSTRAINT "notifications_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "notifications" ADD CONSTRAINT "notifications_astrologer_id_astrologers_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "notifications" ADD CONSTRAINT "notifications_astrologer_id_astrologers_user_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_order_id_orders_id_fk" FOREIGN KEY ("order_id") REFERENCES "public"."orders"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_product_id_shop_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."shop_products"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "orders" ADD CONSTRAINT "orders_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "orders" ADD CONSTRAINT "orders_transaction_id_transactions_id_fk" FOREIGN KEY ("transaction_id") REFERENCES "public"."transactions"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "payment_events" ADD CONSTRAINT "payment_events_payment_order_id_payment_orders_id_fk" FOREIGN KEY ("payment_order_id") REFERENCES "public"."payment_orders"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "payment_orders" ADD CONSTRAINT "payment_orders_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "payment_orders" ADD CONSTRAINT "payment_orders_transaction_id_transactions_id_fk" FOREIGN KEY ("transaction_id") REFERENCES "public"."transactions"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pooja_bookings" ADD CONSTRAINT "pooja_bookings_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pooja_bookings" ADD CONSTRAINT "pooja_bookings_pooja_id_mandir_pooja_id_fk" FOREIGN KEY ("pooja_id") REFERENCES "public"."mandir_pooja"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "pooja_bookings" ADD CONSTRAINT "pooja_bookings_transaction_id_transactions_id_fk" FOREIGN KEY ("transaction_id") REFERENCES "public"."transactions"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reports" ADD CONSTRAINT "reports_reporter_id_users_id_fk" FOREIGN KEY ("reporter_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "reports" ADD CONSTRAINT "reports_reported_user_id_users_id_fk" FOREIGN KEY ("reported_user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "reports" ADD CONSTRAINT "reports_reported_astrologer_id_astrologers_id_fk" FOREIGN KEY ("reported_astrologer_id") REFERENCES "public"."astrologers"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "reports" ADD CONSTRAINT "reports_resolved_by_admins_id_fk" FOREIGN KEY ("resolved_by") REFERENCES "public"."admins"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reports" ADD CONSTRAINT "reports_reported_astrologer_id_astrologers_user_id_fk" FOREIGN KEY ("reported_astrologer_id") REFERENCES "public"."astrologers"("user_id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reports" ADD CONSTRAINT "reports_resolved_by_admins_user_id_fk" FOREIGN KEY ("resolved_by") REFERENCES "public"."admins"("user_id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "reviews" ADD CONSTRAINT "reviews_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "reviews" ADD CONSTRAINT "reviews_astrologer_id_astrologers_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "reviews" ADD CONSTRAINT "reviews_astrologer_id_astrologers_user_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "reviews" ADD CONSTRAINT "reviews_call_id_call_logs_id_fk" FOREIGN KEY ("call_id") REFERENCES "public"."call_logs"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "support_tickets" ADD CONSTRAINT "support_tickets_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "support_tickets" ADD CONSTRAINT "support_tickets_astrologer_id_astrologers_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "support_tickets" ADD CONSTRAINT "support_tickets_assigned_to_admins_id_fk" FOREIGN KEY ("assigned_to") REFERENCES "public"."admins"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "support_tickets" ADD CONSTRAINT "support_tickets_astrologer_id_astrologers_user_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("user_id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "support_tickets" ADD CONSTRAINT "support_tickets_assigned_to_admins_user_id_fk" FOREIGN KEY ("assigned_to") REFERENCES "public"."admins"("user_id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "ticket_replies" ADD CONSTRAINT "ticket_replies_ticket_id_support_tickets_id_fk" FOREIGN KEY ("ticket_id") REFERENCES "public"."support_tickets"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_wallet_id_wallets_id_fk" FOREIGN KEY ("wallet_id") REFERENCES "public"."wallets"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "transactions" ADD CONSTRAINT "transactions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "transactions" ADD CONSTRAINT "transactions_astrologer_id_astrologers_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "transactions" ADD CONSTRAINT "transactions_astrologer_id_astrologers_user_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("user_id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "wallets" ADD CONSTRAINT "wallets_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "wallets" ADD CONSTRAINT "wallets_astrologer_id_astrologers_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "website_content" ADD CONSTRAINT "website_content_updated_by_admins_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."admins"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "withdrawal_requests" ADD CONSTRAINT "withdrawal_requests_astrologer_id_astrologers_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "withdrawal_requests" ADD CONSTRAINT "withdrawal_requests_processed_by_admins_id_fk" FOREIGN KEY ("processed_by") REFERENCES "public"."admins"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "wallets" ADD CONSTRAINT "wallets_astrologer_id_astrologers_user_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "wallets" ADD CONSTRAINT "wallets_admin_id_admins_user_id_fk" FOREIGN KEY ("admin_id") REFERENCES "public"."admins"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "website_content" ADD CONSTRAINT "website_content_updated_by_admins_user_id_fk" FOREIGN KEY ("updated_by") REFERENCES "public"."admins"("user_id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "withdrawal_requests" ADD CONSTRAINT "withdrawal_requests_astrologer_id_astrologers_user_id_fk" FOREIGN KEY ("astrologer_id") REFERENCES "public"."astrologers"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "withdrawal_requests" ADD CONSTRAINT "withdrawal_requests_admin_id_admins_user_id_fk" FOREIGN KEY ("admin_id") REFERENCES "public"."admins"("user_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "withdrawal_requests" ADD CONSTRAINT "withdrawal_requests_processed_by_admins_user_id_fk" FOREIGN KEY ("processed_by") REFERENCES "public"."admins"("user_id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "idx_conv_messages_conv_created" ON "conversation_messages" USING btree ("conversation_id","created_at" DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX "idx_conv_messages_unread" ON "conversation_messages" USING btree ("conversation_id","is_read") WHERE "conversation_messages"."is_read" = false;--> statement-breakpoint
+CREATE UNIQUE INDEX "unique_participants" ON "conversations" USING btree ("participant_one_id","participant_two_id");--> statement-breakpoint
+CREATE INDEX "idx_conversations_p1_lastmsg" ON "conversations" USING btree ("participant_one_id","last_message_at" DESC NULLS LAST);--> statement-breakpoint
+CREATE INDEX "idx_conversations_p2_lastmsg" ON "conversations" USING btree ("participant_two_id","last_message_at" DESC NULLS LAST);--> statement-breakpoint
+CREATE UNIQUE INDEX "unique_date_time" ON "muhurat" USING btree ("date","time");

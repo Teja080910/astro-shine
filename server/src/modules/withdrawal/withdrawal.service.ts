@@ -19,25 +19,35 @@ export class WithdrawalService {
   async findByAdminId(adminId: string) { return this.db.query.withdrawalRequests.findMany({ where: eq(schema.withdrawalRequests.adminId, adminId) }); }
 
   async findAll() {
-    const requests = await this.db
-      .select({
-        id: schema.withdrawalRequests.id,
-        astrologerId: schema.withdrawalRequests.astrologerId,
-        adminId: schema.withdrawalRequests.adminId,
-        astrologerName: schema.astrologers.name,
-        adminName: schema.admins.name,
-        amount: schema.withdrawalRequests.amount,
-        status: schema.withdrawalRequests.status,
-        bankAccount: schema.withdrawalRequests.bankAccount,
-        adminNote: schema.withdrawalRequests.adminNote,
-        createdAt: schema.withdrawalRequests.createdAt,
-        updatedAt: schema.withdrawalRequests.updatedAt,
-      })
-      .from(schema.withdrawalRequests)
-      .leftJoin(schema.astrologers, eq(schema.withdrawalRequests.astrologerId, schema.astrologers.id))
-      .leftJoin(schema.admins, eq(schema.withdrawalRequests.adminId, schema.admins.id))
-      .orderBy(desc(schema.withdrawalRequests.createdAt));
-    return requests;
+    const rows = await this.db.execute<{
+      id: string; astrologer_id: string; admin_id: string; astrologer_name: string; admin_name: string;
+      amount: string; status: string; bank_account: any; admin_note: string;
+      created_at: string; updated_at: string;
+    }>(sql`
+      SELECT wr.id, wr.astrologer_id, wr.admin_id, wr.amount, wr.status,
+             wr.bank_account, wr.admin_note, wr.created_at, wr.updated_at,
+             COALESCE(u_astro.name, '') AS astrologer_name,
+             COALESCE(u_admin.name, '') AS admin_name
+      FROM withdrawal_requests wr
+      LEFT JOIN astrologers a ON wr.astrologer_id = a.user_id
+      LEFT JOIN users u_astro ON a.user_id = u_astro.id
+      LEFT JOIN admins ad ON wr.admin_id = ad.user_id
+      LEFT JOIN users u_admin ON ad.user_id = u_admin.id
+      ORDER BY wr.created_at DESC
+    `);
+    return rows.rows.map(r => ({
+      id: r.id,
+      astrologerId: r.astrologer_id,
+      adminId: r.admin_id,
+      astrologerName: r.astrologer_name,
+      adminName: r.admin_name,
+      amount: r.amount,
+      status: r.status,
+      bankAccount: r.bank_account,
+      adminNote: r.admin_note,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+    }));
   }
 
   async create(data: typeof schema.withdrawalRequests.$inferInsert) {

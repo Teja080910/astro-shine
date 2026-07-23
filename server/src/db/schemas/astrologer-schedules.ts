@@ -3,7 +3,7 @@ import { astrologers } from './astrologers';
 
 export const astrologerSchedules = pgTable('astrologer_schedules', {
   id: uuid('id').defaultRandom().primaryKey(),
-  astrologerId: uuid('astrologer_id').notNull().references(() => astrologers.id, { onDelete: 'cascade' }),
+  astrologerId: uuid('astrologer_id').notNull().references(() => astrologers.userId, { onDelete: 'cascade' }),
   dayOfWeek: integer('day_of_week').notNull(),
   startTime: time('start_time').notNull(),
   endTime: time('end_time').notNull(),

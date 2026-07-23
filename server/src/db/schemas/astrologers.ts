@@ -1,17 +1,9 @@
-import { pgTable, uuid, varchar, text, date, boolean, timestamp, integer, decimal } from 'drizzle-orm/pg-core';
-import { authProvider, gender, verificationStatus, onlineStatus } from '../enums';
+import { pgTable, uuid, text, integer, decimal, boolean, timestamp } from 'drizzle-orm/pg-core';
+import { verificationStatus, onlineStatus } from '../enums';
+import { users } from './users';
 
 export const astrologers = pgTable('astrologers', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  name: varchar('name', { length: 255 }).notNull(),
-  email: varchar('email', { length: 255 }).unique().notNull(),
-  phone: varchar('phone', { length: 20 }).unique(),
-  password: varchar('password', { length: 255 }),
-  avatar: text('avatar'),
-  gender: gender('gender'),
-  dateOfBirth: date('date_of_birth'),
-  authProvider: authProvider('auth_provider').notNull().default('email'),
-  authProviderId: varchar('auth_provider_id', { length: 255 }),
+  userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
   bio: text('bio'),
   experience: integer('experience').notNull().default(0),
   specialization: text('specialization').array().notNull().default([]),
@@ -32,11 +24,6 @@ export const astrologers = pgTable('astrologers', {
   verificationDoc: text('verification_doc').array(),
   verificationNote: text('verification_note'),
   onlineStatus: onlineStatus('online_status').notNull().default('offline'),
-  isActive: boolean('is_active').notNull().default(true),
-  fcmToken: text('fcm_token'),
-  lastLoginAt: timestamp('last_login_at'),
-  onboardingCompleted: boolean('onboarding_completed').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-  deletedAt: timestamp('deleted_at'),
 });

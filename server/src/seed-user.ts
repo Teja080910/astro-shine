@@ -46,8 +46,10 @@ async function seedUser() {
       email,
       phone,
       password: hashed,
+      role: 'user',
       authProvider: 'email',
     }).returning();
+    await db.insert(schema.wallets).values({ userId: user.id }).onConflictDoNothing();
     console.log(`✅ User created: ${user.id}`);
   } else if (type === 'astrologer' || type === 'a') {
     const experience = parseInt(extraArgs.experience || extraArgs.exp || '5', 10);
@@ -59,11 +61,17 @@ async function seedUser() {
     const audioPrice = extraArgs.audio || '12';
     const videoPrice = extraArgs.video || '15';
 
-    const [astro] = await db.insert(schema.astrologers).values({
+    const [user] = await db.insert(schema.users).values({
       name,
       email,
       phone,
       password: hashed,
+      role: 'astrologer',
+      authProvider: 'email',
+    }).returning();
+
+    await db.insert(schema.astrologers).values({
+      userId: user.id,
       experience,
       specialization,
       languages,
@@ -73,17 +81,17 @@ async function seedUser() {
       audioCallPricePerMin: audioPrice,
       videoCallPricePerMin: videoPrice,
       verificationStatus: extraArgs.verified === 'true' ? 'approved' : 'pending',
-      authProvider: 'email',
-    }).returning();
-    console.log(`✅ Astrologer created: ${astro.id}`);
+    });
+
+    console.log(`✅ Astrologer created: ${user.id}`);
 
     if (extraArgs.wallet !== 'false') {
-      await db.insert(schema.wallets).values({ astrologerId: astro.id, balance: '0' });
+      await db.insert(schema.wallets).values({ astrologerId: user.id, balance: '0' });
       console.log('✅ Wallet created');
     }
     if (extraArgs.commission !== 'false') {
       await db.insert(schema.commissions).values({
-        astrologerId: astro.id,
+        astrologerId: user.id,
         type: 'percentage',
         value: extraArgs.commissionVal || '20',
         minAmount: '10',
@@ -92,14 +100,20 @@ async function seedUser() {
       console.log('✅ Commission created');
     }
   } else if (type === 'admin' || type === 'ad') {
-    const role = extraArgs.role || 'admin';
-    const [admin] = await db.insert(schema.admins).values({
+    const [user] = await db.insert(schema.users).values({
       name,
       email,
       password: hashed,
-      role,
+      role: 'admin',
+      authProvider: 'email',
     }).returning();
-    console.log(`✅ Admin created: ${admin.id} (${role})`);
+
+    await db.insert(schema.admins).values({
+      userId: user.id,
+      role: extraArgs.role || 'admin',
+    });
+    await db.insert(schema.wallets).values({ userId: user.id, adminId: user.id }).onConflictDoNothing();
+    console.log(`✅ Admin created: ${user.id} (${extraArgs.role || 'admin'})`);
   }
 
   process.exit(0);

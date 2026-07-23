@@ -58,6 +58,22 @@ export class AuthController {
     return this.authService.registerWithEmail(body);
   }
 
+  @Post('register-astrologer')
+  async registerAstrologer(@Body() body: { name: string; email: string; password: string; phone?: string; specialization?: string[]; experience?: number }) {
+    if (!body.name || body.name.length < 2) throw new BadRequestException('Name must be at least 2 characters');
+    if (!body.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) throw new BadRequestException('Valid email is required');
+    if (!body.password || body.password.length < 6) throw new BadRequestException('Password must be at least 6 characters');
+    return this.authService.registerAstrologer(body);
+  }
+
+  @Post('register-admin')
+  async registerAdmin(@Body() body: { name: string; email: string; password: string }) {
+    if (!body.name || body.name.length < 2) throw new BadRequestException('Name must be at least 2 characters');
+    if (!body.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email)) throw new BadRequestException('Valid email is required');
+    if (!body.password || body.password.length < 6) throw new BadRequestException('Password must be at least 6 characters');
+    return this.authService.registerAdmin(body);
+  }
+
   @Post('login')
   async login(@Body() body: { email: string; password: string }) {
     if (!body.email || !body.password) throw new BadRequestException('Email and password are required');

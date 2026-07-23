@@ -45,9 +45,10 @@ export class WalletService {
 
   async getOrCreateAdminWallet(): Promise<{ id: string; balance: string }> {
     const [admin] = await this.db
-      .select()
+      .select({ id: schema.admins.userId })
       .from(schema.admins)
-      .where(eq(schema.admins.isActive, true))
+      .leftJoin(schema.users, eq(schema.admins.userId, schema.users.id))
+      .where(eq(schema.users.isActive, true))
       .limit(1);
     if (!admin) throw new NotFoundException('No active admin found');
     let wallet = await this.getWalletByAdminId(admin.id);

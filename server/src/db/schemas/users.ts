@@ -1,8 +1,9 @@
 import { pgTable, uuid, varchar, text, date, boolean, timestamp } from 'drizzle-orm/pg-core';
-import { authProvider, gender } from '../enums';
+import { authProvider, gender, userRole } from '../enums';
 
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
+  role: userRole('role').notNull().default('user'),
   name: varchar('name', { length: 255 }).notNull(),
   email: varchar('email', { length: 255 }).unique().notNull(),
   phone: varchar('phone', { length: 20 }).unique(),

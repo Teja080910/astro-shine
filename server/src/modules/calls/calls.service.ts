@@ -100,7 +100,7 @@ export class CallsService {
       totalVideoCalls: call.type === 'video' ? sql`${schema.astrologers.totalVideoCalls} + 1` : undefined,
       totalAudioCalls: call.type === 'audio' ? sql`${schema.astrologers.totalAudioCalls} + 1` : undefined,
       updatedAt: new Date(),
-    }).where(eq(schema.astrologers.id, call.astrologerId));
+    }).where(eq(schema.astrologers.userId, call.astrologerId));
 
     this.realtime.broadcast('astrologer:stats-updated', { astrologerId: call.astrologerId });
 

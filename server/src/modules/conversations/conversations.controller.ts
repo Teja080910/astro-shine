@@ -85,10 +85,14 @@ export class ConversationsController {
       where: (users: any, { inArray }: any) => inArray(users.id, userIds),
     });
     for (const u of users) map.set(u.id, u.name || 'User');
-    const astrologers = await this.db.query.astrologers.findMany({
-      where: (astrologers: any, { inArray }: any) => inArray(astrologers.id, userIds),
-    });
-    for (const a of astrologers) map.set(a.id, a.name || 'Astrologer');
+    const astroRows = await this.db.select({
+      id: schema.astrologers.userId,
+      name: schema.users.name,
+    })
+    .from(schema.astrologers)
+    .leftJoin(schema.users, eq(schema.astrologers.userId, schema.users.id))
+    .where(inArray(schema.astrologers.userId, userIds));
+    for (const a of astroRows) map.set(a.id, a.name || 'Astrologer');
     return map;
   }
 }
