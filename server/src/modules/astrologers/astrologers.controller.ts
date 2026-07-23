@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { AstrologersService } from './astrologers.service';
+import { AuthService } from '../auth/auth.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 
 function stripPassword(u: any) { if (!u) return u; const { password, ...r } = u; return r; }
@@ -7,7 +8,10 @@ function stripPassword(u: any) { if (!u) return u; const { password, ...r } = u;
 @Controller('astrologers')
 @UseGuards(AuthGuard)
 export class AstrologersController {
-  constructor(private readonly service: AstrologersService) {}
+  constructor(
+    private readonly service: AstrologersService,
+    private readonly authService: AuthService,
+  ) {}
 
   @Get()
   async findAll(@Req() req: any) {
@@ -25,7 +29,13 @@ export class AstrologersController {
   async findOne(@Param('id') id: string) { return stripPassword(await this.service.findById(id)); }
 
   @Post()
-  async create(@Body() body: any) { return stripPassword(await this.service.create(body)); }
+  async create(@Body() body: any) {
+    const { name, email, password, phone, ...profileFields } = body;
+    const result = await this.authService.registerAstrologer({
+      name, email, password, phone, ...profileFields,
+    });
+    return stripPassword(result);
+  }
 
   @Put(':id')
   async update(@Param('id') id: string, @Body() body: any) { return stripPassword(await this.service.update(id, body)); }

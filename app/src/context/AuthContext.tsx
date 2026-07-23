@@ -140,15 +140,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password: string,
     phone?: string,
   ) => {
-    const { token, user: u } = await api.auth.register({
+    const { token, user: u, astrologer } = await api.auth.registerAstrologer({
       name,
       email,
       password,
       phone,
     });
-    api.setToken(token);
-    const a = await api.astrologers.create({ name, email, password, phone });
-    await persist(token, undefined, a, "astrologer");
+    await persist(token, undefined, astrologer, "astrologer");
   };
 
   const loginWithOtp = async (identifier: string, otp: string, role: AppRole, type: 'phone' | 'email' = 'phone') => {

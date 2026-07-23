@@ -252,7 +252,7 @@ export class AuthService {
 
     const { password: _, ...safeUser } = user;
     const token = this.generateToken(user.id, 'astrologer');
-    return { token, user: safeUser, astrologer };
+    return { token, user: safeUser, astrologer: { name: user.name, email: user.email, phone: user.phone, ...astrologer } };
   }
 
   async registerAdmin(data: {

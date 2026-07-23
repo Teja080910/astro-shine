@@ -19,10 +19,10 @@ export function AstrologerHomeScreen({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = useCallback(async () => {
-    if (!astrologer?.id) return;
+    if (!astrologer?.userId) return;
     try {
       const [astro, txns] = await Promise.all([
-        api.astrologers.get(astrologer.id),
+        api.astrologers.get(astrologer.userId),
         api.transactions.listMy(),
       ]);
       setIsOnline(astro.onlineStatus === 'online');
@@ -36,21 +36,21 @@ export function AstrologerHomeScreen({ navigation }: any) {
       });
       setRecentTxns(txns.slice(0, 5));
     } catch { }
-  }, [astrologer?.id, statsVersion]);
+  }, [astrologer?.userId, statsVersion]);
 
   useEffect(() => { if (isFocused) loadData(); }, [isFocused, loadData]);
 
   useEffect(() => {
-    if (astrologer?.id && astrologerStatuses[astrologer.id]) {
-      setIsOnline(astrologerStatuses[astrologer.id] === 'online');
+    if (astrologer?.userId && astrologerStatuses[astrologer.userId]) {
+      setIsOnline(astrologerStatuses[astrologer.userId] === 'online');
     }
-  }, [astrologerStatuses, astrologer?.id]);
+  }, [astrologerStatuses, astrologer?.userId]);
 
   const onRefresh = async () => { setRefreshing(true); await loadData(); setRefreshing(false); };
 
   const toggleOnline = async (v: boolean) => {
     setIsOnline(v);
-    if (astrologer?.id) await api.astrologers.updateStatus(astrologer.id, v ? 'online' : 'offline');
+    if (astrologer?.userId) await api.astrologers.updateStatus(astrologer.userId, v ? 'online' : 'offline');
   };
 
   const statItems = [
@@ -251,7 +251,7 @@ export function AstrologerWithdrawalScreen() {
     if (!amount || !bankAc || !ifsc) return;
     setLoading(true);
     try {
-      await api.withdrawals.create({ amount, bankAccount: { accountNumber: bankAc, ifsc }, astrologerId: astrologer?.id });
+      await api.withdrawals.create({ amount, bankAccount: { accountNumber: bankAc, ifsc }, astrologerId: astrologer?.userId });
       setShowForm(false);
       setAmount(''); setBankAc(''); setIfsc('');
       await loadData();
@@ -336,9 +336,9 @@ export function AstrologerReviewsScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = useCallback(async () => {
-    if (!astrologer?.id) return;
-    try { const r = await api.reviews.list({ astrologerId: astrologer.id }); setReviews(r); } catch { }
-  }, [astrologer?.id]);
+    if (!astrologer?.userId) return;
+    try { const r = await api.reviews.list({ astrologerId: astrologer.userId }); setReviews(r); } catch { }
+  }, [astrologer?.userId]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -381,10 +381,10 @@ export function AstrologerNotificationsScreen() {
 
   const loadData = useCallback(async () => {
     try {
-      const n = await api.notifications.list({ astrologerId: astrologer?.id });
+      const n = await api.notifications.list({ astrologerId: astrologer?.userId });
       setNotifs(n);
     } catch { }
-  }, [astrologer?.id]);
+  }, [astrologer?.userId]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -430,9 +430,9 @@ export function AstrologerConsultationScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = useCallback(async () => {
-    if (!astrologer?.id) return;
-    try { const c = await api.calls.list({ astrologerId: astrologer.id }); setCalls(c); } catch { }
-  }, [astrologer?.id]);
+    if (!astrologer?.userId) return;
+    try { const c = await api.calls.list({ astrologerId: astrologer.userId }); setCalls(c); } catch { }
+  }, [astrologer?.userId]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -654,7 +654,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
           {
             label: 'Delete', variant: 'danger', onPress: async () => {
               setDeleteOpen(false);
-              try { await api.astrologers.delete(profile!.id); await logout(); } catch { }
+              try { await api.astrologers.delete(profile!.userId); await logout(); } catch { }
             }
           },
         ]}

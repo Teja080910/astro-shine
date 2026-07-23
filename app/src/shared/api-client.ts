@@ -69,6 +69,7 @@ class ApiClient {
   auth = {
     register: (d: RegisterRequest) => this.post<AuthResponse>('/auth/register', d),
     login: (d: LoginRequest) => this.post<AuthResponse>('/auth/login', d),
+    registerAstrologer: (d: RegisterRequest) => this.post<AuthResponse>('/auth/register-astrologer', d),
     checkPhone: (phone: string) => this.post<{ exists: boolean }>('/auth/check-phone', { phone }),
     phoneLogin: (phone: string, otp: string) => this.post<AuthResponse>('/auth/phone-login', { phone, otp }),
     sendPhoneOtp: (phone: string) => this.post<{ message: string }>('/auth/send-phone-otp', { phone }),

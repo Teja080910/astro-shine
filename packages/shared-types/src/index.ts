@@ -21,7 +21,7 @@ export type NotificationType = 'system' | 'promotional' | 'transactional' | 'rem
 // ============ Auth ============
 export interface LoginRequest { email: string; password: string; }
 export interface RegisterRequest { name: string; email: string; password: string; phone?: string; }
-export interface AuthResponse { token: string; user: User; }
+export interface AuthResponse { token: string; user: User; astrologer?: Astrologer; admin?: Admin; }
 export interface OtpResponse { otp: string; }
 export interface VerifyOtpRequest { phone: string; otp: string; }
 
@@ -37,6 +37,7 @@ export interface User {
 // ============ Astrologer ============
 export interface Astrologer {
   userId: string; id?: string;
+  name?: string; email?: string; phone?: string; isActive?: boolean;
   bio?: string; experience: number; specialization: string[];
   languages: string[]; skills: string[];
   pricePerMin: string; chatPricePerMin?: string; audioCallPricePerMin?: string; videoCallPricePerMin?: string; rating: number; totalReviews: number;

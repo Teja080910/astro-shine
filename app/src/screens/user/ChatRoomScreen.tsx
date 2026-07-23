@@ -44,7 +44,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
   const { messages, loadMessages, loadMoreMessages, sendMessage, startTyping, stopTyping, markAsRead, typingUsers, hasMore, loading, onlineUsers, connected, joinRoom, setActiveConversation, astrologerStatuses, chatBlockedMessage, clearChatBlocked } = useChat();
   const { initiateCall } = useCall();
   const { user, astrologer: authAstrologer } = useAuth();
-  const currentUserId = user?.id || authAstrologer?.id;
+  const currentUserId = user?.id || authAstrologer?.userId;
   const isUser = !!user?.id;
   const [input, setInput] = useState('');
   const flatListRef = useRef<FlatList>(null);
