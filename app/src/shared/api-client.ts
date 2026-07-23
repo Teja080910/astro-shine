@@ -1,7 +1,8 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
-import type { AuthResponse, LoginRequest, RegisterRequest, User, Astrologer, Admin, KundliRecord, MatchmakingRecord, HoroscopeRecord, PanchangRecord, Wallet, Transaction, WithdrawalRequest, Commission, CommissionLog, CallLog, ChatMessage, Gift, GiftTransaction, Donation, ShopProduct, Order, OrderItem, Blog, NewsItem, Review, Report, Notification, AppSetting, ApiKey, DynamicLink, WebsiteContent, LiveSession, MandirPooja, PoojaBooking, SupportTicket, TicketReply, AppRelease, Video } from '../shared/types';
+import axios, { AxiosInstance } from 'axios';
+import type { AuthResponse, LoginRequest, RegisterRequest, User, Astrologer, Admin, KundliRecord, MatchmakingRecord, HoroscopeRecord, PanchangRecord, Wallet, Transaction, WithdrawalRequest, Commission, CommissionLog, CallLog, ChatMessage, Gift, GiftTransaction, Donation, ShopProduct, Order, OrderItem, Blog, NewsItem, Review, Report, Notification, AppSetting, ApiKey, DynamicLink, WebsiteContent, LiveSession, MandirPooja, PoojaBooking, SupportTicket, TicketReply, AppRelease, Video, Conversation, ConversationMessage, PaginatedMessages, PaymentOrderRequest, PaymentOrderResponse, PaymentVerifyRequest, PaymentVerifyResponse, PaymentStatusResponse, PaymentRefundRequest, PaymentRefundResponse, MuhuratCategory, MuhuratItem, FileUploadResponse, ScheduleSlot } from '../shared/types';
+import { config } from '../config';
 
-const BASE_URL = __DEV__ ? 'http://10.0.2.2:3067/api/v1' : 'https://api.astroshine.com/api/v1';
+const BASE_URL = config.apiBaseUrl;
 
 class ApiClient {
   private client: AxiosInstance;
@@ -13,6 +14,31 @@ class ApiClient {
       if (this.token) config.headers.Authorization = `Bearer ${this.token}`;
       return config;
     });
+    this.client.interceptors.response.use(
+      (response) => response,
+      async (error) => {
+        if (error.response?.status === 401 && !error.config._retry) {
+          error.config._retry = true;
+          try {
+            const AsyncStorage = await import('@react-native-async-storage/async-storage');
+            const stored = await AsyncStorage.default.getItem('auth');
+            if (stored) {
+              const { token: savedToken } = JSON.parse(stored);
+              if (savedToken && savedToken !== this.token) {
+                this.token = savedToken;
+                error.config.headers.Authorization = `Bearer ${savedToken}`;
+                return this.client.request(error.config);
+              }
+            }
+          } catch {}
+          this.token = null;
+          await import('@react-native-async-storage/async-storage')
+            .then((AsyncStorage) => AsyncStorage.default.removeItem('auth'))
+            .catch(() => {});
+        }
+        return Promise.reject(error);
+      },
+    );
   }
 
   setToken(token: string | null) { this.token = token; }
@@ -22,12 +48,40 @@ class ApiClient {
   private async put<T>(path: string, data?: any): Promise<T> { const r = await this.client.put(path, data); return r.data; }
   private async del(path: string): Promise<void> { await this.client.delete(path); }
 
+  async uploadFile(file: { uri: string; name: string; mimeType?: string }): Promise<{ filename: string; url: string }> {
+    const formData = new FormData();
+    formData.append('file', { uri: file.uri, name: file.name, type: file.mimeType || 'application/octet-stream' } as any);
+    const r = await this.client.post('/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return r.data;
+  }
+
+  // Payments
+  payments = {
+    createOrder: (d: PaymentOrderRequest) => this.post<PaymentOrderResponse>('/payments/create-order', d),
+    verify: (d: PaymentVerifyRequest) => this.post<PaymentVerifyResponse>('/payments/verify', d),
+    getStatus: (id: string) => this.get<PaymentStatusResponse>(`/payments/${id}/status`),
+    refund: (id: string, d?: PaymentRefundRequest) => this.post<PaymentRefundResponse>(`/payments/${id}/refund`, d),
+  };
+
   // Auth
   auth = {
     register: (d: RegisterRequest) => this.post<AuthResponse>('/auth/register', d),
     login: (d: LoginRequest) => this.post<AuthResponse>('/auth/login', d),
-    sendOtp: (phone: string) => this.post<{ otp: string }>('/auth/send-otp', { phone }),
-    verifyOtp: (phone: string, otp: string) => this.post<AuthResponse>('/auth/verify-otp', { phone, otp }),
+    checkPhone: (phone: string) => this.post<{ exists: boolean }>('/auth/check-phone', { phone }),
+    phoneLogin: (phone: string, otp: string) => this.post<AuthResponse>('/auth/phone-login', { phone, otp }),
+    sendPhoneOtp: (phone: string) => this.post<{ message: string }>('/auth/send-phone-otp', { phone }),
+    sendEmailOtp: (email: string) => this.post<{ message: string }>('/auth/send-email-otp', { email }),
+    verifyEmailOtp: (email: string, otp: string) => this.post<AuthResponse>('/auth/verify-email-otp', { email, otp }),
+    sendRegistrationOtp: (identifier: string, type: 'email' | 'phone') =>
+      this.post<{ message: string }>('/auth/send-registration-otp', { identifier, type }),
+    verifyRegistrationOtp: (identifier: string, type: 'email' | 'phone', otp: string) =>
+      this.post<{ verified: true }>('/auth/verify-registration-otp', { identifier, type, otp }),
+    sendForgotPasswordOtp: (identifier: string, type: 'email' | 'phone') =>
+      this.post<{ message: string }>('/auth/forgot-password/send-otp', { identifier, type }),
+    resetPassword: (identifier: string, type: 'email' | 'phone', otp: string, newPassword: string) =>
+      this.post<{ success: boolean }>('/auth/forgot-password/reset', { identifier, type, otp, newPassword }),
   };
 
   // Users
@@ -36,6 +90,7 @@ class ApiClient {
     get: (id: string) => this.get<User>(`/users/${id}`),
     update: (id: string, d: Partial<User>) => this.put<User>(`/users/${id}`, d),
     delete: (id: string) => this.del(`/users/${id}`),
+    changePassword: (d: any) => this.post<any>('/users/change-password', d),
   };
 
   // Astrologers
@@ -46,6 +101,10 @@ class ApiClient {
     update: (id: string, d: any) => this.put<Astrologer>(`/astrologers/${id}`, d),
     verify: (id: string, status: string, note?: string) => this.post<Astrologer>(`/astrologers/${id}/verify`, { status, note }),
     updateStatus: (id: string, status: string) => this.put<Astrologer>(`/astrologers/${id}/online-status`, { status }),
+    delete: (id: string) => this.del(`/astrologers/${id}`),
+    feedback: (id: string, data: { userId: string; ratings: number; comments?: string }) =>
+      this.post<any>(`/astrologers/${id}/feedback`, data),
+    getFeedback: (id: string) => this.get<any[]>(`/astrologers/${id}/feedback`),
   };
 
   // Admins
@@ -53,6 +112,7 @@ class ApiClient {
     list: () => this.get<Admin[]>('/admins'),
     get: (id: string) => this.get<Admin>(`/admins/${id}`),
     create: (d: any) => this.post<Admin>('/admins', d),
+    update: (id: string, d: any) => this.put<Admin>(`/admins/${id}`, d),
   };
 
   // Kundli
@@ -73,6 +133,7 @@ class ApiClient {
   // Horoscope
   horoscope = {
     bySign: (sign: string, date?: string) => this.get<HoroscopeRecord[]>('/horoscope', { sign, date }),
+    today: (sign: string) => this.get<HoroscopeRecord>('/horoscope', { sign, date: new Date().toISOString().split('T')[0] }),
     create: (d: any) => this.post<HoroscopeRecord>('/horoscope', d),
   };
 
@@ -91,6 +152,7 @@ class ApiClient {
   // Transactions
   transactions = {
     list: (walletId?: string) => this.get<Transaction[]>('/transactions', { walletId }),
+    listMy: () => this.get<Transaction[]>('/transactions/my'),
     get: (id: string) => this.get<Transaction>(`/transactions/${id}`),
     create: (d: any) => this.post<Transaction>('/transactions', d),
     updateStatus: (id: string, status: string) => this.put<Transaction>(`/transactions/${id}/status`, { status }),
@@ -107,6 +169,7 @@ class ApiClient {
   // Commissions
   commissions = {
     list: () => this.get<Commission[]>('/commissions'),
+    findByAstrologer: (astrologerId: string) => this.get<Commission>(`/commissions/by-astrologer/${astrologerId}`),
     create: (d: any) => this.post<Commission>('/commissions', d),
     update: (id: string, d: any) => this.put<Commission>(`/commissions/${id}`, d),
     logs: (astrologerId?: string) => this.get<CommissionLog[]>('/commissions/logs', { astrologerId }),
@@ -280,6 +343,48 @@ class ApiClient {
     get: (id: string) => this.get<Video>(`/videos/${id}`),
     create: (d: any) => this.post<Video>('/videos', d),
     update: (id: string, d: any) => this.put<Video>(`/videos/${id}`, d),
+  };
+
+  // Schedule
+  schedule = {
+    byAstrologer: (astrologerId: string) => this.get<any[]>(`/schedule/${astrologerId}`),
+    upsert: (astrologerId: string, d: any) => this.post<any>(`/schedule/${astrologerId}`, d),
+    bulkUpsert: (astrologerId: string, schedules: any[]) => this.put<any>(`/schedule/${astrologerId}/bulk`, { schedules }),
+  };
+
+  // Conversations
+  conversations = {
+    list: () => this.get<{ data: Conversation[] }>('/conversations'),
+    get: (id: string) => this.get<Conversation>(`/conversations/${id}`),
+    create: (participantId: string, participantRole: string) =>
+      this.post<Conversation>('/conversations', { participantId, participantRole }),
+    getMessages: (id: string, cursor?: string, limit = 20) =>
+      this.get<PaginatedMessages>(`/conversations/${id}/messages`, { cursor, limit }),
+    sendMessage: (id: string, content: string, type = 'text') =>
+      this.post<ConversationMessage>(`/conversations/${id}/messages`, { content, type }),
+    markAsRead: (id: string) => this.put<{ unreadCount: number }>(`/conversations/${id}/read`),
+    delete: (id: string) => this.del(`/conversations/${id}`),
+  };
+
+  // Muhurat Categories
+  muhuratCategories = {
+    list: () => this.get<MuhuratCategory[]>('/muhurat-categories'),
+    listAdmin: () => this.get<MuhuratCategory[]>('/muhurat-categories/admin'),
+    get: (id: string) => this.get<MuhuratCategory>(`/muhurat-categories/${id}`),
+    create: (d: any) => this.post<MuhuratCategory>('/muhurat-categories', d),
+    update: (id: string, d: any) => this.put<MuhuratCategory>(`/muhurat-categories/${id}`, d),
+  };
+
+  // Muhurat Entries
+  muhurat = {
+    list: (categoryId?: string, startDate?: string, endDate?: string) =>
+      this.get<MuhuratItem[]>('/muhurat', { categoryId, startDate, endDate }),
+    listAdmin: () => this.get<MuhuratItem[]>('/muhurat/admin'),
+    listMy: () => this.get<MuhuratItem[]>('/muhurat/my'),
+    get: (id: string) => this.get<MuhuratItem>(`/muhurat/${id}`),
+    create: (d: any) => this.post<MuhuratItem>('/muhurat', d),
+    update: (id: string, d: any) => this.put<MuhuratItem>(`/muhurat/${id}`, d),
+    delete: (id: string) => this.del(`/muhurat/${id}`),
   };
 }
 

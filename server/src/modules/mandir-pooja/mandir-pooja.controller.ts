@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Put, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Param, Body, Query, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { MandirPoojaService } from './mandir-pooja.service';
+import { AuthGuard } from '../../common/guards/auth.guard';
 
 @Controller('mandir-pooja')
 export class MandirPoojaController {
@@ -15,20 +16,34 @@ export class MandirPoojaController {
   async findOne(@Param('id') id: string) { return this.service.findById(id); }
 
   @Post()
-  async create(@Body() body: any) { return this.service.create(body); }
+  @UseGuards(AuthGuard)
+  async create(@Body() body: any, @Req() req: any) {
+    if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can create poojas');
+    return this.service.create(body);
+  }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() body: any) { return this.service.update(id, body); }
+  @UseGuards(AuthGuard)
+  async update(@Param('id') id: string, @Body() body: any, @Req() req: any) {
+    if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can update poojas');
+    return this.service.update(id, body);
+  }
 
   @Get('bookings/list')
-  async getBookings(@Query('userId') userId?: string, @Query('poojaId') poojaId?: string) {
-    return this.service.getBookings(userId, poojaId);
+  @UseGuards(AuthGuard)
+  async getBookings(@Req() req: any, @Query('userId') userId?: string, @Query('poojaId') poojaId?: string) {
+    const targetUserId = userId || req.userId;
+    return this.service.getBookings(targetUserId, poojaId);
   }
 
   @Post('bookings')
-  async createBooking(@Body() body: any) { return this.service.createBooking(body); }
+  @UseGuards(AuthGuard)
+  async createBooking(@Body() body: any, @Req() req: any) {
+    return this.service.createBooking({ ...body, userId: req.userId });
+  }
 
   @Put('bookings/:id/status')
+  @UseGuards(AuthGuard)
   async updateBookingStatus(@Param('id') id: string, @Body() body: { status: string }) {
     return this.service.updateBookingStatus(id, body.status);
   }

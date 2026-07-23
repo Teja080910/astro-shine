@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, HttpCode, HttpStatus, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { BlogsService } from './blogs.service';
+import { AuthGuard } from '../../common/guards/auth.guard';
 
 @Controller('blogs')
 export class BlogsController {
@@ -15,12 +16,24 @@ export class BlogsController {
   async findOne(@Param('id') id: string) { return this.service.findById(id); }
 
   @Post()
-  async create(@Body() body: any) { return this.service.create(body); }
+  @UseGuards(AuthGuard)
+  async create(@Body() body: any, @Req() req: any) {
+    if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can create blogs');
+    return this.service.create(body);
+  }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() body: any) { return this.service.update(id, body); }
+  @UseGuards(AuthGuard)
+  async update(@Param('id') id: string, @Body() body: any, @Req() req: any) {
+    if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can update blogs');
+    return this.service.update(id, body);
+  }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: string) { await this.service.delete(id); }
+  @UseGuards(AuthGuard)
+  async remove(@Param('id') id: string, @Req() req: any) {
+    if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can delete blogs');
+    await this.service.delete(id);
+  }
 }

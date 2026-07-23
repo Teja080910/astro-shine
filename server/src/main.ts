@@ -6,7 +6,13 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.enableCors();
+  const corsOrigin = process.env.CORS_ORIGIN;
+  app.enableCors({
+    origin: corsOrigin === '*' || !corsOrigin
+      ? (origin: string | undefined, cb: (err: Error | null, allow?: boolean) => void) => cb(null, true)
+      : corsOrigin.split(',').map(s => s.trim()),
+    credentials: true,
+  });
   app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(
     new ValidationPipe({
@@ -20,5 +26,6 @@ async function bootstrap() {
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
   console.log(`🚀 Server running on http://localhost:${port}/api/v1`);
+  console.log(`🔌 WebSocket running on ws://localhost:${port}/ws`);
 }
 bootstrap();

@@ -35,3 +35,12 @@ export { supportTickets } from './support-tickets';
 export { ticketReplies } from './ticket-replies';
 export { appReleases } from './app-releases';
 export { videos } from './videos';
+export { conversations } from './conversations';
+export { conversationMessages } from './conversation-messages';
+export { paymentOrders } from './payment-orders';
+export { paymentEvents } from './payment-events';
+export { muhuratCategories } from './muhurat-categories';
+export { muhurat } from './muhurat';
+export { feedback } from './feedback';
+export { donationLogs } from './donation-logs';
+

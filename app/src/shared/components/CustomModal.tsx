@@ -1,6 +1,6 @@
 import React from 'react';
-import { Modal, View, StyleSheet, Pressable, Animated, Dimensions, ScrollView } from 'react-native';
-import { colors, radii, shadows } from '../theme';
+import { Modal, View, Text, StyleSheet, Pressable, Animated, Dimensions, ScrollView } from 'react-native';
+import { colors, radii, shadows, typography } from '../theme';
 
 const { height } = Dimensions.get('window');
 
@@ -12,7 +12,7 @@ interface Props {
   dismissable?: boolean;
 }
 
-export function CustomModal({ visible, onClose, children, dismissable = true }: Props) {
+export function CustomModal({ visible, onClose, children, title, dismissable = true }: Props) {
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(50)).current;
 
@@ -31,13 +31,14 @@ export function CustomModal({ visible, onClose, children, dismissable = true }: 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={dismissable ? onClose : undefined}>
       <Pressable style={styles.overlay} onPress={dismissable ? onClose : undefined}>
-        <Animated.View style={[styles.sheet, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-          <Pressable onPress={(e) => e.stopPropagation()}>
-            <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
+        <Animated.View style={[styles.sheet, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }, { backgroundColor: colors.surface }]}>
+          <ScrollView bounces={true} showsVerticalScrollIndicator={true} style={{ flexShrink: 1, flexGrow: 1 }}>
+            <Pressable onPress={(e) => e.stopPropagation()}>
               <View style={styles.handle} />
+              {title ? <Text style={[typography.sectionTitle, { paddingHorizontal: 24, marginBottom: 16, color: colors.textPrimary }]}>{title}</Text> : null}
               {children}
-            </ScrollView>
-          </Pressable>
+            </Pressable>
+          </ScrollView>
         </Animated.View>
       </Pressable>
     </Modal>

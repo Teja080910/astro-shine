@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -34,6 +35,13 @@ import { SupportTicketsModule } from './modules/support-tickets/support-tickets.
 import { AppReleasesModule } from './modules/app-releases/app-releases.module';
 import { VideosModule } from './modules/videos/videos.module';
 import { FileUploadModule } from './modules/file-upload/file-upload.module';
+import { EmailModule } from './modules/email/email.module';
+import { ConversationsModule } from './modules/conversations/conversations.module';
+import { AstrologerScheduleModule } from './modules/schedule/schedule.module';
+import { RealtimeModule } from './common/realtime.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { MuhuratCategoriesModule } from './modules/muhurat-categories/muhurat-categories.module';
+import { MuhuratModule } from './modules/muhurat/muhurat.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -74,8 +82,18 @@ import { AppService } from './app.service';
     AppReleasesModule,
     VideosModule,
     FileUploadModule,
+    EmailModule,
+    ConversationsModule,
+    AstrologerScheduleModule,
+    RealtimeModule,
+    ScheduleModule.forRoot(),
+    PaymentsModule,
+    MuhuratCategoriesModule,
+    MuhuratModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+  ],
 })
 export class AppModule {}

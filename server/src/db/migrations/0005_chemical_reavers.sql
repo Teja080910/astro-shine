@@ -1,0 +1,2 @@
+ALTER TABLE "wallets" ADD COLUMN "admin_id" uuid;--> statement-breakpoint
+ALTER TABLE "wallets" ADD CONSTRAINT "wallets_admin_id_admins_id_fk" FOREIGN KEY ("admin_id") REFERENCES "public"."admins"("id") ON DELETE cascade ON UPDATE no action;
