@@ -30,7 +30,16 @@
         "android.permission.INTERNET"
       ]
     },
-    "plugins": [],
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "2718ae98-737a-4e1f-a144-bc7caaf39d26"
