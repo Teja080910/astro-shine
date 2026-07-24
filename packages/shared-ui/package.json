@@ -6,8 +6,13 @@
   "types": "src/index.ts",
   "peerDependencies": {
     "react": "*",
-    "react-native": "*",
-    "react-native-paper": "*",
-    "react-native-safe-area-context": "*"
+    "react-native": "*"
+  },
+  "peerDependenciesMeta": {
+    "react-native": { "optional": true },
+    "@expo/vector-icons": { "optional": true },
+    "expo-linear-gradient": { "optional": true },
+    "react-native-paper": { "optional": true },
+    "react-native-safe-area-context": { "optional": true }
   }
 }

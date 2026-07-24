@@ -27,13 +27,18 @@ async function seed() {
 
   const astrologerIds: string[] = [];
   for (const a of astroData) {
-    const [astro] = await db.insert(schema.astrologers).values({
+    const [user] = await db.insert(schema.users).values({
       name: a.name,
       email: a.email,
       phone: a.phone,
-      password: hashPassword('password123'),
+      password: hashPassword(crypto.randomUUID()),
+      role: 'astrologer',
       gender: a.name.includes(' ') ? (a.name.split(' ')[0].endsWith('a') ? 'female' : 'male') as 'male' | 'female' : 'male',
       dateOfBirth: '1985-06-15',
+    }).returning();
+
+    await db.insert(schema.astrologers).values({
+      userId: user.id,
       bio: a.bio,
       experience: a.experience,
       specialization: a.specialization,
@@ -52,8 +57,9 @@ async function seed() {
       totalEarnings: a.totalEarnings,
       verificationStatus: a.verificationStatus as 'approved' | 'pending' | 'rejected',
       onlineStatus: a.onlineStatus as 'online' | 'offline' | 'busy',
-    }).returning({ id: schema.astrologers.id });
-    astrologerIds.push(astro.id);
+    });
+
+    astrologerIds.push(user.id);
   }
   console.log(`✅ ${astroData.length} astrologers created`);
 

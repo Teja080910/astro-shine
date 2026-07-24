@@ -6,7 +6,7 @@ export const dynamicLinks = pgTable('dynamic_links', {
   pageName: varchar('page_name', { length: 100 }).unique().notNull(),
   url: text('url').notNull(),
   isActive: boolean('is_active').notNull().default(true),
-  updatedBy: uuid('updated_by').references(() => admins.id, { onDelete: 'set null' }),
+  updatedBy: uuid('updated_by').references(() => admins.userId, { onDelete: 'set null' }),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

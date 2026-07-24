@@ -7,17 +7,26 @@ import { eq, sql, desc, or, and, isNull, inArray } from 'drizzle-orm';
 export class AdminsService {
   constructor(@Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>) {}
 
-  async findAll() { return this.db.query.admins.findMany(); }
-  async findById(id: string) { return this.db.query.admins.findFirst({ where: eq(schema.admins.id, id) }); }
-  async findByEmail(email: string) { return this.db.query.admins.findFirst({ where: eq(schema.admins.email, email) }); }
+  async findAll() {
+    return this.db.query.admins.findMany();
+  }
+
+  async findByUserId(userId: string) {
+    return this.db.query.admins.findFirst({ where: eq(schema.admins.userId, userId) });
+  }
+
+  async findById(id: string) {
+    return this.findByUserId(id);
+  }
 
   async create(data: typeof schema.admins.$inferInsert) {
-    const [r] = await this.db.insert(schema.admins).values(data).returning(); return r;
+    const [r] = await this.db.insert(schema.admins).values(data).returning();
+    return r;
   }
 
   async update(id: string, data: Partial<typeof schema.admins.$inferInsert>) {
     const [r] = await this.db.update(schema.admins)
-      .set({ ...data, updatedAt: new Date() }).where(eq(schema.admins.id, id)).returning();
+      .set({ ...data, updatedAt: new Date() }).where(eq(schema.admins.userId, id)).returning();
     return r;
   }
 
@@ -25,10 +34,9 @@ export class AdminsService {
     const [usersCountResult] = await this.db.select({ count: sql<number>`count(*)` })
       .from(schema.users)
       .where(isNull(schema.users.deletedAt));
-    
+
     const [astrologersCountResult] = await this.db.select({ count: sql<number>`count(*)` })
-      .from(schema.astrologers)
-      .where(isNull(schema.astrologers.deletedAt));
+      .from(schema.astrologers);
 
     const [depositsResult] = await this.db.select({ sum: sql<string>`sum(amount)` })
       .from(schema.transactions)
@@ -60,13 +68,14 @@ export class AdminsService {
     const pendingWithdrawals = await this.db.select({
       id: schema.withdrawalRequests.id,
       astrologerId: schema.withdrawalRequests.astrologerId,
-      astrologerName: schema.astrologers.name,
+      astrologerName: schema.users.name,
       amount: schema.withdrawalRequests.amount,
       status: schema.withdrawalRequests.status,
       createdAt: schema.withdrawalRequests.createdAt,
     })
     .from(schema.withdrawalRequests)
-    .leftJoin(schema.astrologers, eq(schema.withdrawalRequests.astrologerId, schema.astrologers.id))
+    .leftJoin(schema.astrologers, eq(schema.withdrawalRequests.astrologerId, schema.astrologers.userId))
+    .leftJoin(schema.users, eq(schema.astrologers.userId, schema.users.id))
     .where(eq(schema.withdrawalRequests.status, 'pending'))
     .limit(5)
     .orderBy(desc(schema.withdrawalRequests.createdAt));
@@ -100,27 +109,18 @@ export class AdminsService {
       default: trunc = 'day';
     }
 
-    const deposits = await this.db.execute<{
-      period: string; amount: string;
-    }>(sql`
-      SELECT date_trunc(${trunc}, created_at) AS period,
-             SUM(amount) AS amount
+    const deposits = await this.db.execute<{ period: string; amount: string }>(sql`
+      SELECT date_trunc(${trunc}, created_at) AS period, SUM(amount) AS amount
       FROM transactions
-      WHERE category = 'add_funds' AND status = 'success'
-        AND created_at >= NOW() - INTERVAL '30 days'
-      GROUP BY period
-      ORDER BY period
+      WHERE category = 'add_funds' AND status = 'success' AND created_at >= NOW() - INTERVAL '30 days'
+      GROUP BY period ORDER BY period
     `);
 
-    const fees = await this.db.execute<{
-      period: string; amount: string;
-    }>(sql`
-      SELECT date_trunc(${trunc}, created_at) AS period,
-             SUM(platform_fee) AS amount
+    const fees = await this.db.execute<{ period: string; amount: string }>(sql`
+      SELECT date_trunc(${trunc}, created_at) AS period, SUM(platform_fee) AS amount
       FROM commission_logs
       WHERE created_at >= NOW() - INTERVAL '30 days'
-      GROUP BY period
-      ORDER BY period
+      GROUP BY period ORDER BY period
     `);
 
     return {
@@ -135,17 +135,9 @@ export class AdminsService {
     const whereClause = inArray(schema.transactions.category, revenueCategories);
 
     const [data, totalResult] = await Promise.all([
-      this.db
-        .select()
-        .from(schema.transactions)
-        .where(whereClause)
-        .orderBy(desc(schema.transactions.createdAt))
-        .limit(limit)
-        .offset(offset),
-      this.db
-        .select({ count: sql<number>`count(*)` })
-        .from(schema.transactions)
-        .where(whereClause),
+      this.db.select().from(schema.transactions).where(whereClause)
+        .orderBy(desc(schema.transactions.createdAt)).limit(limit).offset(offset),
+      this.db.select({ count: sql<number>`count(*)` }).from(schema.transactions).where(whereClause),
     ]);
     return { data, total: Number(totalResult[0].count), page, limit };
   }
@@ -156,16 +148,13 @@ export class AdminsService {
       .where(and(eq(schema.transactions.category, 'add_funds'), eq(schema.transactions.status, 'success')));
 
     const [callCharges] = await this.db.select({ sum: sql<string>`COALESCE(SUM(amount::decimal), 0)` })
-      .from(schema.transactions)
-      .where(eq(schema.transactions.category, 'call_charge'));
+      .from(schema.transactions).where(eq(schema.transactions.category, 'call_charge'));
 
     const [chatCharges] = await this.db.select({ sum: sql<string>`COALESCE(SUM(amount::decimal), 0)` })
-      .from(schema.transactions)
-      .where(eq(schema.transactions.category, 'chat_charge'));
+      .from(schema.transactions).where(eq(schema.transactions.category, 'chat_charge'));
 
     const [commissionsPaid] = await this.db.select({ sum: sql<string>`COALESCE(SUM(amount::decimal), 0)` })
-      .from(schema.transactions)
-      .where(and(eq(schema.transactions.category, 'commission'), eq(schema.transactions.type, 'credit')));
+      .from(schema.transactions).where(and(eq(schema.transactions.category, 'commission'), eq(schema.transactions.type, 'credit')));
 
     const [platformFees] = await this.db.select({ sum: sql<string>`COALESCE(SUM(platform_fee::decimal), 0)` })
       .from(schema.commissionLogs);
@@ -180,4 +169,3 @@ export class AdminsService {
     };
   }
 }
-

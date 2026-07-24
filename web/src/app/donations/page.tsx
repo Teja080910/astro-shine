@@ -6,20 +6,29 @@ import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
 import { api } from '@/lib/api';
 import { useSocket } from '@/hooks/useSocket';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthStore } from '@/store/auth';
 
 function DonationsContent() {
-  const { admin } = useAuth();
+  const { admin } = useAuthStore();
   const [stats, setStats] = useState({ totalReceived: 0, totalWithdrawn: 0, pending: 0 });
   const [logs, setLogs] = useState<any[]>([]);
   const [withdrawModal, setWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawNote, setWithdrawNote] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState('');
 
   const refresh = useCallback(() => {
-    api.get<any>('/donations/stats').then(setStats);
-    api.get<any[]>('/donations/logs').then(setLogs);
+    setLoading(true);
+    setFetchError('');
+    Promise.all([
+      api.get<any>('/donations/stats'),
+      api.get<any[]>('/donations/logs'),
+    ])
+      .then(([s, l]) => { setStats(s); setLogs(l); })
+      .catch((e) => setFetchError(e.message || 'Failed to load donation data'))
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
@@ -53,34 +62,42 @@ function DonationsContent() {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-surface-light rounded-2xl p-4 border border-divider">
-          <p className="text-text-muted text-sm">Total Received</p>
-          <p className="text-2xl font-bold text-success">+₹{stats.totalReceived.toFixed(2)}</p>
-        </div>
-        <div className="bg-surface-light rounded-2xl p-4 border border-divider">
-          <p className="text-text-muted text-sm">Total Withdrawn</p>
-          <p className="text-2xl font-bold text-danger">-₹{stats.totalWithdrawn.toFixed(2)}</p>
-        </div>
-        <div className="bg-surface-light rounded-2xl p-4 border border-divider">
-          <p className="text-text-muted text-sm">Pending Balance</p>
-          <p className="text-2xl font-bold text-text-primary">₹{stats.pending.toFixed(2)}</p>
-        </div>
-      </div>
+      {loading ? (
+        <div className="flex items-center justify-center h-64 text-text-secondary">Loading donations...</div>
+      ) : fetchError ? (
+        <div className="bg-red-900/20 border border-red-800 text-red-400 rounded-lg px-4 py-3 text-sm">{fetchError}</div>
+      ) : (
+        <>
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="bg-surface-light rounded-2xl p-4 border border-divider">
+              <p className="text-text-muted text-sm">Total Received</p>
+              <p className="text-2xl font-bold text-success">+₹{stats.totalReceived.toFixed(2)}</p>
+            </div>
+            <div className="bg-surface-light rounded-2xl p-4 border border-divider">
+              <p className="text-text-muted text-sm">Total Withdrawn</p>
+              <p className="text-2xl font-bold text-danger">-₹{stats.totalWithdrawn.toFixed(2)}</p>
+            </div>
+            <div className="bg-surface-light rounded-2xl p-4 border border-divider">
+              <p className="text-text-muted text-sm">Pending Balance</p>
+              <p className="text-2xl font-bold text-text-primary">₹{stats.pending.toFixed(2)}</p>
+            </div>
+          </div>
 
-      <h2 className="text-xl font-bold text-text-primary mb-4">Donation Logs</h2>
-      <Table headers={['Type', 'Amount', 'Note', 'Date']} emptyMessage="No donation logs found">
-        {logs.map((l: any) => (
-          <tr key={l.id} className="border-b border-divider hover:bg-surface-light/50">
-            <td className="px-4 py-3">
-              {l.type === 'received' ? <Badge variant="success">Received</Badge> : <Badge variant="danger">Withdrawn</Badge>}
-            </td>
-            <td className="px-4 py-3 text-text-primary font-medium">₹{l.amount}</td>
-            <td className="px-4 py-3 text-text-secondary">{l.note || '-'}</td>
-            <td className="px-4 py-3 text-text-muted text-sm">{formatDate(l.createdAt)}</td>
-          </tr>
-        ))}
-      </Table>
+          <h2 className="text-xl font-bold text-text-primary mb-4">Donation Logs</h2>
+          <Table headers={['Type', 'Amount', 'Note', 'Date']} emptyMessage="No donation logs found">
+            {logs.map((l: any) => (
+              <tr key={l.id} className="border-b border-divider hover:bg-surface-light/50">
+                <td className="px-4 py-3">
+                  {l.type === 'received' ? <Badge variant="success">Received</Badge> : <Badge variant="danger">Withdrawn</Badge>}
+                </td>
+                <td className="px-4 py-3 text-text-primary font-medium">₹{l.amount}</td>
+                <td className="px-4 py-3 text-text-secondary">{l.note || '-'}</td>
+                <td className="px-4 py-3 text-text-muted text-sm">{formatDate(l.createdAt)}</td>
+              </tr>
+            ))}
+          </Table>
+        </>
+      )}
 
       <CustomModal open={withdrawModal} onClose={() => { setWithdrawModal(false); setError(''); }} title="Withdraw Donation Funds">
         <div className="space-y-3 text-text-secondary p-2">

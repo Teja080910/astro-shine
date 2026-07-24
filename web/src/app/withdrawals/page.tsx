@@ -6,10 +6,10 @@ import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
 import { api } from '@/lib/api';
 import { useSocket } from '@/hooks/useSocket';
-import { useAuth } from '@/context/AuthContext';
+import { useAuthStore } from '@/store/auth';
 
 function WithdrawalsContent() {
-  const { admin } = useAuth();
+  const { admin } = useAuthStore();
   const [data, setData] = useState<any[]>([]);
   const [selected, setSelected] = useState<any | null>(null);
 
@@ -47,7 +47,7 @@ function WithdrawalsContent() {
             </td>
             <td className="px-4 py-3 text-text-muted text-sm">{formatDate(w.createdAt)}</td>
             <td className="px-4 py-3">
-              {w.status === 'pending' && !w.adminId && (
+              {w.status === 'pending' && (
                 <button onClick={() => setSelected(w)} className="text-primary-light hover:underline text-sm">Review</button>
               )}
             </td>

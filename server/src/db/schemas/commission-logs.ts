@@ -5,7 +5,7 @@ import { callLogs } from './call-logs';
 
 export const commissionLogs = pgTable('commission_logs', {
   id: uuid('id').defaultRandom().primaryKey(),
-  astrologerId: uuid('astrologer_id').notNull().references(() => astrologers.id, { onDelete: 'cascade' }),
+  astrologerId: uuid('astrologer_id').notNull().references(() => astrologers.userId, { onDelete: 'cascade' }),
   transactionId: uuid('transaction_id').references(() => transactions.id, { onDelete: 'set null' }),
   callId: uuid('call_id').references(() => callLogs.id, { onDelete: 'set null' }),
   amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),

@@ -18,7 +18,7 @@ export class CommissionService {
       .select({
         id: schema.commissions.id,
         astrologerId: schema.commissions.astrologerId,
-        astrologerName: schema.astrologers.name,
+        astrologerName: schema.users.name,
         type: schema.commissions.type,
         value: schema.commissions.value,
         minAmount: schema.commissions.minAmount,
@@ -28,7 +28,8 @@ export class CommissionService {
         updatedAt: schema.commissions.updatedAt,
       })
       .from(schema.commissions)
-      .leftJoin(schema.astrologers, eq(schema.commissions.astrologerId, schema.astrologers.id));
+      .leftJoin(schema.astrologers, eq(schema.commissions.astrologerId, schema.astrologers.userId))
+      .leftJoin(schema.users, eq(schema.astrologers.userId, schema.users.id));
   }
   async findByAstrologerId(astrologerId: string) { return this.db.query.commissions.findFirst({ where: eq(schema.commissions.astrologerId, astrologerId) }); }
 
@@ -153,13 +154,37 @@ export class CommissionService {
         platformFee: platformFee.toFixed(2),
       });
 
+      if (platformFee > 0) {
+        const adminWallet = await this.walletService.getOrCreateAdminWallet();
+        const feeStr = platformFee.toFixed(2);
+        await tx
+          .update(schema.wallets)
+          .set({
+            balance: sql`${schema.wallets.balance} + ${feeStr}::decimal`,
+            totalAdded: sql`${schema.wallets.totalAdded} + ${feeStr}::decimal`,
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.wallets.id, adminWallet.id));
+        await tx.insert(schema.transactions).values({
+          walletId: adminWallet.id,
+          type: 'credit',
+          category: 'commission',
+          amount: feeStr,
+          fee: '0',
+          netAmount: feeStr,
+          status: 'success',
+          description: `Platform fee from call ${callId}`,
+          referenceId: callId,
+        });
+      }
+
       await tx
         .update(schema.astrologers)
         .set({
           totalEarnings: sql`${schema.astrologers.totalEarnings} + ${amountStr}::decimal`,
           updatedAt: new Date(),
         })
-        .where(eq(schema.astrologers.id, astrologerId));
+        .where(eq(schema.astrologers.userId, astrologerId));
     });
   }
 

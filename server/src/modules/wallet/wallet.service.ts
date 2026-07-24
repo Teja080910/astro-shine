@@ -45,9 +45,10 @@ export class WalletService {
 
   async getOrCreateAdminWallet(): Promise<{ id: string; balance: string }> {
     const [admin] = await this.db
-      .select()
+      .select({ id: schema.admins.userId })
       .from(schema.admins)
-      .where(eq(schema.admins.isActive, true))
+      .leftJoin(schema.users, eq(schema.admins.userId, schema.users.id))
+      .where(eq(schema.users.isActive, true))
       .limit(1);
     if (!admin) throw new NotFoundException('No active admin found');
     let wallet = await this.getWalletByAdminId(admin.id);
@@ -75,11 +76,14 @@ export class WalletService {
   }
 
   async addFunds(walletId: string, amount: string) {
+    const parsed = parseFloat(amount);
+    if (isNaN(parsed) || parsed <= 0) throw new BadRequestException('Invalid amount');
+    const amountStr = parsed.toFixed(2);
     const [wallet] = await this.db
       .update(schema.wallets)
       .set({
-        balance: sql`${schema.wallets.balance} + ${amount}::decimal`,
-        totalAdded: sql`${schema.wallets.totalAdded} + ${amount}::decimal`,
+        balance: sql`${schema.wallets.balance} + ${amountStr}::decimal`,
+        totalAdded: sql`${schema.wallets.totalAdded} + ${amountStr}::decimal`,
         updatedAt: new Date(),
       })
       .where(eq(schema.wallets.id, walletId))
@@ -88,15 +92,32 @@ export class WalletService {
   }
 
   async deductFunds(walletId: string, amount: string) {
-    const [wallet] = await this.db
+    const parsed = parseFloat(amount);
+    if (isNaN(parsed) || parsed <= 0) throw new BadRequestException('Invalid amount');
+
+    const wallet = await this.getWalletById(walletId);
+    if (!wallet) throw new NotFoundException('Wallet not found');
+    if (Number(wallet.balance) < parsed) throw new BadRequestException('Insufficient balance');
+
+    const amountStr = parsed.toFixed(2);
+    const [updated] = await this.db
       .update(schema.wallets)
       .set({
-        balance: sql`${schema.wallets.balance} - ${amount}::decimal`,
-        totalDeducted: sql`${schema.wallets.totalDeducted} + ${amount}::decimal`,
+        balance: sql`${schema.wallets.balance} - ${amountStr}::decimal`,
+        totalDeducted: sql`${schema.wallets.totalDeducted} + ${amountStr}::decimal`,
         updatedAt: new Date(),
       })
       .where(eq(schema.wallets.id, walletId))
       .returning();
+    return updated;
+  }
+
+  async getWalletById(walletId: string) {
+    const [wallet] = await this.db
+      .select()
+      .from(schema.wallets)
+      .where(eq(schema.wallets.id, walletId))
+      .limit(1);
     return wallet;
   }
 
