@@ -9,6 +9,7 @@ import type { Astrologer } from '@astro-shine/shared-types';
 export default function AstrologersPage() {
   const [data, setData] = useState<Astrologer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [selected, setSelected] = useState<Astrologer | null>(null);
   const [verify, setVerify] = useState<Astrologer | null>(null);
   const [chatPrice, setChatPrice] = useState('');
@@ -16,7 +17,7 @@ export default function AstrologersPage() {
   const [videoPrice, setVideoPrice] = useState('');
   const [rejectionNote, setRejectionNote] = useState('');
 
-  useEffect(() => { api.get<Astrologer[]>('/astrologers').then(setData).finally(() => setLoading(false)); }, []);
+  useEffect(() => { api.get<Astrologer[]>('/astrologers').then(setData).catch((e) => setError(e.message || 'Failed to load astrologers')).finally(() => setLoading(false)); }, []);
 
   const handleVerify = async (id: string, status: 'approved' | 'rejected') => {
     await api.post<any>(`/astrologers/${id}/verify`, { status, note: rejectionNote });
@@ -61,7 +62,12 @@ export default function AstrologersPage() {
         <span className="text-text-secondary">{data.length} total</span>
       </div>
       <Table headers={['Name', 'Email', 'Specialization', 'Chat/min', 'Audio/min', 'Video/min', 'Status', '']} emptyMessage="No astrologers found">
-        {data.map(a => (
+        {loading ? (
+          <tr><td colSpan={8} className="px-4 py-12 text-center text-text-secondary">Loading astrologers...</td></tr>
+        ) : error ? (
+          <tr><td colSpan={8} className="px-4 py-3 text-center text-red-400">{error}</td></tr>
+        ) : (
+          data.map(a => (
           <tr key={a.userId || a.id} className="border-b border-divider hover:bg-surface-light/50">
             <td className="px-4 py-3 text-text-primary font-medium">{a.name}</td>
             <td className="px-4 py-3 text-text-secondary">{a.email}</td>
@@ -91,7 +97,8 @@ export default function AstrologersPage() {
               )}
             </td>
           </tr>
-        ))}
+          ))
+        )}
       </Table>
 
       {/* Details & Pricing Management Modal */}
