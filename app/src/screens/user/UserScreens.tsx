@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Image, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useCall } from '../../context/CallContext';
 import { useChat } from '../../context/ChatContext';
@@ -58,6 +58,7 @@ export function UserHomeScreen({ navigation }: any) {
   const [selectedSign, setSelectedSign] = useState('aries');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [horoscopeLoading, setHoroscopeLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeHoroscopeTab, setActiveHoroscopeTab] = useState<'love' | 'career' | 'finance' | 'health'>('career');
@@ -87,6 +88,8 @@ export function UserHomeScreen({ navigation }: any) {
   }, [user?.id, selectedSign, todayStr, horoscopeVersion]);
 
   useEffect(() => { if (isFocused) loadData(); }, [isFocused, loadData]);
+
+  const onRefresh = useCallback(() => { setRefreshing(true); loadData().finally(() => setRefreshing(false)); }, [loadData]);
 
   const fetchHoroscope = async (sign: string) => {
     setHoroscopeLoading(true);
@@ -122,7 +125,8 @@ export function UserHomeScreen({ navigation }: any) {
 
   return (
     <ScreenWrapper style={{ position: 'relative', zIndex: 1 }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         {/* Top Header Bar */}
         <View style={styles.topHeader}>
           <TouchableOpacity onPress={() => setMenuOpen(true)} style={{ padding: 4 }}>
@@ -637,9 +641,12 @@ export function AstrologerListScreen({ route, navigation }: any) {
   const [selectedCat, setSelectedCat] = useState('All');
   const cats = ['All', 'Vedic', 'Tarot', 'Numerology', 'Palmistry', 'Vastu'];
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const onlyLive = route?.params?.onlyLive ?? false;
 
-  useEffect(() => { if (isFocused) api.astrologers.list().then(setData).finally(() => setLoading(false)); }, [isFocused]);
+  const fetchData = useCallback(() => api.astrologers.list().then(setData), []);
+  useEffect(() => { if (isFocused) { setLoading(true); fetchData().finally(() => setLoading(false)); } }, [isFocused, fetchData]);
+  const onRefresh = useCallback(() => { setRefreshing(true); fetchData().finally(() => setRefreshing(false)); }, [fetchData]);
   
   const filtered = data.filter(a => {
     const matchesSearch = !search || a.name?.toLowerCase().includes(search.toLowerCase()) || a.specialization?.some(s => s.toLowerCase().includes(search.toLowerCase()));
@@ -669,6 +676,7 @@ export function AstrologerListScreen({ route, navigation }: any) {
         keyExtractor={(c) => c} 
       />
       <FlatList data={filtered} keyExtractor={(a) => a.userId} contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={<EmptyState icon={<Ionicons name="people-outline" size={48} color={colors.textMuted} />} title="No astrologers" />}
         renderItem={({ item }) => {
           const isOnline = getAstrologerOnlineStatus(item, astrologerStatuses);
