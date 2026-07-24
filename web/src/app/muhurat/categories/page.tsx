@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { GradientButton, CustomModal, Table, Badge } from '@/components/UIComponents';
 import { api } from '@/lib/api';
-import { config } from '@/config';
+import { useSocket } from '@/hooks/useSocket';
 import type { MuhuratCategory } from '@astro-shine/shared-types';
-import { io } from 'socket.io-client';
 
 export default function MuhuratCategoriesPage() {
   const [data, setData] = useState<MuhuratCategory[]>([]);
@@ -14,33 +13,25 @@ export default function MuhuratCategoriesPage() {
   const [form, setForm] = useState({ name: '', description: '', isActive: true });
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    // Fetch initial list
+  const fetchData = useCallback(() => {
     api.get<MuhuratCategory[]>('/muhurat-categories/admin')
       .then(setData)
       .catch(console.error);
+  }, []);
 
-    // Socket connection
-    const socket = io(config.apiUrl, {
-      path: '/ws',
-      transports: ['websocket'],
-    });
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-    socket.on('muhurat-category:created', (newCat: MuhuratCategory) => {
+  useSocket({
+    'muhurat-category:created': useCallback((newCat: MuhuratCategory) => {
       setData((prev) => {
         if (prev.some((c) => c.id === newCat.id)) return prev;
         return [...prev, newCat];
       });
-    });
-
-    socket.on('muhurat-category:updated', (updatedCat: MuhuratCategory) => {
+    }, []),
+    'muhurat-category:updated': useCallback((updatedCat: MuhuratCategory) => {
       setData((prev) => prev.map((c) => (c.id === updatedCat.id ? updatedCat : c)));
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
+    }, []),
+  });
 
   const startEdit = (cat: MuhuratCategory) => {
     setEditing(cat);

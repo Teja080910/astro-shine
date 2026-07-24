@@ -2,19 +2,23 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
 import { eq, and, sql, desc } from 'drizzle-orm';
+import { WalletService } from '../wallet/wallet.service';
 
 @Injectable()
 export class CommissionService {
   private readonly logger = new Logger(CommissionService.name);
 
-  constructor(@Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>) {}
+  constructor(
+    @Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>,
+    private readonly walletService: WalletService,
+  ) {}
 
   async findAll() {
     return this.db
       .select({
         id: schema.commissions.id,
         astrologerId: schema.commissions.astrologerId,
-        astrologerName: schema.astrologers.name,
+        astrologerName: schema.users.name,
         type: schema.commissions.type,
         value: schema.commissions.value,
         minAmount: schema.commissions.minAmount,
@@ -24,7 +28,8 @@ export class CommissionService {
         updatedAt: schema.commissions.updatedAt,
       })
       .from(schema.commissions)
-      .leftJoin(schema.astrologers, eq(schema.commissions.astrologerId, schema.astrologers.id));
+      .leftJoin(schema.astrologers, eq(schema.commissions.astrologerId, schema.astrologers.userId))
+      .leftJoin(schema.users, eq(schema.astrologers.userId, schema.users.id));
   }
   async findByAstrologerId(astrologerId: string) { return this.db.query.commissions.findFirst({ where: eq(schema.commissions.astrologerId, astrologerId) }); }
 
@@ -149,13 +154,37 @@ export class CommissionService {
         platformFee: platformFee.toFixed(2),
       });
 
+      if (platformFee > 0) {
+        const adminWallet = await this.walletService.getOrCreateAdminWallet();
+        const feeStr = platformFee.toFixed(2);
+        await tx
+          .update(schema.wallets)
+          .set({
+            balance: sql`${schema.wallets.balance} + ${feeStr}::decimal`,
+            totalAdded: sql`${schema.wallets.totalAdded} + ${feeStr}::decimal`,
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.wallets.id, adminWallet.id));
+        await tx.insert(schema.transactions).values({
+          walletId: adminWallet.id,
+          type: 'credit',
+          category: 'commission',
+          amount: feeStr,
+          fee: '0',
+          netAmount: feeStr,
+          status: 'success',
+          description: `Platform fee from call ${callId}`,
+          referenceId: callId,
+        });
+      }
+
       await tx
         .update(schema.astrologers)
         .set({
           totalEarnings: sql`${schema.astrologers.totalEarnings} + ${amountStr}::decimal`,
           updatedAt: new Date(),
         })
-        .where(eq(schema.astrologers.id, astrologerId));
+        .where(eq(schema.astrologers.userId, astrologerId));
     });
   }
 
@@ -185,18 +214,20 @@ export class CommissionService {
         return;
       }
 
-      const result = await tx.execute<{
-        id: string; balance: string; total_added: string;
-      }>(sql`SELECT id, balance, total_added
-        FROM wallets WHERE astrologer_id = ${astrologerId} LIMIT 1 FOR UPDATE`);
-      const wallet = result.rows?.[0];
+      // Auto-create astrologer wallet if missing
+      let wallet = (await tx.execute<{
+        id: string; balance: string;
+      }>(sql`SELECT id, balance FROM wallets WHERE astrologer_id = ${astrologerId} LIMIT 1 FOR UPDATE`)).rows?.[0];
       if (!wallet) {
-        this.logger.warn(`No wallet for astrologer ${astrologerId}, skipping chat revenue`);
-        return;
+        const [created] = await tx.insert(schema.wallets).values({
+          astrologerId,
+        }).returning({ id: schema.wallets.id, balance: schema.wallets.balance });
+        wallet = created;
       }
 
       const amountStr = astrologerEarnings.toFixed(2);
 
+      // Credit astrologer wallet
       await tx
         .update(schema.wallets)
         .set({
@@ -206,7 +237,8 @@ export class CommissionService {
         })
         .where(eq(schema.wallets.id, wallet.id));
 
-      await tx.insert(schema.transactions).values({
+      // Insert transaction record for astrologer credit
+      const [txn] = await tx.insert(schema.transactions).values({
         walletId: wallet.id,
         astrologerId,
         type: 'credit',
@@ -215,9 +247,44 @@ export class CommissionService {
         fee: platformFee.toFixed(2),
         netAmount: amountStr,
         status: 'success',
-        description: `Earnings from message in conversation ${conversationId}`,
+        description: `Earnings from chat in conversation ${conversationId}`,
         referenceId: messageId,
+      }).returning();
+
+      // Insert commission_log for audit trail
+      await tx.insert(schema.commissionLogs).values({
+        astrologerId,
+        transactionId: txn.id,
+        amount: chargeAmount.toFixed(2),
+        percentage: effectivePercentage.toFixed(2),
+        totalEarned: astrologerEarnings.toFixed(2),
+        platformFee: platformFee.toFixed(2),
       });
+
+      // Credit platform fee to admin wallet
+      if (platformFee > 0) {
+        const adminWallet = await this.walletService.getOrCreateAdminWallet();
+        const feeStr = platformFee.toFixed(2);
+        await tx
+          .update(schema.wallets)
+          .set({
+            balance: sql`${schema.wallets.balance} + ${feeStr}::decimal`,
+            totalAdded: sql`${schema.wallets.totalAdded} + ${feeStr}::decimal`,
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.wallets.id, adminWallet.id));
+        await tx.insert(schema.transactions).values({
+          walletId: adminWallet.id,
+          type: 'credit',
+          category: 'commission',
+          amount: feeStr,
+          fee: '0',
+          netAmount: feeStr,
+          status: 'success',
+          description: `Platform fee from chat conversation ${conversationId}`,
+          referenceId: messageId,
+        });
+      }
     });
   }
 }

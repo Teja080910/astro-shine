@@ -1,11 +1,11 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { UsersService } from '../users/users.service';
-import { AdminsService } from '../admin/admins.service';
-import { AstrologersService } from '../astrologers/astrologers.service';
-import { EmailService } from '../email/email.service';
 import * as crypto from 'crypto';
+import { eq } from 'drizzle-orm';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as jwt from 'jsonwebtoken';
+import * as schema from '../../db/schemas';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class AuthService {
@@ -13,27 +13,113 @@ export class AuthService {
   private readonly otpStore: Map<string, { otp: string; expiresAt: number }> = new Map();
 
   constructor(
+    @Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>,
     private configService: ConfigService,
-    private usersService: UsersService,
-    private adminsService: AdminsService,
-    private astrologersService: AstrologersService,
     private emailService: EmailService,
   ) {
-    this.jwtSecret = this.configService.get<string>('JWT_SECRET', 'default-secret');
+    this.jwtSecret = this.configService.get<string>('JWT_SECRET') || '';
+    if (!this.jwtSecret) {
+      throw new Error('JWT_SECRET environment variable is required');
+    }
+  }
+
+  private async findUserByEmail(email: string) {
+    return this.db.query.users.findFirst({ where: eq(schema.users.email, email) });
+  }
+
+  private async findUserByPhone(phone: string) {
+    return this.db.query.users.findFirst({ where: eq(schema.users.phone, phone) });
   }
 
   async sendEmailOtp(email: string): Promise<{ message: string }> {
-    const user = await this.usersService.findByEmail(email);
-    if (!user) {
-      throw new UnauthorizedException('USER_NOT_FOUND');
+    const user = await this.findUserByEmail(email);
+    if (!user) throw new UnauthorizedException('USER_NOT_FOUND');
+    if (!user.isActive || user.deletedAt) throw new UnauthorizedException('Account has been deleted or deactivated');
+    return this.generateAndSendOtp(`email:${email}`, email);
+  }
+
+  private async generateAndSendOtp(key: string, email: string): Promise<{ message: string }> {
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    this.otpStore.set(key, { otp, expiresAt: Date.now() + 600000 });
+    try {
+      await this.emailService.sendOtpEmail(email, otp);
+    } catch (e) {
+      this.otpStore.delete(key);
+      throw new BadRequestException('Failed to send OTP email');
     }
-    if (!user.isActive || user.deletedAt) {
-      throw new UnauthorizedException('Account has been deleted or deactivated');
+    return { message: 'OTP sent to email' };
+  }
+
+  async sendForgotPasswordOtp(identifier: string, type: 'email' | 'phone'): Promise<{ message: string }> {
+    const user = type === 'email' ? await this.findUserByEmail(identifier) : await this.findUserByPhone(identifier);
+    if (!user) throw new UnauthorizedException('USER_NOT_FOUND');
+    if (!user.isActive || user.deletedAt) throw new UnauthorizedException('Account has been deleted or deactivated');
+
+    if (type === 'email') {
+      return this.generateAndSendOtp(`reset:${identifier}`, identifier);
     }
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    this.otpStore.set(`email:${email}`, { otp, expiresAt: Date.now() + 600000 });
-    await this.emailService.sendOtpEmail(email, otp);
-    return { message: 'OTP sent to email' };
+    this.otpStore.set(`reset:phone:${identifier}`, { otp, expiresAt: Date.now() + 600000 });
+    return { message: 'OTP sent to phone' };
+  }
+
+  async resetPassword(identifier: string, otp: string, newPassword: string, type: 'email' | 'phone' = 'email'): Promise<{ success: boolean }> {
+    const key = type === 'email' ? `reset:${identifier}` : `reset:phone:${identifier}`;
+    const stored = this.otpStore.get(key);
+    if (!stored || stored.otp !== otp || stored.expiresAt < Date.now()) {
+      throw new UnauthorizedException('Invalid or expired OTP');
+    }
+    this.otpStore.delete(key);
+
+    if (!newPassword || newPassword.length < 6) {
+      throw new BadRequestException('Password must be at least 6 characters');
+    }
+
+    const user = type === 'email' ? await this.findUserByEmail(identifier) : await this.findUserByPhone(identifier);
+    if (!user) throw new UnauthorizedException('USER_NOT_FOUND');
+
+    const hashedPassword = await this.hashPassword(newPassword);
+    await this.db.update(schema.users)
+      .set({ password: hashedPassword, updatedAt: new Date() })
+      .where(eq(schema.users.id, user.id));
+
+    return { success: true };
+  }
+
+  async sendRegistrationOtp(identifier: string, type: 'email' | 'phone'): Promise<{ message: string }> {
+    if (type === 'email') {
+      const existing = await this.findUserByEmail(identifier);
+      if (existing) throw new BadRequestException('Email already registered');
+    } else {
+      const existing = await this.findUserByPhone(identifier);
+      if (existing) throw new BadRequestException('Phone number already registered');
+      if (!identifier || identifier.length < 10) throw new BadRequestException('Valid phone number is required');
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const key = `reg:${type}:${identifier}`;
+    this.otpStore.set(key, { otp, expiresAt: Date.now() + 600000 });
+
+    if (type === 'email') {
+      try {
+        await this.emailService.sendOtpEmail(identifier, otp);
+      } catch (e) {
+        this.otpStore.delete(key);
+        throw new BadRequestException('Failed to send OTP email');
+      }
+    }
+
+    return { message: `OTP sent to ${type === 'email' ? 'email' : 'phone'}` };
+  }
+
+  async verifyRegistrationOtp(identifier: string, type: 'email' | 'phone', otp: string): Promise<{ verified: true }> {
+    const key = `reg:${type}:${identifier}`;
+    const stored = this.otpStore.get(key);
+    if (!stored || stored.otp !== otp || stored.expiresAt < Date.now()) {
+      throw new UnauthorizedException('Invalid or expired OTP');
+    }
+    this.otpStore.delete(key);
+    return { verified: true };
   }
 
   async verifyEmailOtp(email: string, otp: string): Promise<{ token: string; user: any }> {
@@ -41,82 +127,60 @@ export class AuthService {
     if (!stored || stored.otp !== otp || stored.expiresAt < Date.now()) {
       throw new UnauthorizedException('Invalid or expired OTP');
     }
-
     this.otpStore.delete(`email:${email}`);
 
-    const user = await this.usersService.findByEmail(email);
-    if (!user) {
-      throw new UnauthorizedException('USER_NOT_FOUND');
-    }
-    if (!user.isActive || user.deletedAt) {
-      throw new UnauthorizedException('Account has been deleted or deactivated');
-    }
+    const user = await this.findUserByEmail(email);
+    if (!user) throw new UnauthorizedException('USER_NOT_FOUND');
+    if (!user.isActive || user.deletedAt) throw new UnauthorizedException('Account has been deleted or deactivated');
 
-    const token = this.generateToken(user.id, 'user');
+    const token = this.generateToken(user.id, user.role);
     const { password: _, ...safeUser } = user;
     return { token, user: safeUser };
   }
 
   async checkPhone(phone: string): Promise<{ exists: boolean }> {
-    const user = await this.usersService.findByPhone(phone);
+    const user = await this.findUserByPhone(phone);
     return { exists: !!user };
   }
 
-  async loginWithPhone(phone: string): Promise<{ token: string; user: any }> {
-    const user = await this.usersService.findByPhone(phone);
-    if (!user) {
-      throw new UnauthorizedException('USER_NOT_FOUND');
+  async sendPhoneOtp(phone: string): Promise<{ message: string }> {
+    const user = await this.findUserByPhone(phone);
+    if (!user) throw new UnauthorizedException('USER_NOT_FOUND');
+    if (!user.isActive || user.deletedAt) throw new UnauthorizedException('Account has been deleted or deactivated');
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    this.otpStore.set(`phone:${phone}`, { otp, expiresAt: Date.now() + 600000 });
+    return { message: 'OTP sent to phone' };
+  }
+
+  async loginWithPhone(phone: string, otp: string): Promise<{ token: string; user: any }> {
+    const stored = this.otpStore.get(`phone:${phone}`);
+    if (!stored || stored.otp !== otp || stored.expiresAt < Date.now()) {
+      throw new UnauthorizedException('Invalid or expired OTP');
     }
-    if (!user.isActive || user.deletedAt) {
-      throw new UnauthorizedException('Account has been deleted or deactivated');
-    }
-    const token = this.generateToken(user.id, 'user');
+    this.otpStore.delete(`phone:${phone}`);
+
+    const user = await this.findUserByPhone(phone);
+    if (!user) throw new UnauthorizedException('USER_NOT_FOUND');
+    if (!user.isActive || user.deletedAt) throw new UnauthorizedException('Account has been deleted or deactivated');
+    const token = this.generateToken(user.id, user.role);
     const { password: _, ...safeUser } = user;
     return { token, user: safeUser };
   }
 
   async loginWithEmail(email: string, password: string): Promise<{ token: string; user: any }> {
-    let user: any = null;
-    let role = 'user';
-
-    const regularUser = await this.usersService.findByEmail(email);
-    if (regularUser && regularUser.isActive && !regularUser.deletedAt && regularUser.password) {
-      const isValid = await this.verifyPassword(password, regularUser.password);
-      if (isValid) {
-        user = regularUser;
-        role = 'user';
-      }
-    }
-
-    if (!user) {
-      const adminUser = await this.adminsService.findByEmail(email);
-      if (adminUser && adminUser.isActive !== false && adminUser.password) {
-        const isValid = await this.verifyPassword(password, adminUser.password);
-        if (isValid) {
-          user = adminUser;
-          role = adminUser.role || 'admin';
-        }
-      }
-    }
-
-    if (!user) {
-      const astrologerUser = await this.astrologersService.findByEmail(email);
-      if (astrologerUser && astrologerUser.isActive !== false && astrologerUser.password) {
-        const isValid = await this.verifyPassword(password, astrologerUser.password);
-        if (isValid) {
-          user = astrologerUser;
-          role = 'astrologer';
-        }
-      }
-    }
-
-    if (!user) {
+    const user = await this.findUserByEmail(email);
+    if (!user || !user.isActive || user.deletedAt || !user.password) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    const isValid = await this.verifyPassword(password, user.password);
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const token = this.generateToken(user.id, user.role);
     const { password: _, ...safeUser } = user;
-    const token = this.generateToken(user.id, role);
-    return { token, user: { ...safeUser, role } };
+    return { token, user: safeUser };
   }
 
   async registerWithEmail(data: {
@@ -124,30 +188,99 @@ export class AuthService {
     email: string;
     password: string;
     phone?: string;
+    role?: 'user' | 'astrologer' | 'admin';
   }): Promise<{ token: string; user: any }> {
-    const existing = await this.usersService.findByEmail(data.email);
-    if (existing) {
-      throw new BadRequestException('Email already registered');
-    }
+    const existing = await this.findUserByEmail(data.email);
+    if (existing) throw new BadRequestException('Email already registered');
 
     if (data.phone) {
-      const existingPhone = await this.usersService.findByPhone(data.phone);
-      if (existingPhone) {
-        throw new BadRequestException('Phone number already registered');
-      }
+      const existingPhone = await this.findUserByPhone(data.phone);
+      if (existingPhone) throw new BadRequestException('Phone number already registered');
     }
 
     const hashedPassword = await this.hashPassword(data.password);
-    const user = await this.usersService.create({
-      ...data,
+    const [user] = await this.db.insert(schema.users).values({
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
       password: hashedPassword,
-    });
+      role: data.role || 'user',
+    }).returning();
 
-    await this.emailService.sendWelcomeEmail(data.email, data.name);
+    await this.db.insert(schema.wallets).values({ userId: user.id }).onConflictDoNothing();
+
+    try {
+      await this.emailService.sendWelcomeEmail(data.email, data.name);
+    } catch {}
 
     const { password: _, ...safeUser } = user;
-    const token = this.generateToken(user.id, 'user');
+    const token = this.generateToken(user.id, user.role);
     return { token, user: safeUser };
+  }
+
+  async registerAstrologer(data: {
+    name: string;
+    email: string;
+    password: string;
+    phone?: string;
+    specialization?: string[];
+    experience?: number;
+  }): Promise<{ token: string; user: any; astrologer: any }> {
+    const existing = await this.findUserByEmail(data.email);
+    if (existing) throw new BadRequestException('Email already registered');
+
+    const hashedPassword = await this.hashPassword(data.password);
+    const [user] = await this.db.insert(schema.users).values({
+      name: data.name,
+      email: data.email,
+      phone: data.phone,
+      password: hashedPassword,
+      role: 'astrologer',
+    }).returning();
+
+    const [astrologer] = await this.db.insert(schema.astrologers).values({
+      userId: user.id,
+      specialization: data.specialization || [],
+      experience: data.experience || 0,
+    }).returning();
+
+    await this.db.insert(schema.wallets).values({ userId: user.id, astrologerId: user.id }).onConflictDoNothing();
+
+    try {
+      await this.emailService.sendWelcomeEmail(data.email, data.name);
+    } catch {}
+
+    const { password: _, ...safeUser } = user;
+    const token = this.generateToken(user.id, 'astrologer');
+    return { token, user: safeUser, astrologer: { name: user.name, email: user.email, phone: user.phone, ...astrologer } };
+  }
+
+  async registerAdmin(data: {
+    name: string;
+    email: string;
+    password: string;
+  }): Promise<{ token: string; user: any; admin: any }> {
+    const existing = await this.findUserByEmail(data.email);
+    if (existing) throw new BadRequestException('Email already registered');
+
+    const hashedPassword = await this.hashPassword(data.password);
+    const [user] = await this.db.insert(schema.users).values({
+      name: data.name,
+      email: data.email,
+      password: hashedPassword,
+      role: 'admin',
+    }).returning();
+
+    const [admin] = await this.db.insert(schema.admins).values({
+      userId: user.id,
+      role: 'admin',
+    }).returning();
+
+    await this.db.insert(schema.wallets).values({ userId: user.id, adminId: user.id }).onConflictDoNothing();
+
+    const { password: _, ...safeUser } = user;
+    const token = this.generateToken(user.id, 'admin');
+    return { token, user: safeUser, admin };
   }
 
   async validateToken(token: string): Promise<{ userId: string; role: string }> {
@@ -159,10 +292,21 @@ export class AuthService {
     }
   }
 
+  async checkPassword(userId: string, password: string): Promise<boolean> {
+    const user = await this.db.query.users.findFirst({ where: eq(schema.users.id, userId) });
+    if (!user || !user.password) return false;
+    return this.verifyPassword(password, user.password);
+  }
+
+  async updatePasswordInDb(userId: string, newPassword: string, _role?: string): Promise<void> {
+    const hashed = await this.hashPassword(newPassword);
+    await this.db.update(schema.users)
+      .set({ password: hashed, updatedAt: new Date() })
+      .where(eq(schema.users.id, userId));
+  }
+
   private generateToken(userId: string, role: string): string {
-    return jwt.sign({ sub: userId, role }, this.jwtSecret, {
-      expiresIn: 604800,
-    });
+    return jwt.sign({ sub: userId, role }, this.jwtSecret, { expiresIn: 604800 });
   }
 
   private async hashPassword(password: string): Promise<string> {

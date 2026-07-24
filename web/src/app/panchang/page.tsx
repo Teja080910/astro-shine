@@ -54,6 +54,7 @@ export default function PanchangPage() {
   };
 
   const handleSave = async () => {
+    if (!date) { alert('Date is required'); return; }
     const payload = {
       date,
       tithi: tithi || null,

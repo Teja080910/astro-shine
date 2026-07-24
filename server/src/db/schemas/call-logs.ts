@@ -5,7 +5,7 @@ import { callType, callStatus } from '../enums';
 
 export const callLogs = pgTable('call_logs', {
   id: uuid('id').defaultRandom().primaryKey(),
-  astrologerId: uuid('astrologer_id').notNull().references(() => astrologers.id, { onDelete: 'cascade' }),
+  astrologerId: uuid('astrologer_id').notNull().references(() => astrologers.userId, { onDelete: 'cascade' }),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   type: callType('type').notNull(),
   status: callStatus('status').notNull().default('initiated'),

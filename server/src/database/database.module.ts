@@ -1,6 +1,7 @@
 import { Module, Global } from '@nestjs/common';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
+import { ConfigService } from '@nestjs/config';
 import * as schema from '../db/schemas';
 
 @Global()
@@ -8,11 +9,14 @@ import * as schema from '../db/schemas';
   providers: [
     {
       provide: 'DATABASE_POOL',
-      useFactory: () => {
-        return new Pool({
-          connectionString: process.env.DATABASE_URL,
-        });
+      useFactory: (configService: ConfigService) => {
+        const databaseUrl = configService.get<string>('DATABASE_URL');
+        if (!databaseUrl) {
+          throw new Error('DATABASE_URL environment variable is required');
+        }
+        return new Pool({ connectionString: databaseUrl });
       },
+      inject: [ConfigService],
     },
     {
       provide: 'DRIZZLE_DB',

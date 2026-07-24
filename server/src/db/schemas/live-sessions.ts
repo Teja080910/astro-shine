@@ -3,7 +3,7 @@ import { astrologers } from './astrologers';
 
 export const liveSessions = pgTable('live_sessions', {
   id: uuid('id').defaultRandom().primaryKey(),
-  astrologerId: uuid('astrologer_id').notNull().references(() => astrologers.id, { onDelete: 'cascade' }),
+  astrologerId: uuid('astrologer_id').notNull().references(() => astrologers.userId, { onDelete: 'cascade' }),
   title: varchar('title', { length: 255 }),
   thumbnail: text('thumbnail'),
   status: varchar('status', { length: 50 }).notNull().default('scheduled'),

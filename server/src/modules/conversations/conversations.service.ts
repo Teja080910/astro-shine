@@ -1,6 +1,6 @@
 import { Injectable, Inject, NotFoundException, ConflictException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { and, eq, or, desc, sql, lt } from 'drizzle-orm';
+import { and, eq, or, desc, sql, lt, inArray } from 'drizzle-orm';
 import * as schema from '../../db/schemas';
 
 @Injectable()
@@ -147,6 +147,26 @@ export class ConversationsService {
         ),
       );
     return Number(result[0]?.count ?? 0);
+  }
+
+  async getUnreadCounts(conversationIds: string[], userId: string): Promise<Record<string, number>> {
+    if (conversationIds.length === 0) return {};
+    const result = await this.db.select({
+      conversationId: schema.conversationMessages.conversationId,
+      count: sql<number>`count(*)`,
+    })
+      .from(schema.conversationMessages)
+      .where(
+        and(
+          inArray(schema.conversationMessages.conversationId, conversationIds),
+          eq(schema.conversationMessages.isRead, false),
+          sql`${schema.conversationMessages.senderId} != ${userId}`,
+        ),
+      )
+      .groupBy(schema.conversationMessages.conversationId);
+    const map: Record<string, number> = {};
+    for (const row of result) map[row.conversationId] = Number(row.count);
+    return map;
   }
 
   async deleteConversation(id: string) {

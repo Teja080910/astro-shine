@@ -8,6 +8,7 @@ import {
   ConnectedSocket,
   MessageBody,
 } from '@nestjs/websockets';
+import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { AuthService } from '../auth/auth.service';
 import { ConversationsService } from './conversations.service';
@@ -21,13 +22,18 @@ import { WalletService } from '../wallet/wallet.service';
 import { CommissionService } from '../commission/commission.service';
 
 @WebSocketGateway({
-  cors: { origin: '*', credentials: true },
+  cors: {
+    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : true,
+    credentials: true,
+  },
   path: '/ws',
 })
 export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
 
+  private readonly logger = new Logger(ChatGateway.name);
   private onlineUsers = new Map<string, { userId: string; role: string; socketId: string }>();
+  private lastChatCharge = new Map<string, number>();
 
   constructor(
     private readonly authService: AuthService,
@@ -46,12 +52,11 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   }
 
   async handleConnection(client: Socket) {
-    const token = client.handshake.query.token as string;
-    console.log(`[WS] Connection attempt - socketId: ${client.id}, hasToken: ${!!token}`);
+    const token = (client.handshake.auth?.token as string) || (client.handshake.query.token as string);
+    this.logger.debug(`[WS] Connection attempt - socketId: ${client.id}, hasToken: ${!!token}`);
     if (!token) {
-      client.data.userId = 'anonymous';
-      client.data.role = 'guest';
-      console.log(`[WS] Guest connection accepted - socketId: ${client.id}`);
+      client.emit('error', { message: 'Authentication required' });
+      client.disconnect();
       return;
     }
 
@@ -60,7 +65,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       client.data.userId = payload.userId;
       client.data.role = payload.role || 'user';
 
-      console.log(`[WS] Authenticated - userId: ${payload.userId}, socketId: ${client.id}`);
+      this.logger.debug(`[WS] Authenticated - userId: ${payload.userId}, socketId: ${client.id}`);
 
       this.onlineUsers.set(payload.userId, {
         userId: payload.userId,
@@ -68,7 +73,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         socketId: client.id,
       });
 
-      console.log(`[WS] Online users map:`, Object.fromEntries(this.onlineUsers));
+      this.logger.debug(`[WS] Online users map:`, Object.fromEntries(this.onlineUsers));
 
       client.broadcast.emit('user:online', { userId: payload.userId, role: payload.role || 'user' });
 
@@ -76,15 +81,15 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         try {
           await this.astrologersService.updateOnlineStatus(payload.userId, 'online');
         } catch (e: any) {
-          console.error('[WS] Failed to update astrologer online status on connect:', e.message);
+          this.logger.error('[WS] Failed to update astrologer online status on connect:', e.message);
         }
       }
 
       const convs = await this.conversationsService.findByUser(payload.userId);
-      console.log(`[WS] Auto-joining ${convs.length} rooms for userId: ${payload.userId}`);
+      this.logger.debug(`[WS] Auto-joining ${convs.length} rooms for userId: ${payload.userId}`);
       convs.forEach((c) => {
         client.join(`conversation:${c.id}`);
-        console.log(`[WS] Joined room: conversation:${c.id}`);
+        this.logger.debug(`[WS] Joined room: conversation:${c.id}`);
       });
 
       const onlineParticipantIds = new Set<string>();
@@ -98,7 +103,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         const u = this.onlineUsers.get(id);
         if (u) {
           client.emit('user:online', { userId: id, role: u.role });
-          console.log(`[WS] Sent online status to ${client.id} for userId: ${id}`);
+          this.logger.debug(`[WS] Sent online status to ${client.id} for userId: ${id}`);
         }
       });
     } catch {
@@ -110,17 +115,17 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   async handleDisconnect(client: Socket) {
     const userId = client.data.userId;
     const role = client.data.role;
-    console.log(`[WS] Disconnect - socketId: ${client.id}, userId: ${userId}, role: ${role}`);
+    this.logger.debug(`[WS] Disconnect - socketId: ${client.id}, userId: ${userId}, role: ${role}`);
     if (userId) {
       this.onlineUsers.delete(userId);
-      console.log(`[WS] Online users map after disconnect:`, Object.fromEntries(this.onlineUsers));
+      this.logger.debug(`[WS] Online users map after disconnect:`, Object.fromEntries(this.onlineUsers));
       client.broadcast.emit('user:offline', { userId, role });
 
       if (role === 'astrologer') {
         try {
           await this.astrologersService.updateOnlineStatus(userId, 'offline');
         } catch (e: any) {
-          console.error('[WS] Failed to update astrologer offline status on disconnect:', e.message);
+          this.logger.error('[WS] Failed to update astrologer offline status on disconnect:', e.message);
         }
       }
     }
@@ -131,10 +136,10 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { conversationId: string },
   ) {
-    console.log(`[WS] join:conversation - socketId: ${client.id}, userId: ${client.data.userId}, conversationId: ${data.conversationId}`);
+    this.logger.debug(`[WS] join:conversation - socketId: ${client.id}, userId: ${client.data.userId}, conversationId: ${data.conversationId}`);
     client.join(`conversation:${data.conversationId}`);
     const room = this.server.sockets.adapter.rooms.get(`conversation:${data.conversationId}`);
-    console.log(`[WS] Room members after join:`, room ? [...room] : 'room not found');
+    this.logger.debug(`[WS] Room members after join:`, room ? [...room] : 'room not found');
   }
 
   @SubscribeMessage('leave:conversation')
@@ -142,7 +147,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { conversationId: string },
   ) {
-    console.log(`[WS] leave:conversation - socketId: ${client.id}, conversationId: ${data.conversationId}`);
+    this.logger.debug(`[WS] leave:conversation - socketId: ${client.id}, conversationId: ${data.conversationId}`);
     client.leave(`conversation:${data.conversationId}`);
   }
 
@@ -152,17 +157,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     @MessageBody() data: { conversationId: string; content: string; type?: string },
   ) {
     const { userId, role } = client.data;
-    console.log(`[WS] message:send RECEIVED - userId: ${userId}, socketId: ${client.id}, conversationId: ${data.conversationId}, content: "${data.content}"`);
-
-    const CHARGE_PER_MESSAGE = 5;
-
-    if (role === 'user') {
-      const canSend = await this.walletService.checkSufficientBalance(userId, CHARGE_PER_MESSAGE);
-      if (!canSend) {
-        client.emit('error', { message: 'Insufficient wallet balance to send message. Please recharge.' });
-        return;
-      }
-    }
+    this.logger.debug(`[WS] message:send RECEIVED - userId: ${userId}, socketId: ${client.id}, conversationId: ${data.conversationId}, content: "${data.content}"`);
 
     const message = await this.conversationsService.createMessage(
       data.conversationId,
@@ -171,47 +166,65 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       data.content,
       data.type || 'text',
     );
-    console.log(`[WS] Message persisted - messageId: ${message.id}`);
+    this.logger.debug(`[WS] Message persisted - messageId: ${message.id}`);
 
     if (role === 'user') {
       try {
-        await this.walletService.deductFundsAtomic({
-          userId,
-          amount: CHARGE_PER_MESSAGE,
-          description: 'Chat message',
-          category: 'chat_charge',
-          referenceId: message.id,
-        });
+        const conversation = await this.conversationsService.findById(data.conversationId);
+        const astrologerId = conversation.participantOneRole === 'astrologer'
+          ? conversation.participantOneId
+          : conversation.participantTwoId;
+        const astrologer = await this.astrologersService.findById(astrologerId);
+        const chatPrice = parseFloat(astrologer?.chatPricePerMin || '5');
 
-        // Distribute chat earnings to astrologer
-        try {
-          const conversation = await this.conversationsService.findById(data.conversationId);
-          const astrologerId = conversation.participantOneRole === 'astrologer'
-            ? conversation.participantOneId
-            : conversation.participantTwoId;
+        // Per-minute charging: charge chatPrice every 60 seconds
+        const now = Date.now();
+        const lastCharge = this.lastChatCharge.get(data.conversationId) || 0;
+
+        if (lastCharge === 0) {
+          // First message: start the timer without charging
+          this.lastChatCharge.set(data.conversationId, now);
+        } else if (now - lastCharge >= 60000) {
+          // Check balance first
+          const hasBalance = await this.walletService.checkSufficientBalance(userId, chatPrice);
+          if (!hasBalance) {
+            client.emit('chat:blocked', {
+              message: 'Insufficient wallet balance. Please recharge to continue chatting.',
+            });
+            return;
+          }
+
+          this.lastChatCharge.set(data.conversationId, now);
+
+          await this.walletService.deductFundsAtomic({
+            userId,
+            amount: chatPrice,
+            description: 'Chat per minute',
+            category: 'chat_charge',
+            referenceId: message.id,
+          });
+
           await this.commissionService.distributeChatEarnings(
             astrologerId,
             data.conversationId,
             message.id,
-            CHARGE_PER_MESSAGE,
+            chatPrice,
           );
-        } catch (distErr: any) {
-          console.error(`[WS] Failed to distribute chat earnings: ${distErr.message}`);
         }
       } catch (e: any) {
-        console.error(`[WS] Failed to deduct chat charge: ${e.message}`);
+        this.logger.error(`[WS] Failed to deduct chat charge: ${e.message}`);
       }
     }
 
     const room = `conversation:${data.conversationId}`;
     const roomSockets = this.server.sockets.adapter.rooms.get(room);
-    console.log(`[WS] Room "${room}" members before broadcast:`, roomSockets ? [...roomSockets] : 'room not found');
+    this.logger.debug(`[WS] Room "${room}" members before broadcast:`, roomSockets ? [...roomSockets] : 'room not found');
 
     client.emit('message:new', message);
-    console.log(`[WS] Emitted message:new to sender socket: ${client.id}`);
+    this.logger.debug(`[WS] Emitted message:new to sender socket: ${client.id}`);
 
     client.to(room).emit('message:new', message);
-    console.log(`[WS] Emitted message:new to room "${room}" (excluding sender)`);
+    this.logger.debug(`[WS] Emitted message:new to room "${room}" (excluding sender)`);
 
     client.to(room).emit('conversation:updated', {
       conversationId: data.conversationId,
@@ -220,11 +233,11 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     });
 
     const otherSocket = this.findOtherSocket(data.conversationId, userId);
-    console.log(`[WS] findOtherSocket result:`, otherSocket ? `found socketId: ${otherSocket.id}` : 'null');
+    this.logger.debug(`[WS] findOtherSocket result:`, otherSocket ? `found socketId: ${otherSocket.id}` : 'null');
 
     if (otherSocket) {
       await this.conversationsService.markAsDelivered(data.conversationId, userId);
-      console.log(`[WS] Marked messages as delivered for conversation: ${data.conversationId}`);
+      this.logger.debug(`[WS] Marked messages as delivered for conversation: ${data.conversationId}`);
       client.emit('message:delivered', {
         messageId: message.id,
         conversationId: data.conversationId,
@@ -233,18 +246,18 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         messageId: message.id,
         conversationId: data.conversationId,
       });
-      console.log(`[WS] Emitted message:delivered to room`);
+      this.logger.debug(`[WS] Emitted message:delivered to room`);
     } else {
       const otherUserId = await this.conversationsService.getOtherParticipant(data.conversationId, userId);
-      console.log(`[WS] No other socket in room. Other userId: ${otherUserId}`);
+      this.logger.debug(`[WS] No other socket in room. Other userId: ${otherUserId}`);
       if (otherUserId) {
         const otherClient = this.findSocketByUserId(otherUserId);
-        console.log(`[WS] findSocketByUserId(${otherUserId}):`, otherClient ? `found socketId: ${otherClient.id}` : 'null');
+        this.logger.debug(`[WS] findSocketByUserId(${otherUserId}):`, otherClient ? `found socketId: ${otherClient.id}` : 'null');
         if (otherClient) {
           otherClient.emit('message:new', message);
           otherClient.emit('conversation:new', { conversationId: data.conversationId });
           otherClient.join(room);
-          console.log(`[WS] Emitted message:new directly to otherClient: ${otherClient.id} and joined room`);
+          this.logger.debug(`[WS] Emitted message:new directly to otherClient: ${otherClient.id} and joined room`);
         }
       }
     }
@@ -256,7 +269,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     @MessageBody() data: { conversationId: string },
   ) {
     const { userId } = client.data;
-    console.log(`[WS] message:read - userId: ${userId}, conversationId: ${data.conversationId}`);
+    this.logger.debug(`[WS] message:read - userId: ${userId}, conversationId: ${data.conversationId}`);
     await this.conversationsService.markAsRead(data.conversationId, userId);
     this.server.to(`conversation:${data.conversationId}`).emit('message:read', {
       conversationId: data.conversationId,
@@ -302,6 +315,11 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     if (appId && appCert) {
       token = RtcTokenBuilder.buildTokenWithUid(appId, appCert, channelName, uid, RtcRole.PUBLISHER, Math.floor(Date.now() / 1000) + 3600);
     }
+    const astro = await this.astrologersService.findById(data.astrologerId);
+    const ratePerMin = data.type === 'video'
+      ? (astro?.videoCallPricePerMin || astro?.pricePerMin || '0')
+      : (astro?.audioCallPricePerMin || astro?.pricePerMin || '0');
+
     const callLog = await this.callsService.create({
       astrologerId: data.astrologerId,
       userId,
@@ -309,7 +327,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       status: 'initiated',
       agoraChannel: channelName,
       agoraToken: token,
-      ratePerMin: '0',
+      ratePerMin,
     });
     const caller = await this.usersService.findById(userId);
     const callerName = caller?.name || 'User';

@@ -9,6 +9,13 @@ export class WalletService {
     @Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>,
   ) {}
 
+  async findAll() {
+    return this.db
+      .select()
+      .from(schema.wallets)
+      .orderBy(sql`${schema.wallets.createdAt} DESC`);
+  }
+
   async getWalletByUserId(userId: string) {
     const [wallet] = await this.db
       .select()
@@ -27,6 +34,33 @@ export class WalletService {
     return wallet;
   }
 
+  async getWalletByAdminId(adminId: string) {
+    const [wallet] = await this.db
+      .select()
+      .from(schema.wallets)
+      .where(eq(schema.wallets.adminId, adminId))
+      .limit(1);
+    return wallet;
+  }
+
+  async getOrCreateAdminWallet(): Promise<{ id: string; balance: string }> {
+    const [admin] = await this.db
+      .select({ id: schema.admins.userId })
+      .from(schema.admins)
+      .leftJoin(schema.users, eq(schema.admins.userId, schema.users.id))
+      .where(eq(schema.users.isActive, true))
+      .limit(1);
+    if (!admin) throw new NotFoundException('No active admin found');
+    let wallet = await this.getWalletByAdminId(admin.id);
+    if (!wallet) {
+      const [created] = await this.db.insert(schema.wallets).values({
+        adminId: admin.id,
+      }).returning();
+      wallet = created;
+    }
+    return wallet;
+  }
+
   async createWallet(data: { userId?: string; astrologerId?: string }) {
     const [wallet] = await this.db
       .insert(schema.wallets)
@@ -42,11 +76,14 @@ export class WalletService {
   }
 
   async addFunds(walletId: string, amount: string) {
+    const parsed = parseFloat(amount);
+    if (isNaN(parsed) || parsed <= 0) throw new BadRequestException('Invalid amount');
+    const amountStr = parsed.toFixed(2);
     const [wallet] = await this.db
       .update(schema.wallets)
       .set({
-        balance: sql`${schema.wallets.balance} + ${amount}::decimal`,
-        totalAdded: sql`${schema.wallets.totalAdded} + ${amount}::decimal`,
+        balance: sql`${schema.wallets.balance} + ${amountStr}::decimal`,
+        totalAdded: sql`${schema.wallets.totalAdded} + ${amountStr}::decimal`,
         updatedAt: new Date(),
       })
       .where(eq(schema.wallets.id, walletId))
@@ -55,16 +92,59 @@ export class WalletService {
   }
 
   async deductFunds(walletId: string, amount: string) {
-    const [wallet] = await this.db
+    const parsed = parseFloat(amount);
+    if (isNaN(parsed) || parsed <= 0) throw new BadRequestException('Invalid amount');
+
+    const wallet = await this.getWalletById(walletId);
+    if (!wallet) throw new NotFoundException('Wallet not found');
+    if (Number(wallet.balance) < parsed) throw new BadRequestException('Insufficient balance');
+
+    const amountStr = parsed.toFixed(2);
+    const [updated] = await this.db
       .update(schema.wallets)
       .set({
-        balance: sql`${schema.wallets.balance} - ${amount}::decimal`,
-        totalDeducted: sql`${schema.wallets.totalDeducted} + ${amount}::decimal`,
+        balance: sql`${schema.wallets.balance} - ${amountStr}::decimal`,
+        totalDeducted: sql`${schema.wallets.totalDeducted} + ${amountStr}::decimal`,
         updatedAt: new Date(),
       })
       .where(eq(schema.wallets.id, walletId))
       .returning();
+    return updated;
+  }
+
+  async getWalletById(walletId: string) {
+    const [wallet] = await this.db
+      .select()
+      .from(schema.wallets)
+      .where(eq(schema.wallets.id, walletId))
+      .limit(1);
     return wallet;
+  }
+
+  async creditPlatformFee(amount: number, description: string, referenceId?: string): Promise<void> {
+    const adminWallet = await this.getOrCreateAdminWallet();
+    const amountStr = amount.toFixed(2);
+    await this.db.transaction(async (tx) => {
+      await tx
+        .update(schema.wallets)
+        .set({
+          balance: sql`${schema.wallets.balance} + ${amountStr}::decimal`,
+          totalAdded: sql`${schema.wallets.totalAdded} + ${amountStr}::decimal`,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.wallets.id, adminWallet.id));
+      await tx.insert(schema.transactions).values({
+        walletId: adminWallet.id,
+        type: 'credit',
+        category: 'commission',
+        amount: amountStr,
+        fee: '0',
+        netAmount: amountStr,
+        status: 'success',
+        description,
+        referenceId: referenceId || null,
+      });
+    });
   }
 
   async checkSufficientBalance(userId: string, amount: number): Promise<boolean> {

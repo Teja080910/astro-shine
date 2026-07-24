@@ -1,31 +1,44 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
 import { api } from '@/lib/api';
-import type { WithdrawalRequest } from '@astro-shine/shared-types';
+import { useSocket } from '@/hooks/useSocket';
+import { useAuthStore } from '@/store/auth';
 
-export default function WithdrawalsPage() {
-  const [data, setData] = useState<WithdrawalRequest[]>([]);
-  const [selected, setSelected] = useState<WithdrawalRequest | null>(null);
+function WithdrawalsContent() {
+  const { admin } = useAuthStore();
+  const [data, setData] = useState<any[]>([]);
+  const [selected, setSelected] = useState<any | null>(null);
 
-  useEffect(() => { api.get<WithdrawalRequest[]>('/withdrawals').then(setData); }, []);
+  const refresh = useCallback(() => {
+    api.get<any[]>('/withdrawals').then(setData);
+  }, []);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  useSocket({
+    'withdrawal:new': useCallback(() => { refresh(); }, [refresh]),
+    'withdrawal:updated': useCallback(() => { refresh(); }, [refresh]),
+  });
 
   const handleAction = async (id: string, action: 'approve' | 'reject') => {
-    await api.put<any>(`/withdrawals/${id}/${action === 'approve' ? 'approve' : 'reject'}`, { adminId: 'system' });
-    setData(data.map(w => w.id === id ? { ...w, status: action === 'approve' ? 'approved' : 'rejected' } : w));
+    const adminId = admin?.id || 'system';
+    await api.put<any>(`/withdrawals/${id}/${action === 'approve' ? 'approve' : 'reject'}`, { adminId });
+    refresh();
     setSelected(null);
   };
 
   return (
-    <AdminLayout>
+    <>
       <h1 className="text-3xl font-extrabold text-text-primary mb-6">Withdrawals</h1>
-      <Table headers={['Astrologer', 'Amount', 'Status', 'Date', '']} emptyMessage="No withdrawals found">
-        {data.map(w => (
+      <Table headers={['Requester', 'Type', 'Amount', 'Status', 'Date', '']} emptyMessage="No withdrawals found">
+        {data.map((w: any) => (
           <tr key={w.id} className="border-b border-divider hover:bg-surface-light/50">
-            <td className="px-4 py-3 text-text-primary">{(w as any).astrologerName || w.astrologerId?.slice(0, 8) + '...'}</td>
+            <td className="px-4 py-3 text-text-primary">{w.astrologerName || w.adminName || w.astrologerId?.slice(0, 8) || 'Admin'}</td>
+            <td className="px-4 py-3 text-text-secondary">{w.adminId ? 'Admin' : 'Astrologer'}</td>
             <td className="px-4 py-3 text-text-primary">₹{w.amount}</td>
             <td className="px-4 py-3">
               {w.status === 'approved' && <Badge variant="success">Approved</Badge>}
@@ -34,7 +47,9 @@ export default function WithdrawalsPage() {
             </td>
             <td className="px-4 py-3 text-text-muted text-sm">{formatDate(w.createdAt)}</td>
             <td className="px-4 py-3">
-              {w.status === 'pending' && <button onClick={() => setSelected(w)} className="text-primary-light hover:underline text-sm">Review</button>}
+              {w.status === 'pending' && (
+                <button onClick={() => setSelected(w)} className="text-primary-light hover:underline text-sm">Review</button>
+              )}
             </td>
           </tr>
         ))}
@@ -43,6 +58,7 @@ export default function WithdrawalsPage() {
       <CustomModal open={!!selected} onClose={() => setSelected(null)} title="Process Withdrawal">
         {selected && (
           <div className="space-y-3 text-text-secondary">
+            <p><span className="font-medium text-text-primary">Astrologer:</span> {selected.astrologerName}</p>
             <p><span className="font-medium text-text-primary">Amount:</span> ₹{selected.amount}</p>
             <div className="flex gap-3 mt-4">
               <GradientButton onClick={() => handleAction(selected.id, 'approve')}>Approve</GradientButton>
@@ -51,6 +67,14 @@ export default function WithdrawalsPage() {
           </div>
         )}
       </CustomModal>
+    </>
+  );
+}
+
+export default function WithdrawalsPage() {
+  return (
+    <AdminLayout>
+      <WithdrawalsContent />
     </AdminLayout>
   );
 }

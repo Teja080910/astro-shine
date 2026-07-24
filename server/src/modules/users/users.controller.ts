@@ -1,5 +1,6 @@
-import { Controller, Get, Param, Body, Post, Put, Delete, HttpCode, HttpStatus, UseGuards, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Param, Body, Post, Put, Delete, HttpCode, HttpStatus, UseGuards, BadRequestException, UnauthorizedException, ForbiddenException, Req } from '@nestjs/common';
 import { UsersService } from './users.service';
+import { AuthService } from '../auth/auth.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
@@ -11,7 +12,10 @@ function stripPassword(user: any) {
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly authService: AuthService,
+  ) {}
 
   @Get('profile')
   @UseGuards(AuthGuard)
@@ -36,16 +40,20 @@ export class UsersController {
   async changePassword(
     @CurrentUser() userId: string,
     @Body() body: { currentPassword?: string; newPassword?: string },
+    @Req() req: any,
   ) {
     const { currentPassword, newPassword } = body;
     if (!currentPassword || !newPassword) {
       throw new BadRequestException('currentPassword and newPassword are required');
     }
-    const isCorrect = await this.usersService.verifyPassword(userId, currentPassword);
+    if (newPassword.length < 6) {
+      throw new BadRequestException('New password must be at least 6 characters');
+    }
+    const isCorrect = await this.authService.checkPassword(userId, currentPassword);
     if (!isCorrect) {
       throw new UnauthorizedException('Incorrect current password');
     }
-    await this.usersService.updatePassword(userId, newPassword);
+    await this.authService.updatePasswordInDb(userId, newPassword, req.userRole);
     return { success: true, message: 'Password changed successfully' };
   }
 
@@ -57,32 +65,42 @@ export class UsersController {
   }
 
   @Get()
-  async findAll() {
+  @UseGuards(AuthGuard)
+  async findAll(@Req() req: any) {
+    if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can view all users');
     const users = await this.usersService.findAll();
     return users.map(stripPassword);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  @UseGuards(AuthGuard)
+  async findOne(@Param('id') id: string, @Req() req: any) {
+    if (req.userRole !== 'admin' && req.userId !== id) throw new ForbiddenException('Cannot view another user profile');
     const user = await this.usersService.findById(id);
     return stripPassword(user);
   }
 
   @Post()
-  async create(@Body() body: any) {
+  @UseGuards(AuthGuard)
+  async create(@Body() body: any, @Req() req: any) {
+    if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can create users');
     const user = await this.usersService.create(body);
     return stripPassword(user);
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() body: any) {
+  @UseGuards(AuthGuard)
+  async update(@Param('id') id: string, @Body() body: any, @Req() req: any) {
+    if (req.userRole !== 'admin' && req.userId !== id) throw new ForbiddenException('Cannot update another user profile');
     const user = await this.usersService.update(id, body);
     return stripPassword(user);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async remove(@Param('id') id: string) {
+  @UseGuards(AuthGuard)
+  async remove(@Param('id') id: string, @Req() req: any) {
+    if (req.userRole !== 'admin' && req.userId !== id) throw new ForbiddenException('Cannot delete another user');
     await this.usersService.softDelete(id);
   }
 }

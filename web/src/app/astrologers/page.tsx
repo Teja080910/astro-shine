@@ -11,28 +11,47 @@ export default function AstrologersPage() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Astrologer | null>(null);
   const [verify, setVerify] = useState<Astrologer | null>(null);
-  const [priceInput, setPriceInput] = useState('');
+  const [chatPrice, setChatPrice] = useState('');
+  const [audioPrice, setAudioPrice] = useState('');
+  const [videoPrice, setVideoPrice] = useState('');
   const [rejectionNote, setRejectionNote] = useState('');
 
   useEffect(() => { api.get<Astrologer[]>('/astrologers').then(setData).finally(() => setLoading(false)); }, []);
 
   const handleVerify = async (id: string, status: 'approved' | 'rejected') => {
     await api.post<any>(`/astrologers/${id}/verify`, { status, note: rejectionNote });
-    setData(data.map(a => a.id === id ? { ...a, verificationStatus: status, verificationNote: rejectionNote } : a));
+    setData(data.map(a => a.userId === id ? { ...a, verificationStatus: status, verificationNote: rejectionNote } : a));
     setVerify(null);
     setRejectionNote('');
   };
 
   const handleToggleActive = async (astrologer: Astrologer) => {
-    const updated = await api.put<Astrologer>(`/astrologers/${astrologer.id}`, { isActive: !astrologer.isActive });
-    setData(data.map(a => a.id === astrologer.id ? updated : a));
-    if (selected?.id === astrologer.id) setSelected(updated);
+    const updated = await api.put<Astrologer>(`/astrologers/${astrologer.userId}`, { isActive: !(astrologer as any).isActive });
+    setData(data.map(a => a.userId === astrologer.userId ? updated : a));
+    if (selected?.userId === astrologer.userId) setSelected(updated);
   };
 
-  const handleSavePrice = async (id: string) => {
-    const updated = await api.put<Astrologer>(`/astrologers/${id}`, { pricePerMin: priceInput });
-    setData(data.map(a => a.id === id ? updated : a));
-    if (selected?.id === id) setSelected(updated);
+  const handleSavePrices = async (id: string) => {
+    const comm = await api.get<any>(`/commissions/by-astrologer/${id}`).catch(() => null);
+    if (comm === null) {
+      alert('Failed to fetch commission rules. Please try again.'); return;
+    }
+    const minCap = comm?.minCap ? parseFloat(comm.minCap) : 0;
+    const maxCap = comm?.maxCap ? parseFloat(comm.maxCap) : 0;
+    const vals = [chatPrice, audioPrice, videoPrice].map(v => parseFloat(v) || 0);
+    if (minCap > 0 && vals.some(v => v < minCap)) {
+      alert(`Prices cannot be below minCap of ₹${minCap}`); return;
+    }
+    if (maxCap > 0 && vals.some(v => v > maxCap)) {
+      alert(`Prices cannot exceed maxCap of ₹${maxCap}`); return;
+    }
+    const updated = await api.put<Astrologer>(`/astrologers/${id}`, {
+      chatPricePerMin: chatPrice,
+      audioCallPricePerMin: audioPrice,
+      videoCallPricePerMin: videoPrice,
+    });
+    setData(data.map(a => a.userId === id ? updated : a));
+    if (selected?.userId === id) setSelected(updated);
   };
 
   return (
@@ -41,14 +60,15 @@ export default function AstrologersPage() {
         <h1 className="text-3xl font-extrabold text-text-primary">Astrologers</h1>
         <span className="text-text-secondary">{data.length} total</span>
       </div>
-      <Table headers={['Name', 'Email', 'Specialization', 'Price/min', 'Rating', 'Status', '']} emptyMessage="No astrologers found">
+      <Table headers={['Name', 'Email', 'Specialization', 'Chat/min', 'Audio/min', 'Video/min', 'Status', '']} emptyMessage="No astrologers found">
         {data.map(a => (
-          <tr key={a.id} className="border-b border-divider hover:bg-surface-light/50">
+          <tr key={a.userId || a.id} className="border-b border-divider hover:bg-surface-light/50">
             <td className="px-4 py-3 text-text-primary font-medium">{a.name}</td>
             <td className="px-4 py-3 text-text-secondary">{a.email}</td>
             <td className="px-4 py-3 text-text-secondary">{a.specialization?.slice(0, 2).join(', ') || '-'}</td>
-            <td className="px-4 py-3 text-text-secondary">₹{a.pricePerMin}</td>
-            <td className="px-4 py-3 text-text-secondary">{parseFloat(a.rating).toFixed(1)}</td>
+            <td className="px-4 py-3 text-text-secondary">₹{(a as any).chatPricePerMin || a.pricePerMin}</td>
+            <td className="px-4 py-3 text-text-secondary">₹{(a as any).audioCallPricePerMin || a.pricePerMin}</td>
+            <td className="px-4 py-3 text-text-secondary">₹{(a as any).videoCallPricePerMin || a.pricePerMin}</td>
             <td className="px-4 py-3">
               {a.verificationStatus === 'approved' && <Badge variant="success">Verified</Badge>}
               {a.verificationStatus === 'pending' && <Badge variant="warning">Pending</Badge>}
@@ -58,7 +78,9 @@ export default function AstrologersPage() {
               <button
                 onClick={() => {
                   setSelected(a);
-                  setPriceInput(a.pricePerMin);
+                  setChatPrice((a as any).chatPricePerMin || a.pricePerMin);
+                  setAudioPrice((a as any).audioCallPricePerMin || a.pricePerMin);
+                  setVideoPrice((a as any).videoCallPricePerMin || a.pricePerMin);
                 }}
                 className="text-primary-light hover:underline text-sm font-medium"
               >
@@ -79,7 +101,7 @@ export default function AstrologersPage() {
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="text-lg font-bold text-text-primary">{selected.name}</h3>
-                <p className="text-xs text-text-muted">{selected.id}</p>
+                <p className="text-xs text-text-muted">{selected.userId}</p>
               </div>
               <Badge variant={selected.isActive ? 'success' : 'danger'}>
                 {selected.isActive ? 'Active' : 'Inactive'}
@@ -92,28 +114,33 @@ export default function AstrologersPage() {
             <p><span className="font-medium text-text-primary">Specialization:</span> {selected.specialization?.join(', ') || '-'}</p>
             <p><span className="font-medium text-text-primary">Languages:</span> {selected.languages?.join(', ') || '-'}</p>
             <p><span className="font-medium text-text-primary">Skills:</span> {selected.skills?.join(', ') || '-'}</p>
-            <p><span className="font-medium text-text-primary">Rating:</span> {parseFloat(selected.rating).toFixed(2)} ({selected.totalReviews} reviews)</p>
+            <p><span className="font-medium text-text-primary">Rating:</span> {Number(selected.rating).toFixed(2)} ({selected.totalReviews} reviews)</p>
             <p><span className="font-medium text-text-primary">Total Earnings:</span> ₹{selected.totalEarnings}</p>
             <p><span className="font-medium text-text-primary">Bio:</span> {selected.bio || '-'}</p>
 
             <div className="border-t border-divider pt-4 mt-2">
-              <label className="block text-text-primary font-medium mb-1">Consultation Pricing (₹/min)</label>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  value={priceInput}
-                  onChange={(e) => setPriceInput(e.target.value)}
-                  className="input-field py-2 px-3 text-sm"
-                  placeholder="Price per minute"
-                />
-                <button
-                  onClick={() => handleSavePrice(selected.id)}
-                  className="gradient-btn py-2 px-4 text-sm font-bold shrink-0"
-                  style={{ borderRadius: '16px' }}
-                >
-                  Save Price
-                </button>
+              <label className="block text-text-primary font-medium mb-2">Pricing (₹/min)</label>
+              <div className="grid grid-cols-3 gap-3 mb-3">
+                <div>
+                  <label className="block text-xs text-text-muted mb-1">Chat</label>
+                  <input type="number" value={chatPrice} onChange={(e) => setChatPrice(e.target.value)}
+                    className="input-field py-2 px-3 text-sm w-full" placeholder="Chat" />
+                </div>
+                <div>
+                  <label className="block text-xs text-text-muted mb-1">Audio Call</label>
+                  <input type="number" value={audioPrice} onChange={(e) => setAudioPrice(e.target.value)}
+                    className="input-field py-2 px-3 text-sm w-full" placeholder="Audio" />
+                </div>
+                <div>
+                  <label className="block text-xs text-text-muted mb-1">Video Call</label>
+                  <input type="number" value={videoPrice} onChange={(e) => setVideoPrice(e.target.value)}
+                    className="input-field py-2 px-3 text-sm w-full" placeholder="Video" />
+                </div>
               </div>
+              <button onClick={() => handleSavePrices(selected.userId)}
+                className="gradient-btn py-2 px-4 text-sm font-bold" style={{ borderRadius: '16px' }}>
+                Save Prices
+              </button>
             </div>
 
             <div className="flex gap-3 border-t border-divider pt-4 mt-4">
@@ -162,8 +189,8 @@ export default function AstrologersPage() {
             </div>
 
             <div className="flex gap-3 mt-4">
-              <GradientButton onClick={() => handleVerify(verify.id, 'approved')}>Approve</GradientButton>
-              <GradientButton variant="danger" onClick={() => handleVerify(verify.id, 'rejected')}>Reject</GradientButton>
+              <GradientButton onClick={() => handleVerify(verify.userId, 'approved')}>Approve</GradientButton>
+              <GradientButton variant="danger" onClick={() => handleVerify(verify.userId, 'rejected')}>Reject</GradientButton>
             </div>
           </div>
         )}

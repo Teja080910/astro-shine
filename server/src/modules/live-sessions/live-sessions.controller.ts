@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Put, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Param, Body, Query, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { LiveSessionsService } from './live-sessions.service';
+import { AuthGuard } from '../../common/guards/auth.guard';
 
 @Controller('live-sessions')
 export class LiveSessionsController {
@@ -18,8 +19,16 @@ export class LiveSessionsController {
   async findOne(@Param('id') id: string) { return this.service.findById(id); }
 
   @Post()
-  async create(@Body() body: any) { return this.service.create(body); }
+  @UseGuards(AuthGuard)
+  async create(@Body() body: any, @Req() req: any) {
+    if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can create live sessions');
+    return this.service.create(body);
+  }
 
   @Put(':id/status')
-  async updateStatus(@Param('id') id: string, @Body() body: { status: string }) { return this.service.updateStatus(id, body.status); }
+  @UseGuards(AuthGuard)
+  async updateStatus(@Param('id') id: string, @Body() body: { status: string }, @Req() req: any) {
+    if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can update session status');
+    return this.service.updateStatus(id, body.status);
+  }
 }

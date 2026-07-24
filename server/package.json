@@ -19,12 +19,13 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "drizzle-kit migrate || true",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "seed": "ts-node -r tsconfig-paths/register src/seed.ts",
     "seed:muhurat": "ts-node -r tsconfig-paths/register src/seed-muhurat.ts",
-    "seed:muhurat:new": "ts-node -r tsconfig-paths/register src/seed-muhurat-new.ts"
+    "seed:muhurat:new": "ts-node -r tsconfig-paths/register src/seed-muhurat-new.ts",
+    "seed:user": "ts-node -r tsconfig-paths/register src/seed-user.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

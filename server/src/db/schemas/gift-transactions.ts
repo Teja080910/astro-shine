@@ -8,7 +8,7 @@ export const giftTransactions = pgTable('gift_transactions', {
   id: uuid('id').defaultRandom().primaryKey(),
   giftId: uuid('gift_id').notNull().references(() => gifts.id, { onDelete: 'cascade' }),
   senderId: uuid('sender_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  receiverId: uuid('receiver_id').notNull().references(() => astrologers.id, { onDelete: 'cascade' }),
+  receiverId: uuid('receiver_id').notNull().references(() => astrologers.userId, { onDelete: 'cascade' }),
   transactionId: uuid('transaction_id').references(() => transactions.id, { onDelete: 'set null' }),
   isRedeemed: boolean('is_redeemed').notNull().default(false),
   redeemedAt: timestamp('redeemed_at'),

@@ -1,32 +1,65 @@
-import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { AstrologersService } from './astrologers.service';
+import { AuthService } from '../auth/auth.service';
+import { AuthGuard } from '../../common/guards/auth.guard';
 
 function stripPassword(u: any) { if (!u) return u; const { password, ...r } = u; return r; }
 
 @Controller('astrologers')
+@UseGuards(AuthGuard)
 export class AstrologersController {
-  constructor(private readonly service: AstrologersService) {}
+  constructor(
+    private readonly service: AstrologersService,
+    private readonly authService: AuthService,
+  ) {}
 
   @Get()
-  async findAll() { const items = await this.service.findAll(); return items.map(stripPassword); }
+  async findAll(@Req() req: any) {
+    const items = await this.service.findAll();
+    return items.map((a: any) => {
+      if (req.userRole !== 'admin') {
+        const { email, phone, password, bankDetails, ...publicFields } = a;
+        return publicFields;
+      }
+      return stripPassword(a);
+    });
+  }
 
   @Get(':id')
   async findOne(@Param('id') id: string) { return stripPassword(await this.service.findById(id)); }
 
   @Post()
-  async create(@Body() body: any) { return stripPassword(await this.service.create(body)); }
+  async create(@Body() body: any) {
+    const { name, email, password, phone, ...profileFields } = body;
+    const result = await this.authService.registerAstrologer({
+      name, email, password, phone, ...profileFields,
+    });
+    return stripPassword(result);
+  }
 
   @Put(':id')
   async update(@Param('id') id: string, @Body() body: any) { return stripPassword(await this.service.update(id, body)); }
 
   @Post(':id/verify')
-  async verify(@Param('id') id: string, @Body() body: { status: 'approved' | 'rejected'; note?: string }) {
+  async verify(@Param('id') id: string, @Body() body: { status: 'approved' | 'rejected'; note?: string }, @Req() req: any) {
+    if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can verify astrologers');
     return stripPassword(await this.service.verify(id, body.status, body.note));
   }
 
   @Put(':id/online-status')
-  async onlineStatus(@Param('id') id: string, @Body() body: { status: 'online' | 'offline' | 'busy' }) {
+  async onlineStatus(@Param('id') id: string, @Body() body: { status: 'online' | 'offline' | 'busy' }, @Req() req: any) {
+    if (req.userId !== id) throw new ForbiddenException('Can only update own online status');
     return stripPassword(await this.service.updateOnlineStatus(id, body.status));
+  }
+
+  @Post(':id/feedback')
+  async submitFeedback(@Param('id') id: string, @Body() body: { ratings: number; comments?: string }, @Req() req: any) {
+    return this.service.submitFeedback(id, req.userId, body.ratings, body.comments);
+  }
+
+  @Get(':id/feedback')
+  async getFeedback(@Param('id') id: string) {
+    return this.service.getFeedback(id);
   }
 
   @Delete(':id')

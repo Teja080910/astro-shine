@@ -6,7 +6,7 @@ import { callLogs } from './call-logs';
 export const reviews = pgTable('reviews', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  astrologerId: uuid('astrologer_id').notNull().references(() => astrologers.id, { onDelete: 'cascade' }),
+  astrologerId: uuid('astrologer_id').notNull().references(() => astrologers.userId, { onDelete: 'cascade' }),
   rating: integer('rating').notNull(),
   comment: text('comment'),
   callId: uuid('call_id').references(() => callLogs.id, { onDelete: 'set null' }),

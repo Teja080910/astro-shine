@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { GradientButton, CustomModal, Table, Badge, DatePicker, TimePicker } from '@/components/UIComponents';
 import { api } from '@/lib/api';
-import { config } from '@/config';
+import { useSocket } from '@/hooks/useSocket';
 import type { MuhuratItem, MuhuratCategory } from '@astro-shine/shared-types';
-import { io } from 'socket.io-client';
 
 export default function MuhuratEntriesPage() {
   const [data, setData] = useState<MuhuratItem[]>([]);
@@ -23,7 +22,7 @@ export default function MuhuratEntriesPage() {
   });
   const [error, setError] = useState('');
 
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     api.get<MuhuratCategory[]>('/muhurat-categories/admin')
       .then(setCategories)
       .catch(console.error);
@@ -31,31 +30,26 @@ export default function MuhuratEntriesPage() {
     api.get<MuhuratItem[]>('/muhurat/admin')
       .then(setData)
       .catch(console.error);
+  }, []);
 
-    const socket = io(config.apiUrl, {
-      path: '/ws',
-      transports: ['websocket'],
-    });
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
-    socket.on('muhurat:created', (newEntry: MuhuratItem) => {
+  useSocket({
+    'muhurat:created': useCallback((newEntry: MuhuratItem) => {
       setData((prev) => {
         if (prev.some((e) => e.id === newEntry.id)) return prev;
         return [...prev, newEntry];
       });
-    });
-
-    socket.on('muhurat:updated', (updatedEntry: MuhuratItem) => {
+    }, []),
+    'muhurat:updated': useCallback((updatedEntry: MuhuratItem) => {
       setData((prev) => prev.map((e) => (e.id === updatedEntry.id ? updatedEntry : e)));
-    });
-
-    socket.on('muhurat:deleted', (del: { id: string }) => {
+    }, []),
+    'muhurat:deleted': useCallback((del: { id: string }) => {
       setData((prev) => prev.filter((e) => e.id !== del.id));
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
+    }, []),
+  });
 
   const startEdit = (entry: MuhuratItem) => {
     setEditing(entry);
