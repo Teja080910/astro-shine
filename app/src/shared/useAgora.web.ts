@@ -9,6 +9,8 @@ export function useAgora() {
   const [isCameraFront, setIsCameraFront] = useState(true);
   const [isRemoteMuted, setIsRemoteMuted] = useState(false);
   const [isRemoteVideoMuted, setIsRemoteVideoMuted] = useState(false);
+  const [remoteVideoTrack, setRemoteVideoTrack] = useState<any>(null);
+  const [localVideoTrack, setLocalVideoTrack] = useState<any>(null);
   const simulateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -18,7 +20,7 @@ export function useAgora() {
   }, []);
 
   const joinChannel = useCallback(async (channel: string, token: string, uid: number, type: 'audio' | 'video') => {
-    console.log('[Web Agora Mock] Joining channel:', channel);
+    console.log('[Web LiveKit Mock] Joining channel:', channel);
     setJoined(true);
     simulateTimerRef.current = setTimeout(() => {
       setRemoteUid(12345);
@@ -26,9 +28,11 @@ export function useAgora() {
   }, []);
 
   const leaveChannel = useCallback(() => {
-    console.log('[Web Agora Mock] Leaving channel');
+    console.log('[Web LiveKit Mock] Leaving channel');
     setJoined(false);
     setRemoteUid(null);
+    setRemoteVideoTrack(null);
+    setLocalVideoTrack(null);
     if (simulateTimerRef.current) {
       clearTimeout(simulateTimerRef.current);
       simulateTimerRef.current = null;
@@ -54,5 +58,6 @@ export function useAgora() {
   return {
     joinChannel, leaveChannel, toggleMute, toggleSpeaker, toggleCamera, switchCamera,
     joined, remoteUid, isMuted, isSpeakerOn, isVideoEnabled, isCameraFront, isRemoteMuted, isRemoteVideoMuted,
+    remoteVideoTrack, localVideoTrack,
   };
 }

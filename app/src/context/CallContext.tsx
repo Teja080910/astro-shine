@@ -11,7 +11,6 @@ interface CallData {
   callId: string;
   channel: string;
   token: string;
-  uid: number;
   callerId?: string;
   callerRole?: string;
   callerName?: string;
@@ -83,7 +82,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         callId: data.callId,
         channel: data.channel,
         token: data.token,
-        uid: data.uid,
         callerId: data.callerId,
         callerRole: data.callerRole,
         callerName: data.callerName,
@@ -93,7 +91,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     });
 
     socket.on('call:initiated', (data: any) => {
-      setCallData(prev => prev ? { ...prev, callId: data.callId, channel: data.channel, token: data.token, uid: data.uid } : null);
+      setCallData(prev => prev ? { ...prev, callId: data.callId, channel: data.channel, token: data.token } : null);
     });
 
     socket.on('call:accepted', (data: any) => {
@@ -130,7 +128,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     if (!hasPermission) return;
 
     setCallState('calling');
-    setCallData({ callId: '', channel: '', token: '', uid: 0, type, callerName: astrologerName });
+    setCallData({ callId: '', channel: '', token: '', type, callerName: astrologerName });
     socketRef.current?.emit('call:initiate', { astrologerId, type });
     const callTimer = setTimeout(() => {
       setCallState(prev => prev === 'calling' ? 'idle' : prev);

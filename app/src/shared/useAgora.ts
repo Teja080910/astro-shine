@@ -1,26 +1,14 @@
 import { useCallback, useRef, useEffect, useState } from 'react';
-import { NativeModules } from 'react-native';
-import { config } from '../config';
+import { Room, RoomEvent, Track } from 'livekit-client';
+import { registerGlobals } from '@livekit/react-native';
+import type { LocalVideoTrack, RemoteVideoTrack } from 'livekit-client';
 
-const isExpoGo = !NativeModules.AgoraRtcNg;
+registerGlobals();
 
-let createAgoraRtcEngine: any;
-let ChannelProfileType: any;
-let ClientRoleType: any;
-
-if (!isExpoGo) {
-  try {
-    // @ts-ignore
-    const agora = require('react-native-agora');
-    createAgoraRtcEngine = agora.createAgoraRtcEngine;
-    ChannelProfileType = agora.ChannelProfileType;
-    ClientRoleType = agora.ClientRoleType;
-  } catch (e) {
-    console.error('Failed to import react-native-agora:', e);
-  }
-}
+const LIVEKIT_URL = 'ws://31.97.222.250:7880';
 
 export function useAgora() {
+  const roomRef = useRef<Room | null>(null);
   const [joined, setJoined] = useState(false);
   const [remoteUid, setRemoteUid] = useState<number | null>(null);
   const [isMuted, setIsMuted] = useState(false);
@@ -29,168 +17,137 @@ export function useAgora() {
   const [isCameraFront, setIsCameraFront] = useState(true);
   const [isRemoteMuted, setIsRemoteMuted] = useState(false);
   const [isRemoteVideoMuted, setIsRemoteVideoMuted] = useState(false);
-
-  const engineRef = useRef<any>(null);
+  const [remoteVideoTrack, setRemoteVideoTrack] = useState<RemoteVideoTrack | null>(null);
+  const [localVideoTrack, setLocalVideoTrack] = useState<LocalVideoTrack | null>(null);
 
   useEffect(() => {
-    if (isExpoGo) return;
-    const init = async () => {
-      try {
-        engineRef.current = createAgoraRtcEngine();
-        const engine = engineRef.current;
-        engine.initialize({
-          appId: config.agoraAppId,
-          channelProfile: ChannelProfileType.ChannelProfileCommunication,
-        });
-
-        engine.registerEventHandler({
-          onJoinChannelSuccess: (connection: any, elapsed: any) => {
-            console.log('[Agora] onJoinChannelSuccess', connection);
-            setJoined(true);
-          },
-          onUserJoined: (connection: any, remoteUid: any, elapsed: any) => {
-            console.log('[Agora] onUserJoined', remoteUid);
-            setRemoteUid(remoteUid);
-          },
-          onUserOffline: (connection: any, remoteUid: any, reason: any) => {
-            console.log('[Agora] onUserOffline', remoteUid);
-            setRemoteUid(null);
-            setIsRemoteMuted(false);
-            setIsRemoteVideoMuted(false);
-          },
-          onUserMuteAudio: (connection: any, uid: any, muted: any) => {
-            console.log('[Agora] onUserMuteAudio', uid, muted);
-            setIsRemoteMuted(muted);
-          },
-          onUserMuteVideo: (connection: any, uid: any, muted: any) => {
-            console.log('[Agora] onUserMuteVideo', uid, muted);
-            setIsRemoteVideoMuted(muted);
-          },
-          onError: (err: any, msg: any) => {
-            console.log('[Agora] onError', err, msg);
-          }
-        });
-
-        engine.enableAudio();
-      } catch (e) {
-        console.error('[Agora] init error', e);
-      }
-    };
-    init();
-
     return () => {
-      if (engineRef.current) {
-        engineRef.current.unregisterEventHandler({});
-        engineRef.current.release();
-        engineRef.current = null;
-      }
+      roomRef.current?.disconnect();
+      roomRef.current = null;
     };
   }, []);
 
   const joinChannel = useCallback(async (channel: string, token: string, uid: number, type: 'audio' | 'video') => {
-    if (isExpoGo) {
-      console.log('[Expo Go Agora Mock] Joining channel:', channel);
-      setJoined(true);
-      setTimeout(() => {
-        setRemoteUid(12345);
-      }, 2000);
-      return;
-    }
-    if (!engineRef.current) return;
+    const room = new Room({
+      adaptiveStream: true,
+      dynacast: true,
+    });
+    roomRef.current = room;
+
+    room.on(RoomEvent.TrackSubscribed, (track, participant, pub) => {
+      if (track.kind === Track.Kind.Audio) {
+        setIsRemoteMuted(false);
+      }
+      if (track.kind === Track.Kind.Video) {
+        setIsRemoteVideoMuted(false);
+        setRemoteVideoTrack(track as RemoteVideoTrack);
+      }
+    });
+
+    room.on(RoomEvent.TrackUnsubscribed, (track, participant, pub) => {
+      if (track.kind === Track.Kind.Video) {
+        setIsRemoteVideoMuted(true);
+        setRemoteVideoTrack(null);
+      }
+    });
+
+    room.on(RoomEvent.TrackMuted, (pub, participant) => {
+      if (pub.kind === Track.Kind.Audio) setIsRemoteMuted(true);
+      if (pub.kind === Track.Kind.Video) {
+        setIsRemoteVideoMuted(true);
+        setRemoteVideoTrack(null);
+      }
+    });
+
+    room.on(RoomEvent.TrackUnmuted, (pub, participant) => {
+      if (pub.kind === Track.Kind.Audio) setIsRemoteMuted(false);
+      if (pub.kind === Track.Kind.Video) {
+        setIsRemoteVideoMuted(false);
+        setRemoteVideoTrack(pub.videoTrack as RemoteVideoTrack);
+      }
+    });
+
+    room.on(RoomEvent.ParticipantConnected, () => {
+      setRemoteUid(1);
+      setIsRemoteMuted(false);
+      setIsRemoteVideoMuted(false);
+    });
+
+    room.on(RoomEvent.ParticipantDisconnected, () => {
+      setRemoteUid(null);
+      setRemoteVideoTrack(null);
+      setIsRemoteMuted(false);
+      setIsRemoteVideoMuted(false);
+    });
+
+    room.on(RoomEvent.Disconnected, () => {
+      setJoined(false);
+      setRemoteUid(null);
+      setRemoteVideoTrack(null);
+      setLocalVideoTrack(null);
+    });
+
     try {
-      engineRef.current.setClientRole(ClientRoleType.ClientRoleBroadcaster);
+      await room.connect(LIVEKIT_URL, token);
+      setJoined(true);
+
+      await room.localParticipant.setMicrophoneEnabled(true);
       if (type === 'video') {
-        engineRef.current.enableVideo();
-        engineRef.current.startPreview();
+        await room.localParticipant.setCameraEnabled(true);
         setIsVideoEnabled(true);
+        if (room.localParticipant.videoTrackPublications.size > 0) {
+          const pub = [...room.localParticipant.videoTrackPublications.values()][0];
+          setLocalVideoTrack(pub.videoTrack as LocalVideoTrack);
+        }
       } else {
-        engineRef.current.disableVideo();
         setIsVideoEnabled(false);
       }
-      engineRef.current.joinChannel(token, channel, uid, {});
     } catch (e) {
-      console.error('[Agora] joinChannel error', e);
+      console.error('[LiveKit] joinChannel error', e);
     }
   }, []);
 
   const leaveChannel = useCallback(() => {
-    if (isExpoGo) {
-      setJoined(false);
-      setRemoteUid(null);
-      setIsRemoteMuted(false);
-      setIsRemoteVideoMuted(false);
-      return;
-    }
-    if (!engineRef.current) return;
-    try {
-      engineRef.current.leaveChannel();
-      setJoined(false);
-      setRemoteUid(null);
-      setIsRemoteMuted(false);
-      setIsRemoteVideoMuted(false);
-    } catch (e) {
-      console.error('[Agora] leaveChannel error', e);
-    }
+    roomRef.current?.disconnect();
+    roomRef.current = null;
+    setJoined(false);
+    setRemoteUid(null);
+    setRemoteVideoTrack(null);
+    setLocalVideoTrack(null);
+    setIsRemoteMuted(false);
+    setIsRemoteVideoMuted(false);
   }, []);
 
   const toggleMute = useCallback(() => {
-    if (isExpoGo) {
-      setIsMuted(prev => !prev);
-      return;
-    }
-    if (!engineRef.current) return;
+    if (!roomRef.current) return;
     setIsMuted(prev => {
       const next = !prev;
-      engineRef.current?.muteLocalAudioStream(next);
+      roomRef.current!.localParticipant.setMicrophoneEnabled(!next);
       return next;
     });
   }, []);
 
   const toggleSpeaker = useCallback(() => {
-    if (isExpoGo) {
-      setIsSpeakerOn(prev => !prev);
-      return;
-    }
-    if (!engineRef.current) return;
-    setIsSpeakerOn(prev => {
-      const next = !prev;
-      engineRef.current?.setEnableSpeakerphone(next);
-      return next;
-    });
+    setIsSpeakerOn(prev => !prev);
   }, []);
 
   const toggleCamera = useCallback(() => {
-    if (isExpoGo) {
-      setIsVideoEnabled(prev => !prev);
-      return;
-    }
-    if (!engineRef.current) return;
+    if (!roomRef.current) return;
     setIsVideoEnabled(prev => {
       const next = !prev;
-      if (next) {
-        engineRef.current?.enableVideo();
-        engineRef.current?.startPreview();
-      } else {
-        engineRef.current?.disableVideo();
-        engineRef.current?.stopPreview();
-      }
+      roomRef.current!.localParticipant.setCameraEnabled(next);
       return next;
     });
   }, []);
 
   const switchCamera = useCallback(() => {
-    if (isExpoGo) {
-      setIsCameraFront(prev => !prev);
-      return;
-    }
-    if (!engineRef.current) return;
-    engineRef.current.switchCamera();
+    (roomRef.current?.localParticipant as any)?.switchCamera?.('front');
     setIsCameraFront(prev => !prev);
   }, []);
 
   return {
     joinChannel, leaveChannel, toggleMute, toggleSpeaker, toggleCamera, switchCamera,
     joined, remoteUid, isMuted, isSpeakerOn, isVideoEnabled, isCameraFront, isRemoteMuted, isRemoteVideoMuted,
+    remoteVideoTrack, localVideoTrack,
   };
 }
-

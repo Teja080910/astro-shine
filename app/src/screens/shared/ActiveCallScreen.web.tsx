@@ -18,7 +18,7 @@ export function ActiveCallScreen() {
   useEffect(() => {
     if (callState === 'active' && callData?.channel && callData?.token && !joinedRef.current) {
       joinedRef.current = true;
-      joinChannel(callData.channel, callData.token, callData.uid, callData.type);
+      joinChannel(callData.channel, callData.token, 0, callData.type);
     }
   }, [callState, callData]);
 

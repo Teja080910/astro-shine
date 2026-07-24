@@ -1,30 +1,15 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, NativeModules } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors } from '../../shared';
 import { Ionicons } from '@expo/vector-icons';
 import { useCall } from '../../context/CallContext';
 import { useAgora } from '../../shared/useAgora';
 import { api } from '../../shared/api-client';
-
-const isExpoGo = !NativeModules.AgoraRtcNg;
-
-let RtcSurfaceView: any;
-let VideoSourceType: any;
-
-if (!isExpoGo) {
-  try {
-    // @ts-ignore
-    const agora = require('react-native-agora');
-    RtcSurfaceView = agora.RtcSurfaceView;
-    VideoSourceType = agora.VideoSourceType;
-  } catch (e) {
-    console.error('Failed to import react-native-agora in ActiveCallScreen:', e);
-  }
-}
+import { VideoView } from '@livekit/react-native';
 
 export function ActiveCallScreen() {
   const { callData, callState, endCall } = useCall();
-  const { joinChannel, leaveChannel, toggleMute, toggleSpeaker, toggleCamera, switchCamera, isMuted, isSpeakerOn, isVideoEnabled, isCameraFront, remoteUid, isRemoteMuted, isRemoteVideoMuted } = useAgora();
+  const { joinChannel, leaveChannel, toggleMute, toggleSpeaker, toggleCamera, switchCamera, isMuted, isSpeakerOn, isVideoEnabled, isCameraFront, remoteUid, isRemoteMuted, isRemoteVideoMuted, remoteVideoTrack } = useAgora();
   const [seconds, setSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const joinedRef = useRef(false);
@@ -42,7 +27,7 @@ export function ActiveCallScreen() {
   useEffect(() => {
     if (callState === 'active' && callData?.channel && callData?.token && !joinedRef.current) {
       joinedRef.current = true;
-      joinChannel(callData.channel, callData.token, callData.uid, callData.type);
+      joinChannel(callData.channel, callData.token, 0, callData.type);
     }
   }, [callState, callData]);
 
@@ -85,22 +70,13 @@ export function ActiveCallScreen() {
         {isVideo && (
           <View style={styles.videoContainer}>
             <View style={styles.remoteVideo}>
-              {remoteUid && !isRemoteVideoMuted ? (
+              {remoteUid && !isRemoteVideoMuted && remoteVideoTrack ? (
                 <>
-                  {isExpoGo ? (
-                    <View style={[StyleSheet.absoluteFill, { backgroundColor: '#1C1C1E', justifyContent: 'center', alignItems: 'center' }]}>
-                      <Ionicons name="videocam" size={48} color={colors.primary} />
-                      <Text style={{ color: colors.white, marginTop: 8, fontSize: 12 }}>Remote View (Mock)</Text>
-                    </View>
-                  ) : (
-                    <RtcSurfaceView
-                      canvas={{
-                        uid: remoteUid,
-                        sourceType: VideoSourceType.VideoSourceRemote,
-                      }}
-                      style={StyleSheet.absoluteFill}
-                    />
-                  )}
+                  <VideoView
+                    videoTrack={remoteVideoTrack}
+                    style={StyleSheet.absoluteFill as any}
+                    mirror={false}
+                  />
                   <View style={styles.remoteNameContainer}>
                     <Text style={styles.remoteVideoName}>{otherName}</Text>
                     {isRemoteMuted && (
@@ -126,20 +102,10 @@ export function ActiveCallScreen() {
             </View>
             <View style={[styles.localVideo, { opacity: isVideoEnabled ? 1 : 0.4 }]}>
               {isVideoEnabled ? (
-                isExpoGo ? (
-                  <View style={[StyleSheet.absoluteFill, { backgroundColor: '#2C2C2E', justifyContent: 'center', alignItems: 'center' }]}>
-                    <Ionicons name="person" size={24} color={colors.white} />
-                    <Text style={{ color: colors.textMuted, fontSize: 8, marginTop: 4 }}>Local Mock</Text>
-                  </View>
-                ) : (
-                  <RtcSurfaceView
-                    canvas={{
-                      uid: 0,
-                      sourceType: VideoSourceType.VideoSourceCamera,
-                    }}
-                    style={StyleSheet.absoluteFill}
-                  />
-                )
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: '#2C2C2E', justifyContent: 'center', alignItems: 'center' }]}>
+                  <Ionicons name="person" size={24} color={colors.white} />
+                  <Text style={{ color: colors.textMuted, fontSize: 8, marginTop: 4 }}>You</Text>
+                </View>
               ) : (
                 <Ionicons name="person" size={24} color={colors.white} />
               )}
@@ -154,10 +120,10 @@ export function ActiveCallScreen() {
             </View>
             <Text style={styles.name}>{otherName}</Text>
             <Text style={styles.status}>
-              {callState === 'active' 
-                ? (isRemoteMuted ? 'Muted' : formatTime(seconds)) 
-                : callState === 'ended' 
-                  ? 'Call Ended' 
+              {callState === 'active'
+                ? (isRemoteMuted ? 'Muted' : formatTime(seconds))
+                : callState === 'ended'
+                  ? 'Call Ended'
                   : 'Connecting...'}
             </Text>
             {walletBalance !== null && (
