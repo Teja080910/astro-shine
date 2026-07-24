@@ -307,6 +307,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     @MessageBody() data: { astrologerId: string; type: 'audio' | 'video' },
   ) {
     const { userId, role } = client.data;
+    this.logger.log(`[Call] Initiate - caller: ${userId} (${role}) -> astrologer: ${data.astrologerId}, type: ${data.type}`);
     const roomName = `call_${userId}_${data.astrologerId}_${Date.now()}`;
     const callerIdentity = userId;
     const calleeIdentity = data.astrologerId;
@@ -369,15 +370,20 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     @MessageBody() data: { callId: string },
   ) {
     const call = await this.callsService.findById(data.callId);
-    if (!call) return;
+    if (!call) {
+      this.logger.warn(`[Call] Accept - call ${data.callId} not found`);
+      return;
+    }
+
+    this.logger.log(`[Call] Accept - callId: ${data.callId}, caller: ${call.userId}, astrologer: ${call.astrologerId}`);
 
     const MIN_BALANCE = 10;
     const hasBalance = await this.walletService.checkSufficientBalance(call.userId, MIN_BALANCE);
+    this.logger.log(`[Call] Balance check for ${call.userId}: ${hasBalance ? 'PASS' : 'FAIL'}`);
+
     if (!hasBalance) {
-      const callerSocket = this.findSocketByUserId(call.userId);
-      if (callerSocket) {
-        callerSocket.emit('call:error', { message: 'Insufficient wallet balance to start call. Please recharge.' });
-      }
+      this.logger.warn(`[Call] Insufficient balance for ${call.userId}`);
+      this.emitToUser(call.userId, 'call:error', { message: 'Insufficient wallet balance to start call. Please recharge.' });
       client.emit('call:error', { message: 'Caller has insufficient wallet balance.' });
       await this.callsService.updateStatus(data.callId, 'cancelled');
       return;
@@ -385,10 +391,9 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
     await this.callsService.updateStatus(data.callId, 'ongoing');
     await this.callsService.updateStartedAt(data.callId);
-    const callerSocket = this.findSocketByUserId(call.userId);
-    if (callerSocket) {
-      callerSocket.emit('call:accepted', { callId: data.callId, channel: call.agoraChannel, token: call.agoraToken });
-    }
+    const callerSockets = this.findAllSocketsByUserId(call.userId);
+    this.logger.log(`[Call] Emitting call:accepted to ${call.userId}, ${callerSockets.length} sockets found`);
+    this.emitToUser(call.userId, 'call:accepted', { callId: data.callId, channel: call.agoraChannel, token: call.agoraToken });
   }
 
   @SubscribeMessage('call:reject')
@@ -399,10 +404,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     await this.callsService.updateStatus(data.callId, 'cancelled');
     const call = await this.callsService.findById(data.callId);
     if (!call) return;
-    const callerSocket = this.findSocketByUserId(call.userId);
-    if (callerSocket) {
-      callerSocket.emit('call:rejected', { callId: data.callId });
-    }
+    this.emitToUser(call.userId, 'call:rejected', { callId: data.callId });
   }
 
   @SubscribeMessage('call:end')
@@ -415,16 +417,14 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     if (call.status === 'initiated') {
       await this.callsService.updateStatus(data.callId, 'missed');
       const otherUserId = call.userId === client.data.userId ? call.astrologerId : call.userId;
-      const otherSocket = this.findSocketByUserId(otherUserId);
-      if (otherSocket) otherSocket.emit('call:missed', { callId: data.callId });
+      this.emitToUser(otherUserId, 'call:missed', { callId: data.callId });
       client.emit('call:missed', { callId: data.callId });
       return;
     }
     const endedCall = await this.callsService.endCall(data.callId);
     if (!endedCall) return;
     const otherUserId = call.userId === client.data.userId ? call.astrologerId : call.userId;
-    const otherSocket = this.findSocketByUserId(otherUserId);
-    if (otherSocket) otherSocket.emit('call:ended', { callId: data.callId, duration: endedCall.duration });
+    this.emitToUser(otherUserId, 'call:ended', { callId: data.callId, duration: endedCall.duration });
     client.emit('call:ended', { callId: data.callId, duration: endedCall.duration });
   }
 
@@ -443,5 +443,19 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       if (socket.data.userId === userId) return socket;
     }
     return null;
+  }
+
+  private findAllSocketsByUserId(userId: string): Socket[] {
+    const sockets: Socket[] = [];
+    for (const [, socket] of this.server.sockets.sockets) {
+      if (socket.data.userId === userId) sockets.push(socket);
+    }
+    return sockets;
+  }
+
+  private emitToUser(userId: string, event: string, data: any) {
+    for (const sock of this.findAllSocketsByUserId(userId)) {
+      sock.emit(event, data);
+    }
   }
 }

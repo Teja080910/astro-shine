@@ -78,6 +78,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     socketRef.current = socket;
 
     socket.on('call:incoming', (data: any) => {
+      console.log('[Call] call:incoming received:', data.callId);
       setIncomingCall({
         callId: data.callId,
         channel: data.channel,
@@ -91,10 +92,12 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     });
 
     socket.on('call:initiated', (data: any) => {
+      console.log('[Call] call:initiated received:', data);
       setCallData(prev => prev ? { ...prev, callId: data.callId, channel: data.channel, token: data.token } : null);
     });
 
     socket.on('call:accepted', (data: any) => {
+      console.log('[Call] call:accepted received:', data);
       setCallState('active');
       setCallData(prev => prev ? { ...prev, channel: data.channel, token: data.token } : null);
     });
@@ -105,6 +108,12 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     });
 
     socket.on('call:missed', () => {
+      setCallState('idle');
+      setCallData(null);
+    });
+
+    socket.on('call:error', (data: any) => {
+      console.log('[Call] call:error received:', data.message);
       setCallState('idle');
       setCallData(null);
     });
@@ -127,6 +136,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     const hasPermission = await requestCallPermissions(type);
     if (!hasPermission) return;
 
+    console.log('[Call] initiateCall:', astrologerId, type);
     setCallState('calling');
     setCallData({ callId: '', channel: '', token: '', type, callerName: astrologerName });
     socketRef.current?.emit('call:initiate', { astrologerId, type });

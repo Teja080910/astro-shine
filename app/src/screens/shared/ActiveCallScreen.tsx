@@ -3,13 +3,12 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors } from '../../shared';
 import { Ionicons } from '@expo/vector-icons';
 import { useCall } from '../../context/CallContext';
-import { useAgora } from '../../shared/useAgora';
+import { useLiveKit } from '../../shared/useLiveKit';
 import { api } from '../../shared/api-client';
-import { VideoView } from '@livekit/react-native';
 
 export function ActiveCallScreen() {
   const { callData, callState, endCall } = useCall();
-  const { joinChannel, leaveChannel, toggleMute, toggleSpeaker, toggleCamera, switchCamera, isMuted, isSpeakerOn, isVideoEnabled, isCameraFront, remoteUid, isRemoteMuted, isRemoteVideoMuted, remoteVideoTrack } = useAgora();
+  const { joinChannel, leaveChannel, toggleMute, toggleSpeaker, toggleCamera, switchCamera, isMuted, isSpeakerOn, isVideoEnabled, isCameraFront, remoteUid, isRemoteMuted, isRemoteVideoMuted, remoteVideoTrack } = useLiveKit();
   const [seconds, setSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const joinedRef = useRef(false);
@@ -27,6 +26,7 @@ export function ActiveCallScreen() {
   useEffect(() => {
     if (callState === 'active' && callData?.channel && callData?.token && !joinedRef.current) {
       joinedRef.current = true;
+      console.log('[Call] ActiveCallScreen joining channel:', callData.channel, 'token length:', callData.token.length);
       joinChannel(callData.channel, callData.token, 0, callData.type);
     }
   }, [callState, callData]);
@@ -72,11 +72,10 @@ export function ActiveCallScreen() {
             <View style={styles.remoteVideo}>
               {remoteUid && !isRemoteVideoMuted && remoteVideoTrack ? (
                 <>
-                  <VideoView
-                    videoTrack={remoteVideoTrack}
-                    style={StyleSheet.absoluteFill as any}
-                    mirror={false}
-                  />
+                  <View style={[StyleSheet.absoluteFill, { backgroundColor: '#1C1C1E', justifyContent: 'center', alignItems: 'center' }]}>
+                    <Ionicons name="videocam" size={48} color={colors.primary} />
+                    <Text style={{ color: '#FFFFFF', marginTop: 8, fontSize: 12 }}>{otherName}</Text>
+                  </View>
                   <View style={styles.remoteNameContainer}>
                     <Text style={styles.remoteVideoName}>{otherName}</Text>
                     {isRemoteMuted && (

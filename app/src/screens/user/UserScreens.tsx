@@ -642,7 +642,7 @@ export function AstrologerListScreen({ route, navigation }: any) {
   useEffect(() => { if (isFocused) api.astrologers.list().then(setData).finally(() => setLoading(false)); }, [isFocused]);
   
   const filtered = data.filter(a => {
-    const matchesSearch = !search || a.name!.toLowerCase().includes(search.toLowerCase()) || a.specialization?.some(s => s.toLowerCase().includes(search.toLowerCase()));
+    const matchesSearch = !search || a.name?.toLowerCase().includes(search.toLowerCase()) || a.specialization?.some(s => s.toLowerCase().includes(search.toLowerCase()));
     const matchesCategory = selectedCat === 'All' || a.specialization?.some(s => s.toLowerCase() === selectedCat.toLowerCase());
     const matchesLive = !onlyLive || getAstrologerOnlineStatus(a, astrologerStatuses);
     return matchesSearch && matchesCategory && matchesLive;
