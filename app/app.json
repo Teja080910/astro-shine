@@ -38,6 +38,13 @@
             "usesCleartextTraffic": true
           }
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Astro Shine to use your location to show weather and local panchang data.",
+          "locationWhenInUsePermission": "Allow Astro Shine to use your location to show weather and local panchang data."
+        }
       ]
     ],
     "extra": {

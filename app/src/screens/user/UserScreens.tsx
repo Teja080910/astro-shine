@@ -5,9 +5,10 @@ import { Alert, FlatList, Image, RefreshControl, ScrollView, StyleSheet, Text, T
 import { useAuth } from '../../context/AuthContext';
 import { useCall } from '../../context/CallContext';
 import { useChat } from '../../context/ChatContext';
-import { Avatar, Chip, ConfirmDialog, CustomModal, EmptyState, GlassCard, GradientButton, ScreenWrapper, SearchBar, SectionHeader, SkeletonLoader, StarRating, Toggle, colors, radii, typography } from '../../shared';
+import { Avatar, Chip, ConfirmDialog, CustomModal, EmptyState, GlassCard, GradientButton, ScreenWrapper, SearchBar, SectionHeader, SkeletonLoader, StarRating, Toggle, DatePicker, TimePicker, colors, radii, typography } from '../../shared';
 import { api } from '../../shared/api-client';
-import type { Astrologer, Blog, HoroscopeRecord, MandirPooja, Notification, ShopProduct, Transaction, Video, Wallet } from '../../shared/types';
+import type { Astrologer, Blog, HoroscopeRecord, MandirPooja, Notification, PanchangRecord, ShopProduct, Transaction, Video, Wallet } from '../../shared/types';
+import * as Location from 'expo-location';
 
 const ZODIAC_SIGNS = [
   { sign: 'aries', emoji: '♈', label: 'Aries' },
@@ -25,6 +26,15 @@ const ZODIAC_SIGNS = [
 ];
 
 const ASTRO_CATEGORIES = ['All', 'Vedic', 'Tarot', 'Numerology', 'Palmistry', 'Vastu'];
+
+function to12h(t: string): string {
+  if (!t) return '';
+  const [h, m] = t.split(':');
+  const hour = parseInt(h);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const display = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${display}:${m} ${ampm}`;
+}
 
 function getAstrologerOnlineStatus(astro: Astrologer, astrologerStatuses: Record<string, 'online' | 'offline' | 'busy'>) {
   const wsStatus = astrologerStatuses[astro.userId];
@@ -63,6 +73,24 @@ export function UserHomeScreen({ navigation }: any) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeHoroscopeTab, setActiveHoroscopeTab] = useState<'love' | 'career' | 'finance' | 'health'>('career');
   const unreadCount = notifications.filter(n => !n.isRead).length;
+  const [weather, setWeather] = useState<{ temp: string; condition: string } | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(true);
+  const [location, setLocation] = useState<{ city: string; region: string } | null>(null);
+  const [panchangData, setPanchangData] = useState<PanchangRecord | null>(null);
+
+  const greeting = (() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return { text: 'Good Morning!', icon: 'sunny-outline' as const };
+    if (hour < 17) return { text: 'Good Afternoon!', icon: 'partly-sunny' as const };
+    if (hour < 21) return { text: 'Good Evening!', icon: 'moon-outline' as const };
+    return { text: 'Good Night!', icon: 'moon' as const };
+  })();
+
+  const formatDate = (date: Date) => {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}, ${days[date.getDay()]}`;
+  };
 
   const todayStr = new Date().toISOString().split('T')[0];
 
@@ -88,6 +116,33 @@ export function UserHomeScreen({ navigation }: any) {
   }, [user?.id, selectedSign, todayStr, horoscopeVersion]);
 
   useEffect(() => { if (isFocused) loadData(); }, [isFocused, loadData]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setWeatherLoading(false);
+          return;
+        }
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
+        const { latitude, longitude } = loc.coords;
+        const geo = await Location.reverseGeocodeAsync({ latitude, longitude });
+        if (geo[0]) {
+          const city = geo[0].city || geo[0].district || geo[0].subregion || '';
+          const region = geo[0].region || geo[0].country || '';
+          setLocation({ city, region });
+        }
+        const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${process.env.EXPO_PUBLIC_OPENWEATHER_API_KEY}`);
+        const data = await res.json();
+        if (data.main) setWeather({ temp: `${Math.round(data.main.temp)}°C`, condition: data.weather[0].main });
+      } catch {} finally { setWeatherLoading(false); }
+    })();
+  }, []);
+
+  useEffect(() => {
+    api.panchang.byDate(todayStr).then(setPanchangData).catch(() => {});
+  }, [todayStr]);
 
   const onRefresh = useCallback(() => { setRefreshing(true); loadData().finally(() => setRefreshing(false)); }, [loadData]);
 
@@ -129,41 +184,29 @@ export function UserHomeScreen({ navigation }: any) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         {/* Top Header Bar */}
         <View style={styles.topHeader}>
-          <TouchableOpacity onPress={() => setMenuOpen(true)} style={{ padding: 4 }}>
+          <TouchableOpacity onPress={() => setMenuOpen(true)} style={{ padding: 4, width: 40 }}>
             <Ionicons name="menu-outline" size={28} color={iconColor} />
           </TouchableOpacity>
           
-          <View style={{ alignItems: 'center' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <View style={{
-                width: 36,
-                height: 36,
-                borderRadius: 18,
-                backgroundColor: '#D97706',
-                borderWidth: 2,
-                borderColor: '#F59E0B',
-                alignItems: 'center',
-                justifyContent: 'center',
-                elevation: 3,
-              }}>
-                <Text style={{ color: '#FBBF24', fontSize: 20, fontWeight: '900', lineHeight: 24, textAlign: 'center' }}>🕉️</Text>
-              </View>
-              <Text style={{ fontSize: 22, fontWeight: '900', color: isDark ? '#FBBF24' : '#D97706', letterSpacing: 0.5 }}>
+          <View style={{ alignItems: 'center', flex: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+              <Text style={{ color: isDark ? '#FBBF24' : '#D97706', fontSize: 22, fontWeight: '900' }}>ॐ</Text>
+              <Text style={{ fontSize: 20, fontWeight: '900', color: isDark ? '#FBBF24' : '#D97706', letterSpacing: 0.5 }}>
                 ASTROŚHINE
               </Text>
             </View>
-            <Text style={{ fontSize: 8.5, fontWeight: '800', color: isDark ? '#FBBF24' : '#D97706', letterSpacing: 1, marginTop: 1 }}>
+            <Text style={{ fontSize: 8, fontWeight: '800', color: isDark ? '#FBBF24' : '#D97706', letterSpacing: 1, marginTop: 1, textAlign: 'center' }}>
               YOUR DESTINY, OUR GUIDANCE
             </Text>
           </View>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <TouchableOpacity onPress={() => setTheme(isDark ? 'light' : 'dark')} style={{ padding: 4 }}>
-              <Ionicons name={isDark ? "sunny-outline" : "moon-outline"} size={24} color={iconColor} />
+              <Ionicons name={isDark ? "sunny-outline" : "moon-outline"} size={22} color={iconColor} />
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ padding: 4, position: 'relative' }}>
-              <Ionicons name="notifications-outline" size={26} color={iconColor} />
+              <Ionicons name="notifications-outline" size={24} color={iconColor} />
               {unreadCount > 0 && (
                 <View style={styles.headerBadge}>
                   <Text style={{ color: '#fff', fontSize: 10, fontWeight: '800' }}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
@@ -186,11 +229,11 @@ export function UserHomeScreen({ navigation }: any) {
             </TouchableOpacity>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
               <Ionicons name="calendar-outline" size={13} color={mutedTextColor} />
-              <Text style={{ fontSize: 11, color: bodyTextColor, fontWeight: '500' }}>15 July 2026, Wednesday</Text>
+              <Text style={{ fontSize: 11, color: bodyTextColor, fontWeight: '500' }}>{formatDate(new Date())}</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
               <Ionicons name="location-outline" size={13} color={mutedTextColor} />
-              <Text style={{ fontSize: 11, color: bodyTextColor, fontWeight: '500' }}>Jaipur, Rajasthan</Text>
+              <Text style={{ fontSize: 11, color: bodyTextColor, fontWeight: '500' }}>{location ? `${location.city}, ${location.region}` : 'Jaipur, Rajasthan'}</Text>
             </View>
           </View>
 
@@ -202,14 +245,14 @@ export function UserHomeScreen({ navigation }: any) {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
               <Ionicons name="sunny" size={24} color="#F59E0B" />
               <View>
-                <Text style={{ fontSize: 14, fontWeight: '800', color: titleColor }}>28°C</Text>
-                <Text style={{ fontSize: 11, color: mutedTextColor }}>Sunny</Text>
+                <Text style={{ fontSize: 14, fontWeight: '800', color: titleColor }}>{weather?.temp || (weatherLoading ? '--' : '28°C')}</Text>
+                <Text style={{ fontSize: 11, color: mutedTextColor }}>{weather?.condition || (weatherLoading ? '--' : 'Sunny')}</Text>
               </View>
             </View>
             
             <View style={[styles.goodMorningBtn, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7', borderColor: isDark ? 'rgba(245, 158, 11, 0.3)' : '#FCD34D' }]}>
-              <Ionicons name="sunny-outline" size={12} color={goldTextColor} />
-              <Text style={{ fontSize: 10, fontWeight: '700', color: goldTextColor }}>Good Morning!</Text>
+              <Ionicons name={greeting.icon} size={12} color={goldTextColor} />
+              <Text style={{ fontSize: 10, fontWeight: '700', color: goldTextColor }}>{greeting.text}</Text>
             </View>
           </View>
         </View>
@@ -240,14 +283,14 @@ export function UserHomeScreen({ navigation }: any) {
 
         {/* Zodiac Horoscope Detailed Card */}
         <View style={[styles.horoscopeCard, { backgroundColor: cardBg, borderColor: cardBorderColor, borderRadius: 20, overflow: 'hidden' }]}>
-          <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
-            <Image source={require('../../../assets/aries_ram.png')} style={{ width: 76, height: 76, borderRadius: 38 }} />
-            <View style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-                <Text style={{ fontSize: 22, fontWeight: '800', color: titleColor }}>
+          <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            <Image source={require('../../../assets/aries_ram.png')} style={{ width: 60, height: 60, borderRadius: 30 }} />
+            <View style={{ flex: 1, minWidth: 160 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
+                <Text style={{ fontSize: 20, fontWeight: '800', color: titleColor }}>
                   {ZODIAC_SIGNS.find(z => z.sign === selectedSign)?.label || 'Aries'}
                 </Text>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: isDark ? '#F59E0B' : '#EA580C' }}>
+                <Text style={{ fontSize: 11, fontWeight: '600', color: isDark ? '#F59E0B' : '#EA580C' }}>
                   (Mar 21 – Apr 19)
                 </Text>
               </View>
@@ -262,32 +305,32 @@ export function UserHomeScreen({ navigation }: any) {
 
           {/* Lucky Stats Row */}
           <View style={[styles.luckyGrid, { backgroundColor: cardLightBg, borderColor: cardBorderColor, borderRadius: 12, overflow: 'hidden' }]}>
-            <View style={styles.luckyCol}>
-              <Text style={{ fontSize: 10, color: mutedTextColor }}>Lucky Number</Text>
-              <Text style={{ fontSize: 15, fontWeight: '800', color: titleColor, marginTop: 2 }}>{horoscope[0]?.luckyNumber || '7'}</Text>
-            </View>
-            <View style={[styles.luckyDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#FDE68A' }]} />
-            <View style={styles.luckyCol}>
-              <Text style={{ fontSize: 10, color: mutedTextColor }}>Lucky Color</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
-                <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#FBBF24' }} />
-                <Text style={{ fontSize: 11, fontWeight: '700', color: titleColor }}>{horoscope[0]?.luckyColor || 'Bright Yellow'}</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+              <View style={[styles.luckyCol, { width: '33%', paddingVertical: 6 }]}>
+                <Text style={{ fontSize: 9, color: mutedTextColor }}>Lucky Number</Text>
+                <Text style={{ fontSize: 16, fontWeight: '800', color: titleColor, marginTop: 2 }}>{horoscope[0]?.luckyNumber || '7'}</Text>
+              </View>
+              <View style={[styles.luckyCol, { width: '33%', paddingVertical: 6 }]}>
+                <Text style={{ fontSize: 9, color: mutedTextColor }}>Lucky Color</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                  <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#FBBF24' }} />
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: titleColor }} numberOfLines={1}>{horoscope[0]?.luckyColor || 'Yellow'}</Text>
+                </View>
+              </View>
+              <View style={[styles.luckyCol, { width: '34%', paddingVertical: 6 }]}>
+                <Text style={{ fontSize: 9, color: mutedTextColor }}>Lucky Time</Text>
+                <Text style={{ fontSize: 10, fontWeight: '700', color: titleColor, marginTop: 2 }}>10:30 AM – 12:00 PM</Text>
               </View>
             </View>
-            <View style={[styles.luckyDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#FDE68A' }]} />
-            <View style={styles.luckyCol}>
-              <Text style={{ fontSize: 10, color: mutedTextColor }}>Lucky Time</Text>
-              <Text style={{ fontSize: 10, fontWeight: '700', color: titleColor, marginTop: 2 }}>10:30 AM – 12:00 PM</Text>
-            </View>
-            <View style={[styles.luckyDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#FDE68A' }]} />
-            <View style={styles.luckyCol}>
-              <Text style={{ fontSize: 10, color: mutedTextColor }}>Lucky Direction</Text>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: titleColor, marginTop: 2 }}>🧭 North</Text>
-            </View>
-            <View style={[styles.luckyDivider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#FDE68A' }]} />
-            <View style={styles.luckyCol}>
-              <Text style={{ fontSize: 10, color: mutedTextColor }}>Lucky Alphabet</Text>
-              <Text style={{ fontSize: 14, fontWeight: '800', color: titleColor, marginTop: 2 }}>A</Text>
+            <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : '#FDE68A' }}>
+              <View style={[styles.luckyCol, { width: '50%', paddingVertical: 6 }]}>
+                <Text style={{ fontSize: 9, color: mutedTextColor }}>Lucky Direction</Text>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: titleColor, marginTop: 2 }}>🧭 North</Text>
+              </View>
+              <View style={[styles.luckyCol, { width: '50%', paddingVertical: 6, borderLeftWidth: 1, borderLeftColor: isDark ? 'rgba(255,255,255,0.1)' : '#FDE68A' }]}>
+                <Text style={{ fontSize: 9, color: mutedTextColor }}>Lucky Alphabet</Text>
+                <Text style={{ fontSize: 16, fontWeight: '800', color: titleColor, marginTop: 2 }}>A</Text>
+              </View>
             </View>
           </View>
 
@@ -329,58 +372,60 @@ export function UserHomeScreen({ navigation }: any) {
 
           <View style={[styles.panchangContent, { backgroundColor: cardLightBg }]}>
             {/* Top 4 Panchang factors */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 4 }}>
               <View style={styles.panchangItem}>
-                <Ionicons name="sunny-outline" size={18} color={goldTextColor} />
-                <View>
-                  <Text style={{ fontSize: 10, color: mutedTextColor }}>Tithi</Text>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: titleColor }}>Shukla Paksha Dashami</Text>
+                <Ionicons name="sunny-outline" size={16} color={goldTextColor} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ fontSize: 9, color: mutedTextColor }}>Tithi</Text>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: titleColor }} numberOfLines={1}>{panchangData?.tithi || '--'}</Text>
                 </View>
               </View>
               <View style={styles.panchangItem}>
-                <Ionicons name="star-outline" size={18} color={goldTextColor} />
-                <View>
-                  <Text style={{ fontSize: 10, color: mutedTextColor }}>Nakshatra</Text>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: titleColor }}>Pushya</Text>
+                <Ionicons name="star-outline" size={16} color={goldTextColor} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ fontSize: 9, color: mutedTextColor }}>Nakshatra</Text>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: titleColor }} numberOfLines={1}>{panchangData?.nakshatra || '--'}</Text>
                 </View>
               </View>
               <View style={styles.panchangItem}>
-                <Ionicons name="ribbon-outline" size={18} color={goldTextColor} />
-                <View>
-                  <Text style={{ fontSize: 10, color: mutedTextColor }}>Yoga</Text>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: titleColor }}>Siddhi</Text>
+                <Ionicons name="ribbon-outline" size={16} color={goldTextColor} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ fontSize: 9, color: mutedTextColor }}>Yoga</Text>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: titleColor }} numberOfLines={1}>{panchangData?.yoga || '--'}</Text>
                 </View>
               </View>
               <View style={styles.panchangItem}>
-                <Ionicons name="compass-outline" size={18} color={goldTextColor} />
-                <View>
-                  <Text style={{ fontSize: 10, color: mutedTextColor }}>Karan</Text>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: titleColor }}>Kaulav</Text>
+                <Ionicons name="compass-outline" size={16} color={goldTextColor} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ fontSize: 9, color: mutedTextColor }}>Karan</Text>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: titleColor }} numberOfLines={1}>{panchangData?.karana || '--'}</Text>
                 </View>
               </View>
             </View>
 
             {/* Bottom 3 Panchang factors */}
             <View style={{ flexDirection: 'row', justifyContent: 'space-around', paddingTop: 8, borderTopWidth: 1, borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : '#FDE68A' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Ionicons name="sunny" size={16} color="#F59E0B" />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Ionicons name="sunny" size={14} color="#F59E0B" />
                 <View>
-                  <Text style={{ fontSize: 10, color: mutedTextColor }}>Sunrise</Text>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: titleColor }}>05:48 AM</Text>
+                  <Text style={{ fontSize: 9, color: mutedTextColor }}>Sunrise</Text>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: titleColor }}>{panchangData?.sunrise ? to12h(panchangData.sunrise) : '--'}</Text>
                 </View>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Ionicons name="partly-sunny" size={16} color="#EA580C" />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Ionicons name="partly-sunny" size={14} color="#EA580C" />
                 <View>
-                  <Text style={{ fontSize: 10, color: mutedTextColor }}>Sunset</Text>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: titleColor }}>07:23 PM</Text>
+                  <Text style={{ fontSize: 9, color: mutedTextColor }}>Sunset</Text>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: titleColor }}>{panchangData?.sunset ? to12h(panchangData.sunset) : '--'}</Text>
                 </View>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Ionicons name="time-outline" size={16} color="#DC2626" />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Ionicons name="time-outline" size={14} color="#DC2626" />
                 <View>
-                  <Text style={{ fontSize: 10, color: mutedTextColor }}>Rahukal</Text>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: titleColor }}>12:30 PM - 02:00 PM</Text>
+                  <Text style={{ fontSize: 9, color: mutedTextColor }}>Rahukal</Text>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: titleColor }}>
+                    {panchangData?.rahuKaal ? `${to12h(panchangData.rahuKaal.start)} - ${to12h(panchangData.rahuKaal.end)}` : '--'}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -390,7 +435,7 @@ export function UserHomeScreen({ navigation }: any) {
         {/* Quick Actions Grid */}
         <View style={{ marginHorizontal: 16, marginVertical: 14 }}>
           <Text style={{ fontSize: 16, fontWeight: '800', color: titleColor, marginBottom: 12 }}>Quick Actions</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
             <TouchableOpacity onPress={() => navigation.navigate('Kundli')} style={styles.gridActionItem}>
               <View style={[styles.gridActionIconBg, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7', borderColor: cardBorderColor, borderRadius: 16, overflow: 'hidden' }]}>
                 <Ionicons name="planet" size={22} color={goldTextColor} />
@@ -693,13 +738,10 @@ export function AstrologerListScreen({ route, navigation }: any) {
                       {item.specialization?.slice(0, 2).map((s) => <Chip key={s} label={s} />)}
                     </View>
                   </View>
-                  <View style={{ alignItems: 'flex-end', marginLeft: 8 }}>
-                    <Text style={typography.price}>₹{item.chatPricePerMin || item.pricePerMin}/min</Text>
-                  </View>
                 </View>
 
                 {/* Quick Action Buttons Row */}
-                <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, borderTopWidth: 1, borderTopColor: colors.divider, paddingTop: 10 }}>
+                <View style={{ flexDirection: 'row', gap: 6, marginTop: 12, borderTopWidth: 1, borderTopColor: colors.divider, paddingTop: 10 }}>
                   <TouchableOpacity
                     onPress={async () => {
                       if (!isVerified) { Alert.alert('Not Verified', 'This astrologer is not yet verified.'); return; }
@@ -1139,6 +1181,24 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
           >
             <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={20} color={isFavorite ? "#EF4444" : titleColor} />
           </TouchableOpacity>
+
+          {/* Gift Button */}
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Gifts', { astrologerId: id, astrologerName: astro.name })}
+            activeOpacity={0.7}
+            style={{
+              width: 46,
+              height: 46,
+              borderRadius: 23,
+              borderWidth: 1,
+              borderColor: '#E11D48',
+              backgroundColor: isDark ? 'rgba(225, 29, 72, 0.15)' : '#FFE4E6',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Ionicons name="gift" size={20} color="#E11D48" />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -1198,7 +1258,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
       </View>
 
       <CustomModal visible={feedbackVisible} onClose={() => setFeedbackVisible(false)} title={`Rate ${astro.name}`}>
-        <View style={{ padding: 16, gap: 16 }}>
+        <View style={{ padding: 16, gap: 16, paddingBottom: 40 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 4 }}>
             {[1, 2, 3, 4, 5].map(v => (
               <TouchableOpacity key={v} onPress={() => setFeedbackRating(v)}>
@@ -1358,6 +1418,7 @@ export function KundliScreen() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
   const handleGenerate = async () => {
     if (!form.name || !form.dob || !form.tob || !form.place) {
@@ -1386,12 +1447,16 @@ export function KundliScreen() {
       <Text style={[typography.body, { marginBottom: 20, color: colors.textSecondary }]}>Enter birth details for chart calculation</Text>
       <Input label="Name" value={form.name} onChange={(v: string) => setForm({ ...form, name: v })} placeholder="Full name" />
       <TouchableOpacity onPress={() => setShowDatePicker(true)} style={{ marginBottom: 14 }}>
-        <Text style={[typography.label, { marginBottom: 6 }]}>Date of Birth</Text>
-        <View style={{ backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, justifyContent: 'center' }}>
-          <Text style={{ color: form.dob ? colors.textPrimary : colors.textMuted, fontSize: 15 }}>{form.dob || 'Select date'}</Text>
+        <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Date of Birth</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48 }}>
+          <Ionicons name="calendar-outline" size={18} color={colors.textMuted} />
+          <Text style={{ color: form.dob ? colors.textPrimary : colors.textMuted, fontSize: 15, marginLeft: 8, flex: 1 }}>{form.dob || 'Select date'}</Text>
         </View>
       </TouchableOpacity>
-      <Input label="Time of Birth" value={form.tob} onChange={(v: string) => setForm({ ...form, tob: v })} placeholder="e.g. 14:30" />
+      <DatePicker visible={showDatePicker} value={form.dob} onClose={() => setShowDatePicker(false)} onSelect={(d) => { setForm({ ...form, dob: d }); setShowDatePicker(false); }} />
+      <View style={{ marginBottom: 14 }}>
+        <TimePicker label="Time of Birth" value={form.tob} onChange={(t) => setForm({ ...form, tob: t })} />
+      </View>
       <Input label="Place of Birth" value={form.place} onChange={(v: string) => setForm({ ...form, place: v })} placeholder="e.g. Jaipur" />
       <GradientButton title={loading ? 'Generating...' : 'Generate Kundli'} onPress={handleGenerate} disabled={loading} />
       {result && (
@@ -1414,10 +1479,12 @@ export function MatchmakingScreen() {
   const [p2, setP2] = useState({ name: '', dob: '', tob: '', place: '' });
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [showDatePicker, setShowDatePicker] = useState<'p1' | 'p2' | null>(null);
+  const [showTimePicker, setShowTimePicker] = useState<'p1' | 'p2' | null>(null);
 
   const handleCheck = async () => {
     if (!p1.name || !p1.dob || !p2.name || !p2.dob) {
-      Alert.alert('Required', 'Please fill at least name and DOB for both persons');
+      Alert.alert('Required', 'Please fill at least name and date of birth for both persons');
       return;
     }
     setLoading(true);
@@ -1436,11 +1503,41 @@ export function MatchmakingScreen() {
   return (
     <ScreenWrapper scroll>
       <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>Matchmaking</Text>
-      <Text style={[typography.sectionTitle, { marginTop: 16, color: colors.textPrimary }]}>Person 1</Text>
-      {['name', 'dob', 'tob', 'place'].map((f) => <Input key={'p1' + f} label={f} value={(p1 as any)[f]} onChange={(v: string) => setP1({ ...p1, [f]: v })} />)}
-      <Text style={[typography.sectionTitle, { marginTop: 16, color: colors.textPrimary }]}>Person 2</Text>
-      {['name', 'dob', 'tob', 'place'].map((f) => <Input key={'p2' + f} label={f} value={(p2 as any)[f]} onChange={(v: string) => setP2({ ...p2, [f]: v })} />)}
+      <Text style={[typography.body, { marginBottom: 20, color: colors.textSecondary }]}>Check compatibility between two people</Text>
+
+      <Text style={[typography.sectionTitle, { marginTop: 16, marginBottom: 12, color: colors.textPrimary }]}>Person 1</Text>
+      <Input label="Name" value={p1.name} onChange={(v: string) => setP1({ ...p1, name: v })} placeholder="Full name" />
+      <TouchableOpacity onPress={() => setShowDatePicker('p1')} style={{ marginBottom: 14 }}>
+        <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Date of Birth</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48 }}>
+          <Ionicons name="calendar-outline" size={18} color={colors.textMuted} />
+          <Text style={{ color: p1.dob ? colors.textPrimary : colors.textMuted, fontSize: 15, marginLeft: 8, flex: 1 }}>{p1.dob || 'Select date'}</Text>
+        </View>
+      </TouchableOpacity>
+      <View style={{ marginBottom: 14 }}>
+        <TimePicker label="Time of Birth" value={p1.tob} onChange={(t) => setP1({ ...p1, tob: t })} />
+      </View>
+      <Input label="Place of Birth" value={p1.place} onChange={(v: string) => setP1({ ...p1, place: v })} placeholder="e.g. Jaipur" />
+
+      <Text style={[typography.sectionTitle, { marginTop: 24, marginBottom: 12, color: colors.textPrimary }]}>Person 2</Text>
+      <Input label="Name" value={p2.name} onChange={(v: string) => setP2({ ...p2, name: v })} placeholder="Full name" />
+      <TouchableOpacity onPress={() => setShowDatePicker('p2')} style={{ marginBottom: 14 }}>
+        <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Date of Birth</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48 }}>
+          <Ionicons name="calendar-outline" size={18} color={colors.textMuted} />
+          <Text style={{ color: p2.dob ? colors.textPrimary : colors.textMuted, fontSize: 15, marginLeft: 8, flex: 1 }}>{p2.dob || 'Select date'}</Text>
+        </View>
+      </TouchableOpacity>
+      <View style={{ marginBottom: 14 }}>
+        <TimePicker label="Time of Birth" value={p2.tob} onChange={(t) => setP2({ ...p2, tob: t })} />
+      </View>
+      <Input label="Place of Birth" value={p2.place} onChange={(v: string) => setP2({ ...p2, place: v })} placeholder="e.g. Jaipur" />
+
+      <DatePicker visible={showDatePicker === 'p1'} value={p1.dob} onClose={() => setShowDatePicker(null)} onSelect={(d) => { setP1({ ...p1, dob: d }); setShowDatePicker(null); }} />
+      <DatePicker visible={showDatePicker === 'p2'} value={p2.dob} onClose={() => setShowDatePicker(null)} onSelect={(d) => { setP2({ ...p2, dob: d }); setShowDatePicker(null); }} />
+
       <GradientButton title={loading ? 'Checking...' : 'Check Compatibility'} onPress={handleCheck} disabled={loading} />
+      <View style={{ height: 40 }} />
       {result && (
         <GlassCard style={{ marginTop: 20, padding: 16 }}>
           <Text style={[typography.cardTitle, { marginBottom: 8 }]}>Compatibility Result</Text>
@@ -1814,8 +1911,8 @@ const styles = StyleSheet.create({
   menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
   border: { borderBottomWidth: 1, borderBottomColor: colors.divider },
   logout: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 32, padding: 16, marginBottom: 100 },
-  dropdownContainer: { position: 'absolute', top: 55, right: 16, width: 190, borderRadius: 12, borderWidth: 1, paddingVertical: 4, zIndex: 2000 },
-  dropdownItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
+  dropdownContainer: { position: 'absolute', top: 56, left: 16, width: 200, borderRadius: 16, borderWidth: 1, paddingVertical: 6, zIndex: 2000, elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12 },
+  dropdownItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1 },
   zodiacChip: { width: 52, height: 52, borderRadius: 26, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   notifBadge: { position: 'absolute', top: 2, right: 2, backgroundColor: colors.danger, borderRadius: 10, minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   topHeader: {
@@ -1898,18 +1995,14 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   luckyGrid: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     borderRadius: 12,
-    paddingVertical: 10,
+    paddingVertical: 4,
     paddingHorizontal: 8,
     marginVertical: 12,
     borderWidth: 1,
     borderColor: colors.cardBorder,
   },
   luckyCol: {
-    flex: 1,
     alignItems: 'center',
   },
   luckyDivider: {
@@ -1960,11 +2053,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    maxWidth: '24%',
+    width: '48%',
+    marginBottom: 8,
   },
   gridActionItem: {
-    width: '18%',
+    width: '30%',
     alignItems: 'center',
+    marginBottom: 12,
   },
   gridActionIconBg: {
     width: 50,

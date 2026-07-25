@@ -20,6 +20,9 @@ export function GiftScreen({ route, navigation }: any) {
   const [showSendModal, setShowSendModal] = useState(false);
   const [sending, setSending] = useState(false);
 
+  const preSelectedAstrologerId = route?.params?.astrologerId;
+  const preSelectedAstrologerName = route?.params?.astrologerName;
+
   const loadData = useCallback(async () => {
     try {
       const [g, a, t] = await Promise.all([
@@ -30,15 +33,19 @@ export function GiftScreen({ route, navigation }: any) {
       setGifts(g.filter(g => g.isActive));
       setAstrologers(a);
       setTransactions(t);
+      if (preSelectedAstrologerId) {
+        const found = a.find((astro: Astrologer) => astro.userId === preSelectedAstrologerId);
+        if (found) setSelectedAstrologer(found);
+      }
     } catch {} finally { setLoading(false); }
-  }, [user?.id]);
+  }, [user?.id, preSelectedAstrologerId]);
 
   useEffect(() => { if (isFocused) loadData(); }, [isFocused, loadData]);
   const onRefresh = useCallback(() => { setRefreshing(true); loadData().finally(() => setRefreshing(false)); }, [loadData]);
 
   const openSendGift = (gift: Gift) => {
     setSelectedGift(gift);
-    setSelectedAstrologer(null);
+    if (!preSelectedAstrologerId) setSelectedAstrologer(null);
     setShowSendModal(true);
   };
 

@@ -122,6 +122,7 @@ export function BlogsScreen() {
       <SectionTitle title="Blogs" />
       {blogs.length === 0 ? <EmptyState icon={<Ionicons name="newspaper-outline" size={48} color={colors.textMuted} />} title="No blogs yet" /> :
         blogs.map(b => <GlassCard key={b.id} style={{ marginBottom: 12 }}><Text style={typography.cardTitle}>{b.title}</Text><Text style={typography.body} numberOfLines={3}>{b.excerpt || b.content?.slice(0, 150)}</Text><Text style={typography.caption}>{b.tags?.join(', ')}</Text></GlassCard>)}
+      <View style={{ height: 40 }} />
     </ScreenWrapper>
   );
 }
@@ -1075,8 +1076,8 @@ export function PrivacyPolicyScreen({ navigation }: any) {
 
         <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>2. Information We Collect</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
-          • Personal Identification: Name, email address, telephone number, and gender.{"\n"}
-          • Astrological Profile Details: Date, time, and precise city/country of birth. This data is strictly used to compile your natal chart, horoscope calculations, and matching reports.{"\n"}
+          • Personal Identification: Name, email address, telephone number, and gender.{'\n'}
+          • Astrological Profile Details: Date, time, and precise city/country of birth. This data is strictly used to compile your natal chart, horoscope calculations, and matching reports.{'\n'}
           • Wallet & Billing: We record purchase transaction summaries and wallet ledger history. No full credit/debit card numbers or sensitive banking credentials are saved on our servers.
         </Text>
 
@@ -1101,6 +1102,7 @@ export function PrivacyPolicyScreen({ navigation }: any) {
         </Text>
       </GlassCard>
       <GradientButton title="Back to Dashboard" onPress={() => navigation.navigate('Main')} style={{ marginTop: 12 }} />
+      <View style={{ height: 40 }} />
     </ScreenWrapper>
   );
 }
