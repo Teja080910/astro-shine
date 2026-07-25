@@ -225,7 +225,6 @@ export function GiftScreen({ route, navigation }: any) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <>
-            <Text style={[typography.pageTitle, { marginBottom: 4 }]}>Send a Gift</Text>
             <Text style={[typography.body, { marginBottom: 16 }]}>Show appreciation to your astrologer with a thoughtful gift</Text>
             {transactions.length > 0 && (
               <GlassCard style={{ padding: 16, marginBottom: 16 }}>

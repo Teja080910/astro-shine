@@ -11,7 +11,7 @@ import { useChat } from '../../context/ChatContext';
 import * as DocumentPicker from 'expo-document-picker';
 
 function SectionTitle({ title }: { title: string }) {
-  return <Text style={[typography.pageTitle, { marginBottom: 16 }]}>{title}</Text>;
+  return null;
 }
 
 function to12h(t: string): string {
