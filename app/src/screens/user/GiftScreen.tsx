@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, Image, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Image, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { Avatar, Chip, ConfirmDialog, CustomModal, EmptyState, GlassCard, GradientButton, ScreenWrapper, colors, radii, typography } from '../../shared';
 import { api } from '../../shared/api-client';
@@ -24,6 +24,7 @@ export function GiftScreen({ route, navigation }: any) {
   const [selectedAstrologer, setSelectedAstrologer] = useState<Astrologer | null>(null);
   const [showSendModal, setShowSendModal] = useState(false);
   const [sending, setSending] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const preSelectedAstrologerId = route?.params?.astrologerId;
   const preSelectedAstrologerName = route?.params?.astrologerName;
@@ -279,23 +280,65 @@ export function GiftScreen({ route, navigation }: any) {
             </View>
           )}
           {!selectedAstrologer && (
-            <View style={{ maxHeight: 240 }}>
-              <ScrollView nestedScrollEnabled>
-                {astrologers.map((item) => (
-                  <TouchableOpacity
-                    key={item.userId}
-                    onPress={() => setSelectedAstrologer(item)}
-                    style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.divider }}
-                  >
-                    <Avatar size={36} uri={item.avatar} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={[typography.body, { fontWeight: '600' }]}>{item.name}</Text>
-                      <Text style={typography.caption}>{item.specialization?.[0] || 'Astrologer'}</Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            <View style={{ gap: 10 }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: isDark ? '#111827' : '#F1F5F9',
+                  borderRadius: 12,
+                  paddingHorizontal: 12,
+                  height: 40,
+                  borderWidth: 1,
+                  borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0',
+                }}
+              >
+                <Ionicons name="search" size={16} color={isDark ? '#9CA3AF' : '#64748B'} style={{ marginRight: 8 }} />
+                <TextInput
+                  placeholder="Search astrologer name..."
+                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  style={{
+                    flex: 1,
+                    color: isDark ? '#FFFFFF' : '#0F172A',
+                    fontSize: 13,
+                    padding: 0,
+                  }}
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity onPress={() => setSearchQuery("")}>
+                    <Ionicons name="close-circle" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
                   </TouchableOpacity>
-                ))}
-              </ScrollView>
+                )}
+              </View>
+
+              <View style={{ maxHeight: 240 }}>
+                <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
+                  {astrologers
+                    .filter(a => a.name?.toLowerCase().includes(searchQuery.toLowerCase()))
+                    .map((item) => (
+                      <TouchableOpacity
+                        key={item.userId}
+                        onPress={() => {
+                          setSelectedAstrologer(item);
+                          setSearchQuery("");
+                        }}
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.divider }}
+                      >
+                        <Avatar size={36} uri={item.avatar} />
+                        <View style={{ flex: 1 }}>
+                          <Text style={[typography.body, { fontWeight: '600', color: isDark ? '#FFFFFF' : '#0F172A' }]}>{item.name}</Text>
+                          <Text style={[typography.caption, { color: isDark ? '#9CA3AF' : '#64748B' }]}>{item.specialization?.[0] || 'Astrologer'}</Text>
+                        </View>
+                        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                      </TouchableOpacity>
+                    ))}
+                  {astrologers.filter(a => a.name?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+                    <Text style={{ textAlign: 'center', color: colors.textMuted, marginVertical: 20 }}>No astrologers found</Text>
+                  )}
+                </ScrollView>
+              </View>
             </View>
           )}
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
