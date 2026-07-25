@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const resolvedRole: AppRole =
       (u as any).role === "astrologer" ? "astrologer" : "user";
     if (resolvedRole === "astrologer") {
-      await persist(token, undefined, u as any, "astrologer");
+      await persist(token, undefined, { ...(u as any), userId: (u as any).id } as any, "astrologer");
     } else {
       await persist(token, u as User, undefined, "user");
     }
