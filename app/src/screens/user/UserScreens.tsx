@@ -827,7 +827,7 @@ export function UserHomeScreen({ navigation }: any) {
               onPress={() => setActiveHoroscopeTab("love")}
               style={styles.subTabItem}
             >
-              <Text style={{ fontSize: 13 }}>❤️</Text>
+              <Ionicons name="heart" size={14} color={activeHoroscopeTab === "love" ? "#EF4444" : mutedTextColor} />
               <Text
                 style={{
                   fontSize: 12,
@@ -851,7 +851,7 @@ export function UserHomeScreen({ navigation }: any) {
               onPress={() => setActiveHoroscopeTab("career")}
               style={styles.subTabItem}
             >
-              <Text style={{ fontSize: 13 }}>💼</Text>
+              <Ionicons name="briefcase" size={14} color={activeHoroscopeTab === "career" ? "#3B82F6" : mutedTextColor} />
               <Text
                 style={{
                   fontSize: 12,
@@ -877,7 +877,7 @@ export function UserHomeScreen({ navigation }: any) {
               onPress={() => setActiveHoroscopeTab("finance")}
               style={styles.subTabItem}
             >
-              <Text style={{ fontSize: 13 }}>🪙</Text>
+              <Ionicons name="cash" size={14} color={activeHoroscopeTab === "finance" ? "#16A34A" : mutedTextColor} />
               <Text
                 style={{
                   fontSize: 12,
@@ -903,7 +903,7 @@ export function UserHomeScreen({ navigation }: any) {
               onPress={() => setActiveHoroscopeTab("health")}
               style={styles.subTabItem}
             >
-              <Text style={{ fontSize: 13 }}>➕</Text>
+              <Ionicons name="pulse" size={14} color={activeHoroscopeTab === "health" ? "#8B5CF6" : mutedTextColor} />
               <Text
                 style={{
                   fontSize: 12,
