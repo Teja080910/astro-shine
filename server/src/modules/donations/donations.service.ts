@@ -36,6 +36,21 @@ export class DonationsService {
       .orderBy(desc(schema.donationLogs.createdAt));
   }
 
+  async findAll() {
+    return this.db
+      .select()
+      .from(schema.donations)
+      .orderBy(desc(schema.donations.createdAt));
+  }
+
+  async findByUserId(userId: string) {
+    return this.db
+      .select()
+      .from(schema.donations)
+      .where(eq(schema.donations.userId, userId))
+      .orderBy(desc(schema.donations.createdAt));
+  }
+
   async create(data: { userId?: string; amount: string; transactionId?: string; message?: string }) {
     const [r] = await this.db.insert(schema.donations).values({
       userId: data.userId || null,

@@ -21,14 +21,14 @@ export class LiveSessionsController {
   @Post()
   @UseGuards(AuthGuard)
   async create(@Body() body: any, @Req() req: any) {
-    if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can create live sessions');
-    return this.service.create(body);
+    if (req.userRole !== 'admin' && req.userRole !== 'astrologer') throw new ForbiddenException('Only admins and astrologers can create live sessions');
+    return this.service.create({ ...body, astrologerId: req.userId });
   }
 
   @Put(':id/status')
   @UseGuards(AuthGuard)
   async updateStatus(@Param('id') id: string, @Body() body: { status: string }, @Req() req: any) {
-    if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can update session status');
+    if (req.userRole !== 'admin' && req.userRole !== 'astrologer') throw new ForbiddenException('Only admins and astrologers can update session status');
     return this.service.updateStatus(id, body.status);
   }
 }
