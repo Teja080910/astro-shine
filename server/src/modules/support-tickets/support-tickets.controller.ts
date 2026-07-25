@@ -41,6 +41,6 @@ export class SupportTicketsController {
   @Post('tickets/:id/replies')
   @UseGuards(AuthGuard)
   async addReply(@Param('id') id: string, @Body() body: any, @Req() req: any) {
-    return this.service.addReply({ ...body, ticketId: id, userId: req.userId });
+    return this.service.addReply({ ...body, ticketId: id, senderId: req.userId, senderRole: req.userRole || 'user' });
   }
 }
