@@ -116,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginAsAstrologer = async (email: string, password: string) => {
     const { token, user: u } = await api.auth.login({ email, password });
-    await persist(token, undefined, u as any, "astrologer");
+    await persist(token, undefined, { ...(u as any), userId: (u as any).id } as any, "astrologer");
   };
 
   const registerUser = async (
@@ -149,11 +149,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await persist(token, undefined, astrologer, "astrologer");
   };
 
-  const loginWithOtp = async (identifier: string, otp: string, role: AppRole, type: 'phone' | 'email' = 'phone') => {
+  const loginWithOtp = async (identifier: string, otp: string, _role: AppRole, type: 'phone' | 'email' = 'phone') => {
     const { token, user: u } = type === 'email'
       ? await api.auth.verifyEmailOtp(identifier, otp)
       : await api.auth.phoneLogin(identifier, otp);
-    await persist(token, u as User, undefined, role);
+    const resolvedRole: AppRole = (u as any).role === 'astrologer' ? 'astrologer' : 'user';
+    if (resolvedRole === 'astrologer') {
+      await persist(token, undefined, { ...(u as any), userId: (u as any).id } as any, 'astrologer');
+    } else {
+      await persist(token, u as User, undefined, 'user');
+    }
   };
 
   const logout = async () => {
