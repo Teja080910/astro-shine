@@ -42,6 +42,7 @@ import { RealtimeModule } from './common/realtime.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { MuhuratCategoriesModule } from './modules/muhurat-categories/muhurat-categories.module';
 import { MuhuratModule } from './modules/muhurat/muhurat.module';
+import { AstrologyModule } from './modules/astrology/astrology.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -90,6 +91,7 @@ import { AppService } from './app.service';
     PaymentsModule,
     MuhuratCategoriesModule,
     MuhuratModule,
+    AstrologyModule,
   ],
   controllers: [AppController],
   providers: [

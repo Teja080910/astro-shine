@@ -1,21 +1,46 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import * as fs from 'fs';
-import * as path from 'path';
-import { extname } from 'path';
-
-const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.mp4', '.mp3', '.wav', '.doc', '.docx'];
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+import { CloudinaryStorageService } from './cloudinary-storage.service';
+import { SupabaseStorageService } from './supabase-storage.service';
 
 @Injectable()
 export class FileUploadService {
-  private uploadDir = path.join(process.cwd(), 'uploads');
+  constructor(
+    private cloudinaryStorage: CloudinaryStorageService,
+    private supabaseStorage: SupabaseStorageService,
+  ) {}
 
-  constructor() {
-    if (!fs.existsSync(this.uploadDir)) fs.mkdirSync(this.uploadDir, { recursive: true });
+  async saveFile(file: Express.Multer.File, destination: string = 'local') {
+    if (!file) throw new BadRequestException('No file provided');
+
+    switch (destination) {
+      case 'cloudinary':
+        return this.cloudinaryStorage.saveFile(file);
+      case 'supabase':
+        return this.supabaseStorage.saveFile(file);
+      default:
+        return this.saveLocal(file);
+    }
   }
 
-  async saveFile(file: Express.Multer.File): Promise<{ filename: string; url: string; size: number }> {
-    if (!file) throw new BadRequestException('No file provided');
+  async deleteFile(filename: string, destination: string = 'local') {
+    switch (destination) {
+      case 'cloudinary':
+        return this.cloudinaryStorage.deleteFile(filename);
+      case 'supabase':
+        return this.supabaseStorage.deleteFile(filename);
+      default:
+        return this.deleteLocal(filename);
+    }
+  }
+
+  private async saveLocal(file: Express.Multer.File) {
+    const fs = await import('fs');
+    const path = await import('path');
+    const { extname } = await import('path');
+
+    const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.mp4', '.mp3', '.wav', '.doc', '.docx'];
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
     if (file.size > MAX_FILE_SIZE) throw new BadRequestException(`File size exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`);
 
     const ext = extname(file.originalname).toLowerCase();
@@ -23,12 +48,15 @@ export class FileUploadService {
       throw new BadRequestException(`File type ${ext} not allowed. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`);
     }
 
+    const uploadDir = path.join(process.cwd(), 'uploads');
+    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
     const safeName = file.originalname.replace(/[/\\]/g, '_');
     const filename = `${Date.now()}-${safeName}`;
-    const filepath = path.join(this.uploadDir, filename);
+    const filepath = path.join(uploadDir, filename);
 
     const resolved = path.resolve(filepath);
-    if (!resolved.startsWith(path.resolve(this.uploadDir))) {
+    if (!resolved.startsWith(path.resolve(uploadDir))) {
       throw new BadRequestException('Invalid file path');
     }
 
@@ -36,12 +64,16 @@ export class FileUploadService {
     return { filename, url: `/uploads/${filename}`, size: file.size };
   }
 
-  async deleteFile(filename: string) {
+  private async deleteLocal(filename: string) {
+    const fs = await import('fs');
+    const path = await import('path');
+
     const safeName = filename.replace(/[/\\]/g, '_');
-    const filepath = path.join(this.uploadDir, safeName);
+    const uploadDir = path.join(process.cwd(), 'uploads');
+    const filepath = path.join(uploadDir, safeName);
 
     const resolved = path.resolve(filepath);
-    if (!resolved.startsWith(path.resolve(this.uploadDir))) {
+    if (!resolved.startsWith(path.resolve(uploadDir))) {
       throw new BadRequestException('Invalid file path');
     }
 
