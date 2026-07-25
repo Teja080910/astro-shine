@@ -1,22 +1,49 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useIsFocused } from '@react-navigation/native';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
 import { Avatar, Chip, ConfirmDialog, CustomModal, EmptyState, GlassCard, GradientButton, ScreenWrapper, SectionHeader, StarRating, Toggle, colors, radii, typography } from '../../shared';
 import { api } from '../../shared/api-client';
 import type { CallLog, Notification, Review, Transaction, WithdrawalRequest } from '../../shared/types';
+import * as Location from 'expo-location';
 
 export function AstrologerHomeScreen({ navigation }: any) {
   const { astrologer, theme, setTheme } = useAuth();
   const { astrologerStatuses, statsVersion } = useChat();
   const isFocused = useIsFocused();
+  const isDark = theme === 'dark';
   const [isOnline, setIsOnline] = useState(astrologer?.onlineStatus === 'online');
   const [stats, setStats] = useState({ todayEarnings: '₹0', totalCalls: '0', rating: '0', totalEarnings: '₹0' });
   const [recentTxns, setRecentTxns] = useState<any[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [weather, setWeather] = useState<{ temp: string; condition: string } | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(true);
+  const [location, setLocation] = useState<{ city: string; region: string } | null>(null);
+
+  const titleColor = isDark ? '#FBBF24' : '#7F1D1D';
+  const iconColor = isDark ? '#F59E0B' : '#7F1D1D';
+  const cardLightBg = isDark ? '#1F2937' : '#FFFBEB';
+  const cardBorderColor = isDark ? 'rgba(245, 158, 11, 0.25)' : '#FDE68A';
+  const bodyTextColor = isDark ? '#E5E7EB' : '#374151';
+  const mutedTextColor = isDark ? '#9CA3AF' : '#6B7280';
+  const goldTextColor = isDark ? '#FBBF24' : '#D97706';
+
+  const greeting = (() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return { text: 'Good Morning!', icon: 'sunny-outline' as const };
+    if (hour < 17) return { text: 'Good Afternoon!', icon: 'partly-sunny' as const };
+    if (hour < 21) return { text: 'Good Evening!', icon: 'moon-outline' as const };
+    return { text: 'Good Night!', icon: 'moon' as const };
+  })();
+
+  const formatDate = (date: Date) => {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}, ${days[date.getDay()]}`;
+  };
 
   const loadData = useCallback(async () => {
     if (!astrologer?.userId) return;
@@ -46,6 +73,26 @@ export function AstrologerHomeScreen({ navigation }: any) {
     }
   }, [astrologerStatuses, astrologer?.userId]);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') { setWeatherLoading(false); return; }
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
+        const { latitude, longitude } = loc.coords;
+        const geo = await Location.reverseGeocodeAsync({ latitude, longitude });
+        if (geo && geo[0]) {
+          const city = geo[0].city || geo[0].district || geo[0].subregion || '';
+          const region = geo[0].region || geo[0].country || '';
+          setLocation({ city, region });
+        }
+        const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=metric&appid=${process.env.EXPO_PUBLIC_OPENWEATHER_API_KEY}`);
+        const data = await res.json();
+        if (data.main) setWeather({ temp: `${Math.round(data.main.temp)}°C`, condition: data.weather[0].main });
+      } catch {} finally { setWeatherLoading(false); }
+    })();
+  }, []);
+
   const onRefresh = async () => { setRefreshing(true); await loadData(); setRefreshing(false); };
 
   const toggleOnline = async (v: boolean) => {
@@ -62,26 +109,79 @@ export function AstrologerHomeScreen({ navigation }: any) {
 
   return (
     <ScreenWrapper style={{ position: 'relative', zIndex: 1 }}>
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 120 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>
-              <Ionicons name="sunny" size={24} color={colors.accentGold} /> Namaste
-            </Text>
-            <Text style={[typography.body, { color: colors.textSecondary }]}>{astrologer?.name || 'Astrologer'}</Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <View style={{ alignItems: 'center' }}>
-              <Text style={[typography.caption, { color: colors.textSecondary }]}>{isOnline ? 'Online' : 'Offline'}</Text>
-              <Toggle value={isOnline} onValueChange={toggleOnline} trackColor={{ false: colors.textMuted, true: colors.success }} />
+      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+        {/* Top Header Bar */}
+        <View style={styles.topHeader}>
+          <TouchableOpacity onPress={() => setMenuOpen(true)} style={{ padding: 4, width: 40 }}>
+            <Ionicons name="menu-outline" size={28} color={iconColor} />
+          </TouchableOpacity>
+          
+          <View style={{ alignItems: 'center', flex: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+              <Text style={{ color: isDark ? '#FBBF24' : '#D97706', fontSize: 22, fontWeight: '900' }}>ॐ</Text>
+              <Text style={{ fontSize: 20, fontWeight: '900', color: isDark ? '#FBBF24' : '#D97706', letterSpacing: 0.5 }}>
+                ASTROŚHINE
+              </Text>
             </View>
-            <TouchableOpacity onPress={() => setTheme(theme === 'dark' ? 'light' : 'dark')} style={{ padding: 8 }}>
-              <Ionicons name={theme === 'dark' ? 'sunny-outline' : 'moon-outline'} size={28} color={colors.textPrimary} />
+            <Text style={{ fontSize: 8, fontWeight: '800', color: isDark ? '#FBBF24' : '#D97706', letterSpacing: 1, marginTop: 1, textAlign: 'center' }}>
+              YOUR DESTINY, OUR GUIDANCE
+            </Text>
+          </View>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <TouchableOpacity onPress={() => setTheme(isDark ? 'light' : 'dark')} style={{ padding: 4 }}>
+              <Ionicons name={isDark ? "sunny-outline" : "moon-outline"} size={22} color={iconColor} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setMenuOpen(true)} style={{ padding: 8 }}>
-              <Ionicons name="menu-outline" size={32} color={colors.textPrimary} />
+            <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={{ padding: 4, position: 'relative' }}>
+              <Ionicons name="notifications-outline" size={24} color={iconColor} />
             </TouchableOpacity>
           </View>
+        </View>
+
+        {/* Greeting & Online Toggle Card */}
+        <View style={[styles.greetingRow, { backgroundColor: cardLightBg, borderColor: cardBorderColor }]}>
+          <View style={{ flex: 1.1 }}>
+            <Text style={{ fontSize: 13, color: mutedTextColor, fontWeight: '500' }}>Namaste,</Text>
+            <Text style={{ fontSize: 18, fontWeight: '800', color: titleColor, marginVertical: 2 }}>
+              {astrologer?.name || 'Astrologer'} <Ionicons name="hand-left-outline" size={16} color={titleColor} />
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
+              <Ionicons name="calendar-outline" size={13} color={mutedTextColor} />
+              <Text style={{ fontSize: 11, color: bodyTextColor, fontWeight: '500' }}>{formatDate(new Date())}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 }}>
+              <Ionicons name="location-outline" size={13} color={mutedTextColor} />
+              <Text style={{ fontSize: 11, color: bodyTextColor, fontWeight: '500' }}>{location ? `${location.city}, ${location.region}` : 'Loading...'}</Text>
+            </View>
+          </View>
+
+          <View style={{ alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}>
+            <Image source={require('../../../assets/ganesha_header.png')} style={{ width: 85, height: 95 }} resizeMode="contain" />
+          </View>
+
+          <View style={{ flex: 0.9, alignItems: 'flex-end', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Ionicons name="sunny" size={24} color="#F59E0B" />
+              <View>
+                <Text style={{ fontSize: 14, fontWeight: '800', color: titleColor }}>{weather?.temp || (weatherLoading ? '--' : '28°C')}</Text>
+                <Text style={{ fontSize: 11, color: mutedTextColor }}>{weather?.condition || (weatherLoading ? '--' : 'Sunny')}</Text>
+              </View>
+            </View>
+            
+            <View style={[styles.goodMorningBtn, { backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7', borderColor: isDark ? 'rgba(245, 158, 11, 0.3)' : '#FCD34D' }]}>
+              <Ionicons name={greeting.icon} size={12} color={goldTextColor} />
+              <Text style={{ fontSize: 10, fontWeight: '700', color: goldTextColor }}>{greeting.text}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Online/Offline Toggle */}
+        <View style={[styles.onlineRow, { backgroundColor: cardLightBg, borderColor: cardBorderColor }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: isOnline ? '#10B981' : mutedTextColor }} />
+            <Text style={{ fontSize: 14, fontWeight: '700', color: isOnline ? '#10B981' : mutedTextColor }}>{isOnline ? 'Online' : 'Offline'}</Text>
+          </View>
+          <Toggle value={isOnline} onValueChange={toggleOnline} trackColor={{ false: mutedTextColor, true: '#10B981' }} />
         </View>
 
         <View style={styles.statsGrid}>
@@ -682,9 +782,50 @@ const styles = StyleSheet.create({
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 20 },
   stat: { width: '47%', alignItems: 'center', padding: 14 },
   quickAction: { flex: 1, height: 70, borderRadius: radii.card, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  dropdownContainer: { position: 'absolute', top: 55, right: 16, width: 200, borderRadius: 12, borderWidth: 1, paddingVertical: 4, zIndex: 2000 },
-  dropdownItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
+  dropdownContainer: { position: 'absolute', top: 56, left: 16, width: 200, borderRadius: 16, borderWidth: 1, paddingVertical: 6, zIndex: 2000, elevation: 8, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12 },
+  dropdownItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1 },
   input: { backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, color: colors.textPrimary, fontSize: 15 },
+  topHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  greetingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 12,
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+  },
+  goodMorningBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  onlineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
 });
 
 export { AstrologerMuhuratScreen } from './AstrologerMuhuratScreen';
