@@ -715,11 +715,15 @@ export function AstrologerRequestsScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isFocused && astrologer?.userId) {
-      api.calls.list({ astrologerId: astrologer.userId })
-        .then(c => setRequests(c.filter((r: any) => r.status === 'initiated')))
-        .catch(() => {})
-        .finally(() => setLoading(false));
+    if (isFocused) {
+      if (astrologer?.userId) {
+        api.calls.list({ astrologerId: astrologer.userId })
+          .then(c => setRequests(c.filter((r: any) => r.status === 'initiated')))
+          .catch(() => {})
+          .finally(() => setLoading(false));
+      } else {
+        setLoading(false);
+      }
     }
   }, [isFocused, astrologer?.userId]);
 
@@ -785,37 +789,51 @@ export function AstrologerScheduleScreen() {
 
   return (
     <ScreenWrapper scroll>
-      <SectionTitle title="Availability Schedule" />
-      <Text style={[typography.body, { marginBottom: 16, paddingHorizontal: 4 }]}>Set your weekly availability for consultations</Text>
-      {days.map((d, i) => {
-        const s = schedules[i];
-        return (
-          <GlassCard key={d} style={{ marginBottom: 8, padding: 12 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Toggle
-                  value={s?.isAvailable ?? true}
-                  onValueChange={(v) => updateDay(i, 'isAvailable', v)}
-                  trackColor={{ false: colors.textMuted, true: colors.success }}
-                />
-                <Text style={[typography.cardTitle, { opacity: s?.isAvailable === false ? 0.4 : 1 }]}>{d}</Text>
+      <View style={{ width: '100%', maxWidth: 600, alignSelf: 'center', padding: 16 }}>
+        <SectionTitle title="Availability Schedule" />
+        <Text style={[typography.body, { marginBottom: 16, paddingHorizontal: 4 }]}>Set your weekly availability for consultations</Text>
+        {days.map((d, i) => {
+          const s = schedules[i];
+          const isAvail = s?.isAvailable ?? true;
+          return (
+            <GlassCard key={d} style={{ marginBottom: 8, padding: 14 }}>
+              <View style={{ gap: 8 }}>
+                {/* Header Row: Day Name + Toggle */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={[typography.cardTitle, { opacity: isAvail ? 1 : 0.4, fontSize: 15 }]}>
+                    {d}
+                  </Text>
+                  <Toggle
+                    value={isAvail}
+                    onValueChange={(v) => updateDay(i, 'isAvailable', v)}
+                    trackColor={{ false: colors.textMuted, true: colors.success }}
+                  />
+                </View>
+
+                {/* Time Picker Row (Fills width dynamically, hides if unavailable) */}
+                {isAvail && (
+                  <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+                    <View style={{ flex: 1 }}>
+                      <TimePicker
+                        value={s?.startTime || '09:00'}
+                        onChange={(v) => updateDay(i, 'startTime', v)}
+                      />
+                    </View>
+                    <Text style={[typography.caption, { color: colors.textSecondary }]}>to</Text>
+                    <View style={{ flex: 1 }}>
+                      <TimePicker
+                        value={s?.endTime || '18:00'}
+                        onChange={(v) => updateDay(i, 'endTime', v)}
+                      />
+                    </View>
+                  </View>
+                )}
               </View>
-              <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center', opacity: s?.isAvailable === false ? 0.4 : 1 }}>
-                <TimePicker
-                  value={s?.startTime || '09:00'}
-                  onChange={(v) => updateDay(i, 'startTime', v)}
-                />
-                <Text style={typography.caption}>to</Text>
-                <TimePicker
-                  value={s?.endTime || '18:00'}
-                  onChange={(v) => updateDay(i, 'endTime', v)}
-                />
-              </View>
-            </View>
-          </GlassCard>
-        );
-      })}
-      <GradientButton title={loading ? 'Saving...' : 'Save Schedule'} onPress={saveAll} disabled={loading} style={{ marginTop: 16 }} />
+            </GlassCard>
+          );
+        })}
+        <GradientButton title={loading ? 'Saving...' : 'Save Schedule'} onPress={saveAll} disabled={loading} style={{ marginTop: 16 }} />
+      </View>
     </ScreenWrapper>
   );
 }

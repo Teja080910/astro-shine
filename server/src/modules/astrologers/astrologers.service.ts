@@ -130,6 +130,23 @@ export class AstrologersService {
       ratings: ratings.toFixed(1),
       comments,
     }).returning();
+
+    // Increment cached totalReviews count on astrologers table
+    await this.db.update(schema.astrologers)
+      .set({
+        totalReviews: sql`${schema.astrologers.totalReviews} + 1`
+      })
+      .where(eq(schema.astrologers.userId, astrologerId));
+
+    // Mirror feedback to reviews table for Admin Dashboard / reviews module queries
+    await this.db.insert(schema.reviews).values({
+      astrologerId,
+      userId,
+      rating: ratings,
+      comment: comments || '',
+      isVisible: true,
+    }).catch(() => {});
+
     return feedback;
   }
 
