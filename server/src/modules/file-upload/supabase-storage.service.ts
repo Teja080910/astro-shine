@@ -1,7 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { ConfigService } from '@nestjs/config';
-import * as path from 'path';
 import { extname } from 'path';
 
 const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.mp4', '.mp3', '.wav', '.doc', '.docx'];
@@ -9,19 +8,24 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 @Injectable()
 export class SupabaseStorageService {
-  private supabase: SupabaseClient;
+  private supabase: SupabaseClient | null = null;
   private bucketName = 'internal-docs';
 
-  constructor(private configService: ConfigService) {
-    const url = this.configService.get<string>('SUPABASE_URL') || 'http://localhost:8000';
-    const key = this.configService.get<string>('SUPABASE_SERVICE_KEY');
-    this.supabase = createClient(url, key || '');
+  constructor(private configService: ConfigService) {}
+
+  private getClient(): SupabaseClient {
+    if (!this.supabase) {
+      const url = this.configService.get<string>('SUPABASE_URL') || 'http://localhost:8000';
+      const key = this.configService.get<string>('SUPABASE_SERVICE_KEY');
+      this.supabase = createClient(url, key || '', { realtime: { transport: require('ws') } });
+    }
+    return this.supabase;
   }
 
   async ensureBucket() {
-    const { data: buckets } = await this.supabase.storage.listBuckets();
+    const { data: buckets } = await this.getClient().storage.listBuckets();
     if (!buckets?.find(b => b.name === this.bucketName)) {
-      await this.supabase.storage.createBucket(this.bucketName, {
+      await this.getClient().storage.createBucket(this.bucketName, {
         public: false,
         fileSizeLimit: MAX_FILE_SIZE,
       });
@@ -42,7 +46,7 @@ export class SupabaseStorageService {
     const safeName = file.originalname.replace(/[/\\]/g, '_');
     const filename = `${Date.now()}-${safeName}`;
 
-    const { error } = await this.supabase.storage
+    const { error } = await this.getClient().storage
       .from(this.bucketName)
       .upload(filename, file.buffer, {
         contentType: file.mimetype,
@@ -51,7 +55,7 @@ export class SupabaseStorageService {
 
     if (error) throw new BadRequestException(`Supabase upload failed: ${error.message}`);
 
-    const { data: urlData } = this.supabase.storage
+    const { data: urlData } = this.getClient().storage
       .from(this.bucketName)
       .getPublicUrl(filename);
 
@@ -59,7 +63,7 @@ export class SupabaseStorageService {
   }
 
   async deleteFile(filename: string) {
-    const { error } = await this.supabase.storage
+    const { error } = await this.getClient().storage
       .from(this.bucketName)
       .remove([filename]);
 
