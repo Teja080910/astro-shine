@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuthStore } from '@/store/auth';
-import { AlertTriangle, ArrowDownUp, Bell, Calendar, Clock, FileText, Gift, Globe, Key, LayoutDashboard, Link2, LogOut, MessageSquare, Moon, Newspaper, Package, Percent, Receipt, Sparkles, Star, Sun, Users, Wallet } from 'lucide-react';
+import { AlertTriangle, ArrowDownUp, Bell, Calendar, Clock, FileText, Gift, Globe, Key, LayoutDashboard, Link2, LogOut, MessageSquare, Moon, Newspaper, Package, Percent, Phone, Radio, Receipt, Settings, ShoppingBag, Sparkles, Star, Sun, Ticket, Users, Video, Wallet } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -16,8 +16,17 @@ const menuItems = [
   { href: '/orders', icon: Package, label: 'Orders' },
   { href: '/transactions', icon: Receipt, label: 'Transactions' },
   { href: '/withdrawals', icon: ArrowDownUp, label: 'Withdrawals' },
+  { href: '/gifts', icon: Gift, label: 'Gifts' },
   { href: '/donations', icon: Gift, label: 'Donations' },
   { href: '/commissions', icon: Percent, label: 'Commissions' },
+  { href: '/calls', icon: Phone, label: 'Calls' },
+  { href: '/live-sessions', icon: Radio, label: 'Live Sessions' },
+  { href: '/mandir-pooja', icon: Sparkles, label: 'Mandir Pooja' },
+  { href: '/support', icon: Ticket, label: 'Support' },
+  { href: '/shop', icon: ShoppingBag, label: 'Shop' },
+  { href: '/videos', icon: Video, label: 'Videos' },
+  { href: '/releases', icon: Package, label: 'Releases' },
+  { href: '/settings', icon: Settings, label: 'Settings' },
   { href: '/horoscope', icon: Sparkles, label: 'Horoscopes' },
   { href: '/panchang', icon: Calendar, label: 'Panchang' },
   { href: '/muhurat', icon: Clock, label: 'Muhurat' },

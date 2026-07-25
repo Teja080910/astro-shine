@@ -1353,21 +1353,86 @@ export function ChatScreen() {
 
 // Kundli
 export function KundliScreen() {
+  const { user } = useAuth();
   const [form, setForm] = useState({ name: '', dob: '', tob: '', place: '' });
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const handleGenerate = async () => {
+    if (!form.name || !form.dob || !form.tob || !form.place) {
+      Alert.alert('Required', 'Please fill all fields');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await api.kundli.create({
+        userId: user?.id,
+        name: form.name,
+        gender: 'male',
+        dateOfBirth: form.dob,
+        timeOfBirth: form.tob,
+        placeOfBirth: form.place,
+      });
+      setResult(res);
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.message || 'Failed to generate kundli');
+    } finally { setLoading(false); }
+  };
+
   return (
     <ScreenWrapper scroll>
       <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>Kundli</Text>
       <Text style={[typography.body, { marginBottom: 20, color: colors.textSecondary }]}>Enter birth details for chart calculation</Text>
-      {['name', 'dob', 'tob', 'place'].map((f) => <Input key={f} label={f} value={(form as any)[f]} onChange={(v: string) => setForm({ ...form, [f]: v })} />)}
-      <GradientButton title="Generate Kundli" onPress={() => {}} />
+      <Input label="Name" value={form.name} onChange={(v: string) => setForm({ ...form, name: v })} placeholder="Full name" />
+      <TouchableOpacity onPress={() => setShowDatePicker(true)} style={{ marginBottom: 14 }}>
+        <Text style={[typography.label, { marginBottom: 6 }]}>Date of Birth</Text>
+        <View style={{ backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, justifyContent: 'center' }}>
+          <Text style={{ color: form.dob ? colors.textPrimary : colors.textMuted, fontSize: 15 }}>{form.dob || 'Select date'}</Text>
+        </View>
+      </TouchableOpacity>
+      <Input label="Time of Birth" value={form.tob} onChange={(v: string) => setForm({ ...form, tob: v })} placeholder="e.g. 14:30" />
+      <Input label="Place of Birth" value={form.place} onChange={(v: string) => setForm({ ...form, place: v })} placeholder="e.g. Jaipur" />
+      <GradientButton title={loading ? 'Generating...' : 'Generate Kundli'} onPress={handleGenerate} disabled={loading} />
+      {result && (
+        <GlassCard style={{ marginTop: 20, padding: 16 }}>
+          <Text style={[typography.cardTitle, { marginBottom: 8 }]}>Kundli Generated</Text>
+          <Text style={typography.body}>Name: {result.name}</Text>
+          <Text style={typography.body}>Date: {result.dateOfBirth?.split('T')[0]}</Text>
+          <Text style={typography.body}>Time: {result.timeOfBirth}</Text>
+          <Text style={typography.body}>Place: {result.placeOfBirth}</Text>
+        </GlassCard>
+      )}
     </ScreenWrapper>
   );
 }
 
 // Matchmaking
 export function MatchmakingScreen() {
+  const { user } = useAuth();
   const [p1, setP1] = useState({ name: '', dob: '', tob: '', place: '' });
   const [p2, setP2] = useState({ name: '', dob: '', tob: '', place: '' });
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+
+  const handleCheck = async () => {
+    if (!p1.name || !p1.dob || !p2.name || !p2.dob) {
+      Alert.alert('Required', 'Please fill at least name and DOB for both persons');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await api.matchmaking.create({
+        userId: user?.id,
+        person1Name: p1.name, person1Dob: p1.dob, person1Tob: p1.tob, person1Place: p1.place,
+        person2Name: p2.name, person2Dob: p2.dob, person2Tob: p2.tob, person2Place: p2.place,
+      });
+      setResult(res);
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.message || 'Failed to check compatibility');
+    } finally { setLoading(false); }
+  };
+
   return (
     <ScreenWrapper scroll>
       <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>Matchmaking</Text>
@@ -1375,22 +1440,73 @@ export function MatchmakingScreen() {
       {['name', 'dob', 'tob', 'place'].map((f) => <Input key={'p1' + f} label={f} value={(p1 as any)[f]} onChange={(v: string) => setP1({ ...p1, [f]: v })} />)}
       <Text style={[typography.sectionTitle, { marginTop: 16, color: colors.textPrimary }]}>Person 2</Text>
       {['name', 'dob', 'tob', 'place'].map((f) => <Input key={'p2' + f} label={f} value={(p2 as any)[f]} onChange={(v: string) => setP2({ ...p2, [f]: v })} />)}
-      <GradientButton title="Check Compatibility" onPress={() => {}} />
+      <GradientButton title={loading ? 'Checking...' : 'Check Compatibility'} onPress={handleCheck} disabled={loading} />
+      {result && (
+        <GlassCard style={{ marginTop: 20, padding: 16 }}>
+          <Text style={[typography.cardTitle, { marginBottom: 8 }]}>Compatibility Result</Text>
+          {result.matchScore != null && (
+            <Text style={{ fontSize: 36, fontWeight: '800', color: colors.accentGold, textAlign: 'center' }}>{result.matchScore}%</Text>
+          )}
+          {result.matchDetails && <Text style={typography.body}>{JSON.stringify(result.matchDetails)}</Text>}
+        </GlassCard>
+      )}
     </ScreenWrapper>
   );
 }
 
 // Shop
-export function ShopScreen() {
+export function ShopScreen({ navigation }: any) {
+  const { user } = useAuth();
   const isFocused = useIsFocused();
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cart, setCart] = useState<{ product: ShopProduct; qty: number }[]>([]);
+  const [showCart, setShowCart] = useState(false);
+  const [ordering, setOrdering] = useState(false);
+
   useEffect(() => { if (isFocused) { api.shop.list().then(setProducts).finally(() => setLoading(false)); } }, [isFocused]);
+
+  const addToCart = (product: ShopProduct) => {
+    setCart(prev => {
+      const existing = prev.find(c => c.product.id === product.id);
+      if (existing) return prev.map(c => c.product.id === product.id ? { ...c, qty: c.qty + 1 } : c);
+      return [...prev, { product, qty: 1 }];
+    });
+    Alert.alert('Added', `${product.name} added to cart`);
+  };
+
+  const removeFromCart = (productId: string) => {
+    setCart(prev => prev.filter(c => c.product.id !== productId));
+  };
+
+  const cartTotal = cart.reduce((s, c) => s + Number(c.product.price) * c.qty, 0);
+
+  const handlePlaceOrder = async () => {
+    if (cart.length === 0) return;
+    setOrdering(true);
+    try {
+      const order = await api.orders.create({ userId: user?.id, totalAmount: cartTotal });
+      for (const item of cart) {
+        await api.orders.addItem(order.id, { productId: item.product.id, quantity: item.qty, unitPrice: item.product.price, totalPrice: String(Number(item.product.price) * item.qty) });
+      }
+      setCart([]);
+      setShowCart(false);
+      Alert.alert('Order Placed', `Order #${order.id.slice(0, 8).toUpperCase()} created successfully!`);
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.message || 'Failed to place order');
+    } finally { setOrdering(false); }
+  };
 
   if (loading) return <ScreenWrapper scroll><SkeletonLoader height={180} /></ScreenWrapper>;
   return (
     <ScreenWrapper scroll>
-      <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>Astro Shop</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>Astro Shop</Text>
+        <TouchableOpacity onPress={() => setShowCart(true)} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, padding: 8 }}>
+          <Ionicons name="cart" size={24} color={colors.accentGold} />
+          {cart.length > 0 && <View style={{ backgroundColor: colors.danger, borderRadius: 10, minWidth: 20, height: 20, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 }}><Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>{cart.length}</Text></View>}
+        </TouchableOpacity>
+      </View>
       <FlatList data={products} numColumns={2} keyExtractor={(p) => p.id} scrollEnabled={false}
         renderItem={({ item }) => (
           <TouchableOpacity style={{ flex: 0.5, margin: 6 }}>
@@ -1398,12 +1514,37 @@ export function ShopScreen() {
               <View style={{ height: 120, backgroundColor: colors.surfaceLight, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}><Ionicons name="diamond-outline" size={40} color={colors.primaryLight} /></View>
               <Text style={typography.cardTitle} numberOfLines={1}>{item.name}</Text>
               <Text style={typography.price}>₹{item.price}</Text>
-              <GradientButton title="Add to Cart" onPress={() => {}} small style={{ marginTop: 8 }} />
+              <GradientButton title="Add to Cart" onPress={() => addToCart(item)} small style={{ marginTop: 8 }} />
             </GlassCard>
           </TouchableOpacity>
         )}
         ListEmptyComponent={<EmptyState icon={<Ionicons name="cart-outline" size={48} color={colors.textMuted} />} title="No products yet" />}
       />
+      <CustomModal visible={showCart} onClose={() => setShowCart(false)} title="Your Cart">
+        <View style={{ padding: 16, gap: 12 }}>
+          {cart.length === 0 ? (
+            <Text style={[typography.body, { textAlign: 'center', color: colors.textMuted }]}>Cart is empty</Text>
+          ) : (
+            cart.map(c => (
+              <View key={c.product.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.body, { fontWeight: '600' }]}>{c.product.name} x{c.qty}</Text>
+                  <Text style={typography.caption}>₹{Number(c.product.price) * c.qty}</Text>
+                </View>
+                <TouchableOpacity onPress={() => removeFromCart(c.product.id)}><Ionicons name="close-circle" size={22} color={colors.danger} /></TouchableOpacity>
+              </View>
+            ))
+          )}
+          {cart.length > 0 && (
+            <>
+              <View style={{ borderTopWidth: 1, borderTopColor: colors.divider, paddingTop: 8 }}>
+                <Text style={[typography.cardTitle]}>Total: ₹{cartTotal}</Text>
+              </View>
+              <GradientButton title={ordering ? 'Placing Order...' : 'Place Order'} onPress={handlePlaceOrder} disabled={ordering} />
+            </>
+          )}
+        </View>
+      </CustomModal>
     </ScreenWrapper>
   );
 }
@@ -1467,6 +1608,7 @@ export function ProfileScreen({ navigation }: any) {
 
   const items = [
     { icon: 'person-outline', label: 'Edit Profile', route: 'EditProfile', category: 'Account' },
+    { icon: 'gift-outline', label: 'Gifts', route: 'Gifts', category: 'Account' },
     { icon: 'receipt-outline', label: 'Order History', route: 'OrderHistory', category: 'Account' },
     { icon: 'wallet-outline', label: 'Transaction History', route: 'Wallet', category: 'Account' },
     { icon: 'notifications-outline', label: 'Notifications', route: 'Notifications', category: 'Account' },
@@ -1990,3 +2132,4 @@ const styles = StyleSheet.create({
 });
 
 export { MuhuratScreen } from './MuhuratScreen';
+export { GiftScreen } from './GiftScreen';

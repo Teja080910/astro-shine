@@ -503,6 +503,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
     { icon: 'call-outline', label: 'Consultation History', route: 'Consultations' },
     { icon: 'star-outline', label: 'Ratings & Reviews', route: 'Reviews' },
     { icon: 'cash-outline', label: 'Withdrawals', route: 'Withdrawals' },
+    { icon: 'gift-outline', label: 'Gifts Received', route: 'Gifts' },
     { icon: 'notifications-outline', label: 'Notifications', route: 'Notifications' },
     { icon: 'help-circle-outline', label: 'Help & Support', route: 'Support' },
   ];
@@ -687,3 +688,4 @@ const styles = StyleSheet.create({
 });
 
 export { AstrologerMuhuratScreen } from './AstrologerMuhuratScreen';
+export { AstrologerGiftScreen } from './AstrologerGiftScreen';

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
-import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, colors, typography, radii, shadows } from '../../shared';
+import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, CustomModal, colors, typography, radii, shadows } from '../../shared';
 import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
-import type { Blog, Notification, SupportTicket, NewsItem, Video, PanchangRecord, CommissionLog } from '../../shared/types';
+import type { Blog, MandirPooja, Notification, PoojaBooking, SupportTicket, NewsItem, Video, PanchangRecord, CommissionLog } from '../../shared/types';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
@@ -554,15 +554,114 @@ export function ReportScreen({ route, navigation }: any) {
 
 // Mandir Pooja
 export function MandirPoojaScreen({ navigation }: any) {
+  const { user } = useAuth();
+  const isFocused = useIsFocused();
+  const [poojas, setPoojas] = useState<MandirPooja[]>([]);
+  const [bookings, setBookings] = useState<PoojaBooking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedPooja, setSelectedPooja] = useState<MandirPooja | null>(null);
+  const [bookingDate, setBookingDate] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [booking, setBooking] = useState(false);
+
+  useEffect(() => {
+    if (isFocused) {
+      Promise.all([
+        api.mandirPooja.list(),
+        api.mandirPooja.bookings({ userId: user?.id }).catch(() => []),
+      ]).then(([p, b]) => { setPoojas(p); setBookings(b); }).finally(() => setLoading(false));
+    }
+  }, [isFocused, user?.id]);
+
+  const handleBook = async () => {
+    if (!selectedPooja || !bookingDate) return;
+    setBooking(true);
+    try {
+      const order = await api.payments.createOrder({ amount: Number(selectedPooja.price), purpose: 'pooja_booking', purposeId: selectedPooja.id });
+      navigation.navigate('Payment', {
+        razorpayOrderId: order.razorpayOrderId, key: order.key, amount: order.amount,
+        currency: order.currency, purpose: 'pooja_booking', paymentOrderId: order.id,
+        onSuccess: async () => {
+          await api.mandirPooja.createBooking({ userId: user?.id, poojaId: selectedPooja.id, bookingDate, amount: selectedPooja.price });
+          setSelectedPooja(null);
+          setBookingDate('');
+          const b = await api.mandirPooja.bookings({ userId: user?.id });
+          setBookings(b);
+        },
+      });
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Failed to initiate booking');
+    } finally { setBooking(false); }
+  };
+
+  if (loading) return <ScreenWrapper scroll><SectionTitle title="Mandir Pooja" /><GlassCard><Text style={typography.body}>Loading...</Text></GlassCard></ScreenWrapper>;
+
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Mandir Pooja" />
-      <GlassCard style={{ alignItems: 'center', padding: 24 }}>
-        <Ionicons name="flame" size={48} color={colors.accentGold} />
-        <Text style={[typography.cardTitle, { marginTop: 12 }]}>Book a Sacred Pooja</Text>
-        <Text style={[typography.body, { textAlign: 'center', marginTop: 8 }]}>Satyanarayan Pooja, Rudrabhishek, Navgraha Shanti and more</Text>
-        <GradientButton title="View Pooja List" onPress={() => navigation.navigate('MandirPooja')} variant="gold" style={{ marginTop: 16 }} />
-      </GlassCard>
+      {poojas.length > 0 && (
+        <>
+          <Text style={[typography.sectionTitle, { marginBottom: 12 }]}>Available Poojas</Text>
+          {poojas.map(p => (
+            <TouchableOpacity key={p.id} onPress={() => setSelectedPooja(p)} style={{ marginBottom: 10 }}>
+              <GlassCard style={{ padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.accentGold + '20', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="flame" size={24} color={colors.accentGold} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={typography.cardTitle}>{p.name}</Text>
+                  {p.description && <Text style={typography.caption} numberOfLines={2}>{p.description}</Text>}
+                  <Text style={[typography.price, { marginTop: 4 }]}>₹{p.price}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </GlassCard>
+            </TouchableOpacity>
+          ))}
+        </>
+      )}
+
+      {bookings.length > 0 && (
+        <>
+          <Text style={[typography.sectionTitle, { marginTop: 20, marginBottom: 12 }]}>My Bookings</Text>
+          {bookings.map(b => {
+            const pooja = poojas.find(p => p.id === b.poojaId);
+            return (
+              <GlassCard key={b.id} style={{ marginBottom: 8, padding: 14 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <View>
+                    <Text style={[typography.cardTitle, { fontSize: 14 }]}>{pooja?.name || 'Pooja'}</Text>
+                    <Text style={typography.caption}>{new Date(b.bookingDate).toLocaleDateString()} · ₹{b.amount}</Text>
+                  </View>
+                  <Text style={[typography.caption, { color: b.status === 'confirmed' ? colors.success : colors.warning, fontWeight: '600' }]}>{b.status.toUpperCase()}</Text>
+                </View>
+              </GlassCard>
+            );
+          })}
+        </>
+      )}
+
+      {poojas.length === 0 && bookings.length === 0 && (
+        <GlassCard style={{ alignItems: 'center', padding: 24 }}>
+          <Ionicons name="flame" size={48} color={colors.accentGold} />
+          <Text style={[typography.cardTitle, { marginTop: 12 }]}>Book a Sacred Pooja</Text>
+          <Text style={[typography.body, { textAlign: 'center', marginTop: 8 }]}>Satyanarayan Pooja, Rudrabhishek, Navgraha Shanti and more</Text>
+        </GlassCard>
+      )}
+
+      <CustomModal visible={!!selectedPooja} onClose={() => setSelectedPooja(null)} title={`Book ${selectedPooja?.name || 'Pooja'}`}>
+        <View style={{ padding: 16, gap: 12 }}>
+          <Text style={[typography.body, { color: colors.textSecondary }]}>Price: ₹{selectedPooja?.price}</Text>
+          <TouchableOpacity onPress={() => setShowDatePicker(true)} style={{ backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, justifyContent: 'center' }}>
+            <Text style={{ color: bookingDate ? colors.textPrimary : colors.textMuted, fontSize: 15 }}>{bookingDate || 'Select booking date'}</Text>
+          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <TouchableOpacity onPress={() => setSelectedPooja(null)} style={{ flex: 1, height: 48, borderRadius: radii.button, borderWidth: 1, borderColor: colors.cardBorder, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
+            </TouchableOpacity>
+            <View style={{ flex: 1 }}><GradientButton title={booking ? 'Processing...' : 'Pay & Book'} onPress={handleBook} disabled={booking || !bookingDate} /></View>
+          </View>
+        </View>
+      </CustomModal>
     </ScreenWrapper>
   );
 }
@@ -609,10 +708,43 @@ export function OrderHistoryScreen() {
 
 // Astrologer: Requests
 export function AstrologerRequestsScreen() {
+  const { astrologer } = useAuth();
+  const isFocused = useIsFocused();
+  const [requests, setRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isFocused && astrologer?.userId) {
+      api.calls.list({ astrologerId: astrologer.userId })
+        .then(c => setRequests(c.filter((r: any) => r.status === 'initiated')))
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    }
+  }, [isFocused, astrologer?.userId]);
+
+  if (loading) return <ScreenWrapper scroll><SectionTitle title="User Requests" /><GlassCard><Text style={typography.body}>Loading...</Text></GlassCard></ScreenWrapper>;
+
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="User Requests" />
-      <EmptyState icon={<Ionicons name="people-outline" size={48} color={colors.textMuted} />} title="No pending requests" subtitle="Users who want to connect will appear here" />
+      {requests.length === 0 ? (
+        <EmptyState icon={<Ionicons name="people-outline" size={48} color={colors.textMuted} />} title="No pending requests" subtitle="Users who want to connect will appear here" />
+      ) : (
+        requests.map(r => (
+          <GlassCard key={r.id} style={{ marginBottom: 8, padding: 14 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View>
+                <Text style={[typography.cardTitle, { fontSize: 14 }]}>{(r as any).userName || 'User'}</Text>
+                <Text style={typography.caption}>{r.type === 'video' ? 'Video Call' : 'Audio Call'} · {new Date(r.createdAt).toLocaleString()}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <GradientButton title="Accept" onPress={() => api.calls.updateStatus(r.id, 'ongoing').then(() => setRequests(prev => prev.filter(x => x.id !== r.id)))} small />
+                <GradientButton title="Decline" variant="danger" onPress={() => api.calls.updateStatus(r.id, 'cancelled').then(() => setRequests(prev => prev.filter(x => x.id !== r.id)))} small />
+              </View>
+            </View>
+          </GlassCard>
+        ))
+      )}
     </ScreenWrapper>
   );
 }
@@ -863,15 +995,69 @@ export function AstrologerCommissionScreen() {
 
 // Astrologer: Go Live
 export function AstrologerGoLiveScreen({ navigation }: any) {
+  const { astrologer } = useAuth();
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [title, setTitle] = useState('');
+  const [creating, setCreating] = useState(false);
+  const isFocused = useIsFocused();
+
+  useEffect(() => {
+    if (isFocused && astrologer?.userId) {
+      api.liveSessions.byAstrologer(astrologer.userId)
+        .then(setSessions)
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    }
+  }, [isFocused, astrologer?.userId]);
+
+  const handleGoLive = async () => {
+    if (!title.trim()) { Alert.alert('Required', 'Please enter a session title'); return; }
+    setCreating(true);
+    try {
+      const session = await api.liveSessions.create({ astrologerId: astrologer?.userId, title, status: 'live' });
+      setSessions(prev => [session, ...prev]);
+      setTitle('');
+      Alert.alert('Live!', 'Your live session has started.');
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.message || 'Failed to start live session');
+    } finally { setCreating(false); }
+  };
+
+  if (loading) return <ScreenWrapper scroll><SectionTitle title="Go Live" /><GlassCard><Text style={typography.body}>Loading...</Text></GlassCard></ScreenWrapper>;
+
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Go Live" />
-      <GlassCard style={{ alignItems: 'center', padding: 24 }}>
-        <Ionicons name="radio" size={48} color={colors.danger} />
-        <Text style={[typography.cardTitle, { marginTop: 12 }]}>Start a Live Session</Text>
-        <Text style={[typography.body, { textAlign: 'center', marginTop: 8 }]}>Stream to your followers in real-time. Share predictions, answer questions, and grow your audience.</Text>
-        <GradientButton title="Go Live Now" onPress={() => navigation.navigate('GoLive')} variant="gold" style={{ marginTop: 16 }} />
+      <GlassCard style={{ padding: 20, marginBottom: 16 }}>
+        <View style={{ alignItems: 'center', marginBottom: 16 }}>
+          <Ionicons name="radio" size={48} color={colors.danger} />
+          <Text style={[typography.cardTitle, { marginTop: 12 }]}>Start a Live Session</Text>
+          <Text style={[typography.body, { textAlign: 'center', marginTop: 8 }]}>Stream to your followers in real-time.</Text>
+        </View>
+        <TextInput
+          style={{ backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, color: colors.textPrimary, fontSize: 15, marginBottom: 12 }}
+          value={title} onChangeText={setTitle} placeholder="Session title" placeholderTextColor={colors.textMuted}
+        />
+        <GradientButton title={creating ? 'Starting...' : 'Go Live Now'} variant="gold" onPress={handleGoLive} disabled={creating} />
       </GlassCard>
+
+      {sessions.length > 0 && (
+        <>
+          <Text style={[typography.sectionTitle, { marginBottom: 12 }]}>Your Live Sessions</Text>
+          {sessions.map(s => (
+            <GlassCard key={s.id} style={{ marginBottom: 8, padding: 14 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.cardTitle, { fontSize: 14 }]}>{s.title || 'Live Session'}</Text>
+                  <Text style={typography.caption}>{new Date(s.createdAt).toLocaleDateString()} · {s.viewerCount || 0} viewers</Text>
+                </View>
+                <Text style={[typography.caption, { color: s.status === 'live' ? colors.success : colors.textMuted, fontWeight: '600' }]}>{s.status.toUpperCase()}</Text>
+              </View>
+            </GlassCard>
+          ))}
+        </>
+      )}
     </ScreenWrapper>
   );
 }

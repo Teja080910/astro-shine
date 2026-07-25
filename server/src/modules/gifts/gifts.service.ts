@@ -10,6 +10,8 @@ export class GiftsService {
   async findAll() { return this.db.query.gifts.findMany(); }
   async findById(id: string) { return this.db.query.gifts.findFirst({ where: eq(schema.gifts.id, id) }); }
   async create(data: typeof schema.gifts.$inferInsert) { const [r] = await this.db.insert(schema.gifts).values(data).returning(); return r; }
+  async update(id: string, data: Partial<typeof schema.gifts.$inferInsert>) { const [r] = await this.db.update(schema.gifts).set(data).where(eq(schema.gifts.id, id)).returning(); return r; }
+  async delete(id: string) { await this.db.delete(schema.gifts).where(eq(schema.gifts.id, id)); return { success: true }; }
 
   async getGiftTransactions(userId?: string) {
     if (userId) return this.db.query.giftTransactions.findMany({ where: eq(schema.giftTransactions.senderId, userId) });
