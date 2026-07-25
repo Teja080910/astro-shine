@@ -60,7 +60,7 @@ export function AstrologerGiftScreen() {
       <FlatList
         data={transactions}
         keyExtractor={t => t.id}
-        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <>

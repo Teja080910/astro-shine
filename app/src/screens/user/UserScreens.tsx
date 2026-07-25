@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../../context/AuthContext";
 import { useCall } from "../../context/CallContext";
 import { useChat } from "../../context/ChatContext";
@@ -392,14 +393,17 @@ export function UserHomeScreen({ navigation }: any) {
         <View
           style={[
             styles.greetingRow,
-            { backgroundColor: cardLightBg, borderColor: cardBorderColor },
+            {
+              backgroundColor: cardLightBg,
+              borderColor: cardBorderColor,
+            },
           ]}
         >
-          <View style={{ flex: 1.1 }}>
+          <View style={{ flex: 1 }}>
             <Text
               style={{ fontSize: 13, color: mutedTextColor, fontWeight: "500" }}
             >
-              Namaste,
+              Namaste, 👋
             </Text>
             <Text
               style={{
@@ -408,8 +412,10 @@ export function UserHomeScreen({ navigation }: any) {
                 color: titleColor,
                 marginVertical: 2,
               }}
+              numberOfLines={1}
+              adjustsFontSizeToFit
             >
-              {user?.name || "Aarav Sharma"} <Ionicons name="hand-left-outline" size={16} color={titleColor} />
+              {user?.name || "Aarav Sharma"}
             </Text>
             <TouchableOpacity
               onPress={() => navigation.navigate("Wallet")}
@@ -484,9 +490,9 @@ export function UserHomeScreen({ navigation }: any) {
 
           <View
             style={{
+              width: 85,
               alignItems: "center",
               justifyContent: "center",
-              paddingHorizontal: 4,
             }}
           >
             <Image
@@ -498,9 +504,10 @@ export function UserHomeScreen({ navigation }: any) {
 
           <View
             style={{
-              flex: 0.9,
+              flex: 1,
               alignItems: "flex-end",
               justifyContent: "space-between",
+              alignSelf: "stretch",
             }}
           >
             <View
@@ -820,97 +827,127 @@ export function UserHomeScreen({ navigation }: any) {
           <View
             style={[
               styles.subTabsRow,
-              { borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A" },
+              {
+                borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A",
+                justifyContent: "center",
+                paddingHorizontal: 4,
+                gap: 6,
+              },
             ]}
           >
             <TouchableOpacity
               onPress={() => setActiveHoroscopeTab("love")}
-              style={styles.subTabItem}
+              style={[
+                styles.subTabItem,
+                activeHoroscopeTab === "love" && {
+                  backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEE2E2",
+                },
+              ]}
             >
-              <Ionicons name="heart" size={14} color={activeHoroscopeTab === "love" ? "#EF4444" : mutedTextColor} />
+              <Ionicons
+                name="heart"
+                size={14}
+                color={activeHoroscopeTab === "love" ? "#EF4444" : mutedTextColor}
+              />
               <Text
                 style={{
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: activeHoroscopeTab === "love" ? "700" : "600",
                   color:
-                    activeHoroscopeTab === "love" ? titleColor : bodyTextColor,
+                    activeHoroscopeTab === "love"
+                      ? isDark
+                        ? "#EF4444"
+                        : "#B91C1C"
+                      : bodyTextColor,
                 }}
               >
                 Love
               </Text>
             </TouchableOpacity>
-            <View
-              style={[
-                styles.subTabDivider,
-                {
-                  backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A",
-                },
-              ]}
-            />
+
             <TouchableOpacity
               onPress={() => setActiveHoroscopeTab("career")}
-              style={styles.subTabItem}
+              style={[
+                styles.subTabItem,
+                activeHoroscopeTab === "career" && {
+                  backgroundColor: isDark ? "rgba(59, 130, 246, 0.15)" : "#DBEAFE",
+                },
+              ]}
             >
-              <Ionicons name="briefcase" size={14} color={activeHoroscopeTab === "career" ? "#3B82F6" : mutedTextColor} />
+              <Ionicons
+                name="briefcase"
+                size={14}
+                color={activeHoroscopeTab === "career" ? "#3B82F6" : mutedTextColor}
+              />
               <Text
                 style={{
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: activeHoroscopeTab === "career" ? "700" : "600",
                   color:
                     activeHoroscopeTab === "career"
-                      ? titleColor
+                      ? isDark
+                        ? "#3B82F6"
+                        : "#1D4ED8"
                       : bodyTextColor,
                 }}
               >
                 Career
               </Text>
             </TouchableOpacity>
-            <View
-              style={[
-                styles.subTabDivider,
-                {
-                  backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A",
-                },
-              ]}
-            />
+
             <TouchableOpacity
               onPress={() => setActiveHoroscopeTab("finance")}
-              style={styles.subTabItem}
+              style={[
+                styles.subTabItem,
+                activeHoroscopeTab === "finance" && {
+                  backgroundColor: isDark ? "rgba(22, 163, 74, 0.15)" : "#D1FAE5",
+                },
+              ]}
             >
-              <Ionicons name="cash" size={14} color={activeHoroscopeTab === "finance" ? "#16A34A" : mutedTextColor} />
+              <Ionicons
+                name="cash"
+                size={14}
+                color={activeHoroscopeTab === "finance" ? "#16A34A" : mutedTextColor}
+              />
               <Text
                 style={{
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: activeHoroscopeTab === "finance" ? "700" : "600",
                   color:
                     activeHoroscopeTab === "finance"
-                      ? titleColor
+                      ? isDark
+                        ? "#16A34A"
+                        : "#15803D"
                       : bodyTextColor,
                 }}
               >
                 Finance
               </Text>
             </TouchableOpacity>
-            <View
-              style={[
-                styles.subTabDivider,
-                {
-                  backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A",
-                },
-              ]}
-            />
+
             <TouchableOpacity
               onPress={() => setActiveHoroscopeTab("health")}
-              style={styles.subTabItem}
+              style={[
+                styles.subTabItem,
+                activeHoroscopeTab === "health" && {
+                  backgroundColor: isDark ? "rgba(139, 92, 246, 0.15)" : "#F5F3FF",
+                },
+              ]}
             >
-              <Ionicons name="pulse" size={14} color={activeHoroscopeTab === "health" ? "#8B5CF6" : mutedTextColor} />
+              <Ionicons
+                name="pulse"
+                size={14}
+                color={activeHoroscopeTab === "health" ? "#8B5CF6" : mutedTextColor}
+              />
               <Text
                 style={{
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: activeHoroscopeTab === "health" ? "700" : "600",
                   color:
                     activeHoroscopeTab === "health"
-                      ? titleColor
+                      ? isDark
+                        ? "#8B5CF6"
+                        : "#6D28D9"
                       : bodyTextColor,
                 }}
               >
@@ -1387,14 +1424,20 @@ export function UserHomeScreen({ navigation }: any) {
         </View>
 
         {/* Shravan Month Special Banner */}
-        <View
+        <LinearGradient
+          colors={
+            isDark
+              ? ["rgba(127, 29, 29, 0.55)", "rgba(217, 119, 6, 0.25)"]
+              : ["#FFF5F5", "#FFFBEB"]
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={[
             styles.specialBanner,
             {
-              backgroundColor: cardLightBg,
-              borderColor: cardBorderColor,
-              borderRadius: 18,
-              overflow: "hidden",
+              borderColor: isDark ? "rgba(245, 158, 11, 0.4)" : "#FDE68A",
+              flexDirection: "row",
+              alignItems: "center",
             },
           ]}
         >
@@ -1403,32 +1446,39 @@ export function UserHomeScreen({ navigation }: any) {
             style={{ width: 84, height: 84 }}
             resizeMode="contain"
           />
-          <View style={{ flex: 1, marginHorizontal: 8 }}>
+          <View style={{ flex: 1, paddingLeft: 12 }}>
             <Text
               style={{ fontSize: 15, fontWeight: "800", color: titleColor }}
             >
-              Shravan Month Special
+              Shravan Special 🔱
             </Text>
-            <Text style={{ fontSize: 11, color: bodyTextColor, marginTop: 2 }}>
-              Get special blessings and discounts on Pooja services
+            <Text style={{ fontSize: 11, color: bodyTextColor, marginTop: 4, marginBottom: 10 }}>
+              Get special blessings & discounts on Puja services
             </Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("MandirPooja")}
+              style={[
+                styles.bookNowBtn,
+                {
+                  backgroundColor: "#D97706",
+                  alignSelf: "flex-start",
+                  borderRadius: 12,
+                  paddingHorizontal: 16,
+                  paddingVertical: 6,
+                  elevation: 2,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                },
+              ]}
+            >
+              <Text style={{ color: "#FFF", fontSize: 11, fontWeight: "800" }}>
+                Book Now ›
+              </Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("MandirPooja")}
-            style={[
-              styles.bookNowBtn,
-              {
-                backgroundColor: "#D97706",
-                borderRadius: 16,
-                overflow: "hidden",
-              },
-            ]}
-          >
-            <Text style={{ color: "#FFF", fontSize: 11, fontWeight: "700" }}>
-              Book Now ›
-            </Text>
-          </TouchableOpacity>
-        </View>
+        </LinearGradient>
 
         <View style={{ height: 24 }} />
 
@@ -1488,7 +1538,7 @@ export function UserHomeScreen({ navigation }: any) {
           </GlassCard>
         )}
 
-        <View style={{ height: 24 }} />
+        {/* <View style={{ height: 24 }} />
 
         <SectionHeader
           title="By Category"
@@ -1555,7 +1605,7 @@ export function UserHomeScreen({ navigation }: any) {
               No astrologers in this category
             </Text>
           </GlassCard>
-        )}
+        )} */}
 
         {poojas.length > 0 && (
           <>
@@ -1612,7 +1662,7 @@ export function UserHomeScreen({ navigation }: any) {
                   </GlassCard>
                 </TouchableOpacity>
               )}
-              style={{ marginLeft: 8 }}
+              style={{ marginLeft: 0 }}
             />
           </>
         )}
@@ -1673,7 +1723,7 @@ export function UserHomeScreen({ navigation }: any) {
                   </GlassCard>
                 </TouchableOpacity>
               )}
-              style={{ marginLeft: 8 }}
+              style={{ marginLeft: 0 }}
             />
           </>
         )}
@@ -1722,7 +1772,7 @@ export function UserHomeScreen({ navigation }: any) {
                   </GlassCard>
                 </TouchableOpacity>
               )}
-              style={{ marginLeft: 8 }}
+              style={{ marginLeft: 0 }}
             />
           </>
         )}
@@ -1755,7 +1805,16 @@ export function UserHomeScreen({ navigation }: any) {
             Your contribution helps us maintain this sacred platform and support
             our spiritual community.
           </Text>
-          <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "center",
+              flexWrap: "wrap",
+              gap: 8,
+              marginBottom: 16,
+              paddingHorizontal: 8,
+            }}
+          >
             {["101", "501", "1100", "2100"].map((a) => (
               <Chip key={a} label={`₹${a}`} />
             ))}
@@ -4790,14 +4849,15 @@ const styles = StyleSheet.create({
   subTabItem: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 6,
+    borderRadius: 16,
     gap: 4,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
   },
   subTabDivider: {
-    width: 1,
-    height: 16,
-    backgroundColor: colors.divider,
+    width: 0,
+    height: 0,
   },
   panchangContainer: {
     marginHorizontal: 16,

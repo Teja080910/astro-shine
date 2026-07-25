@@ -81,7 +81,7 @@ export function GiftScreen({ route, navigation }: any) {
         data={gifts}
         keyExtractor={g => g.id}
         numColumns={2}
-        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         columnWrapperStyle={{ gap: 12 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={

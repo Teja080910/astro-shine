@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   categoriesContainer: { marginBottom: 16, height: 40 },
-  listContainer: { paddingHorizontal: 16, paddingBottom: 120 },
+  listContainer: { paddingHorizontal: 16, paddingBottom: 100 },
   card: { padding: 16, marginBottom: 16 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   titleContainer: { flexDirection: 'row', alignItems: 'center', flex: 1 },

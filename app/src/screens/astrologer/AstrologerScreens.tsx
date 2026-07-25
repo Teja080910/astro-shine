@@ -109,7 +109,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
 
   return (
     <ScreenWrapper style={{ position: 'relative', zIndex: 1 }}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 120 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 100 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         {/* Top Header Bar */}
         <View style={styles.topHeader}>
           <TouchableOpacity onPress={() => setMenuOpen(true)} style={{ padding: 4, width: 40 }}>
@@ -630,7 +630,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
 
   return (
     <ScreenWrapper scroll>
-      <View style={{ paddingBottom: 120 }}>
+      <View style={{ paddingBottom: 100 }}>
         {/* Hero Header Card */}
         <View style={{ backgroundColor: colors.surfaceLight, borderRadius: 24, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: colors.cardBorder, marginTop: 8 }}>
           <View style={{ position: 'relative' }}>
