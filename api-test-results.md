@@ -57,7 +57,7 @@ Generated: $(date)
 
 ### POST `/auth/logout`
 **Description:** Logout  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 {}
@@ -74,7 +74,7 @@ Generated: $(date)
 
 ### GET `/users/profile`
 **Description:** Get profile  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -97,7 +97,7 @@ Generated: $(date)
   "lastLoginAt": null,
   "onboardingCompleted": false,
   "createdAt": "2026-07-25T12:11:18.631Z",
-  "updatedAt": "2026-07-25T06:57:10.666Z",
+  "updatedAt": "2026-07-25T07:39:23.606Z",
   "deletedAt": null
 }
 ```
@@ -106,7 +106,7 @@ Generated: $(date)
 
 ### PUT `/users/profile`
 **Description:** Update profile  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 {"name":"Updated User"}
@@ -129,7 +129,7 @@ Generated: $(date)
   "lastLoginAt": null,
   "onboardingCompleted": false,
   "createdAt": "2026-07-25T12:11:18.631Z",
-  "updatedAt": "2026-07-25T06:58:14.412Z",
+  "updatedAt": "2026-07-25T07:41:04.651Z",
   "deletedAt": null
 }
 ```
@@ -138,7 +138,7 @@ Generated: $(date)
 
 ### POST `/users/change-password`
 **Description:** Change pw  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 {"currentPassword":"Test@123","newPassword":"Test@1234"}
@@ -155,7 +155,7 @@ Generated: $(date)
 
 ### POST `/users/change-password`
 **Description:** Revert pw  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 {"currentPassword":"Test@1234","newPassword":"Test@123"}
@@ -172,7 +172,7 @@ Generated: $(date)
 
 ### GET `/users`
 **Description:** List users (admin)  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -405,7 +405,7 @@ Generated: $(date)
     "lastLoginAt": null,
     "onboardingCompleted": false,
     "createdAt": "2026-07-25T12:11:18.631Z",
-    "updatedAt": "2026-07-25T06:58:14.610Z",
+    "updatedAt": "2026-07-25T07:41:04.821Z",
     "deletedAt": null
   },
   {
@@ -586,7 +586,7 @@ Generated: $(date)
 
 ### GET `/users/23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266`
 **Description:** Get user by ID  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -609,7 +609,7 @@ Generated: $(date)
   "lastLoginAt": null,
   "onboardingCompleted": false,
   "createdAt": "2026-07-25T12:11:18.631Z",
-  "updatedAt": "2026-07-25T06:58:14.610Z",
+  "updatedAt": "2026-07-25T07:41:04.821Z",
   "deletedAt": null
 }
 ```
@@ -618,7 +618,7 @@ Generated: $(date)
 
 ### PUT `/users/23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266`
 **Description:** Admin update user  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 {"name":"Admin Updated"}
@@ -641,7 +641,7 @@ Generated: $(date)
   "lastLoginAt": null,
   "onboardingCompleted": false,
   "createdAt": "2026-07-25T12:11:18.631Z",
-  "updatedAt": "2026-07-25T06:58:14.663Z",
+  "updatedAt": "2026-07-25T07:41:04.863Z",
   "deletedAt": null
 }
 ```
@@ -650,7 +650,7 @@ Generated: $(date)
 
 ### GET `/astrologers`
 **Description:** List astrologers  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -1105,7 +1105,7 @@ Generated: $(date)
 
 ### GET `/astrologers/eddbd187-163b-4776-a986-c406d152a75f`
 **Description:** Get astrologer  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -1119,7 +1119,7 @@ Generated: $(date)
 
 ### PUT `/astrologers/eddbd187-163b-4776-a986-c406d152a75f`
 **Description:** Update astrologer  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZGRiZDE4Ny0xNjNiLTQ3NzYtYTk4Ni1jNDA2ZDE1MmE3NWYiLCJyb2xlIjoiYXN0cm9sb2dlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.s0sBRLxaJ9IuIhUxxUMXPESiaxh_eVkRfl8HbLZ7vjM  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZGRiZDE4Ny0xNjNiLTQ3NzYtYTk4Ni1jNDA2ZDE1MmE3NWYiLCJyb2xlIjoiYXN0cm9sb2dlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.SKcFcb3QDFPAYVQnSJ8lmhAWi8Dxtn1LJMXzZ3fjMt0  
 **Request:**
 ```json
 {"bio":"Updated bio"}
@@ -1133,7 +1133,7 @@ Generated: $(date)
 
 ### PUT `/astrologers/eddbd187-163b-4776-a986-c406d152a75f/online-status`
 **Description:** Online status  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZGRiZDE4Ny0xNjNiLTQ3NzYtYTk4Ni1jNDA2ZDE1MmE3NWYiLCJyb2xlIjoiYXN0cm9sb2dlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.s0sBRLxaJ9IuIhUxxUMXPESiaxh_eVkRfl8HbLZ7vjM  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZGRiZDE4Ny0xNjNiLTQ3NzYtYTk4Ni1jNDA2ZDE1MmE3NWYiLCJyb2xlIjoiYXN0cm9sb2dlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.SKcFcb3QDFPAYVQnSJ8lmhAWi8Dxtn1LJMXzZ3fjMt0  
 **Request:**
 ```json
 {"isOnline":true}
@@ -1147,7 +1147,7 @@ Generated: $(date)
 
 ### POST `/astrologers/eddbd187-163b-4776-a986-c406d152a75f/verify`
 **Description:** Verify (admin)  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 {"verified":true}
@@ -1161,7 +1161,7 @@ Generated: $(date)
 
 ### POST `/astrologers/eddbd187-163b-4776-a986-c406d152a75f/feedback`
 **Description:** Submit feedback  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 {"ratings":5,"comment":"Great!"}
@@ -1171,7 +1171,7 @@ Generated: $(date)
 {
   "statusCode": 500,
   "message": "Internal server error",
-  "timestamp": "2026-07-25T06:58:14.767Z",
+  "timestamp": "2026-07-25T07:41:04.952Z",
   "path": "/api/v1/astrologers/eddbd187-163b-4776-a986-c406d152a75f/feedback"
 }
 ```
@@ -1180,7 +1180,7 @@ Generated: $(date)
 
 ### GET `/astrologers/eddbd187-163b-4776-a986-c406d152a75f/feedback`
 **Description:** Get feedback  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -1194,7 +1194,7 @@ Generated: $(date)
 
 ### GET `/admins`
 **Description:** List admins  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -1221,7 +1221,7 @@ Generated: $(date)
 
 ### GET `/admins/dashboard-stats`
 **Description:** Dashboard stats  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -1281,7 +1281,7 @@ Generated: $(date)
 
 ### GET `/admins/revenue-chart`
 **Description:** Revenue chart  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -1298,7 +1298,7 @@ Generated: $(date)
 
 ### GET `/admins/revenue/transactions`
 **Description:** Revenue transactions  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -1317,7 +1317,7 @@ Generated: $(date)
 
 ### GET `/admins/revenue/summary`
 **Description:** Revenue summary  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -1338,7 +1338,7 @@ Generated: $(date)
 
 ### GET `/admins/aaf50893-eddc-433d-816f-c8a27973f024`
 **Description:** Get admin  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -1357,7 +1357,7 @@ Generated: $(date)
 
 ### GET `/wallet`
 **Description:** Get wallet  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -1382,7 +1382,7 @@ Generated: $(date)
 
 ### POST `/wallet/add-funds`
 **Description:** Add funds  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 {"amount":1000}
@@ -1396,7 +1396,7 @@ Generated: $(date)
 
 ### GET `/wallet/all`
 **Description:** All wallets (admin)  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -1627,7 +1627,7 @@ Generated: $(date)
 
 ### GET `/transactions/my`
 **Description:** My transactions  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -1641,7 +1641,7 @@ Generated: $(date)
 
 ### GET `/transactions`
 **Description:** All transactions (admin)  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -1655,7 +1655,7 @@ Generated: $(date)
 
 ### GET `/kundli?userId=23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266`
 **Description:** Get kundli  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -1677,6 +1677,36 @@ Generated: $(date)
     "chartData": null,
     "planetaryPositions": null,
     "createdAt": "2026-07-25T12:27:11.083Z"
+  },
+  {
+    "id": "dbd47a9b-3ed9-49ee-9485-b1d46ace27cd",
+    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+    "name": "Test",
+    "gender": "male",
+    "dateOfBirth": "1990-01-15",
+    "timeOfBirth": "10:30:00",
+    "placeOfBirth": "Mumbai",
+    "latitude": null,
+    "longitude": null,
+    "timezone": null,
+    "chartData": null,
+    "planetaryPositions": null,
+    "createdAt": "2026-07-25T12:28:15.023Z"
+  },
+  {
+    "id": "ca13b588-d34c-4a16-aa9a-2033bb6e8945",
+    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+    "name": "Test",
+    "gender": "male",
+    "dateOfBirth": "1990-01-15",
+    "timeOfBirth": "10:30:00",
+    "placeOfBirth": "Mumbai",
+    "latitude": null,
+    "longitude": null,
+    "timezone": null,
+    "chartData": null,
+    "planetaryPositions": null,
+    "createdAt": "2026-07-25T13:09:23.910Z"
   }
 ]
 ```
@@ -1685,7 +1715,7 @@ Generated: $(date)
 
 ### POST `/kundli`
 **Description:** Create kundli  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 {"name":"Test","gender":"male","dateOfBirth":"1990-01-15","timeOfBirth":"10:30","placeOfBirth":"Mumbai"}
@@ -1693,7 +1723,7 @@ Generated: $(date)
 **Response (201):**
 ```json
 {
-  "id": "dbd47a9b-3ed9-49ee-9485-b1d46ace27cd",
+  "id": "2ea07aa9-dbb3-4163-98f8-b4e76e895b05",
   "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
   "name": "Test",
   "gender": "male",
@@ -1705,7 +1735,7 @@ Generated: $(date)
   "timezone": null,
   "chartData": null,
   "planetaryPositions": null,
-  "createdAt": "2026-07-25T12:28:15.023Z"
+  "createdAt": "2026-07-25T13:11:05.179Z"
 }
 ```
 **Status:** PASS
@@ -1713,7 +1743,7 @@ Generated: $(date)
 
 ### GET `/matchmaking?userId=23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266`
 **Description:** Get matchmaking  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -1727,7 +1757,7 @@ Generated: $(date)
 
 ### POST `/matchmaking`
 **Description:** Create matchmaking  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 {"userId":"23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266","person1Name":"A","person1Dob":"1990-01-15","person1Tob":"10:30","person1Pob":"Mumbai","person2Name":"B","person2Dob":"1992-06-20","person2Tob":"14:00","person2Pob":"Delhi"}
@@ -1737,7 +1767,7 @@ Generated: $(date)
 {
   "statusCode": 500,
   "message": "Internal server error",
-  "timestamp": "2026-07-25T06:58:15.057Z",
+  "timestamp": "2026-07-25T07:41:05.212Z",
   "path": "/api/v1/matchmaking"
 }
 ```
@@ -2633,6 +2663,26 @@ Generated: $(date)
     "luckyColor": "Red",
     "mood": "Energetic",
     "createdAt": "2026-07-25T12:27:11.172Z"
+  },
+  {
+    "id": "28d4dd92-15f1-44a5-bb5e-c9d20a19b3e0",
+    "zodiacSign": "Aries",
+    "date": "2026-07-25",
+    "prediction": "Great day",
+    "luckyNumber": 7,
+    "luckyColor": "Red",
+    "mood": "Energetic",
+    "createdAt": "2026-07-25T12:28:15.091Z"
+  },
+  {
+    "id": "a86beb73-0069-4af2-a586-f2fc477c923e",
+    "zodiacSign": "Aries",
+    "date": "2026-07-25",
+    "prediction": "Great day",
+    "luckyNumber": 7,
+    "luckyColor": "Red",
+    "mood": "Energetic",
+    "createdAt": "2026-07-25T13:09:23.965Z"
   }
 ]
 ```
@@ -2649,14 +2699,14 @@ Generated: $(date)
 **Response (201):**
 ```json
 {
-  "id": "28d4dd92-15f1-44a5-bb5e-c9d20a19b3e0",
+  "id": "ead05ebe-708f-4ce5-8a25-6c79545a456e",
   "zodiacSign": "Aries",
   "date": "2026-07-25",
   "prediction": "Great day",
   "luckyNumber": 7,
   "luckyColor": "Red",
   "mood": "Energetic",
-  "createdAt": "2026-07-25T12:28:15.091Z"
+  "createdAt": "2026-07-25T13:11:05.244Z"
 }
 ```
 **Status:** PASS
@@ -2815,7 +2865,7 @@ Generated: $(date)
 {
   "statusCode": 500,
   "message": "Internal server error",
-  "timestamp": "2026-07-25T06:58:15.125Z",
+  "timestamp": "2026-07-25T07:41:05.277Z",
   "path": "/api/v1/panchang"
 }
 ```
@@ -2977,7 +3027,7 @@ Generated: $(date)
 
 ### POST `/blogs`
 **Description:** Create blog  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 {"title":"Test Blog","slug":"test-blog","content":"Test content","author":"Admin","tags":["test"],"image":"https://example.com/img.jpg"}
@@ -2987,7 +3037,7 @@ Generated: $(date)
 {
   "statusCode": 500,
   "message": "Internal server error",
-  "timestamp": "2026-07-25T06:58:15.166Z",
+  "timestamp": "2026-07-25T07:41:05.315Z",
   "path": "/api/v1/blogs"
 }
 ```
@@ -3075,6 +3125,24 @@ Generated: $(date)
     "isActive": true,
     "createdAt": "2026-07-25T12:27:11.312Z",
     "updatedAt": "2026-07-25T12:27:11.312Z"
+  },
+  {
+    "id": "3e3be3db-44c7-469f-beba-df0c6ff29202",
+    "title": "Test News",
+    "content": "Test",
+    "image": null,
+    "isActive": true,
+    "createdAt": "2026-07-25T12:28:15.220Z",
+    "updatedAt": "2026-07-25T12:28:15.220Z"
+  },
+  {
+    "id": "ede10627-f47a-467a-8f00-b01959870712",
+    "title": "Test News",
+    "content": "Test",
+    "image": null,
+    "isActive": true,
+    "createdAt": "2026-07-25T13:09:24.068Z",
+    "updatedAt": "2026-07-25T13:09:24.068Z"
   }
 ]
 ```
@@ -3162,6 +3230,24 @@ Generated: $(date)
     "isActive": true,
     "createdAt": "2026-07-25T12:27:11.312Z",
     "updatedAt": "2026-07-25T12:27:11.312Z"
+  },
+  {
+    "id": "3e3be3db-44c7-469f-beba-df0c6ff29202",
+    "title": "Test News",
+    "content": "Test",
+    "image": null,
+    "isActive": true,
+    "createdAt": "2026-07-25T12:28:15.220Z",
+    "updatedAt": "2026-07-25T12:28:15.220Z"
+  },
+  {
+    "id": "ede10627-f47a-467a-8f00-b01959870712",
+    "title": "Test News",
+    "content": "Test",
+    "image": null,
+    "isActive": true,
+    "createdAt": "2026-07-25T13:09:24.068Z",
+    "updatedAt": "2026-07-25T13:09:24.068Z"
   }
 ]
 ```
@@ -3170,7 +3256,7 @@ Generated: $(date)
 
 ### POST `/news`
 **Description:** Create news  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 {"title":"Test News","content":"Test","category":"General"}
@@ -3178,13 +3264,13 @@ Generated: $(date)
 **Response (201):**
 ```json
 {
-  "id": "3e3be3db-44c7-469f-beba-df0c6ff29202",
+  "id": "a70778cc-fcaa-4dc9-9e90-f16b1d1b0c92",
   "title": "Test News",
   "content": "Test",
   "image": null,
   "isActive": true,
-  "createdAt": "2026-07-25T12:28:15.220Z",
-  "updatedAt": "2026-07-25T12:28:15.220Z"
+  "createdAt": "2026-07-25T13:11:05.371Z",
+  "updatedAt": "2026-07-25T13:11:05.371Z"
 }
 ```
 **Status:** PASS
@@ -3192,7 +3278,7 @@ Generated: $(date)
 
 ### GET `/reviews?astrologerId=eddbd187-163b-4776-a986-c406d152a75f`
 **Description:** List reviews  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -3206,7 +3292,7 @@ Generated: $(date)
 
 ### POST `/reviews`
 **Description:** Create review  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 {"astrologerId":"eddbd187-163b-4776-a986-c406d152a75f","rating":4,"comment":"Good"}
@@ -3216,7 +3302,7 @@ Generated: $(date)
 {
   "statusCode": 500,
   "message": "Internal server error",
-  "timestamp": "2026-07-25T06:58:15.256Z",
+  "timestamp": "2026-07-25T07:41:05.414Z",
   "path": "/api/v1/reviews"
 }
 ```
@@ -3225,7 +3311,7 @@ Generated: $(date)
 
 ### GET `/reports`
 **Description:** List reports  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -3239,7 +3325,7 @@ Generated: $(date)
 
 ### POST `/reports`
 **Description:** Create report  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 {"targetType":"astrologer","targetId":"eddbd187-163b-4776-a986-c406d152a75f","reason":"Test","description":"Test report"}
@@ -3249,7 +3335,7 @@ Generated: $(date)
 {
   "statusCode": 500,
   "message": "Internal server error",
-  "timestamp": "2026-07-25T06:58:15.296Z",
+  "timestamp": "2026-07-25T07:41:05.453Z",
   "path": "/api/v1/reports"
 }
 ```
@@ -3258,7 +3344,7 @@ Generated: $(date)
 
 ### GET `/notifications?userId=23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266`
 **Description:** List notifications  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -3272,7 +3358,7 @@ Generated: $(date)
 
 ### POST `/notifications`
 **Description:** Create notification  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 {"userId":"23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266","title":"Test","message":"Test","type":"general"}
@@ -3282,7 +3368,7 @@ Generated: $(date)
 {
   "statusCode": 500,
   "message": "Internal server error",
-  "timestamp": "2026-07-25T06:58:15.335Z",
+  "timestamp": "2026-07-25T07:41:05.495Z",
   "path": "/api/v1/notifications"
 }
 ```
@@ -3291,7 +3377,7 @@ Generated: $(date)
 
 ### POST `/notifications/read-all`
 **Description:** Mark all read  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 {"userId":"23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266"}
@@ -3401,7 +3487,7 @@ Generated: $(date)
     "description": "Application display name",
     "updatedBy": "aaf50893-eddc-433d-816f-c8a27973f024",
     "createdAt": "2026-07-24T02:05:40.972Z",
-    "updatedAt": "2026-07-25T06:57:11.492Z"
+    "updatedAt": "2026-07-25T07:39:24.217Z"
   }
 ]
 ```
@@ -3424,7 +3510,7 @@ Generated: $(date)
   "description": "Application display name",
   "updatedBy": "aaf50893-eddc-433d-816f-c8a27973f024",
   "createdAt": "2026-07-24T02:05:40.972Z",
-  "updatedAt": "2026-07-25T06:57:11.492Z"
+  "updatedAt": "2026-07-25T07:39:24.217Z"
 }
 ```
 **Status:** PASS
@@ -3432,7 +3518,7 @@ Generated: $(date)
 
 ### POST `/settings/app_name`
 **Description:** Set setting  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 {"value":"Astro Shine Pro"}
@@ -3446,7 +3532,7 @@ Generated: $(date)
   "description": "Application display name",
   "updatedBy": "aaf50893-eddc-433d-816f-c8a27973f024",
   "createdAt": "2026-07-24T02:05:40.972Z",
-  "updatedAt": "2026-07-25T06:58:15.408Z"
+  "updatedAt": "2026-07-25T07:41:05.608Z"
 }
 ```
 **Status:** PASS
@@ -3454,7 +3540,7 @@ Generated: $(date)
 
 ### GET `/api-keys`
 **Description:** List API keys  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -3468,7 +3554,7 @@ Generated: $(date)
 
 ### POST `/api-keys`
 **Description:** Create API key  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 {"provider":"razorpay","key":"test_key","value":"test_value"}
@@ -3478,7 +3564,7 @@ Generated: $(date)
 {
   "statusCode": 500,
   "message": "Internal server error",
-  "timestamp": "2026-07-25T06:58:15.442Z",
+  "timestamp": "2026-07-25T07:41:05.653Z",
   "path": "/api/v1/api-keys"
 }
 ```
@@ -3567,7 +3653,7 @@ Generated: $(date)
 {
   "statusCode": 500,
   "message": "Internal server error",
-  "timestamp": "2026-07-25T06:58:15.513Z",
+  "timestamp": "2026-07-25T07:41:05.751Z",
   "path": "/api/v1/dynamic-links"
 }
 ```
@@ -3591,7 +3677,7 @@ Generated: $(date)
     "isActive": true,
     "updatedBy": null,
     "createdAt": "2026-07-25T12:11:24.672Z",
-    "updatedAt": "2026-07-25T06:57:11.664Z"
+    "updatedAt": "2026-07-25T07:39:24.361Z"
   }
 ]
 ```
@@ -3615,7 +3701,7 @@ Generated: $(date)
     "isActive": true,
     "updatedBy": null,
     "createdAt": "2026-07-25T12:11:24.672Z",
-    "updatedAt": "2026-07-25T06:57:11.664Z"
+    "updatedAt": "2026-07-25T07:39:24.361Z"
   }
 ]
 ```
@@ -3638,7 +3724,7 @@ Generated: $(date)
   "isActive": true,
   "updatedBy": null,
   "createdAt": "2026-07-25T12:11:24.672Z",
-  "updatedAt": "2026-07-25T06:57:11.664Z"
+  "updatedAt": "2026-07-25T07:39:24.361Z"
 }
 ```
 **Status:** PASS
@@ -3660,7 +3746,7 @@ Generated: $(date)
   "isActive": true,
   "updatedBy": null,
   "createdAt": "2026-07-25T12:11:24.672Z",
-  "updatedAt": "2026-07-25T06:58:15.580Z"
+  "updatedAt": "2026-07-25T07:41:05.854Z"
 }
 ```
 **Status:** PASS
@@ -3668,7 +3754,7 @@ Generated: $(date)
 
 ### GET `/commissions`
 **Description:** List commissions  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -3815,7 +3901,7 @@ Generated: $(date)
 
 ### GET `/commissions/logs?astrologerId=eddbd187-163b-4776-a986-c406d152a75f`
 **Description:** Commission logs  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -3834,7 +3920,7 @@ Generated: $(date)
 
 ### GET `/commissions/stats/eddbd187-163b-4776-a986-c406d152a75f`
 **Description:** Astrologer stats  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -3853,7 +3939,7 @@ Generated: $(date)
 
 ### GET `/commissions/by-astrologer/eddbd187-163b-4776-a986-c406d152a75f`
 **Description:** By astrologer  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -3867,7 +3953,7 @@ Generated: $(date)
 
 ### GET `/calls?userId=23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266`
 **Description:** List calls  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -3881,7 +3967,7 @@ Generated: $(date)
 
 ### GET `/gifts`
 **Description:** List gifts  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -3889,24 +3975,6 @@ Generated: $(date)
 **Response (200):**
 ```json
 [
-  {
-    "id": "f3d5e5fe-c295-4874-8282-08bdcad4ae59",
-    "name": "Gemstone Bracelet",
-    "image": "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=200",
-    "price": "799.00",
-    "isActive": true,
-    "createdAt": "2026-07-24T02:05:40.739Z",
-    "updatedAt": "2026-07-24T02:05:40.739Z"
-  },
-  {
-    "id": "2bd90177-b135-4a5e-9bc4-35d9879dec86",
-    "name": "Premium Pooja Kit",
-    "image": "https://images.unsplash.com/photo-1585238342024-78d387f4a707?w=200",
-    "price": "999.00",
-    "isActive": true,
-    "createdAt": "2026-07-24T02:05:40.739Z",
-    "updatedAt": "2026-07-24T02:05:40.739Z"
-  },
   {
     "id": "805e99fb-657a-413b-b047-213f00d9b969",
     "name": "Gold Plated Idol",
@@ -3996,6 +4064,42 @@ Generated: $(date)
     "isActive": true,
     "createdAt": "2026-07-24T02:05:40.739Z",
     "updatedAt": "2026-07-24T02:05:40.739Z"
+  },
+  {
+    "id": "298f819c-e2ce-4910-bb62-8a358bf83422",
+    "name": "Test Gift",
+    "image": "https://example.com/gift.jpg",
+    "price": "99.00",
+    "isActive": true,
+    "createdAt": "2026-07-25T12:28:15.723Z",
+    "updatedAt": "2026-07-25T12:28:15.723Z"
+  },
+  {
+    "id": "f3d5e5fe-c295-4874-8282-08bdcad4ae59",
+    "name": "Updated Gift",
+    "image": "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=200",
+    "price": "149.00",
+    "isActive": true,
+    "createdAt": "2026-07-24T02:05:40.739Z",
+    "updatedAt": "2026-07-24T02:05:40.739Z"
+  },
+  {
+    "id": "2a84ed40-2aa2-4551-8c0a-2116edaa3889",
+    "name": "Test Gift",
+    "image": "https://example.com/gift.jpg",
+    "price": "99.00",
+    "isActive": true,
+    "createdAt": "2026-07-25T13:09:24.485Z",
+    "updatedAt": "2026-07-25T13:09:24.485Z"
+  },
+  {
+    "id": "2bd90177-b135-4a5e-9bc4-35d9879dec86",
+    "name": "Updated Gift",
+    "image": "https://images.unsplash.com/photo-1585238342024-78d387f4a707?w=200",
+    "price": "149.00",
+    "isActive": true,
+    "createdAt": "2026-07-24T02:05:40.739Z",
+    "updatedAt": "2026-07-24T02:05:40.739Z"
   }
 ]
 ```
@@ -4004,7 +4108,7 @@ Generated: $(date)
 
 ### POST `/gifts`
 **Description:** Create gift  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 {"name":"Test Gift","price":99,"image":"https://example.com/gift.jpg","isActive":true}
@@ -4012,21 +4116,21 @@ Generated: $(date)
 **Response (201):**
 ```json
 {
-  "id": "298f819c-e2ce-4910-bb62-8a358bf83422",
+  "id": "60f14f31-c45d-48e7-9c85-69e445c8622c",
   "name": "Test Gift",
   "image": "https://example.com/gift.jpg",
   "price": "99.00",
   "isActive": true,
-  "createdAt": "2026-07-25T12:28:15.723Z",
-  "updatedAt": "2026-07-25T12:28:15.723Z"
+  "createdAt": "2026-07-25T13:11:06.066Z",
+  "updatedAt": "2026-07-25T13:11:06.066Z"
 }
 ```
 **Status:** PASS
 
 
-### GET `/gifts/f3d5e5fe-c295-4874-8282-08bdcad4ae59`
+### GET `/gifts/805e99fb-657a-413b-b047-213f00d9b969`
 **Description:** Get gift  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -4034,10 +4138,10 @@ Generated: $(date)
 **Response (200):**
 ```json
 {
-  "id": "f3d5e5fe-c295-4874-8282-08bdcad4ae59",
-  "name": "Gemstone Bracelet",
-  "image": "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=200",
-  "price": "799.00",
+  "id": "805e99fb-657a-413b-b047-213f00d9b969",
+  "name": "Gold Plated Idol",
+  "image": "https://images.unsplash.com/photo-1577083288073-40892c0860a4?w=200",
+  "price": "1499.00",
   "isActive": true,
   "createdAt": "2026-07-24T02:05:40.739Z",
   "updatedAt": "2026-07-24T02:05:40.739Z"
@@ -4046,9 +4150,9 @@ Generated: $(date)
 **Status:** PASS
 
 
-### PUT `/gifts/f3d5e5fe-c295-4874-8282-08bdcad4ae59`
+### PUT `/gifts/805e99fb-657a-413b-b047-213f00d9b969`
 **Description:** Update gift  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 {"name":"Updated Gift","price":149}
@@ -4056,9 +4160,9 @@ Generated: $(date)
 **Response (200):**
 ```json
 {
-  "id": "f3d5e5fe-c295-4874-8282-08bdcad4ae59",
+  "id": "805e99fb-657a-413b-b047-213f00d9b969",
   "name": "Updated Gift",
-  "image": "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=200",
+  "image": "https://images.unsplash.com/photo-1577083288073-40892c0860a4?w=200",
   "price": "149.00",
   "isActive": true,
   "createdAt": "2026-07-24T02:05:40.739Z",
@@ -4070,17 +4174,17 @@ Generated: $(date)
 
 ### POST `/gifts/send`
 **Description:** Send gift  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
-{"giftId":"f3d5e5fe-c295-4874-8282-08bdcad4ae59","receiverId":"eddbd187-163b-4776-a986-c406d152a75f"}
+{"giftId":"805e99fb-657a-413b-b047-213f00d9b969","receiverId":"eddbd187-163b-4776-a986-c406d152a75f"}
 ```
 **Response (500):**
 ```json
 {
   "statusCode": 500,
   "message": "Internal server error",
-  "timestamp": "2026-07-25T06:58:15.788Z",
+  "timestamp": "2026-07-25T07:41:06.150Z",
   "path": "/api/v1/gifts/send"
 }
 ```
@@ -4089,7 +4193,7 @@ Generated: $(date)
 
 ### GET `/gifts/transactions`
 **Description:** Transactions  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -4103,7 +4207,7 @@ Generated: $(date)
 
 ### GET `/donations?userId=23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266`
 **Description:** List donations  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -4111,6 +4215,22 @@ Generated: $(date)
 **Response (200):**
 ```json
 [
+  {
+    "id": "dbcab9bd-fea7-4ae9-b7a5-ea8140e602b3",
+    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+    "amount": "500.00",
+    "transactionId": null,
+    "message": null,
+    "createdAt": "2026-07-25T13:09:24.592Z"
+  },
+  {
+    "id": "ac4b0ee8-0b30-4319-b68e-d534d807b5e2",
+    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+    "amount": "500.00",
+    "transactionId": null,
+    "message": null,
+    "createdAt": "2026-07-25T12:28:15.840Z"
+  },
   {
     "id": "cc63f0a1-fe1e-4c30-a36b-e3da89ef2876",
     "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
@@ -4150,7 +4270,7 @@ Generated: $(date)
 
 ### POST `/donations`
 **Description:** Create donation  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 {"amount":500,"userId":"23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266"}
@@ -4158,12 +4278,12 @@ Generated: $(date)
 **Response (201):**
 ```json
 {
-  "id": "ac4b0ee8-0b30-4319-b68e-d534d807b5e2",
+  "id": "9b20fc52-8306-46d1-8581-1a0f93a6b4e9",
   "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
   "amount": "500.00",
   "transactionId": null,
   "message": null,
-  "createdAt": "2026-07-25T12:28:15.840Z"
+  "createdAt": "2026-07-25T13:11:06.219Z"
 }
 ```
 **Status:** PASS
@@ -4171,7 +4291,7 @@ Generated: $(date)
 
 ### GET `/donations/stats`
 **Description:** Stats (admin)  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -4179,9 +4299,9 @@ Generated: $(date)
 **Response (200):**
 ```json
 {
-  "totalReceived": 2500,
+  "totalReceived": 3500,
   "totalWithdrawn": 0,
-  "pending": 2500
+  "pending": 3500
 }
 ```
 **Status:** PASS
@@ -4189,7 +4309,7 @@ Generated: $(date)
 
 ### GET `/donations/logs`
 **Description:** Logs (admin)  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -4197,6 +4317,26 @@ Generated: $(date)
 **Response (200):**
 ```json
 [
+  {
+    "id": "1f4e7240-b888-4ce3-b7ae-3ad38bc7b5cf",
+    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+    "adminId": null,
+    "type": "received",
+    "amount": "500.00",
+    "status": "completed",
+    "note": null,
+    "createdAt": "2026-07-25T13:11:06.222Z"
+  },
+  {
+    "id": "57b41749-ac7d-41ea-81eb-46ef3fd776d7",
+    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+    "adminId": null,
+    "type": "received",
+    "amount": "500.00",
+    "status": "completed",
+    "note": null,
+    "createdAt": "2026-07-25T13:09:24.594Z"
+  },
   {
     "id": "f1710d0c-8c98-4111-bd8d-af399f797edf",
     "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
@@ -4262,32 +4402,6 @@ Generated: $(date)
 **Response (200):**
 ```json
 [
-  {
-    "id": "d64c0ead-b5fd-45aa-a2ae-168e50166bbc",
-    "name": "Meditation Cushion",
-    "description": "Comfortable floor cushion for meditation",
-    "price": "899.00",
-    "comparePrice": "1199.00",
-    "images": [],
-    "category": "Meditation",
-    "stock": 25,
-    "isActive": true,
-    "createdAt": "2026-07-24T02:05:40.742Z",
-    "updatedAt": "2026-07-24T02:05:40.742Z"
-  },
-  {
-    "id": "7b71f53c-c995-4ac6-b606-33b510e3a9ca",
-    "name": "Tibetan Singing Bowl",
-    "description": "Handmade singing bowl for sound healing",
-    "price": "2499.00",
-    "comparePrice": "2999.00",
-    "images": [],
-    "category": "Meditation",
-    "stock": 15,
-    "isActive": true,
-    "createdAt": "2026-07-24T02:05:40.742Z",
-    "updatedAt": "2026-07-24T02:05:40.742Z"
-  },
   {
     "id": "086963c0-66ef-4515-a59d-7d7473037977",
     "name": "Agarbatti Pack (12)",
@@ -4391,6 +4505,32 @@ Generated: $(date)
     "isActive": true,
     "createdAt": "2026-07-25T12:27:11.988Z",
     "updatedAt": "2026-07-25T12:27:11.988Z"
+  },
+  {
+    "id": "981872c6-175a-4426-86f6-2b258a2404e9",
+    "name": "Test Product",
+    "description": "Test",
+    "price": "299.00",
+    "comparePrice": null,
+    "images": [],
+    "category": "Books",
+    "stock": 10,
+    "isActive": true,
+    "createdAt": "2026-07-25T12:28:15.908Z",
+    "updatedAt": "2026-07-25T12:28:15.908Z"
+  },
+  {
+    "id": "e79a2f63-50d7-40ac-a8b3-2188184d6665",
+    "name": "Test Product",
+    "description": "Test",
+    "price": "299.00",
+    "comparePrice": null,
+    "images": [],
+    "category": "Books",
+    "stock": 10,
+    "isActive": true,
+    "createdAt": "2026-07-25T13:09:24.653Z",
+    "updatedAt": "2026-07-25T13:09:24.653Z"
   }
 ]
 ```
@@ -4399,7 +4539,7 @@ Generated: $(date)
 
 ### POST `/shop`
 **Description:** Create product  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 {"name":"Test Product","description":"Test","price":299,"category":"Books","stock":10,"image":"https://example.com/p.jpg"}
@@ -4407,7 +4547,7 @@ Generated: $(date)
 **Response (201):**
 ```json
 {
-  "id": "981872c6-175a-4426-86f6-2b258a2404e9",
+  "id": "c2ac9769-b5b7-4b81-9b4b-5046d4c10123",
   "name": "Test Product",
   "description": "Test",
   "price": "299.00",
@@ -4416,14 +4556,14 @@ Generated: $(date)
   "category": "Books",
   "stock": 10,
   "isActive": true,
-  "createdAt": "2026-07-25T12:28:15.908Z",
-  "updatedAt": "2026-07-25T12:28:15.908Z"
+  "createdAt": "2026-07-25T13:11:06.310Z",
+  "updatedAt": "2026-07-25T13:11:06.310Z"
 }
 ```
 **Status:** PASS
 
 
-### GET `/shop/d64c0ead-b5fd-45aa-a2ae-168e50166bbc`
+### GET `/shop/086963c0-66ef-4515-a59d-7d7473037977`
 **Description:** Get product  
 **Auth:** No  
 **Request:**
@@ -4433,14 +4573,14 @@ Generated: $(date)
 **Response (200):**
 ```json
 {
-  "id": "d64c0ead-b5fd-45aa-a2ae-168e50166bbc",
-  "name": "Meditation Cushion",
-  "description": "Comfortable floor cushion for meditation",
-  "price": "899.00",
-  "comparePrice": "1199.00",
+  "id": "086963c0-66ef-4515-a59d-7d7473037977",
+  "name": "Agarbatti Pack (12)",
+  "description": "Premium sandalwood incense sticks",
+  "price": "99.00",
+  "comparePrice": "149.00",
   "images": [],
-  "category": "Meditation",
-  "stock": 25,
+  "category": "Incense",
+  "stock": 100,
   "isActive": true,
   "createdAt": "2026-07-24T02:05:40.742Z",
   "updatedAt": "2026-07-24T02:05:40.742Z"
@@ -4449,9 +4589,9 @@ Generated: $(date)
 **Status:** PASS
 
 
-### PUT `/shop/d64c0ead-b5fd-45aa-a2ae-168e50166bbc`
+### PUT `/shop/086963c0-66ef-4515-a59d-7d7473037977`
 **Description:** Update product  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 {"price":249}
@@ -4459,25 +4599,25 @@ Generated: $(date)
 **Response (200):**
 ```json
 {
-  "id": "d64c0ead-b5fd-45aa-a2ae-168e50166bbc",
-  "name": "Meditation Cushion",
-  "description": "Comfortable floor cushion for meditation",
+  "id": "086963c0-66ef-4515-a59d-7d7473037977",
+  "name": "Agarbatti Pack (12)",
+  "description": "Premium sandalwood incense sticks",
   "price": "249.00",
-  "comparePrice": "1199.00",
+  "comparePrice": "149.00",
   "images": [],
-  "category": "Meditation",
-  "stock": 25,
+  "category": "Incense",
+  "stock": 100,
   "isActive": true,
   "createdAt": "2026-07-24T02:05:40.742Z",
-  "updatedAt": "2026-07-25T06:58:15.949Z"
+  "updatedAt": "2026-07-25T07:41:06.364Z"
 }
 ```
 **Status:** PASS
 
 
-### DELETE `/shop/d64c0ead-b5fd-45aa-a2ae-168e50166bbc`
+### DELETE `/shop/086963c0-66ef-4515-a59d-7d7473037977`
 **Description:** Delete product  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -4491,7 +4631,7 @@ Generated: $(date)
 
 ### GET `/orders/my`
 **Description:** My orders  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -4499,26 +4639,6 @@ Generated: $(date)
 **Response (200):**
 ```json
 [
-  {
-    "id": "041eff49-0c61-4fdb-bdfb-faa3230c0665",
-    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
-    "totalAmount": "299.00",
-    "status": "pending",
-    "shippingAddress": null,
-    "transactionId": null,
-    "createdAt": "2026-07-25T12:13:56.713Z",
-    "updatedAt": "2026-07-25T12:13:56.713Z"
-  },
-  {
-    "id": "3bc862ae-460c-4701-b879-e0d08b8ea56f",
-    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
-    "totalAmount": "299.00",
-    "status": "confirmed",
-    "shippingAddress": null,
-    "transactionId": null,
-    "createdAt": "2026-07-25T12:12:42.323Z",
-    "updatedAt": "2026-07-25T06:43:56.776Z"
-  },
   {
     "id": "fe5355f1-b60d-4bbf-876c-b2e2122254de",
     "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
@@ -4538,6 +4658,46 @@ Generated: $(date)
     "transactionId": null,
     "createdAt": "2026-07-25T12:11:25.202Z",
     "updatedAt": "2026-07-25T06:57:12.241Z"
+  },
+  {
+    "id": "4736483b-6cfe-465f-9d65-7d51d3ef1456",
+    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+    "totalAmount": "299.00",
+    "status": "pending",
+    "shippingAddress": null,
+    "transactionId": null,
+    "createdAt": "2026-07-25T12:28:16.017Z",
+    "updatedAt": "2026-07-25T12:28:16.017Z"
+  },
+  {
+    "id": "041eff49-0c61-4fdb-bdfb-faa3230c0665",
+    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+    "totalAmount": "299.00",
+    "status": "confirmed",
+    "shippingAddress": null,
+    "transactionId": null,
+    "createdAt": "2026-07-25T12:13:56.713Z",
+    "updatedAt": "2026-07-25T06:58:16.095Z"
+  },
+  {
+    "id": "92bd7735-95ed-433a-9617-9be3ebde4252",
+    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+    "totalAmount": "299.00",
+    "status": "pending",
+    "shippingAddress": null,
+    "transactionId": null,
+    "createdAt": "2026-07-25T13:09:24.745Z",
+    "updatedAt": "2026-07-25T13:09:24.745Z"
+  },
+  {
+    "id": "3bc862ae-460c-4701-b879-e0d08b8ea56f",
+    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+    "totalAmount": "299.00",
+    "status": "confirmed",
+    "shippingAddress": null,
+    "transactionId": null,
+    "createdAt": "2026-07-25T12:12:42.323Z",
+    "updatedAt": "2026-07-25T07:39:24.806Z"
   }
 ]
 ```
@@ -4546,7 +4706,7 @@ Generated: $(date)
 
 ### GET `/orders`
 **Description:** All orders  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -4554,26 +4714,6 @@ Generated: $(date)
 **Response (200):**
 ```json
 [
-  {
-    "id": "041eff49-0c61-4fdb-bdfb-faa3230c0665",
-    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
-    "userName": "Admin Updated",
-    "totalAmount": "299.00",
-    "status": "pending",
-    "shippingAddress": null,
-    "createdAt": "2026-07-25T12:13:56.713Z",
-    "updatedAt": "2026-07-25T12:13:56.713Z"
-  },
-  {
-    "id": "3bc862ae-460c-4701-b879-e0d08b8ea56f",
-    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
-    "userName": "Admin Updated",
-    "totalAmount": "299.00",
-    "status": "confirmed",
-    "shippingAddress": null,
-    "createdAt": "2026-07-25T12:12:42.323Z",
-    "updatedAt": "2026-07-25T06:43:56.776Z"
-  },
   {
     "id": "fe5355f1-b60d-4bbf-876c-b2e2122254de",
     "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
@@ -4593,6 +4733,46 @@ Generated: $(date)
     "shippingAddress": null,
     "createdAt": "2026-07-25T12:11:25.202Z",
     "updatedAt": "2026-07-25T06:57:12.241Z"
+  },
+  {
+    "id": "4736483b-6cfe-465f-9d65-7d51d3ef1456",
+    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+    "userName": "Admin Updated",
+    "totalAmount": "299.00",
+    "status": "pending",
+    "shippingAddress": null,
+    "createdAt": "2026-07-25T12:28:16.017Z",
+    "updatedAt": "2026-07-25T12:28:16.017Z"
+  },
+  {
+    "id": "041eff49-0c61-4fdb-bdfb-faa3230c0665",
+    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+    "userName": "Admin Updated",
+    "totalAmount": "299.00",
+    "status": "confirmed",
+    "shippingAddress": null,
+    "createdAt": "2026-07-25T12:13:56.713Z",
+    "updatedAt": "2026-07-25T06:58:16.095Z"
+  },
+  {
+    "id": "92bd7735-95ed-433a-9617-9be3ebde4252",
+    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+    "userName": "Admin Updated",
+    "totalAmount": "299.00",
+    "status": "pending",
+    "shippingAddress": null,
+    "createdAt": "2026-07-25T13:09:24.745Z",
+    "updatedAt": "2026-07-25T13:09:24.745Z"
+  },
+  {
+    "id": "3bc862ae-460c-4701-b879-e0d08b8ea56f",
+    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+    "userName": "Admin Updated",
+    "totalAmount": "299.00",
+    "status": "confirmed",
+    "shippingAddress": null,
+    "createdAt": "2026-07-25T12:12:42.323Z",
+    "updatedAt": "2026-07-25T07:39:24.806Z"
   }
 ]
 ```
@@ -4601,7 +4781,7 @@ Generated: $(date)
 
 ### POST `/orders`
 **Description:** Create order  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 {"userId":"23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266","totalAmount":299,"status":"pending"}
@@ -4609,22 +4789,22 @@ Generated: $(date)
 **Response (201):**
 ```json
 {
-  "id": "4736483b-6cfe-465f-9d65-7d51d3ef1456",
+  "id": "1c5b401a-b799-4266-a3cf-fcf4be30f4ef",
   "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
   "totalAmount": "299.00",
   "status": "pending",
   "shippingAddress": null,
   "transactionId": null,
-  "createdAt": "2026-07-25T12:28:16.017Z",
-  "updatedAt": "2026-07-25T12:28:16.017Z"
+  "createdAt": "2026-07-25T13:11:06.456Z",
+  "updatedAt": "2026-07-25T13:11:06.456Z"
 }
 ```
 **Status:** PASS
 
 
-### GET `/orders/041eff49-0c61-4fdb-bdfb-faa3230c0665`
+### GET `/orders/fe5355f1-b60d-4bbf-876c-b2e2122254de`
 **Description:** Get order  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -4632,22 +4812,22 @@ Generated: $(date)
 **Response (200):**
 ```json
 {
-  "id": "041eff49-0c61-4fdb-bdfb-faa3230c0665",
+  "id": "fe5355f1-b60d-4bbf-876c-b2e2122254de",
   "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
   "totalAmount": "299.00",
   "status": "pending",
   "shippingAddress": null,
   "transactionId": null,
-  "createdAt": "2026-07-25T12:13:56.713Z",
-  "updatedAt": "2026-07-25T12:13:56.713Z"
+  "createdAt": "2026-07-25T12:27:12.141Z",
+  "updatedAt": "2026-07-25T12:27:12.141Z"
 }
 ```
 **Status:** PASS
 
 
-### GET `/orders/041eff49-0c61-4fdb-bdfb-faa3230c0665/items`
+### GET `/orders/fe5355f1-b60d-4bbf-876c-b2e2122254de/items`
 **Description:** Get items  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -4659,28 +4839,28 @@ Generated: $(date)
 **Status:** PASS
 
 
-### POST `/orders/041eff49-0c61-4fdb-bdfb-faa3230c0665/items`
+### POST `/orders/fe5355f1-b60d-4bbf-876c-b2e2122254de/items`
 **Description:** Add item  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
-{"productId":"d64c0ead-b5fd-45aa-a2ae-168e50166bbc","quantity":1,"price":299}
+{"productId":"086963c0-66ef-4515-a59d-7d7473037977","quantity":1,"price":299}
 ```
 **Response (500):**
 ```json
 {
   "statusCode": 500,
   "message": "Internal server error",
-  "timestamp": "2026-07-25T06:58:16.078Z",
-  "path": "/api/v1/orders/041eff49-0c61-4fdb-bdfb-faa3230c0665/items"
+  "timestamp": "2026-07-25T07:41:06.529Z",
+  "path": "/api/v1/orders/fe5355f1-b60d-4bbf-876c-b2e2122254de/items"
 }
 ```
 **Status:** FAIL
 
 
-### PUT `/orders/041eff49-0c61-4fdb-bdfb-faa3230c0665/status`
+### PUT `/orders/fe5355f1-b60d-4bbf-876c-b2e2122254de/status`
 **Description:** Update status  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 {"status":"confirmed"}
@@ -4688,14 +4868,14 @@ Generated: $(date)
 **Response (200):**
 ```json
 {
-  "id": "041eff49-0c61-4fdb-bdfb-faa3230c0665",
+  "id": "fe5355f1-b60d-4bbf-876c-b2e2122254de",
   "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
   "totalAmount": "299.00",
   "status": "confirmed",
   "shippingAddress": null,
   "transactionId": null,
-  "createdAt": "2026-07-25T12:13:56.713Z",
-  "updatedAt": "2026-07-25T06:58:16.095Z"
+  "createdAt": "2026-07-25T12:27:12.141Z",
+  "updatedAt": "2026-07-25T07:41:06.551Z"
 }
 ```
 **Status:** PASS
@@ -4818,6 +4998,30 @@ Generated: $(date)
     "isActive": true,
     "createdAt": "2026-07-25T12:27:12.313Z",
     "updatedAt": "2026-07-25T12:27:12.313Z"
+  },
+  {
+    "id": "d9e28981-ee5e-4e10-8a4d-9d6ee253407a",
+    "title": "Test Video",
+    "description": null,
+    "url": "https://example.com/v.mp4",
+    "thumbnail": null,
+    "category": "Educational",
+    "duration": 300,
+    "isActive": true,
+    "createdAt": "2026-07-25T12:28:16.148Z",
+    "updatedAt": "2026-07-25T12:28:16.148Z"
+  },
+  {
+    "id": "60cbbe41-d6c8-499a-bea8-3a12ff1ece20",
+    "title": "Test Video",
+    "description": null,
+    "url": "https://example.com/v.mp4",
+    "thumbnail": null,
+    "category": "Educational",
+    "duration": 300,
+    "isActive": true,
+    "createdAt": "2026-07-25T13:09:24.848Z",
+    "updatedAt": "2026-07-25T13:09:24.848Z"
   }
 ]
 ```
@@ -4941,6 +5145,30 @@ Generated: $(date)
     "isActive": true,
     "createdAt": "2026-07-25T12:27:12.313Z",
     "updatedAt": "2026-07-25T12:27:12.313Z"
+  },
+  {
+    "id": "d9e28981-ee5e-4e10-8a4d-9d6ee253407a",
+    "title": "Test Video",
+    "description": null,
+    "url": "https://example.com/v.mp4",
+    "thumbnail": null,
+    "category": "Educational",
+    "duration": 300,
+    "isActive": true,
+    "createdAt": "2026-07-25T12:28:16.148Z",
+    "updatedAt": "2026-07-25T12:28:16.148Z"
+  },
+  {
+    "id": "60cbbe41-d6c8-499a-bea8-3a12ff1ece20",
+    "title": "Test Video",
+    "description": null,
+    "url": "https://example.com/v.mp4",
+    "thumbnail": null,
+    "category": "Educational",
+    "duration": 300,
+    "isActive": true,
+    "createdAt": "2026-07-25T13:09:24.848Z",
+    "updatedAt": "2026-07-25T13:09:24.848Z"
   }
 ]
 ```
@@ -4949,7 +5177,7 @@ Generated: $(date)
 
 ### POST `/videos`
 **Description:** Create video  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 {"title":"Test Video","url":"https://example.com/v.mp4","category":"Educational","duration":300}
@@ -4957,7 +5185,7 @@ Generated: $(date)
 **Response (201):**
 ```json
 {
-  "id": "d9e28981-ee5e-4e10-8a4d-9d6ee253407a",
+  "id": "cf78ff65-5cf1-49f8-bbcb-b5f6dc189eff",
   "title": "Test Video",
   "description": null,
   "url": "https://example.com/v.mp4",
@@ -4965,8 +5193,8 @@ Generated: $(date)
   "category": "Educational",
   "duration": 300,
   "isActive": true,
-  "createdAt": "2026-07-25T12:28:16.148Z",
-  "updatedAt": "2026-07-25T12:28:16.148Z"
+  "createdAt": "2026-07-25T13:11:06.611Z",
+  "updatedAt": "2026-07-25T13:11:06.611Z"
 }
 ```
 **Status:** PASS
@@ -5002,7 +5230,7 @@ Generated: $(date)
 
 ### GET `/live-sessions/astrologer/eddbd187-163b-4776-a986-c406d152a75f`
 **Description:** By astrologer  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZGRiZDE4Ny0xNjNiLTQ3NzYtYTk4Ni1jNDA2ZDE1MmE3NWYiLCJyb2xlIjoiYXN0cm9sb2dlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.s0sBRLxaJ9IuIhUxxUMXPESiaxh_eVkRfl8HbLZ7vjM  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZGRiZDE4Ny0xNjNiLTQ3NzYtYTk4Ni1jNDA2ZDE1MmE3NWYiLCJyb2xlIjoiYXN0cm9sb2dlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.SKcFcb3QDFPAYVQnSJ8lmhAWi8Dxtn1LJMXzZ3fjMt0  
 **Request:**
 ```json
 <no body>
@@ -5016,7 +5244,7 @@ Generated: $(date)
 
 ### POST `/live-sessions`
 **Description:** Create session  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZGRiZDE4Ny0xNjNiLTQ3NzYtYTk4Ni1jNDA2ZDE1MmE3NWYiLCJyb2xlIjoiYXN0cm9sb2dlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.s0sBRLxaJ9IuIhUxxUMXPESiaxh_eVkRfl8HbLZ7vjM  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZGRiZDE4Ny0xNjNiLTQ3NzYtYTk4Ni1jNDA2ZDE1MmE3NWYiLCJyb2xlIjoiYXN0cm9sb2dlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.SKcFcb3QDFPAYVQnSJ8lmhAWi8Dxtn1LJMXzZ3fjMt0  
 **Request:**
 ```json
 {"title":"Test Live","description":"Test"}
@@ -5026,7 +5254,7 @@ Generated: $(date)
 {
   "statusCode": 500,
   "message": "Internal server error",
-  "timestamp": "2026-07-25T06:58:16.214Z",
+  "timestamp": "2026-07-25T07:41:06.705Z",
   "path": "/api/v1/live-sessions"
 }
 ```
@@ -5044,26 +5272,6 @@ Generated: $(date)
 ```json
 [
   {
-    "id": "5d22b2bc-cd83-4d45-8498-417f9abb90a2",
-    "name": "Saraswati Pooja",
-    "description": "Blessings for knowledge and wisdom",
-    "image": null,
-    "price": "751.00",
-    "isActive": true,
-    "createdAt": "2026-07-24T02:05:40.745Z",
-    "updatedAt": "2026-07-24T02:05:40.745Z"
-  },
-  {
-    "id": "ae2db01b-a4b1-40c6-916e-b64176622a85",
-    "name": "Rudra Abhishekam",
-    "description": "Powerful Shiva pooja for spiritual growth",
-    "image": null,
-    "price": "1500.00",
-    "isActive": true,
-    "createdAt": "2026-07-24T02:05:40.745Z",
-    "updatedAt": "2026-07-24T02:05:40.745Z"
-  },
-  {
     "id": "a1c9c0ab-3905-4889-9e46-5711cd4a9fae",
     "name": "Satyanarayan Katha",
     "description": "Complete pooja for peace and happiness",
@@ -5162,6 +5370,46 @@ Generated: $(date)
     "isActive": true,
     "createdAt": "2026-07-24T02:05:40.745Z",
     "updatedAt": "2026-07-25T06:57:12.521Z"
+  },
+  {
+    "id": "d413ce9d-2143-4115-9622-43b8bd441a79",
+    "name": "Satyanarayan Pooja",
+    "description": "Sacred",
+    "image": null,
+    "price": "1100.00",
+    "isActive": true,
+    "createdAt": "2026-07-25T12:28:16.289Z",
+    "updatedAt": "2026-07-25T12:28:16.289Z"
+  },
+  {
+    "id": "5d22b2bc-cd83-4d45-8498-417f9abb90a2",
+    "name": "Saraswati Pooja",
+    "description": "Blessings for knowledge and wisdom",
+    "image": null,
+    "price": "1500.00",
+    "isActive": true,
+    "createdAt": "2026-07-24T02:05:40.745Z",
+    "updatedAt": "2026-07-25T06:58:16.334Z"
+  },
+  {
+    "id": "3e4fdb75-f4d5-4306-9c00-e04efa8e86e2",
+    "name": "Satyanarayan Pooja",
+    "description": "Sacred",
+    "image": null,
+    "price": "1100.00",
+    "isActive": true,
+    "createdAt": "2026-07-25T13:09:24.959Z",
+    "updatedAt": "2026-07-25T13:09:24.959Z"
+  },
+  {
+    "id": "ae2db01b-a4b1-40c6-916e-b64176622a85",
+    "name": "Rudra Abhishekam",
+    "description": "Powerful Shiva pooja for spiritual growth",
+    "image": null,
+    "price": "1500.00",
+    "isActive": true,
+    "createdAt": "2026-07-24T02:05:40.745Z",
+    "updatedAt": "2026-07-25T07:39:24.994Z"
   }
 ]
 ```
@@ -5170,7 +5418,7 @@ Generated: $(date)
 
 ### GET `/mandir-pooja/admin`
 **Description:** List admin  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -5178,26 +5426,6 @@ Generated: $(date)
 **Response (200):**
 ```json
 [
-  {
-    "id": "5d22b2bc-cd83-4d45-8498-417f9abb90a2",
-    "name": "Saraswati Pooja",
-    "description": "Blessings for knowledge and wisdom",
-    "image": null,
-    "price": "751.00",
-    "isActive": true,
-    "createdAt": "2026-07-24T02:05:40.745Z",
-    "updatedAt": "2026-07-24T02:05:40.745Z"
-  },
-  {
-    "id": "ae2db01b-a4b1-40c6-916e-b64176622a85",
-    "name": "Rudra Abhishekam",
-    "description": "Powerful Shiva pooja for spiritual growth",
-    "image": null,
-    "price": "1500.00",
-    "isActive": true,
-    "createdAt": "2026-07-24T02:05:40.745Z",
-    "updatedAt": "2026-07-24T02:05:40.745Z"
-  },
   {
     "id": "a1c9c0ab-3905-4889-9e46-5711cd4a9fae",
     "name": "Satyanarayan Katha",
@@ -5297,6 +5525,46 @@ Generated: $(date)
     "isActive": true,
     "createdAt": "2026-07-24T02:05:40.745Z",
     "updatedAt": "2026-07-25T06:57:12.521Z"
+  },
+  {
+    "id": "d413ce9d-2143-4115-9622-43b8bd441a79",
+    "name": "Satyanarayan Pooja",
+    "description": "Sacred",
+    "image": null,
+    "price": "1100.00",
+    "isActive": true,
+    "createdAt": "2026-07-25T12:28:16.289Z",
+    "updatedAt": "2026-07-25T12:28:16.289Z"
+  },
+  {
+    "id": "5d22b2bc-cd83-4d45-8498-417f9abb90a2",
+    "name": "Saraswati Pooja",
+    "description": "Blessings for knowledge and wisdom",
+    "image": null,
+    "price": "1500.00",
+    "isActive": true,
+    "createdAt": "2026-07-24T02:05:40.745Z",
+    "updatedAt": "2026-07-25T06:58:16.334Z"
+  },
+  {
+    "id": "3e4fdb75-f4d5-4306-9c00-e04efa8e86e2",
+    "name": "Satyanarayan Pooja",
+    "description": "Sacred",
+    "image": null,
+    "price": "1100.00",
+    "isActive": true,
+    "createdAt": "2026-07-25T13:09:24.959Z",
+    "updatedAt": "2026-07-25T13:09:24.959Z"
+  },
+  {
+    "id": "ae2db01b-a4b1-40c6-916e-b64176622a85",
+    "name": "Rudra Abhishekam",
+    "description": "Powerful Shiva pooja for spiritual growth",
+    "image": null,
+    "price": "1500.00",
+    "isActive": true,
+    "createdAt": "2026-07-24T02:05:40.745Z",
+    "updatedAt": "2026-07-25T07:39:24.994Z"
   }
 ]
 ```
@@ -5305,7 +5573,7 @@ Generated: $(date)
 
 ### POST `/mandir-pooja`
 **Description:** Create pooja  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 {"name":"Satyanarayan Pooja","description":"Sacred","price":1100,"category":"General","duration":120}
@@ -5313,20 +5581,20 @@ Generated: $(date)
 **Response (201):**
 ```json
 {
-  "id": "d413ce9d-2143-4115-9622-43b8bd441a79",
+  "id": "4e6624ae-705a-4866-b924-677e78084d0c",
   "name": "Satyanarayan Pooja",
   "description": "Sacred",
   "image": null,
   "price": "1100.00",
   "isActive": true,
-  "createdAt": "2026-07-25T12:28:16.289Z",
-  "updatedAt": "2026-07-25T12:28:16.289Z"
+  "createdAt": "2026-07-25T13:11:06.815Z",
+  "updatedAt": "2026-07-25T13:11:06.815Z"
 }
 ```
 **Status:** PASS
 
 
-### GET `/mandir-pooja/5d22b2bc-cd83-4d45-8498-417f9abb90a2`
+### GET `/mandir-pooja/a1c9c0ab-3905-4889-9e46-5711cd4a9fae`
 **Description:** Get pooja  
 **Auth:** No  
 **Request:**
@@ -5336,11 +5604,11 @@ Generated: $(date)
 **Response (200):**
 ```json
 {
-  "id": "5d22b2bc-cd83-4d45-8498-417f9abb90a2",
-  "name": "Saraswati Pooja",
-  "description": "Blessings for knowledge and wisdom",
+  "id": "a1c9c0ab-3905-4889-9e46-5711cd4a9fae",
+  "name": "Satyanarayan Katha",
+  "description": "Complete pooja for peace and happiness",
   "image": null,
-  "price": "751.00",
+  "price": "1100.00",
   "isActive": true,
   "createdAt": "2026-07-24T02:05:40.745Z",
   "updatedAt": "2026-07-24T02:05:40.745Z"
@@ -5349,9 +5617,9 @@ Generated: $(date)
 **Status:** PASS
 
 
-### PUT `/mandir-pooja/5d22b2bc-cd83-4d45-8498-417f9abb90a2`
+### PUT `/mandir-pooja/a1c9c0ab-3905-4889-9e46-5711cd4a9fae`
 **Description:** Update pooja  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 {"price":1500}
@@ -5359,14 +5627,14 @@ Generated: $(date)
 **Response (200):**
 ```json
 {
-  "id": "5d22b2bc-cd83-4d45-8498-417f9abb90a2",
-  "name": "Saraswati Pooja",
-  "description": "Blessings for knowledge and wisdom",
+  "id": "a1c9c0ab-3905-4889-9e46-5711cd4a9fae",
+  "name": "Satyanarayan Katha",
+  "description": "Complete pooja for peace and happiness",
   "image": null,
   "price": "1500.00",
   "isActive": true,
   "createdAt": "2026-07-24T02:05:40.745Z",
-  "updatedAt": "2026-07-25T06:58:16.334Z"
+  "updatedAt": "2026-07-25T07:41:06.869Z"
 }
 ```
 **Status:** PASS
@@ -5374,24 +5642,24 @@ Generated: $(date)
 
 ### POST `/mandir-pooja/bookings`
 **Description:** Create booking  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
-{"poojaId":"5d22b2bc-cd83-4d45-8498-417f9abb90a2","bookingDate":"2026-08-01","amount":1500}
+{"poojaId":"a1c9c0ab-3905-4889-9e46-5711cd4a9fae","bookingDate":"2026-08-01","amount":1500}
 ```
 **Response (201):**
 ```json
 {
-  "id": "8f35bde2-e630-4a61-803d-c08cb257f4b6",
+  "id": "89868ca1-e5cb-46d7-9bed-d51f254fe30b",
   "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
-  "poojaId": "5d22b2bc-cd83-4d45-8498-417f9abb90a2",
+  "poojaId": "a1c9c0ab-3905-4889-9e46-5711cd4a9fae",
   "bookingDate": "2026-08-01",
   "amount": "1500.00",
   "transactionId": null,
   "status": "pending",
   "notes": null,
-  "createdAt": "2026-07-25T12:28:16.352Z",
-  "updatedAt": "2026-07-25T12:28:16.352Z"
+  "createdAt": "2026-07-25T13:11:06.890Z",
+  "updatedAt": "2026-07-25T13:11:06.890Z"
 }
 ```
 **Status:** PASS
@@ -5399,7 +5667,7 @@ Generated: $(date)
 
 ### GET `/mandir-pooja/bookings/list`
 **Description:** List bookings  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -5430,6 +5698,30 @@ Generated: $(date)
     "notes": null,
     "createdAt": "2026-07-25T12:28:16.352Z",
     "updatedAt": "2026-07-25T12:28:16.352Z"
+  },
+  {
+    "id": "0e069d38-d3c9-4481-bb32-8374491826ed",
+    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+    "poojaId": "ae2db01b-a4b1-40c6-916e-b64176622a85",
+    "bookingDate": "2026-08-01",
+    "amount": "1500.00",
+    "transactionId": null,
+    "status": "pending",
+    "notes": null,
+    "createdAt": "2026-07-25T13:09:25.010Z",
+    "updatedAt": "2026-07-25T13:09:25.010Z"
+  },
+  {
+    "id": "89868ca1-e5cb-46d7-9bed-d51f254fe30b",
+    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+    "poojaId": "a1c9c0ab-3905-4889-9e46-5711cd4a9fae",
+    "bookingDate": "2026-08-01",
+    "amount": "1500.00",
+    "transactionId": null,
+    "status": "pending",
+    "notes": null,
+    "createdAt": "2026-07-25T13:11:06.890Z",
+    "updatedAt": "2026-07-25T13:11:06.890Z"
   }
 ]
 ```
@@ -5438,7 +5730,7 @@ Generated: $(date)
 
 ### GET `/support/tickets?userId=23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266`
 **Description:** List tickets  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -5549,6 +5841,58 @@ Generated: $(date)
     "resolvedAt": "2026-07-25T06:57:12.668Z",
     "createdAt": "2026-07-25T12:27:12.621Z",
     "updatedAt": "2026-07-25T06:57:12.668Z"
+  },
+  {
+    "id": "1c04e615-7d0a-4d41-b5bd-ef49b7c2f047",
+    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+    "astrologerId": null,
+    "subject": "Test Issue",
+    "message": "Having a problem",
+    "status": "open",
+    "priority": "medium",
+    "assignedTo": null,
+    "resolvedAt": null,
+    "createdAt": "2026-07-25T12:28:16.405Z",
+    "updatedAt": "2026-07-25T12:28:16.405Z"
+  },
+  {
+    "id": "cff843d3-0440-45c6-8811-906ae04ba908",
+    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+    "astrologerId": null,
+    "subject": "Test Issue",
+    "message": "Having a problem",
+    "status": "resolved",
+    "priority": "medium",
+    "assignedTo": "aaf50893-eddc-433d-816f-c8a27973f024",
+    "resolvedAt": "2026-07-25T06:58:16.468Z",
+    "createdAt": "2026-07-25T12:28:16.423Z",
+    "updatedAt": "2026-07-25T06:58:16.468Z"
+  },
+  {
+    "id": "85890224-d1b4-4f88-b5a3-ffd3b0506804",
+    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+    "astrologerId": null,
+    "subject": "Test Issue",
+    "message": "Having a problem",
+    "status": "open",
+    "priority": "medium",
+    "assignedTo": null,
+    "resolvedAt": null,
+    "createdAt": "2026-07-25T13:09:25.052Z",
+    "updatedAt": "2026-07-25T13:09:25.052Z"
+  },
+  {
+    "id": "7af2b1e8-82eb-4dc6-80fb-40bf6a3260ce",
+    "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+    "astrologerId": null,
+    "subject": "Test Issue",
+    "message": "Having a problem",
+    "status": "resolved",
+    "priority": "medium",
+    "assignedTo": "aaf50893-eddc-433d-816f-c8a27973f024",
+    "resolvedAt": "2026-07-25T07:39:25.104Z",
+    "createdAt": "2026-07-25T13:09:25.067Z",
+    "updatedAt": "2026-07-25T07:39:25.104Z"
   }
 ]
 ```
@@ -5557,7 +5901,7 @@ Generated: $(date)
 
 ### POST `/support/tickets`
 **Description:** Create ticket  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 {"userId":"23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266","subject":"Test Issue","message":"Having a problem","priority":"medium"}
@@ -5565,7 +5909,7 @@ Generated: $(date)
 **Response (201):**
 ```json
 {
-  "id": "1c04e615-7d0a-4d41-b5bd-ef49b7c2f047",
+  "id": "68b1905c-9dee-4c0d-97f2-e94a64d58735",
   "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
   "astrologerId": null,
   "subject": "Test Issue",
@@ -5574,16 +5918,16 @@ Generated: $(date)
   "priority": "medium",
   "assignedTo": null,
   "resolvedAt": null,
-  "createdAt": "2026-07-25T12:28:16.405Z",
-  "updatedAt": "2026-07-25T12:28:16.405Z"
+  "createdAt": "2026-07-25T13:11:06.970Z",
+  "updatedAt": "2026-07-25T13:11:06.970Z"
 }
 ```
 **Status:** PASS
 
 
-### GET `/support/tickets/cff843d3-0440-45c6-8811-906ae04ba908`
+### GET `/support/tickets/4243432f-b81f-45f5-b4dd-8b2935be9c12`
 **Description:** Get ticket  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -5591,7 +5935,7 @@ Generated: $(date)
 **Response (200):**
 ```json
 {
-  "id": "cff843d3-0440-45c6-8811-906ae04ba908",
+  "id": "4243432f-b81f-45f5-b4dd-8b2935be9c12",
   "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
   "astrologerId": null,
   "subject": "Test Issue",
@@ -5600,16 +5944,16 @@ Generated: $(date)
   "priority": "medium",
   "assignedTo": null,
   "resolvedAt": null,
-  "createdAt": "2026-07-25T12:28:16.423Z",
-  "updatedAt": "2026-07-25T12:28:16.423Z"
+  "createdAt": "2026-07-25T13:11:06.991Z",
+  "updatedAt": "2026-07-25T13:11:06.991Z"
 }
 ```
 **Status:** PASS
 
 
-### PUT `/support/tickets/cff843d3-0440-45c6-8811-906ae04ba908/assign`
+### PUT `/support/tickets/4243432f-b81f-45f5-b4dd-8b2935be9c12/assign`
 **Description:** Assign  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 {"assignedTo":"aaf50893-eddc-433d-816f-c8a27973f024"}
@@ -5617,7 +5961,7 @@ Generated: $(date)
 **Response (200):**
 ```json
 {
-  "id": "cff843d3-0440-45c6-8811-906ae04ba908",
+  "id": "4243432f-b81f-45f5-b4dd-8b2935be9c12",
   "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
   "astrologerId": null,
   "subject": "Test Issue",
@@ -5626,16 +5970,16 @@ Generated: $(date)
   "priority": "medium",
   "assignedTo": "aaf50893-eddc-433d-816f-c8a27973f024",
   "resolvedAt": null,
-  "createdAt": "2026-07-25T12:28:16.423Z",
-  "updatedAt": "2026-07-25T06:58:16.450Z"
+  "createdAt": "2026-07-25T13:11:06.991Z",
+  "updatedAt": "2026-07-25T07:41:07.024Z"
 }
 ```
 **Status:** PASS
 
 
-### PUT `/support/tickets/cff843d3-0440-45c6-8811-906ae04ba908/resolve`
+### PUT `/support/tickets/4243432f-b81f-45f5-b4dd-8b2935be9c12/resolve`
 **Description:** Resolve  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 {}
@@ -5643,7 +5987,7 @@ Generated: $(date)
 **Response (200):**
 ```json
 {
-  "id": "cff843d3-0440-45c6-8811-906ae04ba908",
+  "id": "4243432f-b81f-45f5-b4dd-8b2935be9c12",
   "userId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
   "astrologerId": null,
   "subject": "Test Issue",
@@ -5651,17 +5995,17 @@ Generated: $(date)
   "status": "resolved",
   "priority": "medium",
   "assignedTo": "aaf50893-eddc-433d-816f-c8a27973f024",
-  "resolvedAt": "2026-07-25T06:58:16.468Z",
-  "createdAt": "2026-07-25T12:28:16.423Z",
-  "updatedAt": "2026-07-25T06:58:16.468Z"
+  "resolvedAt": "2026-07-25T07:41:07.045Z",
+  "createdAt": "2026-07-25T13:11:06.991Z",
+  "updatedAt": "2026-07-25T07:41:07.045Z"
 }
 ```
 **Status:** PASS
 
 
-### GET `/support/tickets/cff843d3-0440-45c6-8811-906ae04ba908/replies`
+### GET `/support/tickets/4243432f-b81f-45f5-b4dd-8b2935be9c12/replies`
 **Description:** Get replies  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -5673,9 +6017,9 @@ Generated: $(date)
 **Status:** PASS
 
 
-### POST `/support/tickets/cff843d3-0440-45c6-8811-906ae04ba908/replies`
+### POST `/support/tickets/4243432f-b81f-45f5-b4dd-8b2935be9c12/replies`
 **Description:** Add reply  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 {"message":"Working on it"}
@@ -5683,13 +6027,13 @@ Generated: $(date)
 **Response (201):**
 ```json
 {
-  "id": "aff2156b-f271-44fd-98c6-6a87ee10be87",
-  "ticketId": "cff843d3-0440-45c6-8811-906ae04ba908",
+  "id": "1f513353-5c61-4276-95ee-4028b86c1252",
+  "ticketId": "4243432f-b81f-45f5-b4dd-8b2935be9c12",
   "senderId": "aaf50893-eddc-433d-816f-c8a27973f024",
   "senderRole": "admin",
   "message": "Working on it",
   "attachments": null,
-  "createdAt": "2026-07-25T12:28:16.503Z"
+  "createdAt": "2026-07-25T13:11:07.090Z"
 }
 ```
 **Status:** PASS
@@ -5760,6 +6104,34 @@ Generated: $(date)
     "releasedAt": null,
     "createdAt": "2026-07-25T12:27:12.741Z",
     "updatedAt": "2026-07-25T12:27:12.741Z"
+  },
+  {
+    "id": "25babc57-4988-4f57-acae-f5bca31e496e",
+    "appName": "astro-shine",
+    "platform": "android",
+    "version": "1.0.0",
+    "buildNumber": 1,
+    "releaseNotes": "Initial",
+    "downloadUrl": "https://example.com/app.apk",
+    "isMandatory": false,
+    "isActive": true,
+    "releasedAt": null,
+    "createdAt": "2026-07-25T12:28:16.538Z",
+    "updatedAt": "2026-07-25T12:28:16.538Z"
+  },
+  {
+    "id": "a43e55cb-7df5-402c-a73a-4c46a2cad10d",
+    "appName": "astro-shine",
+    "platform": "android",
+    "version": "1.0.0",
+    "buildNumber": 1,
+    "releaseNotes": "Initial",
+    "downloadUrl": "https://example.com/app.apk",
+    "isMandatory": false,
+    "isActive": true,
+    "releasedAt": null,
+    "createdAt": "2026-07-25T13:09:25.160Z",
+    "updatedAt": "2026-07-25T13:09:25.160Z"
   }
 ]
 ```
@@ -5768,7 +6140,7 @@ Generated: $(date)
 
 ### POST `/releases`
 **Description:** Create release  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 {"appName":"astro-shine","platform":"android","version":"1.0.0","buildNumber":1,"releaseNotes":"Initial","downloadUrl":"https://example.com/app.apk","isMandatory":false}
@@ -5776,7 +6148,7 @@ Generated: $(date)
 **Response (201):**
 ```json
 {
-  "id": "25babc57-4988-4f57-acae-f5bca31e496e",
+  "id": "6619a6a0-5192-4b15-8fcd-e866fa61ce44",
   "appName": "astro-shine",
   "platform": "android",
   "version": "1.0.0",
@@ -5786,8 +6158,8 @@ Generated: $(date)
   "isMandatory": false,
   "isActive": true,
   "releasedAt": null,
-  "createdAt": "2026-07-25T12:28:16.538Z",
-  "updatedAt": "2026-07-25T12:28:16.538Z"
+  "createdAt": "2026-07-25T13:11:07.132Z",
+  "updatedAt": "2026-07-25T13:11:07.132Z"
 }
 ```
 **Status:** PASS
@@ -5795,7 +6167,7 @@ Generated: $(date)
 
 ### GET `/schedule/eddbd187-163b-4776-a986-c406d152a75f`
 **Description:** Get schedule  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZGRiZDE4Ny0xNjNiLTQ3NzYtYTk4Ni1jNDA2ZDE1MmE3NWYiLCJyb2xlIjoiYXN0cm9sb2dlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.s0sBRLxaJ9IuIhUxxUMXPESiaxh_eVkRfl8HbLZ7vjM  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZGRiZDE4Ny0xNjNiLTQ3NzYtYTk4Ni1jNDA2ZDE1MmE3NWYiLCJyb2xlIjoiYXN0cm9sb2dlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.SKcFcb3QDFPAYVQnSJ8lmhAWi8Dxtn1LJMXzZ3fjMt0  
 **Request:**
 ```json
 <no body>
@@ -5809,7 +6181,7 @@ Generated: $(date)
 
 ### POST `/schedule/eddbd187-163b-4776-a986-c406d152a75f`
 **Description:** Upsert slot  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZGRiZDE4Ny0xNjNiLTQ3NzYtYTk4Ni1jNDA2ZDE1MmE3NWYiLCJyb2xlIjoiYXN0cm9sb2dlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.s0sBRLxaJ9IuIhUxxUMXPESiaxh_eVkRfl8HbLZ7vjM  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZGRiZDE4Ny0xNjNiLTQ3NzYtYTk4Ni1jNDA2ZDE1MmE3NWYiLCJyb2xlIjoiYXN0cm9sb2dlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.SKcFcb3QDFPAYVQnSJ8lmhAWi8Dxtn1LJMXzZ3fjMt0  
 **Request:**
 ```json
 {"dayOfWeek":1,"startTime":"09:00","endTime":"17:00","isAvailable":true}
@@ -5819,7 +6191,7 @@ Generated: $(date)
 {
   "statusCode": 500,
   "message": "Internal server error",
-  "timestamp": "2026-07-25T06:58:16.575Z",
+  "timestamp": "2026-07-25T07:41:07.179Z",
   "path": "/api/v1/schedule/eddbd187-163b-4776-a986-c406d152a75f"
 }
 ```
@@ -5828,7 +6200,7 @@ Generated: $(date)
 
 ### PUT `/schedule/eddbd187-163b-4776-a986-c406d152a75f/bulk`
 **Description:** Bulk upsert  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZGRiZDE4Ny0xNjNiLTQ3NzYtYTk4Ni1jNDA2ZDE1MmE3NWYiLCJyb2xlIjoiYXN0cm9sb2dlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.s0sBRLxaJ9IuIhUxxUMXPESiaxh_eVkRfl8HbLZ7vjM  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZGRiZDE4Ny0xNjNiLTQ3NzYtYTk4Ni1jNDA2ZDE1MmE3NWYiLCJyb2xlIjoiYXN0cm9sb2dlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.SKcFcb3QDFPAYVQnSJ8lmhAWi8Dxtn1LJMXzZ3fjMt0  
 **Request:**
 ```json
 {"slots":[{"dayOfWeek":1,"startTime":"09:00","endTime":"13:00","isAvailable":true},{"dayOfWeek":2,"startTime":"10:00","endTime":"14:00","isAvailable":true}]}
@@ -5838,7 +6210,7 @@ Generated: $(date)
 {
   "statusCode": 500,
   "message": "Internal server error",
-  "timestamp": "2026-07-25T06:58:16.592Z",
+  "timestamp": "2026-07-25T07:41:07.197Z",
   "path": "/api/v1/schedule/eddbd187-163b-4776-a986-c406d152a75f/bulk"
 }
 ```
@@ -5847,7 +6219,7 @@ Generated: $(date)
 
 ### GET `/conversations`
 **Description:** List conversations  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -5862,10 +6234,10 @@ Generated: $(date)
       "participantOneRole": "user",
       "participantTwoId": "eddbd187-163b-4776-a986-c406d152a75f",
       "participantTwoRole": "astrologer",
-      "lastMessageAt": "2026-07-25T06:57:12.911Z",
+      "lastMessageAt": "2026-07-25T07:39:25.290Z",
       "lastMessagePreview": "Hello!",
       "createdAt": "2026-07-25T12:27:12.840Z",
-      "updatedAt": "2026-07-25T06:57:12.911Z",
+      "updatedAt": "2026-07-25T07:39:25.290Z",
       "participantId": "eddbd187-163b-4776-a986-c406d152a75f",
       "participantRole": "astrologer",
       "participantName": "Test Astrologer",
@@ -5879,7 +6251,7 @@ Generated: $(date)
 
 ### POST `/conversations`
 **Description:** Create conversation  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 {"participantId":"eddbd187-163b-4776-a986-c406d152a75f","participantRole":"astrologer"}
@@ -5892,10 +6264,10 @@ Generated: $(date)
   "participantOneRole": "user",
   "participantTwoId": "eddbd187-163b-4776-a986-c406d152a75f",
   "participantTwoRole": "astrologer",
-  "lastMessageAt": "2026-07-25T06:57:12.911Z",
+  "lastMessageAt": "2026-07-25T07:39:25.290Z",
   "lastMessagePreview": "Hello!",
   "createdAt": "2026-07-25T12:27:12.840Z",
-  "updatedAt": "2026-07-25T06:57:12.911Z"
+  "updatedAt": "2026-07-25T07:39:25.290Z"
 }
 ```
 **Status:** PASS
@@ -5903,7 +6275,7 @@ Generated: $(date)
 
 ### GET `/conversations/1ccc60eb-39d2-4384-abc4-34cc1dc40750`
 **Description:** Get conversation  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -5916,10 +6288,10 @@ Generated: $(date)
   "participantOneRole": "user",
   "participantTwoId": "eddbd187-163b-4776-a986-c406d152a75f",
   "participantTwoRole": "astrologer",
-  "lastMessageAt": "2026-07-25T06:57:12.911Z",
+  "lastMessageAt": "2026-07-25T07:39:25.290Z",
   "lastMessagePreview": "Hello!",
   "createdAt": "2026-07-25T12:27:12.840Z",
-  "updatedAt": "2026-07-25T06:57:12.911Z",
+  "updatedAt": "2026-07-25T07:39:25.290Z",
   "participantId": "eddbd187-163b-4776-a986-c406d152a75f",
   "participantRole": "astrologer",
   "participantName": "Test Astrologer",
@@ -5931,7 +6303,7 @@ Generated: $(date)
 
 ### GET `/conversations/1ccc60eb-39d2-4384-abc4-34cc1dc40750/messages`
 **Description:** Get messages  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 <no body>
@@ -5952,6 +6324,32 @@ Generated: $(date)
       "isRead": false,
       "readAt": null,
       "createdAt": "2026-07-25T12:27:12.908Z"
+    },
+    {
+      "id": "db1b9d26-9a55-47e3-bd37-38459e7c1f79",
+      "conversationId": "1ccc60eb-39d2-4384-abc4-34cc1dc40750",
+      "senderId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+      "senderRole": "user",
+      "type": "text",
+      "content": "Hello!",
+      "mediaUrl": null,
+      "isDelivered": false,
+      "isRead": false,
+      "readAt": null,
+      "createdAt": "2026-07-25T12:28:16.698Z"
+    },
+    {
+      "id": "0b5fe2bc-d692-4a66-8f2f-8a0d04beb532",
+      "conversationId": "1ccc60eb-39d2-4384-abc4-34cc1dc40750",
+      "senderId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
+      "senderRole": "user",
+      "type": "text",
+      "content": "Hello!",
+      "mediaUrl": null,
+      "isDelivered": false,
+      "isRead": false,
+      "readAt": null,
+      "createdAt": "2026-07-25T13:09:25.288Z"
     }
   ],
   "nextCursor": null,
@@ -5963,7 +6361,7 @@ Generated: $(date)
 
 ### POST `/conversations/1ccc60eb-39d2-4384-abc4-34cc1dc40750/messages`
 **Description:** Send message  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 {"content":"Hello!"}
@@ -5971,7 +6369,7 @@ Generated: $(date)
 **Response (201):**
 ```json
 {
-  "id": "db1b9d26-9a55-47e3-bd37-38459e7c1f79",
+  "id": "61f56ba4-bb29-48c8-8390-5109e651114e",
   "conversationId": "1ccc60eb-39d2-4384-abc4-34cc1dc40750",
   "senderId": "23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266",
   "senderRole": "user",
@@ -5981,7 +6379,7 @@ Generated: $(date)
   "isDelivered": false,
   "isRead": false,
   "readAt": null,
-  "createdAt": "2026-07-25T12:28:16.698Z"
+  "createdAt": "2026-07-25T13:11:07.332Z"
 }
 ```
 **Status:** PASS
@@ -5989,7 +6387,7 @@ Generated: $(date)
 
 ### PUT `/conversations/1ccc60eb-39d2-4384-abc4-34cc1dc40750/read`
 **Description:** Mark read  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 {"userId":"23a6e8d2-99a5-4ccd-b3ca-c9b2a0270266"}
@@ -6068,6 +6466,22 @@ Generated: $(date)
     "isActive": true,
     "createdAt": "2026-07-25T12:27:12.981Z",
     "updatedAt": "2026-07-25T12:27:12.981Z"
+  },
+  {
+    "id": "4fd0a5c0-32e8-4e76-a7ce-326111b76f01",
+    "name": "TestCat21711",
+    "description": "Auspicious",
+    "isActive": true,
+    "createdAt": "2026-07-25T12:28:16.769Z",
+    "updatedAt": "2026-07-25T12:28:16.769Z"
+  },
+  {
+    "id": "db201956-ff9f-464a-8d99-0f9d3406a286",
+    "name": "TestCat1810",
+    "description": "Auspicious",
+    "isActive": true,
+    "createdAt": "2026-07-25T13:09:25.344Z",
+    "updatedAt": "2026-07-25T13:09:25.344Z"
   }
 ]
 ```
@@ -6076,7 +6490,7 @@ Generated: $(date)
 
 ### GET `/muhurat-categories/admin`
 **Description:** List (admin)  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -6139,6 +6553,22 @@ Generated: $(date)
     "isActive": true,
     "createdAt": "2026-07-25T12:27:12.981Z",
     "updatedAt": "2026-07-25T12:27:12.981Z"
+  },
+  {
+    "id": "4fd0a5c0-32e8-4e76-a7ce-326111b76f01",
+    "name": "TestCat21711",
+    "description": "Auspicious",
+    "isActive": true,
+    "createdAt": "2026-07-25T12:28:16.769Z",
+    "updatedAt": "2026-07-25T12:28:16.769Z"
+  },
+  {
+    "id": "db201956-ff9f-464a-8d99-0f9d3406a286",
+    "name": "TestCat1810",
+    "description": "Auspicious",
+    "isActive": true,
+    "createdAt": "2026-07-25T13:09:25.344Z",
+    "updatedAt": "2026-07-25T13:09:25.344Z"
   }
 ]
 ```
@@ -6147,20 +6577,20 @@ Generated: $(date)
 
 ### POST `/muhurat-categories`
 **Description:** Create category  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
-{"name":"TestCat21711","description":"Auspicious","icon":"heart"}
+{"name":"TestCat3177","description":"Auspicious","icon":"heart"}
 ```
 **Response (201):**
 ```json
 {
-  "id": "4fd0a5c0-32e8-4e76-a7ce-326111b76f01",
-  "name": "TestCat21711",
+  "id": "478f92c3-2933-4106-b342-e0d5913fd3dd",
+  "name": "TestCat3177",
   "description": "Auspicious",
   "isActive": true,
-  "createdAt": "2026-07-25T12:28:16.769Z",
-  "updatedAt": "2026-07-25T12:28:16.769Z"
+  "createdAt": "2026-07-25T13:11:07.436Z",
+  "updatedAt": "2026-07-25T13:11:07.436Z"
 }
 ```
 **Status:** PASS
@@ -6189,7 +6619,7 @@ Generated: $(date)
 
 ### PUT `/muhurat-categories/20fee2a1-ba2c-4df7-9f8c-29d4391e867a`
 **Description:** Update category  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 {"name":"Marriage"}
@@ -6199,7 +6629,7 @@ Generated: $(date)
 {
   "statusCode": 500,
   "message": "Internal server error",
-  "timestamp": "2026-07-25T06:58:16.812Z",
+  "timestamp": "2026-07-25T07:41:07.517Z",
   "path": "/api/v1/muhurat-categories/20fee2a1-ba2c-4df7-9f8c-29d4391e867a"
 }
 ```
@@ -6307,7 +6737,7 @@ Generated: $(date)
 
 ### GET `/muhurat/admin`
 **Description:** List (admin)  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -6490,7 +6920,7 @@ Generated: $(date)
 
 ### POST `/muhurat`
 **Description:** Create muhurat  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 {"categoryId":"20fee2a1-ba2c-4df7-9f8c-29d4391e867a","name":"Auspicious Time","date":"2026-08-15","time":"06:00","description":"Good time"}
@@ -6500,7 +6930,7 @@ Generated: $(date)
 {
   "statusCode": 409,
   "message": "This time slot is already registered by Admin User",
-  "timestamp": "2026-07-25T06:58:16.932Z",
+  "timestamp": "2026-07-25T07:41:07.648Z",
   "path": "/api/v1/muhurat"
 }
 ```
@@ -6509,7 +6939,7 @@ Generated: $(date)
 
 ### POST `/payments/create-order`
 **Description:** Create order  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.YaZgveM6OOBTiuSRGh3WPzaa1Vre2SN5whoQsUv-IMo  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyM2E2ZThkMi05OWE1LTRjY2QtYjNjYS1jOWIyYTAyNzAyNjYiLCJyb2xlIjoidXNlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.vIuhxEWCOOsorUnG5JbdE06nS_zMXfsB0riLKndBu8I  
 **Request:**
 ```json
 {"amount":500,"purpose":"wallet_recharge","receipt":"test-receipt-1"}
@@ -6517,8 +6947,8 @@ Generated: $(date)
 **Response (201):**
 ```json
 {
-  "id": "fbb539be-afee-45db-b03b-7254e26fcb1a",
-  "razorpayOrderId": "order_THe2TuRxT4beI6",
+  "id": "6ba368c0-b6fc-48bf-bc01-26cab1f5cb3c",
+  "razorpayOrderId": "order_THelkBteeUXwoF",
   "amount": 50000,
   "currency": "INR",
   "key": "rzp_test_Rp0PAsDOKB05GU",
@@ -6531,7 +6961,7 @@ Generated: $(date)
 
 ### GET `/withdrawals`
 **Description:** List withdrawals  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjI2OTMsImV4cCI6MTc4NTU2NzQ5M30.k2zPCiddp0BHFubiZOw3WndW3ym-9fwXOmYStM5tgU0  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhYWY1MDg5My1lZGRjLTQzM2QtODE2Zi1jOGEyNzk3M2YwMjQiLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODQ5NjUyNjMsImV4cCI6MTc4NTU3MDA2M30.lOll7G2Q99Jfbt9HOglt6HIOaVPAhoANIS1_a79WH7U  
 **Request:**
 ```json
 <no body>
@@ -6545,7 +6975,7 @@ Generated: $(date)
 
 ### POST `/withdrawals`
 **Description:** Create withdrawal  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZGRiZDE4Ny0xNjNiLTQ3NzYtYTk4Ni1jNDA2ZDE1MmE3NWYiLCJyb2xlIjoiYXN0cm9sb2dlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.s0sBRLxaJ9IuIhUxxUMXPESiaxh_eVkRfl8HbLZ7vjM  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZGRiZDE4Ny0xNjNiLTQ3NzYtYTk4Ni1jNDA2ZDE1MmE3NWYiLCJyb2xlIjoiYXN0cm9sb2dlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.SKcFcb3QDFPAYVQnSJ8lmhAWi8Dxtn1LJMXzZ3fjMt0  
 **Request:**
 ```json
 {"amount":1,"accountDetails":"UPI: test@upi"}
@@ -6555,7 +6985,7 @@ Generated: $(date)
 {
   "statusCode": 400,
   "message": "Insufficient wallet balance for withdrawal",
-  "timestamp": "2026-07-25T06:58:17.197Z",
+  "timestamp": "2026-07-25T07:41:08.084Z",
   "path": "/api/v1/withdrawals"
 }
 ```
@@ -6564,7 +6994,7 @@ Generated: $(date)
 
 ### GET `/muhurat/my`
 **Description:** My muhurat entries  
-**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZGRiZDE4Ny0xNjNiLTQ3NzYtYTk4Ni1jNDA2ZDE1MmE3NWYiLCJyb2xlIjoiYXN0cm9sb2dlciIsImlhdCI6MTc4NDk2MjY5MywiZXhwIjoxNzg1NTY3NDkzfQ.s0sBRLxaJ9IuIhUxxUMXPESiaxh_eVkRfl8HbLZ7vjM  
+**Auth:** YeseyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlZGRiZDE4Ny0xNjNiLTQ3NzYtYTk4Ni1jNDA2ZDE1MmE3NWYiLCJyb2xlIjoiYXN0cm9sb2dlciIsImlhdCI6MTc4NDk2NTI2MywiZXhwIjoxNzg1NTcwMDYzfQ.SKcFcb3QDFPAYVQnSJ8lmhAWi8Dxtn1LJMXzZ3fjMt0  
 **Request:**
 ```json
 <no body>
