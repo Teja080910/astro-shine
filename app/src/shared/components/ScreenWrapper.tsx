@@ -13,7 +13,7 @@ interface Props {
   backgroundColor?: string;
 }
 
-export function ScreenWrapper({ children, scroll, style, noPadding, edges = ['top'], backgroundColor }: Props) {
+export function ScreenWrapper({ children, scroll, style, noPadding, edges = ['top', 'bottom'], backgroundColor }: Props) {
   const { theme } = useAuth();
   const isDark = theme === 'dark';
   const bg = backgroundColor || (isDark ? '#09090B' : '#FFFFFF');

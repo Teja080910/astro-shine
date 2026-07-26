@@ -94,7 +94,6 @@ function AstrologerTabs() {
   const { theme } = useAuth();
   const tabs = [
     { key: 'Home', icon: 'home-outline', label: 'Home' },
-    { key: 'Requests', icon: 'people-outline', label: 'Requests' },
     { key: 'Muhurat', icon: 'time-outline', label: 'Muhurat' },
     { key: 'Wallet', icon: 'wallet-outline', label: 'Wallet' },
     { key: 'Chat', icon: 'chatbubbles-outline', label: 'Chat' },
@@ -114,7 +113,6 @@ function AstrologerTabs() {
       tabBar={(props) => <FloatingBottomBar tabs={tabs} activeTab={props.state.routeNames[props.state.index]} onTabPress={(key) => props.navigation.navigate(key)} />}
     >
       <Tab.Screen name="Home" component={AstrologerHomeScreen} />
-      <Tab.Screen name="Requests" component={AstrologerRequestsScreen} />
       <Tab.Screen name="Muhurat" component={AstrologerMuhuratScreen} />
       <Tab.Screen name="Wallet" component={AstrologerWalletScreen} />
       <Tab.Screen name="Chat" component={ChatListScreen} />

@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "../../context/AuthContext";
 import { useCall } from "../../context/CallContext";
 import { useChat } from "../../context/ChatContext";
@@ -392,14 +393,17 @@ export function UserHomeScreen({ navigation }: any) {
         <View
           style={[
             styles.greetingRow,
-            { backgroundColor: cardLightBg, borderColor: cardBorderColor },
+            {
+              backgroundColor: cardLightBg,
+              borderColor: cardBorderColor,
+            },
           ]}
         >
-          <View style={{ flex: 1.1 }}>
+          <View style={{ flex: 1 }}>
             <Text
               style={{ fontSize: 13, color: mutedTextColor, fontWeight: "500" }}
             >
-              Namaste,
+              Namaste, 👋
             </Text>
             <Text
               style={{
@@ -408,8 +412,10 @@ export function UserHomeScreen({ navigation }: any) {
                 color: titleColor,
                 marginVertical: 2,
               }}
+              numberOfLines={1}
+              adjustsFontSizeToFit
             >
-              {user?.name || "Aarav Sharma"} <Ionicons name="hand-left-outline" size={16} color={titleColor} />
+              {user?.name || "Aarav Sharma"}
             </Text>
             <TouchableOpacity
               onPress={() => navigation.navigate("Wallet")}
@@ -484,9 +490,9 @@ export function UserHomeScreen({ navigation }: any) {
 
           <View
             style={{
+              width: 85,
               alignItems: "center",
               justifyContent: "center",
-              paddingHorizontal: 4,
             }}
           >
             <Image
@@ -498,9 +504,10 @@ export function UserHomeScreen({ navigation }: any) {
 
           <View
             style={{
-              flex: 0.9,
+              flex: 1,
               alignItems: "flex-end",
               justifyContent: "space-between",
+              alignSelf: "stretch",
             }}
           >
             <View
@@ -820,97 +827,127 @@ export function UserHomeScreen({ navigation }: any) {
           <View
             style={[
               styles.subTabsRow,
-              { borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A" },
+              {
+                borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A",
+                justifyContent: "center",
+                paddingHorizontal: 4,
+                gap: 6,
+              },
             ]}
           >
             <TouchableOpacity
               onPress={() => setActiveHoroscopeTab("love")}
-              style={styles.subTabItem}
+              style={[
+                styles.subTabItem,
+                activeHoroscopeTab === "love" && {
+                  backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEE2E2",
+                },
+              ]}
             >
-              <Ionicons name="heart" size={14} color={activeHoroscopeTab === "love" ? "#EF4444" : mutedTextColor} />
+              <Ionicons
+                name="heart"
+                size={14}
+                color={activeHoroscopeTab === "love" ? "#EF4444" : mutedTextColor}
+              />
               <Text
                 style={{
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: activeHoroscopeTab === "love" ? "700" : "600",
                   color:
-                    activeHoroscopeTab === "love" ? titleColor : bodyTextColor,
+                    activeHoroscopeTab === "love"
+                      ? isDark
+                        ? "#EF4444"
+                        : "#B91C1C"
+                      : bodyTextColor,
                 }}
               >
                 Love
               </Text>
             </TouchableOpacity>
-            <View
-              style={[
-                styles.subTabDivider,
-                {
-                  backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A",
-                },
-              ]}
-            />
+
             <TouchableOpacity
               onPress={() => setActiveHoroscopeTab("career")}
-              style={styles.subTabItem}
+              style={[
+                styles.subTabItem,
+                activeHoroscopeTab === "career" && {
+                  backgroundColor: isDark ? "rgba(59, 130, 246, 0.15)" : "#DBEAFE",
+                },
+              ]}
             >
-              <Ionicons name="briefcase" size={14} color={activeHoroscopeTab === "career" ? "#3B82F6" : mutedTextColor} />
+              <Ionicons
+                name="briefcase"
+                size={14}
+                color={activeHoroscopeTab === "career" ? "#3B82F6" : mutedTextColor}
+              />
               <Text
                 style={{
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: activeHoroscopeTab === "career" ? "700" : "600",
                   color:
                     activeHoroscopeTab === "career"
-                      ? titleColor
+                      ? isDark
+                        ? "#3B82F6"
+                        : "#1D4ED8"
                       : bodyTextColor,
                 }}
               >
                 Career
               </Text>
             </TouchableOpacity>
-            <View
-              style={[
-                styles.subTabDivider,
-                {
-                  backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A",
-                },
-              ]}
-            />
+
             <TouchableOpacity
               onPress={() => setActiveHoroscopeTab("finance")}
-              style={styles.subTabItem}
+              style={[
+                styles.subTabItem,
+                activeHoroscopeTab === "finance" && {
+                  backgroundColor: isDark ? "rgba(22, 163, 74, 0.15)" : "#D1FAE5",
+                },
+              ]}
             >
-              <Ionicons name="cash" size={14} color={activeHoroscopeTab === "finance" ? "#16A34A" : mutedTextColor} />
+              <Ionicons
+                name="cash"
+                size={14}
+                color={activeHoroscopeTab === "finance" ? "#16A34A" : mutedTextColor}
+              />
               <Text
                 style={{
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: activeHoroscopeTab === "finance" ? "700" : "600",
                   color:
                     activeHoroscopeTab === "finance"
-                      ? titleColor
+                      ? isDark
+                        ? "#16A34A"
+                        : "#15803D"
                       : bodyTextColor,
                 }}
               >
                 Finance
               </Text>
             </TouchableOpacity>
-            <View
-              style={[
-                styles.subTabDivider,
-                {
-                  backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A",
-                },
-              ]}
-            />
+
             <TouchableOpacity
               onPress={() => setActiveHoroscopeTab("health")}
-              style={styles.subTabItem}
+              style={[
+                styles.subTabItem,
+                activeHoroscopeTab === "health" && {
+                  backgroundColor: isDark ? "rgba(139, 92, 246, 0.15)" : "#F5F3FF",
+                },
+              ]}
             >
-              <Ionicons name="pulse" size={14} color={activeHoroscopeTab === "health" ? "#8B5CF6" : mutedTextColor} />
+              <Ionicons
+                name="pulse"
+                size={14}
+                color={activeHoroscopeTab === "health" ? "#8B5CF6" : mutedTextColor}
+              />
               <Text
                 style={{
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: activeHoroscopeTab === "health" ? "700" : "600",
                   color:
                     activeHoroscopeTab === "health"
-                      ? titleColor
+                      ? isDark
+                        ? "#8B5CF6"
+                        : "#6D28D9"
                       : bodyTextColor,
                 }}
               >
@@ -1387,14 +1424,20 @@ export function UserHomeScreen({ navigation }: any) {
         </View>
 
         {/* Shravan Month Special Banner */}
-        <View
+        <LinearGradient
+          colors={
+            isDark
+              ? ["rgba(127, 29, 29, 0.55)", "rgba(217, 119, 6, 0.25)"]
+              : ["#FFF5F5", "#FFFBEB"]
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
           style={[
             styles.specialBanner,
             {
-              backgroundColor: cardLightBg,
-              borderColor: cardBorderColor,
-              borderRadius: 18,
-              overflow: "hidden",
+              borderColor: isDark ? "rgba(245, 158, 11, 0.4)" : "#FDE68A",
+              flexDirection: "row",
+              alignItems: "center",
             },
           ]}
         >
@@ -1403,32 +1446,39 @@ export function UserHomeScreen({ navigation }: any) {
             style={{ width: 84, height: 84 }}
             resizeMode="contain"
           />
-          <View style={{ flex: 1, marginHorizontal: 8 }}>
+          <View style={{ flex: 1, paddingLeft: 12 }}>
             <Text
               style={{ fontSize: 15, fontWeight: "800", color: titleColor }}
             >
-              Shravan Month Special
+              Shravan Special 🔱
             </Text>
-            <Text style={{ fontSize: 11, color: bodyTextColor, marginTop: 2 }}>
-              Get special blessings and discounts on Pooja services
+            <Text style={{ fontSize: 11, color: bodyTextColor, marginTop: 4, marginBottom: 10 }}>
+              Get special blessings & discounts on Puja services
             </Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("MandirPooja")}
+              style={[
+                styles.bookNowBtn,
+                {
+                  backgroundColor: "#D97706",
+                  alignSelf: "flex-start",
+                  borderRadius: 12,
+                  paddingHorizontal: 16,
+                  paddingVertical: 6,
+                  elevation: 2,
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                },
+              ]}
+            >
+              <Text style={{ color: "#FFF", fontSize: 11, fontWeight: "800" }}>
+                Book Now ›
+              </Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("MandirPooja")}
-            style={[
-              styles.bookNowBtn,
-              {
-                backgroundColor: "#D97706",
-                borderRadius: 16,
-                overflow: "hidden",
-              },
-            ]}
-          >
-            <Text style={{ color: "#FFF", fontSize: 11, fontWeight: "700" }}>
-              Book Now ›
-            </Text>
-          </TouchableOpacity>
-        </View>
+        </LinearGradient>
 
         <View style={{ height: 24 }} />
 
@@ -1488,7 +1538,7 @@ export function UserHomeScreen({ navigation }: any) {
           </GlassCard>
         )}
 
-        <View style={{ height: 24 }} />
+        {/* <View style={{ height: 24 }} />
 
         <SectionHeader
           title="By Category"
@@ -1555,7 +1605,7 @@ export function UserHomeScreen({ navigation }: any) {
               No astrologers in this category
             </Text>
           </GlassCard>
-        )}
+        )} */}
 
         {poojas.length > 0 && (
           <>
@@ -1612,7 +1662,7 @@ export function UserHomeScreen({ navigation }: any) {
                   </GlassCard>
                 </TouchableOpacity>
               )}
-              style={{ marginLeft: 8 }}
+              style={{ marginLeft: 0 }}
             />
           </>
         )}
@@ -1673,7 +1723,7 @@ export function UserHomeScreen({ navigation }: any) {
                   </GlassCard>
                 </TouchableOpacity>
               )}
-              style={{ marginLeft: 8 }}
+              style={{ marginLeft: 0 }}
             />
           </>
         )}
@@ -1722,7 +1772,7 @@ export function UserHomeScreen({ navigation }: any) {
                   </GlassCard>
                 </TouchableOpacity>
               )}
-              style={{ marginLeft: 8 }}
+              style={{ marginLeft: 0 }}
             />
           </>
         )}
@@ -1755,7 +1805,16 @@ export function UserHomeScreen({ navigation }: any) {
             Your contribution helps us maintain this sacred platform and support
             our spiritual community.
           </Text>
-          <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "center",
+              flexWrap: "wrap",
+              gap: 8,
+              marginBottom: 16,
+              paddingHorizontal: 8,
+            }}
+          >
             {["101", "501", "1100", "2100"].map((a) => (
               <Chip key={a} label={`₹${a}`} />
             ))}
@@ -2273,6 +2332,9 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
           shadowOpacity: 0.1,
           shadowRadius: 12,
           elevation: 4,
+          width: "100%",
+          maxWidth: 600,
+          alignSelf: "center",
         }}
       >
         {/* Top Header Row: Photo + Information */}
@@ -2421,56 +2483,44 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
               {astro.specialization?.[0] || "Vedic Astrology Expert"}
             </Text>
 
-            {/* Rating & Experience Row */}
+            {/* Rating Row */}
             <View
               style={{
                 flexDirection: "row",
-                justifyContent: "space-between",
                 alignItems: "center",
+                gap: 4,
                 marginTop: 6,
               }}
             >
-              <View
-                style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+              <Ionicons name="star" size={14} color="#F59E0B" />
+              <Text
+                style={{ fontSize: 12, fontWeight: "800", color: titleColor }}
               >
-                <Ionicons name="star" size={15} color="#F59E0B" />
-                <Text
-                  style={{ fontSize: 13, fontWeight: "800", color: titleColor }}
-                >
-                  {astro.rating || "4.4"}
-                </Text>
-                <Text style={{ fontSize: 11, color: mutedTextColor }}>
-                  | {astro.totalReviews || "128"} Reviews
-                </Text>
-              </View>
+                {astro.rating || "4.4"}
+              </Text>
+              <Text style={{ fontSize: 11, color: mutedTextColor }}>
+                | {astro.totalReviews || "128"} Reviews
+              </Text>
+            </View>
 
-              {/* Experience Box */}
-              <View
-                style={{
-                  backgroundColor: isDark ? "rgba(245,158,11,0.15)" : "#FEF3C7",
-                  borderColor: isDark ? "rgba(245,158,11,0.3)" : "#FCD34D",
-                  borderWidth: 1,
-                  borderRadius: 10,
-                  paddingHorizontal: 8,
-                  paddingVertical: 4,
-                  alignItems: "center",
-                }}
+            {/* Experience Pill */}
+            <View
+              style={{
+                alignSelf: "flex-start",
+                backgroundColor: isDark ? "rgba(245,158,11,0.15)" : "#FEF3C7",
+                borderColor: isDark ? "rgba(245,158,11,0.3)" : "#FCD34D",
+                borderWidth: 1,
+                borderRadius: 8,
+                paddingHorizontal: 8,
+                paddingVertical: 3,
+                marginTop: 6,
+              }}
+            >
+              <Text
+                style={{ fontSize: 10, fontWeight: "800", color: titleColor }}
               >
-                <Text
-                  style={{ fontSize: 11, fontWeight: "800", color: titleColor }}
-                >
-                  ✨ {astro.experience || "7"}+
-                </Text>
-                <Text
-                  style={{
-                    fontSize: 9,
-                    color: mutedTextColor,
-                    fontWeight: "600",
-                  }}
-                >
-                  Years Experience
-                </Text>
-              </View>
+                ✨ {astro.experience || "7"}+ Years Exp
+              </Text>
             </View>
 
             {/* Specialty Tag Chips */}
@@ -2530,432 +2580,314 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
             "Specialist in Kundli reading, marriage, career, business, health and relationship solutions."}
         </Text>
 
-        {/* 4 Stats Grid */}
+        {/* 4 Stats Grid (2x2 Layout to prevent squishing) */}
         <View
           style={{
-            flexDirection: "row",
-            justifyContent: "space-around",
-            alignItems: "center",
             paddingVertical: 12,
             borderTopWidth: 1,
             borderBottomWidth: 1,
             borderColor: isDark ? "rgba(255,255,255,0.08)" : "#FDE68A",
             marginVertical: 10,
+            gap: 12,
           }}
         >
-          <View style={{ alignItems: "center", flex: 1 }}>
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
-            >
-              <View
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 14,
-                  backgroundColor: "rgba(139, 92, 246, 0.15)",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Ionicons
-                  name="chatbubble-ellipses-sharp"
-                  size={15}
-                  color="#8B5CF6"
-                />
+          {/* Row 1 */}
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            {/* Chats Column */}
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <View
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    backgroundColor: "rgba(139, 92, 246, 0.15)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Ionicons name="chatbubble-ellipses-sharp" size={15} color="#8B5CF6" />
+                </View>
+                <Text style={{ fontSize: 13, fontWeight: "800", color: titleColor }}>
+                  {astro.totalChats ? `${astro.totalChats}K+` : "12K+"}
+                </Text>
               </View>
-              <Text
-                style={{ fontSize: 13, fontWeight: "800", color: titleColor }}
-              >
-                {astro.totalChats ? `${astro.totalChats}K+` : "12K+"}
+              <Text style={{ fontSize: 10, color: mutedTextColor, marginTop: 2 }}>
+                Chats
               </Text>
             </View>
-            <Text style={{ fontSize: 10, color: mutedTextColor, marginTop: 2 }}>
-              Chats
-            </Text>
+
+            {/* Vertical Divider */}
+            <View style={{ width: 1, height: 32, backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A" }} />
+
+            {/* Calls Column */}
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <View
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    backgroundColor: "rgba(16, 185, 129, 0.15)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Ionicons name="call-sharp" size={15} color="#10B981" />
+                </View>
+                <Text style={{ fontSize: 13, fontWeight: "800", color: titleColor }}>
+                  {astro.totalAudioCalls ? `${astro.totalAudioCalls}K+` : "9K+"}
+                </Text>
+              </View>
+              <Text style={{ fontSize: 10, color: mutedTextColor, marginTop: 2 }}>
+                Calls
+              </Text>
+            </View>
           </View>
 
-          <View
-            style={{
-              width: 1,
-              height: 24,
-              backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A",
-            }}
-          />
-
-          <View style={{ alignItems: "center", flex: 1 }}>
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
-            >
-              <View
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 14,
-                  backgroundColor: "rgba(16, 185, 129, 0.15)",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Ionicons name="call-sharp" size={15} color="#10B981" />
+          {/* Row 2 */}
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            {/* Video Calls Column */}
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <View
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    backgroundColor: "rgba(245, 158, 11, 0.15)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Ionicons name="videocam-sharp" size={15} color="#F59E0B" />
+                </View>
+                <Text style={{ fontSize: 13, fontWeight: "800", color: titleColor }}>
+                  {astro.totalVideoCalls ? `${astro.totalVideoCalls}K+` : "5K+"}
+                </Text>
               </View>
-              <Text
-                style={{ fontSize: 13, fontWeight: "800", color: titleColor }}
-              >
-                {astro.totalAudioCalls ? `${astro.totalAudioCalls}K+` : "9K+"}
+              <Text style={{ fontSize: 10, color: mutedTextColor, marginTop: 2 }}>
+                Video Calls
               </Text>
             </View>
-            <Text style={{ fontSize: 10, color: mutedTextColor, marginTop: 2 }}>
-              Calls
-            </Text>
-          </View>
 
-          <View
-            style={{
-              width: 1,
-              height: 24,
-              backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A",
-            }}
-          />
+            {/* Vertical Divider */}
+            <View style={{ width: 1, height: 32, backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A" }} />
 
-          <View style={{ alignItems: "center", flex: 1 }}>
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
-            >
-              <View
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 14,
-                  backgroundColor: "rgba(245, 158, 11, 0.15)",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Ionicons name="videocam-sharp" size={15} color="#F59E0B" />
+            {/* Happy Clients Column */}
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <View
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 14,
+                    backgroundColor: "rgba(236, 72, 153, 0.15)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Ionicons name="heart-sharp" size={15} color="#EC4899" />
+                </View>
+                <Text style={{ fontSize: 13, fontWeight: "800", color: titleColor }}>
+                  98%
+                </Text>
               </View>
-              <Text
-                style={{ fontSize: 13, fontWeight: "800", color: titleColor }}
-              >
-                {astro.totalVideoCalls ? `${astro.totalVideoCalls}K+` : "5K+"}
+              <Text style={{ fontSize: 10, color: mutedTextColor, marginTop: 2 }}>
+                Happy Clients
               </Text>
             </View>
-            <Text style={{ fontSize: 10, color: mutedTextColor, marginTop: 2 }}>
-              Video Calls
-            </Text>
-          </View>
-
-          <View
-            style={{
-              width: 1,
-              height: 24,
-              backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A",
-            }}
-          />
-
-          <View style={{ alignItems: "center", flex: 1 }}>
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
-            >
-              <View
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 14,
-                  backgroundColor: "rgba(236, 72, 153, 0.15)",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Ionicons name="heart-sharp" size={15} color="#EC4899" />
-              </View>
-              <Text
-                style={{ fontSize: 13, fontWeight: "800", color: titleColor }}
-              >
-                98%
-              </Text>
-            </View>
-            <Text style={{ fontSize: 10, color: mutedTextColor, marginTop: 2 }}>
-              Happy Clients
-            </Text>
           </View>
         </View>
 
-        {/* Rates Box Container */}
+        {/* Rates Box Container (Vertical List to prevent horizontal cutoff) */}
         <View
           style={{
             backgroundColor: cardLightBg,
             borderColor: cardBorderColor,
             borderWidth: 1,
             borderRadius: 16,
-            paddingVertical: 10,
-            paddingHorizontal: 8,
-            flexDirection: "row",
-            justifyContent: "space-around",
-            alignItems: "center",
+            padding: 12,
             marginTop: 6,
             marginBottom: 16,
+            gap: 10,
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <View
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 10,
-                backgroundColor: isDark ? "rgba(245, 158, 11, 0.2)" : "#FEF3C7",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
+          {/* Chat Rate Row */}
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
               <Ionicons name="chatbox" size={16} color="#F59E0B" />
+              <Text style={{ fontSize: 13, fontWeight: "600", color: titleColor }}>Chat Price</Text>
             </View>
-            <View>
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: "600",
-                  color: bodyTextColor,
-                }}
-              >
-                Chat
-              </Text>
-              <Text
-                style={{ fontSize: 12, fontWeight: "800", color: titleColor }}
-              >
-                ₹{astro.chatPricePerMin || 15}.00
-                <Text
-                  style={{
-                    fontSize: 10,
-                    color: mutedTextColor,
-                    fontWeight: "400",
-                  }}
-                >
-                  /min
-                </Text>
-              </Text>
-            </View>
+            <Text style={{ fontSize: 13, fontWeight: "800", color: titleColor }}>
+              ₹{astro.chatPricePerMin || 15}.00<Text style={{ fontSize: 11, color: mutedTextColor, fontWeight: "400" }}>/min</Text>
+            </Text>
           </View>
 
-          <View
-            style={{
-              width: 1,
-              height: 24,
-              backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A",
-            }}
-          />
+          <View style={{ height: 1, backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "#F3F4F6" }} />
 
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <View
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 10,
-                backgroundColor: isDark ? "rgba(16, 185, 129, 0.2)" : "#D1FAE5",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
+          {/* Voice Call Rate Row */}
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
               <Ionicons name="call" size={16} color="#10B981" />
+              <Text style={{ fontSize: 13, fontWeight: "600", color: titleColor }}>Voice Call Price</Text>
             </View>
-            <View>
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: "600",
-                  color: bodyTextColor,
-                }}
-              >
-                Voice Call
-              </Text>
-              <Text
-                style={{ fontSize: 12, fontWeight: "800", color: titleColor }}
-              >
-                ₹{astro.audioCallPricePerMin || 20}.00
-                <Text
-                  style={{
-                    fontSize: 10,
-                    color: mutedTextColor,
-                    fontWeight: "400",
-                  }}
-                >
-                  /min
-                </Text>
-              </Text>
-            </View>
+            <Text style={{ fontSize: 13, fontWeight: "800", color: titleColor }}>
+              ₹{astro.audioCallPricePerMin || 22}.50<Text style={{ fontSize: 11, color: mutedTextColor, fontWeight: "400" }}>/min</Text>
+            </Text>
           </View>
 
-          <View
-            style={{
-              width: 1,
-              height: 24,
-              backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A",
-            }}
-          />
+          <View style={{ height: 1, backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "#F3F4F6" }} />
 
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <View
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 10,
-                backgroundColor: isDark ? "rgba(139, 92, 246, 0.2)" : "#EDE9FE",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
+          {/* Video Call Rate Row */}
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
               <Ionicons name="videocam" size={16} color="#8B5CF6" />
+              <Text style={{ fontSize: 13, fontWeight: "600", color: titleColor }}>Video Call Price</Text>
             </View>
-            <View>
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: "600",
-                  color: bodyTextColor,
-                }}
-              >
-                Video Call
-              </Text>
-              <Text
-                style={{ fontSize: 12, fontWeight: "800", color: titleColor }}
-              >
-                ₹{astro.videoCallPricePerMin || 20}.00
-                <Text
-                  style={{
-                    fontSize: 10,
-                    color: mutedTextColor,
-                    fontWeight: "400",
-                  }}
-                >
-                  /min
-                </Text>
-              </Text>
-            </View>
+            <Text style={{ fontSize: 13, fontWeight: "800", color: titleColor }}>
+              ₹{astro.videoCallPricePerMin || 20}.00<Text style={{ fontSize: 11, color: mutedTextColor, fontWeight: "400" }}>/min</Text>
+            </Text>
           </View>
         </View>
 
-        {/* Action Buttons Row */}
-        <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
-          {/* Chat Now Button (Blue) */}
-          <TouchableOpacity
-            onPress={handleChat}
-            activeOpacity={0.8}
-            style={{
-              flex: 1,
-              height: 46,
-              borderRadius: 16,
-              backgroundColor: "#2563EB",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-              shadowColor: "#2563EB",
-              shadowOpacity: 0.3,
-              shadowRadius: 6,
-              elevation: 3,
-            }}
-          >
-            <Ionicons name="chatbubbles" size={16} color="#FFFFFF" />
-            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>
-              Chat Now
-            </Text>
-          </TouchableOpacity>
+        {/* Action Buttons Rows (Stacked row structure to prevent label wrapping/cramming) */}
+        <View style={{ gap: 8, marginTop: 8 }}>
+          {/* Row 1: Primary Communication Actions */}
+          <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+            {/* Chat Button */}
+            <TouchableOpacity
+              onPress={handleChat}
+              activeOpacity={0.8}
+              style={{
+                flex: 1,
+                height: 48,
+                borderRadius: 16,
+                backgroundColor: "#2563EB",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                shadowColor: "#2563EB",
+                shadowOpacity: 0.3,
+                shadowRadius: 6,
+                elevation: 3,
+              }}
+            >
+              <Ionicons name="chatbubbles" size={16} color="#FFFFFF" />
+              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>
+                Chat
+              </Text>
+            </TouchableOpacity>
 
-          {/* Call Now Button (Green) */}
-          <TouchableOpacity
-            onPress={handleAudioCall}
-            activeOpacity={0.8}
-            style={{
-              flex: 1,
-              height: 46,
-              borderRadius: 16,
-              backgroundColor: "#16A34A",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-              shadowColor: "#16A34A",
-              shadowOpacity: 0.3,
-              shadowRadius: 6,
-              elevation: 3,
-            }}
-          >
-            <Ionicons name="call" size={16} color="#FFFFFF" />
-            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>
-              Call Now
-            </Text>
-          </TouchableOpacity>
+            {/* Call Button */}
+            <TouchableOpacity
+              onPress={handleAudioCall}
+              activeOpacity={0.8}
+              style={{
+                flex: 1,
+                height: 48,
+                borderRadius: 16,
+                backgroundColor: "#16A34A",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                shadowColor: "#16A34A",
+                shadowOpacity: 0.3,
+                shadowRadius: 6,
+                elevation: 3,
+              }}
+            >
+              <Ionicons name="call" size={16} color="#FFFFFF" />
+              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>
+                Call
+              </Text>
+            </TouchableOpacity>
 
-          {/* Video Call Button (Purple) */}
-          <TouchableOpacity
-            onPress={handleVideoCall}
-            activeOpacity={0.8}
-            style={{
-              flex: 1,
-              height: 46,
-              borderRadius: 16,
-              backgroundColor: "#7C3AED",
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-              shadowColor: "#7C3AED",
-              shadowOpacity: 0.3,
-              shadowRadius: 6,
-              elevation: 3,
-            }}
-          >
-            <Ionicons name="videocam" size={16} color="#FFFFFF" />
-            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>
-              Video Call
-            </Text>
-          </TouchableOpacity>
+            {/* Video Button */}
+            <TouchableOpacity
+              onPress={handleVideoCall}
+              activeOpacity={0.8}
+              style={{
+                flex: 1,
+                height: 48,
+                borderRadius: 16,
+                backgroundColor: "#7C3AED",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                shadowColor: "#7C3AED",
+                shadowOpacity: 0.3,
+                shadowRadius: 6,
+                elevation: 3,
+              }}
+            >
+              <Ionicons name="videocam" size={16} color="#FFFFFF" />
+              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>
+                Video
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-          {/* Favorite Heart Button */}
-          <TouchableOpacity
-            onPress={() => setIsFavorite(!isFavorite)}
-            activeOpacity={0.7}
-            style={{
-              width: 46,
-              height: 46,
-              borderRadius: 23,
-              borderWidth: 1,
-              borderColor: isDark
-                ? "rgba(255,255,255,0.15)"
-                : "rgba(0,0,0,0.12)",
-              backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "#F3F4F6",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Ionicons
-              name={isFavorite ? "heart" : "heart-outline"}
-              size={20}
-              color={isFavorite ? "#EF4444" : titleColor}
-            />
-          </TouchableOpacity>
+          {/* Row 2: Secondary Engagement Actions */}
+          <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+            {/* Favorite Button */}
+            <TouchableOpacity
+              onPress={() => setIsFavorite(!isFavorite)}
+              activeOpacity={0.7}
+              style={{
+                flex: 1,
+                height: 44,
+                borderRadius: 12,
+                borderWidth: 1.5,
+                borderColor: isFavorite ? "#EF4444" : isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)",
+                backgroundColor: isFavorite ? "rgba(239, 68, 68, 0.1)" : isDark ? "rgba(255,255,255,0.05)" : "#F3F4F6",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+              }}
+            >
+              <Ionicons
+                name={isFavorite ? "heart" : "heart-outline"}
+                size={18}
+                color={isFavorite ? "#EF4444" : titleColor}
+              />
+              <Text style={{ fontSize: 12, fontWeight: "700", color: isFavorite ? "#EF4444" : titleColor }}>
+                {isFavorite ? "Favorited" : "Add Favorite"}
+              </Text>
+            </TouchableOpacity>
 
-          {/* Gift Button */}
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate("Gifts", {
-                astrologerId: id,
-                astrologerName: astro.name,
-              })
-            }
-            activeOpacity={0.7}
-            style={{
-              width: 46,
-              height: 46,
-              borderRadius: 23,
-              borderWidth: 1,
-              borderColor: "#E11D48",
-              backgroundColor: isDark ? "rgba(225, 29, 72, 0.15)" : "#FFE4E6",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Ionicons name="gift" size={20} color="#E11D48" />
-          </TouchableOpacity>
+            {/* Gift Button */}
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate("Gifts", {
+                  astrologerId: id,
+                  astrologerName: astro.name,
+                })
+              }
+              activeOpacity={0.7}
+              style={{
+                flex: 1,
+                height: 44,
+                borderRadius: 12,
+                borderWidth: 1.5,
+                borderColor: "#E11D48",
+                backgroundColor: isDark ? "rgba(225, 29, 72, 0.15)" : "#FFE4E6",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+              }}
+            >
+              <Ionicons name="gift" size={18} color="#E11D48" />
+              <Text style={{ fontSize: 12, fontWeight: "700", color: "#E11D48" }}>
+                Send Gift
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -3210,8 +3142,9 @@ export function WalletScreen() {
   };
 
   return (
-    <ScreenWrapper scroll>
-      <GlassCard style={styles.balanceCard}>
+    <ScreenWrapper scroll style={{ padding: 0 }}>
+      <View style={{ width: "100%", maxWidth: 600, alignSelf: "center", padding: 16 }}>
+        <GlassCard style={styles.balanceCard}>
         <Text style={typography.caption}>Available Balance</Text>
         <Text style={styles.balance}>₹{wallet?.balance || "0"}</Text>
         <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}>
@@ -3307,6 +3240,7 @@ export function WalletScreen() {
           </View>
         </GlassCard>
       ))}
+      </View>
     </ScreenWrapper>
   );
 }
@@ -3408,9 +3342,6 @@ export function KundliScreen() {
 
   return (
     <ScreenWrapper scroll>
-      <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>
-        Kundli
-      </Text>
       <Text
         style={[
           typography.body,
@@ -3558,9 +3489,6 @@ export function MatchmakingScreen() {
 
   return (
     <ScreenWrapper scroll>
-      <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>
-        Matchmaking
-      </Text>
       <Text
         style={[
           typography.body,
@@ -3844,13 +3772,10 @@ export function ShopScreen({ navigation }: any) {
       <View
         style={{
           flexDirection: "row",
-          justifyContent: "space-between",
+          justifyContent: "flex-end",
           alignItems: "center",
         }}
       >
-        <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>
-          Astro Shop
-        </Text>
         <TouchableOpacity
           onPress={() => setShowCart(true)}
           style={{
@@ -4234,20 +4159,7 @@ export function ProfileScreen({ navigation }: any) {
                 Wallet
               </Text>
             </TouchableOpacity>
-            <View
-              style={[
-                styles.profileStatDiv,
-                { backgroundColor: rowBorderColor },
-              ]}
-            />
-            <View style={styles.profileStatCol}>
-              <Text style={[styles.profileStatVal, { color: goldTextColor }]}>
-                ♈ Aries
-              </Text>
-              <Text style={[styles.profileStatLab, { color: mutedTextColor }]}>
-                Sun Sign
-              </Text>
-            </View>
+
             <View
               style={[
                 styles.profileStatDiv,
@@ -4790,14 +4702,15 @@ const styles = StyleSheet.create({
   subTabItem: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 6,
+    borderRadius: 16,
     gap: 4,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
   },
   subTabDivider: {
-    width: 1,
-    height: 16,
-    backgroundColor: colors.divider,
+    width: 0,
+    height: 0,
   },
   panchangContainer: {
     marginHorizontal: 16,

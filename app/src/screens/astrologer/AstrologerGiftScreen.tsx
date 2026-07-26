@@ -50,7 +50,6 @@ export function AstrologerGiftScreen() {
 
   if (loading) return (
     <ScreenWrapper scroll>
-      <View style={{ padding: 16 }}><Text style={typography.pageTitle}>Gifts Received</Text></View>
       <View style={{ padding: 16 }}><GlassCard style={{ height: 100 }} /></View>
     </ScreenWrapper>
   );
@@ -60,12 +59,11 @@ export function AstrologerGiftScreen() {
       <FlatList
         data={transactions}
         keyExtractor={t => t.id}
-        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <>
-            <Text style={[typography.pageTitle, { marginBottom: 4 }]}>Gifts Received</Text>
-            <Text style={[typography.body, { marginBottom: 16 }]}>Gifts sent to you by users</Text>
+            <Text style={[typography.body, { marginBottom: 16, marginTop: 8 }]}>Gifts sent to you by users</Text>
             <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
               <GlassCard style={{ flex: 1, alignItems: 'center', padding: 16 }}>
                 <Text style={{ fontSize: 28, fontWeight: '800', color: colors.accentGold }}>{transactions.length}</Text>
