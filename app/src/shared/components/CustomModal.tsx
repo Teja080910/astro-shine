@@ -32,7 +32,7 @@ export function CustomModal({ visible, onClose, children, title, dismissable = t
     <Modal visible={visible} transparent animationType="none" onRequestClose={dismissable ? onClose : undefined}>
       <Pressable style={styles.overlay} onPress={dismissable ? onClose : undefined}>
         <Animated.View style={[styles.sheet, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }, { backgroundColor: colors.surface }]}>
-          <ScrollView bounces={true} showsVerticalScrollIndicator={true} style={{ flexShrink: 1, flexGrow: 1 }}>
+          <ScrollView bounces={true} showsVerticalScrollIndicator={true} keyboardShouldPersistTaps="always" style={{ flexShrink: 1, flexGrow: 1 }}>
             <Pressable onPress={(e) => e.stopPropagation()}>
               <View style={styles.handle} />
               {title ? <Text style={[typography.sectionTitle, { paddingHorizontal: 24, marginBottom: 16, color: colors.textPrimary }]}>{title}</Text> : null}
