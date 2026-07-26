@@ -129,10 +129,29 @@ export function useLiveKit() {
   const toggleMute = useCallback(async () => {
     const m = !isMuted;
     setIsMuted(m);
-    try { await roomRef.current?.localParticipant?.setMicrophoneEnabled(!m); } catch {}
+    try {
+      await roomRef.current?.localParticipant?.setMicrophoneEnabled(!m);
+    } catch (e: any) {
+      console.error('[LiveKit] toggleMute error:', e.message || e);
+      setIsMuted(!m);
+    }
   }, [isMuted]);
 
-  const toggleSpeaker = useCallback(() => { setIsSpeakerOn(prev => !prev); }, []);
+  const toggleSpeaker = useCallback(async () => {
+    const newVal = !isSpeakerOn;
+    setIsSpeakerOn(newVal);
+    if (Platform.OS !== 'web') {
+      try {
+        const { Audio } = require('expo-av');
+        await Audio.setAudioModeAsync({
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: true,
+          shouldDuckAndroid: true,
+          playThroughEarpieceAndroid: !newVal,
+        });
+      } catch {}
+    }
+  }, [isSpeakerOn]);
 
   const toggleCamera = useCallback(async () => {
     const e = !isVideoEnabled;

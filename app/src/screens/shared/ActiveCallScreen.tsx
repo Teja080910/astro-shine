@@ -71,6 +71,12 @@ export function ActiveCallScreen() {
     }
   }, [callState]);
 
+  useEffect(() => {
+    if (callState === 'idle') {
+      setSeconds(0);
+    }
+  }, [callState]);
+
   const formatTime = (totalSec: number) => {
     const m = Math.floor(totalSec / 60);
     const s = totalSec % 60;
