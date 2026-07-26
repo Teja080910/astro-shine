@@ -368,7 +368,7 @@ export function EditProfileScreen() {
               style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
               value={specialization}
               onChangeText={setSpecialization}
-              placeholder="e.g. Vedic, Tarot, Numerology"
+              placeholder="e.g. Vedic, Palmistry, Vastu"
               placeholderTextColor={colors.textMuted}
             />
           </View>

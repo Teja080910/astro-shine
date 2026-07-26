@@ -85,8 +85,6 @@ const zodiacImages: { [key: string]: any } = {
 const ASTRO_CATEGORIES = [
   "All",
   "Vedic",
-  "Tarot",
-  "Numerology",
   "Palmistry",
   "Vastu",
 ];
@@ -567,7 +565,7 @@ export function UserHomeScreen({ navigation }: any) {
               <TouchableOpacity
                 key={z.sign}
                 onPress={() => handleSignSelect(z.sign)}
-                style={{ alignItems: "center", width: 52 }}
+                style={{ alignItems: "center", width: 62 }}
               >
                 <View
                   style={[
@@ -599,6 +597,8 @@ export function UserHomeScreen({ navigation }: any) {
                     color: active ? titleColor : bodyTextColor,
                     marginTop: 4,
                   }}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
                 >
                   {z.label}
                 </Text>
@@ -1325,53 +1325,7 @@ export function UserHomeScreen({ navigation }: any) {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => navigation.navigate("Astrologers")}
-              style={styles.gridActionItem}
-            >
-              <View
-                style={[
-                  styles.gridActionIconBg,
-                  {
-                    backgroundColor: isDark
-                      ? "rgba(220, 38, 38, 0.15)"
-                      : "#FEE2E2",
-                    borderColor: isDark ? "rgba(220, 38, 38, 0.3)" : "#FECACA",
-                    borderRadius: 16,
-                    overflow: "hidden",
-                  },
-                ]}
-              >
-                <Ionicons name="square" size={22} color="#DC2626" />
-              </View>
-              <Text style={[styles.gridActionText, { color: bodyTextColor }]}>
-                Tarot
-              </Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => navigation.navigate("Astrologers")}
-              style={styles.gridActionItem}
-            >
-              <View
-                style={[
-                  styles.gridActionIconBg,
-                  {
-                    backgroundColor: isDark
-                      ? "rgba(245, 158, 11, 0.15)"
-                      : "#FEF3C7",
-                    borderColor: cardBorderColor,
-                    borderRadius: 16,
-                    overflow: "hidden",
-                  },
-                ]}
-              >
-                <Ionicons name="keypad" size={22} color={goldTextColor} />
-              </View>
-              <Text style={[styles.gridActionText, { color: bodyTextColor }]}>
-                Numerology
-              </Text>
-            </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => navigation.navigate("Blogs")}
@@ -1629,6 +1583,7 @@ export function UserHomeScreen({ navigation }: any) {
                       alignItems: "center",
                       paddingVertical: 20,
                       gap: 8,
+                      height: 180,
                     }}
                   >
                     <View
@@ -1681,10 +1636,10 @@ export function UserHomeScreen({ navigation }: any) {
               keyExtractor={(v) => v.id}
               renderItem={({ item }) => (
                 <TouchableOpacity style={{ width: 220, marginRight: 12 }}>
-                  <GlassCard style={{ padding: 0, overflow: "hidden" }}>
+                  <GlassCard style={{ padding: 0, overflow: "hidden", height: 175 }}>
                     <View
                       style={{
-                        height: 120,
+                        height: 110,
                         backgroundColor: colors.surfaceLight,
                         alignItems: "center",
                         justifyContent: "center",
@@ -1710,12 +1665,12 @@ export function UserHomeScreen({ navigation }: any) {
                         />
                       </View>
                     </View>
-                    <View style={{ padding: 12 }}>
-                      <Text style={typography.cardTitle} numberOfLines={2}>
+                    <View style={{ padding: 10 }}>
+                      <Text style={typography.cardTitle} numberOfLines={1}>
                         {item.title}
                       </Text>
                       {item.category && (
-                        <Text style={[typography.caption, { marginTop: 4 }]}>
+                        <Text style={[typography.caption, { marginTop: 2 }]}>
                           {item.category}
                         </Text>
                       )}
@@ -1745,13 +1700,13 @@ export function UserHomeScreen({ navigation }: any) {
                   onPress={() => navigation.navigate("Blogs")}
                   style={{ width: 240, marginRight: 12 }}
                 >
-                  <GlassCard style={{ padding: 16 }}>
+                  <GlassCard style={{ padding: 14, height: 155 }}>
                     <Text style={typography.cardTitle} numberOfLines={2}>
                       {item.title}
                     </Text>
                     <Text
-                      style={[typography.body, { marginTop: 6 }]}
-                      numberOfLines={3}
+                      style={[typography.body, { marginTop: 4 }]}
+                      numberOfLines={2}
                     >
                       {item.excerpt || item.content?.slice(0, 120)}
                     </Text>
@@ -1759,12 +1714,11 @@ export function UserHomeScreen({ navigation }: any) {
                       <View
                         style={{
                           flexDirection: "row",
-                          flexWrap: "wrap",
                           gap: 4,
-                          marginTop: 8,
+                          marginTop: 6,
                         }}
                       >
-                        {item.tags.slice(0, 3).map((tag) => (
+                        {item.tags.slice(0, 2).map((tag) => (
                           <Chip key={tag} label={tag} />
                         ))}
                       </View>
@@ -1950,7 +1904,7 @@ export function AstrologerListScreen({ route, navigation }: any) {
   const [data, setData] = useState<Astrologer[]>([]);
   const [search, setSearch] = useState("");
   const [selectedCat, setSelectedCat] = useState("All");
-  const cats = ["All", "Vedic", "Tarot", "Numerology", "Palmistry", "Vastu"];
+  const cats = ["All", "Vedic", "Palmistry", "Vastu"];
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const onlyLive = route?.params?.onlyLive ?? false;
@@ -2011,6 +1965,7 @@ export function AstrologerListScreen({ route, navigation }: any) {
       <FlatList
         data={filtered}
         keyExtractor={(a) => a.userId}
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
