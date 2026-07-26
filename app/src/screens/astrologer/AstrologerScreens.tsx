@@ -228,6 +228,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
     <ScreenWrapper style={{ position: "relative", zIndex: 1 }}>
       <ScrollView
         contentContainerStyle={{ paddingBottom: 100 }}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
