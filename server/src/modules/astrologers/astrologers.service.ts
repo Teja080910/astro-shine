@@ -41,6 +41,9 @@ export class AstrologersService {
         email: schema.users.email,
         phone: schema.users.phone,
         isActive: schema.users.isActive,
+        gender: schema.users.gender,
+        dateOfBirth: schema.users.dateOfBirth,
+        avatar: schema.users.avatar,
       })
       .from(schema.astrologers)
       .leftJoin(schema.users, eq(schema.astrologers.userId, schema.users.id));
@@ -76,6 +79,9 @@ export class AstrologersService {
         email: schema.users.email,
         phone: schema.users.phone,
         isActive: schema.users.isActive,
+        gender: schema.users.gender,
+        dateOfBirth: schema.users.dateOfBirth,
+        avatar: schema.users.avatar,
       })
       .from(schema.astrologers)
       .leftJoin(schema.users, eq(schema.astrologers.userId, schema.users.id))
@@ -98,10 +104,43 @@ export class AstrologersService {
     return result;
   }
 
-  async update(id: string, data: Partial<typeof schema.astrologers.$inferInsert>) {
+  async update(id: string, data: any) {
+    const { name, phone, gender, dateOfBirth, ...astroFields } = data;
+    console.log('DEBUG Astrologer Update payload:', { id, name, phone, gender, dateOfBirth, astroFields });
+
+    // Clean up empty strings for numeric fields to avoid PostgreSQL syntax errors
+    const cleanedAstroFields: any = { ...astroFields };
+    const numericFields = ['chatPricePerMin', 'audioCallPricePerMin', 'videoCallPricePerMin', 'pricePerMin', 'experience'];
+    for (const field of numericFields) {
+      if (cleanedAstroFields[field] === '') {
+        cleanedAstroFields[field] = '0';
+      } else if (cleanedAstroFields[field] !== undefined) {
+        cleanedAstroFields[field] = String(cleanedAstroFields[field]);
+      }
+    }
+
+    // Update users table if user fields are updated
+    const userUpdate: any = {};
+    if (name !== undefined) userUpdate.name = name;
+    if (phone !== undefined) userUpdate.phone = phone;
+    if (gender !== undefined) userUpdate.gender = gender;
+    if (dateOfBirth !== undefined) {
+      userUpdate.dateOfBirth = dateOfBirth === '' ? null : dateOfBirth;
+    }
+
+    if (Object.keys(userUpdate).length > 0) {
+      await this.db.update(schema.users)
+        .set({ ...userUpdate, updatedAt: new Date() })
+        .where(eq(schema.users.id, id));
+    }
+
+    // Update astrologers table
     const [result] = await this.db.update(schema.astrologers)
-      .set({ ...data, updatedAt: new Date() }).where(eq(schema.astrologers.userId, id)).returning();
-    return result;
+      .set({ ...cleanedAstroFields, updatedAt: new Date() })
+      .where(eq(schema.astrologers.userId, id))
+      .returning();
+
+    return (await this.findByUserId(id)) || result;
   }
 
   async verify(id: string, status: 'approved' | 'rejected', note?: string) {

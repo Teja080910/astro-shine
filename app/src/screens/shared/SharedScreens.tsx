@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, CustomModal, colors, typography, radii, shadows } from '../../shared';
 import { api } from '../../shared/api-client';
@@ -177,6 +177,7 @@ export function EditProfileScreen() {
   const navigation = useNavigation<any>();
   const { user, astrologer, role, updateUser } = useAuth();
   const profile = role === 'astrologer' ? astrologer : user;
+  const scrollViewRef = useRef<ScrollView>(null);
   
   const [name, setName] = useState(profile?.name || '');
   const [phone, setPhone] = useState(profile?.phone || '');
@@ -184,6 +185,24 @@ export function EditProfileScreen() {
   const [dateOfBirth, setDateOfBirth] = useState((profile as any)?.dateOfBirth ? (profile as any).dateOfBirth.split('T')[0] : '');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSubscription = Keyboard.addListener(showEvent, () => {
+      setKeyboardOpen(true);
+    });
+    const hideSubscription = Keyboard.addListener(hideEvent, () => {
+      setKeyboardOpen(false);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   // Astrologer-specific fields
   const [bio, setBio] = useState((profile as any)?.bio || '');
@@ -246,192 +265,228 @@ export function EditProfileScreen() {
   };
 
   return (
-    <ScreenWrapper scroll>
-      <SectionTitle title="Edit Profile" />
-      <View style={{ marginBottom: 14 }}>
-        <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Name</Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-          value={name}
-          onChangeText={setName}
-          placeholder="Your name"
-          placeholderTextColor={colors.textMuted}
-        />
-      </View>
-      
-      {role !== 'admin' && (
-        <View style={{ marginBottom: 14 }}>
-          <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Phone</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-            value={phone}
-            onChangeText={setPhone}
-            placeholder="Phone number"
-            placeholderTextColor={colors.textMuted}
-            keyboardType="phone-pad"
-          />
-        </View>
-      )}
-
-      {role !== 'admin' && (
-        <>
+    <ScreenWrapper noPadding>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        <ScrollView
+          ref={scrollViewRef}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: keyboardOpen ? 300 : 20 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={{ width: '100%', maxWidth: 600, alignSelf: 'center', padding: 16 }}>
+            <SectionTitle title="Edit Profile" />
           <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Gender</Text>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <TouchableOpacity
-                onPress={() => setGender('male')}
-                style={{
-                  flex: 1,
-                  height: 48,
-                  borderRadius: radii.input,
-                  borderWidth: 1,
-                  borderColor: gender === 'male' ? colors.primary : colors.cardBorder,
-                  backgroundColor: gender === 'male' ? colors.primary + '15' : colors.surfaceLight,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Text style={{ color: gender === 'male' ? colors.primaryLight : colors.textPrimary, fontWeight: '600' }}>Male</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setGender('female')}
-                style={{
-                  flex: 1,
-                  height: 48,
-                  borderRadius: radii.input,
-                  borderWidth: 1,
-                  borderColor: gender === 'female' ? colors.primary : colors.cardBorder,
-                  backgroundColor: gender === 'female' ? colors.primary + '15' : colors.surfaceLight,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Text style={{ color: gender === 'female' ? colors.primaryLight : colors.textPrimary, fontWeight: '600' }}>Female</Text>
-              </TouchableOpacity>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Name</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={name}
+              onChangeText={setName}
+              placeholder="Your name"
+              placeholderTextColor={colors.textMuted}
+            />
+          </View>
+          
+          {role !== 'admin' && (
+            <View style={{ marginBottom: 14 }}>
+              <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Phone</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+                value={phone}
+                onChangeText={setPhone}
+                placeholder="Phone number"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="phone-pad"
+              />
             </View>
-          </View>
+          )}
 
-          <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Date of Birth</Text>
-            <TouchableOpacity
-              onPress={() => setShowDatePicker(true)}
-              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, justifyContent: 'center', paddingHorizontal: 14 }]}
-            >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ color: dateOfBirth ? colors.textPrimary : colors.textMuted, fontSize: 15 }}>
-                  {dateOfBirth || "Select Date of Birth"}
-                </Text>
-                <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />
+          {role !== 'admin' && (
+            <>
+              <View style={{ marginBottom: 14 }}>
+                <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Gender</Text>
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <TouchableOpacity
+                    onPress={() => setGender('male')}
+                    style={{
+                      flex: 1,
+                      height: 48,
+                      borderRadius: radii.input,
+                      borderWidth: 1,
+                      borderColor: gender === 'male' ? colors.primary : colors.cardBorder,
+                      backgroundColor: gender === 'male' ? colors.primary + '15' : colors.surfaceLight,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Text style={{ color: gender === 'male' ? colors.primaryLight : colors.textPrimary, fontWeight: '600' }}>Male</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setGender('female')}
+                    style={{
+                      flex: 1,
+                      height: 48,
+                      borderRadius: radii.input,
+                      borderWidth: 1,
+                      borderColor: gender === 'female' ? colors.primary : colors.cardBorder,
+                      backgroundColor: gender === 'female' ? colors.primary + '15' : colors.surfaceLight,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Text style={{ color: gender === 'female' ? colors.primaryLight : colors.textPrimary, fontWeight: '600' }}>Female</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </TouchableOpacity>
-          </View>
 
-          <DatePicker
-            visible={showDatePicker}
-            value={dateOfBirth}
-            onClose={() => setShowDatePicker(false)}
-            onSelect={setDateOfBirth}
-          />
-        </>
-      )}
+              <View style={{ marginBottom: 14 }}>
+                <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Date of Birth</Text>
+                <TouchableOpacity
+                  onPress={() => setShowDatePicker(true)}
+                  style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, justifyContent: 'center', paddingHorizontal: 14 }]}
+                >
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ color: dateOfBirth ? colors.textPrimary : colors.textMuted, fontSize: 15 }}>
+                      {dateOfBirth || "Select Date of Birth"}
+                    </Text>
+                    <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />
+                  </View>
+                </TouchableOpacity>
+              </View>
 
-      {role === 'astrologer' && (
-        <>
-          <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Bio</Text>
-            <TextInput
-              style={[styles.input, { height: 80, backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-              value={bio}
-              onChangeText={setBio}
-              placeholder="Tell clients about yourself"
-              placeholderTextColor={colors.textMuted}
-              multiline
-              textAlignVertical="top"
-            />
-          </View>
+              <DatePicker
+                visible={showDatePicker}
+                value={dateOfBirth}
+                onClose={() => setShowDatePicker(false)}
+                onSelect={setDateOfBirth}
+              />
+            </>
+          )}
 
-          <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Experience (years)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-              value={experience}
-              onChangeText={setExperience}
-              placeholder="e.g. 10"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="number-pad"
-            />
-          </View>
+          {role === 'astrologer' && (
+            <>
+              <View style={{ marginBottom: 14 }}>
+                <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Bio</Text>
+                <TextInput
+                  style={[styles.input, { height: 80, backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+                  value={bio}
+                  onChangeText={setBio}
+                  placeholder="Tell clients about yourself"
+                  placeholderTextColor={colors.textMuted}
+                  multiline
+                  textAlignVertical="top"
+                />
+              </View>
 
-          <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Specialization (comma separated)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-              value={specialization}
-              onChangeText={setSpecialization}
-              placeholder="e.g. Vedic, Palmistry, Vastu"
-              placeholderTextColor={colors.textMuted}
-            />
-          </View>
+              <View style={{ marginBottom: 14 }}>
+                <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Experience (years)</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+                  value={experience}
+                  onChangeText={setExperience}
+                  placeholder="e.g. 10"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="number-pad"
+                />
+              </View>
 
-          <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Languages (comma separated)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-              value={languages}
-              onChangeText={setLanguages}
-              placeholder="e.g. Hindi, English, Tamil"
-              placeholderTextColor={colors.textMuted}
-            />
-          </View>
+              <View style={{ marginBottom: 14 }}>
+                <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Specialization (comma separated)</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+                  value={specialization}
+                  onChangeText={setSpecialization}
+                  placeholder="e.g. Vedic, Palmistry, Vastu"
+                  placeholderTextColor={colors.textMuted}
+                />
+              </View>
 
-          <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Skills (comma separated)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-              value={skills}
-              onChangeText={setSkills}
-              placeholder="e.g. Birth Chart, Predictions, Remedies"
-              placeholderTextColor={colors.textMuted}
-            />
-          </View>
+              <View style={{ marginBottom: 14 }}>
+                <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Languages (comma separated)</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+                  value={languages}
+                  onChangeText={setLanguages}
+                  placeholder="e.g. Hindi, English, Tamil"
+                  placeholderTextColor={colors.textMuted}
+                />
+              </View>
 
-          <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Chat price per minute (₹)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-              value={chatPricePerMin}
-              onChangeText={setChatPricePerMin}
-              placeholder="e.g. 10"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="decimal-pad"
-            />
-          </View>
-          <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Audio call price per minute (₹)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-              value={audioCallPricePerMin}
-              onChangeText={setAudioCallPricePerMin}
-              placeholder="e.g. 15"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="decimal-pad"
-            />
-          </View>
-          <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Video call price per minute (₹)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-              value={videoCallPricePerMin}
-              onChangeText={setVideoCallPricePerMin}
-              placeholder="e.g. 20"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="decimal-pad"
-            />
-          </View>
-        </>
-      )}
+              <View style={{ marginBottom: 14 }}>
+                <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Skills (comma separated)</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+                  value={skills}
+                  onChangeText={setSkills}
+                  placeholder="e.g. Birth Chart, Predictions, Remedies"
+                  placeholderTextColor={colors.textMuted}
+                  onFocus={() => {
+                    setTimeout(() => {
+                      scrollViewRef.current?.scrollToEnd({ animated: true });
+                    }, 300);
+                  }}
+                />
+              </View>
 
-      <GradientButton title={loading ? 'Saving...' : 'Save Changes'} onPress={handleSave} disabled={loading} style={{ marginTop: 8 }} />
+              <View style={{ marginBottom: 14 }}>
+                <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Chat price per minute (₹)</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+                  value={chatPricePerMin}
+                  onChangeText={setChatPricePerMin}
+                  placeholder="e.g. 10"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="decimal-pad"
+                  onFocus={() => {
+                    setTimeout(() => {
+                      scrollViewRef.current?.scrollToEnd({ animated: true });
+                    }, 300);
+                  }}
+                />
+              </View>
+              <View style={{ marginBottom: 14 }}>
+                <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Audio call price per minute (₹)</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+                  value={audioCallPricePerMin}
+                  onChangeText={setAudioCallPricePerMin}
+                  placeholder="e.g. 15"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="decimal-pad"
+                  onFocus={() => {
+                    setTimeout(() => {
+                      scrollViewRef.current?.scrollToEnd({ animated: true });
+                    }, 300);
+                  }}
+                />
+              </View>
+              <View style={{ marginBottom: 14 }}>
+                <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Video call price per minute (₹)</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+                  value={videoCallPricePerMin}
+                  onChangeText={setVideoCallPricePerMin}
+                  placeholder="e.g. 20"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="decimal-pad"
+                  onFocus={() => {
+                    setTimeout(() => {
+                      scrollViewRef.current?.scrollToEnd({ animated: true });
+                    }, 300);
+                  }}
+                />
+              </View>
+            </>
+          )}
+
+          <GradientButton title={loading ? 'Saving...' : 'Save Changes'} onPress={handleSave} disabled={loading} style={{ marginTop: 16 }} />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </ScreenWrapper>
   );
 }
