@@ -93,13 +93,19 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
     socket.on('call:initiated', (data: any) => {
       console.log('[Call] call:initiated received:', data);
-      setCallData(prev => prev ? { ...prev, callId: data.callId, channel: data.channel, token: data.token } : null);
+      setCallData(prev => {
+        if (prev) return { ...prev, callId: data.callId, channel: data.channel, token: data.token };
+        return { callId: data.callId, channel: data.channel, token: data.token, type: 'audio', callerName: '' };
+      });
     });
 
     socket.on('call:accepted', (data: any) => {
       console.log('[Call] call:accepted received:', data);
       setCallState('active');
-      setCallData(prev => prev ? { ...prev, channel: data.channel, token: data.token } : null);
+      setCallData(prev => {
+        if (prev) return { ...prev, channel: data.channel, token: data.token };
+        return { callId: data.callId, channel: data.channel, token: data.token, type: 'audio', callerName: '' };
+      });
     });
 
     socket.on('call:rejected', () => {

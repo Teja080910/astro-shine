@@ -1,14 +1,35 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { colors } from '../../shared';
 import { Ionicons } from '@expo/vector-icons';
 import { useCall } from '../../context/CallContext';
 import { useLiveKit } from '../../shared/useLiveKit';
 import { api } from '../../shared/api-client';
 
+let VideoTrackComponent: any = null;
+if (Platform.OS !== 'web') {
+  try {
+    VideoTrackComponent = require('@livekit/react-native').VideoTrack;
+  } catch {}
+}
+
+const RemoteVideo = Platform.OS === 'web'
+  ? ({ track, style }: any) => null
+  : React.memo(({ track, style }: any) => {
+      if (!track || !VideoTrackComponent) return null;
+      return <VideoTrackComponent trackRef={track} style={style} />;
+    });
+
+const LocalVideo = Platform.OS === 'web'
+  ? ({ track, style }: any) => null
+  : React.memo(({ track, style }: any) => {
+      if (!track || !VideoTrackComponent) return null;
+      return <VideoTrackComponent trackRef={track} style={style} mirror={true} />;
+    });
+
 export function ActiveCallScreen() {
   const { callData, callState, endCall } = useCall();
-  const { joinChannel, leaveChannel, toggleMute, toggleSpeaker, toggleCamera, switchCamera, isMuted, isSpeakerOn, isVideoEnabled, isCameraFront, remoteUid, isRemoteMuted, isRemoteVideoMuted, remoteVideoTrack } = useLiveKit();
+  const { joinChannel, leaveChannel, toggleMute, toggleSpeaker, toggleCamera, switchCamera, isMuted, isSpeakerOn, isVideoEnabled, isCameraFront, remoteUid, isRemoteMuted, isRemoteVideoMuted, remoteVideoTrack, localVideoTrack } = useLiveKit();
   const [seconds, setSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const joinedRef = useRef(false);
@@ -72,10 +93,14 @@ export function ActiveCallScreen() {
             <View style={styles.remoteVideo}>
               {remoteUid && !isRemoteVideoMuted && remoteVideoTrack ? (
                 <>
-                  <View style={[StyleSheet.absoluteFill, { backgroundColor: '#1C1C1E', justifyContent: 'center', alignItems: 'center' }]}>
-                    <Ionicons name="videocam" size={48} color={colors.primary} />
-                    <Text style={{ color: '#FFFFFF', marginTop: 8, fontSize: 12 }}>{otherName}</Text>
-                  </View>
+                  {Platform.OS === 'web' ? (
+                    <View style={[StyleSheet.absoluteFill, { backgroundColor: '#1C1C1E', justifyContent: 'center', alignItems: 'center' }]}>
+                      <Ionicons name="videocam" size={48} color={colors.primary} />
+                      <Text style={{ color: '#FFFFFF', marginTop: 8, fontSize: 12 }}>{otherName}</Text>
+                    </View>
+                  ) : (
+                    <RemoteVideo track={remoteVideoTrack} style={StyleSheet.absoluteFill} />
+                  )}
                   <View style={styles.remoteNameContainer}>
                     <Text style={styles.remoteVideoName}>{otherName}</Text>
                     {isRemoteMuted && (
@@ -100,13 +125,13 @@ export function ActiveCallScreen() {
               )}
             </View>
             <View style={[styles.localVideo, { opacity: isVideoEnabled ? 1 : 0.4 }]}>
-              {isVideoEnabled ? (
+              {isVideoEnabled && localVideoTrack && Platform.OS !== 'web' ? (
+                <LocalVideo track={localVideoTrack} style={{ flex: 1 }} />
+              ) : (
                 <View style={[StyleSheet.absoluteFill, { backgroundColor: '#2C2C2E', justifyContent: 'center', alignItems: 'center' }]}>
                   <Ionicons name="person" size={24} color={colors.white} />
                   <Text style={{ color: colors.textMuted, fontSize: 8, marginTop: 4 }}>You</Text>
                 </View>
-              ) : (
-                <Ionicons name="person" size={24} color={colors.white} />
               )}
             </View>
           </View>

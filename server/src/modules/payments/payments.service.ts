@@ -2,7 +2,7 @@ import { Injectable, Inject, BadRequestException, UnauthorizedException, NotFoun
 import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
-import { eq, and, sql, inArray } from 'drizzle-orm';
+import { eq, and, sql, inArray, notInArray } from 'drizzle-orm';
 import Razorpay from 'razorpay';
 import { WalletService } from '../wallet/wallet.service';
 import { TransactionsService } from '../transactions/transactions.service';

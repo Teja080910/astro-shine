@@ -1,7 +1,22 @@
 import { useCallback, useRef, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
-const LIVEKIT_URL = 'ws://31.97.222.250:7880';
+const LIVEKIT_URL = process.env.EXPO_PUBLIC_LIVEKIT_URL || 'ws://31.97.222.250:7880';
+
+let RoomClass: any;
+let RoomEventEnum: any;
+let TrackEnum: any;
+
+async function loadLiveKit() {
+  if (Platform.OS !== 'web') {
+    const lk = await import('@livekit/react-native');
+    lk.registerGlobals();
+  }
+  const lk = await import('livekit-client');
+  RoomClass = lk.Room;
+  RoomEventEnum = lk.RoomEvent;
+  TrackEnum = lk.Track;
+}
 
 export function useLiveKit() {
   const roomRef = useRef<any>(null);
@@ -15,61 +30,75 @@ export function useLiveKit() {
   const [isRemoteVideoMuted, setIsRemoteVideoMuted] = useState(false);
   const [remoteVideoTrack, setRemoteVideoTrack] = useState<any>(null);
   const [localVideoTrack, setLocalVideoTrack] = useState<any>(null);
-  const simulateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return () => {
       roomRef.current?.disconnect?.();
       roomRef.current = null;
-      if (simulateTimerRef.current) clearTimeout(simulateTimerRef.current);
     };
   }, []);
 
   const joinChannel = useCallback(async (channel: string, token: string, uid: number, type: 'audio' | 'video') => {
     try {
       if (Platform.OS !== 'web') {
-        console.log('[LiveKit] Native platform, simulating call');
-        setJoined(true);
-        simulateTimerRef.current = setTimeout(() => setRemoteUid(12345), 2000);
-        return;
+        try {
+          const { Audio } = require('expo-av');
+          Audio.setAudioModeAsync({
+            playsInSilentModeIOS: true,
+            staysActiveInBackground: true,
+            shouldDuckAndroid: true,
+            playThroughEarpieceAndroid: true,
+          }).catch(() => {});
+        } catch {}
       }
-      const { Room, RoomEvent, Track } = await import('livekit-client');
-      const room = new Room({ adaptiveStream: true, dynacast: true });
+      await loadLiveKit();
+      const room = new RoomClass({ adaptiveStream: true, dynacast: true });
       roomRef.current = room;
 
-      room.on(RoomEvent.TrackSubscribed, (track: any, participant: any) => {
+      room.on(RoomEventEnum.TrackSubscribed, (track: any, participant: any) => {
         console.log('[LiveKit] Track subscribed:', track.kind, participant.identity);
-        if (track.kind === Track.Kind.Audio) setIsRemoteMuted(false);
-        if (track.kind === Track.Kind.Video) {
+        if (track.kind === TrackEnum.Kind.Audio) setIsRemoteMuted(false);
+        if (track.kind === TrackEnum.Kind.Video) {
           setIsRemoteVideoMuted(false);
           setRemoteVideoTrack(track);
         }
       });
 
-      room.on(RoomEvent.TrackUnsubscribed, (track: any) => {
-        if (track.kind === Track.Kind.Video) { setIsRemoteVideoMuted(true); setRemoteVideoTrack(null); }
+      room.on(RoomEventEnum.TrackUnsubscribed, (track: any) => {
+        if (track.kind === TrackEnum.Kind.Video) { setIsRemoteVideoMuted(true); setRemoteVideoTrack(null); }
       });
 
-      room.on(RoomEvent.TrackMuted, (pub: any) => {
-        if (pub.kind === Track.Kind.Audio) setIsRemoteMuted(true);
-        if (pub.kind === Track.Kind.Video) { setIsRemoteVideoMuted(true); setRemoteVideoTrack(null); }
+      room.on(RoomEventEnum.TrackMuted, (pub: any) => {
+        if (pub.kind === TrackEnum.Kind.Audio) setIsRemoteMuted(true);
+        if (pub.kind === TrackEnum.Kind.Video) { setIsRemoteVideoMuted(true); setRemoteVideoTrack(null); }
       });
 
-      room.on(RoomEvent.TrackUnmuted, (pub: any) => {
-        if (pub.kind === Track.Kind.Audio) setIsRemoteMuted(false);
-        if (pub.kind === Track.Kind.Video) { setIsRemoteVideoMuted(false); setRemoteVideoTrack(pub.videoTrack); }
+      room.on(RoomEventEnum.TrackUnmuted, (pub: any) => {
+        if (pub.kind === TrackEnum.Kind.Audio) setIsRemoteMuted(false);
+        if (pub.kind === TrackEnum.Kind.Video) {
+          setIsRemoteVideoMuted(false);
+          setRemoteVideoTrack(pub.videoTrack);
+        }
       });
 
-      room.on(RoomEvent.ParticipantConnected, () => {
+      room.on(RoomEventEnum.ParticipantConnected, () => {
         console.log('[LiveKit] Remote participant connected');
         setRemoteUid(1); setIsRemoteMuted(false); setIsRemoteVideoMuted(false);
       });
 
-      room.on(RoomEvent.ParticipantDisconnected, () => {
+      room.on(RoomEventEnum.ParticipantDisconnected, () => {
         setRemoteUid(null); setRemoteVideoTrack(null);
       });
 
-      room.on(RoomEvent.Disconnected, () => {
+      room.on(RoomEventEnum.LocalTrackPublished, (pub: any) => {
+        if (pub.kind === TrackEnum.Kind.Video) { setLocalVideoTrack(pub.track); }
+      });
+
+      room.on(RoomEventEnum.LocalTrackUnpublished, (pub: any) => {
+        if (pub.kind === TrackEnum.Kind.Video) { setLocalVideoTrack(null); }
+      });
+
+      room.on(RoomEventEnum.Disconnected, () => {
         setJoined(false); setRemoteUid(null); setRemoteVideoTrack(null); setLocalVideoTrack(null);
       });
 
@@ -87,8 +116,6 @@ export function useLiveKit() {
       }
     } catch (e: any) {
       console.error('[LiveKit] joinChannel error:', e.message || e);
-      setJoined(true);
-      simulateTimerRef.current = setTimeout(() => setRemoteUid(12345), 2000);
     }
   }, []);
 
@@ -97,7 +124,6 @@ export function useLiveKit() {
     roomRef.current = null;
     setJoined(false); setRemoteUid(null); setRemoteVideoTrack(null); setLocalVideoTrack(null);
     setIsRemoteMuted(false); setIsRemoteVideoMuted(false);
-    if (simulateTimerRef.current) { clearTimeout(simulateTimerRef.current); simulateTimerRef.current = null; }
   }, []);
 
   const toggleMute = useCallback(async () => {
