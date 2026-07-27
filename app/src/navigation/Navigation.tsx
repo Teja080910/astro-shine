@@ -20,6 +20,7 @@ import {
   DonationScreen,
   EditProfileScreen,
   MandirPoojaScreen,
+  MandirPoojaDetailScreen,
   NotificationsScreen,
   OrderHistoryScreen,
   PanchangScreen,
@@ -170,6 +171,7 @@ export function Navigation() {
             <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={headerOpts('Ticket')} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} options={headerOpts('Edit Profile')} />
             <Stack.Screen name="MandirPooja" component={MandirPoojaScreen} options={headerOpts('Mandir Pooja')} />
+            <Stack.Screen name="MandirPoojaDetail" component={MandirPoojaDetailScreen} options={headerOpts('Pooja Details')} />
             <Stack.Screen name="Donation" component={DonationScreen} options={headerOpts('Donation')} />
             <Stack.Screen name="Gifts" component={GiftScreen} options={headerOpts('Gifts')} />
             <Stack.Screen name="Report" component={ReportScreen} options={headerOpts('Report')} />

@@ -1575,7 +1575,7 @@ export function UserHomeScreen({ navigation }: any) {
               keyExtractor={(p) => p.id}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  onPress={() => navigation.navigate("MandirPooja")}
+                  onPress={() => navigation.navigate("MandirPoojaDetail", { poojaId: item.id })}
                   style={{ width: 180, marginRight: 12 }}
                 >
                   <GlassCard

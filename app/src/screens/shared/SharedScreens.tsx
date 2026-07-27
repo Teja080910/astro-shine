@@ -579,10 +579,6 @@ export function MandirPoojaScreen({ navigation }: any) {
   const [poojas, setPoojas] = useState<MandirPooja[]>([]);
   const [bookings, setBookings] = useState<PoojaBooking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPooja, setSelectedPooja] = useState<MandirPooja | null>(null);
-  const [bookingDate, setBookingDate] = useState('');
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [booking, setBooking] = useState(false);
 
   useEffect(() => {
     if (isFocused) {
@@ -593,27 +589,6 @@ export function MandirPoojaScreen({ navigation }: any) {
     }
   }, [isFocused, user?.id]);
 
-  const handleBook = async () => {
-    if (!selectedPooja || !bookingDate) return;
-    setBooking(true);
-    try {
-      const order = await api.payments.createOrder({ amount: Number(selectedPooja.price), purpose: 'pooja_booking', purposeId: selectedPooja.id });
-      navigation.navigate('Payment', {
-        razorpayOrderId: order.razorpayOrderId, key: order.key, amount: order.amount,
-        currency: order.currency, purpose: 'pooja_booking', paymentOrderId: order.id,
-        onSuccess: async () => {
-          await api.mandirPooja.createBooking({ userId: user?.id, poojaId: selectedPooja.id, bookingDate, amount: selectedPooja.price });
-          setSelectedPooja(null);
-          setBookingDate('');
-          const b = await api.mandirPooja.bookings({ userId: user?.id });
-          setBookings(b);
-        },
-      });
-    } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Failed to initiate booking');
-    } finally { setBooking(false); }
-  };
-
   if (loading) return <ScreenWrapper scroll><SectionTitle title="Mandir Pooja" /><GlassCard><Text style={typography.body}>Loading...</Text></GlassCard></ScreenWrapper>;
 
   return (
@@ -623,7 +598,7 @@ export function MandirPoojaScreen({ navigation }: any) {
         <>
           <Text style={[typography.sectionTitle, { marginBottom: 12 }]}>Available Poojas</Text>
           {poojas.map(p => (
-            <TouchableOpacity key={p.id} onPress={() => setSelectedPooja(p)} style={{ marginBottom: 10 }}>
+            <TouchableOpacity key={p.id} onPress={() => navigation.navigate('MandirPoojaDetail', { poojaId: p.id })} style={{ marginBottom: 10 }}>
               <GlassCard style={{ padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.accentGold + '20', alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="flame" size={24} color={colors.accentGold} />
@@ -667,24 +642,11 @@ export function MandirPoojaScreen({ navigation }: any) {
           <Text style={[typography.body, { textAlign: 'center', marginTop: 8 }]}>Satyanarayan Pooja, Rudrabhishek, Navgraha Shanti and more</Text>
         </GlassCard>
       )}
-
-      <CustomModal visible={!!selectedPooja} onClose={() => setSelectedPooja(null)} title={`Book ${selectedPooja?.name || 'Pooja'}`}>
-        <View style={{ padding: 16, gap: 12 }}>
-          <Text style={[typography.body, { color: colors.textSecondary }]}>Price: ₹{selectedPooja?.price}</Text>
-          <TouchableOpacity onPress={() => setShowDatePicker(true)} style={{ backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, justifyContent: 'center' }}>
-            <Text style={{ color: bookingDate ? colors.textPrimary : colors.textMuted, fontSize: 15 }}>{bookingDate || 'Select booking date'}</Text>
-          </TouchableOpacity>
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <TouchableOpacity onPress={() => setSelectedPooja(null)} style={{ flex: 1, height: 48, borderRadius: radii.button, borderWidth: 1, borderColor: colors.cardBorder, justifyContent: 'center', alignItems: 'center' }}>
-              <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
-            </TouchableOpacity>
-            <View style={{ flex: 1 }}><GradientButton title={booking ? 'Processing...' : 'Pay & Book'} onPress={handleBook} disabled={booking || !bookingDate} /></View>
-          </View>
-        </View>
-      </CustomModal>
     </ScreenWrapper>
   );
 }
+
+// Mandir Pooja Detail (moved to MandirPoojaDetailScreen.tsx)
 
 // Order History
 export function OrderHistoryScreen() {
@@ -1212,3 +1174,4 @@ const styles = StyleSheet.create({
 });
 
 export { SupportScreen, TicketDetailScreen, AdminSupportScreen, AdminTicketDetailScreen } from './SupportScreens';
+export { MandirPoojaDetailScreen } from './MandirPoojaDetailScreen';
