@@ -174,7 +174,12 @@ export function NotificationsScreen({ route }: any) {
                     <Ionicons name={n.type === 'system' ? 'settings-outline' : n.type === 'promotional' ? 'megaphone-outline' : 'cash-outline'} size={20} color={n.isRead ? colors.textMuted : colors.primaryLight} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[typography.cardTitle, { fontSize: 14 }]}>{n.title}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                      <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: n.type === 'system' ? colors.primary + '20' : n.type === 'promotional' ? '#9333EA30' : n.type === 'transactional' ? '#10B98130' : '#F59E0B30' }}>
+                        <Text style={{ fontSize: 9, fontWeight: '700', color: n.type === 'system' ? colors.primaryLight : n.type === 'promotional' ? '#A855F7' : n.type === 'transactional' ? '#10B981' : '#F59E0B', textTransform: 'uppercase' }}>{n.type}</Text>
+                      </View>
+                      <Text style={[typography.cardTitle, { fontSize: 14, flex: 1 }]}>{n.title}</Text>
+                    </View>
                     <Text style={[typography.body, { fontSize: 13, marginTop: 2 }]}>{n.body}</Text>
                     <Text style={[typography.caption, { marginTop: 4 }]}>{new Date(n.createdAt).toLocaleDateString()}</Text>
                   </View>

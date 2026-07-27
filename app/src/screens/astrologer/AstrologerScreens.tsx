@@ -44,7 +44,7 @@ import * as Location from "expo-location";
 
 export function AstrologerHomeScreen({ navigation }: any) {
   const { astrologer, theme, setTheme } = useAuth();
-  const { astrologerStatuses, statsVersion, blogVersion } = useChat();
+  const { astrologerStatuses, statsVersion, blogVersion, notificationVersion } = useChat();
   const isFocused = useIsFocused();
   const isDark = theme === "dark";
   const [isOnline, setIsOnline] = useState(
@@ -58,6 +58,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
   });
   const [recentTxns, setRecentTxns] = useState<any[]>([]);
   const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [weather, setWeather] = useState<{
@@ -77,6 +78,8 @@ export function AstrologerHomeScreen({ navigation }: any) {
   const bodyTextColor = isDark ? "#E5E7EB" : "#374151";
   const mutedTextColor = isDark ? "#9CA3AF" : "#6B7280";
   const goldTextColor = isDark ? "#FBBF24" : "#D97706";
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const greeting = (() => {
     const hour = new Date().getHours();
@@ -119,10 +122,11 @@ export function AstrologerHomeScreen({ navigation }: any) {
   const loadData = useCallback(async () => {
     if (!astrologer?.userId) return;
     try {
-      const [astro, txns, blogData] = await Promise.all([
+      const [astro, txns, blogData, notifs] = await Promise.all([
         api.astrologers.get(astrologer.userId),
         api.transactions.listMy(),
         api.blogs.list({ published: 'true' }),
+        api.notifications.list({ astrologerId: astrologer.userId }),
       ]);
       setIsOnline(astro.onlineStatus === "online");
       const todayTxns = txns.filter(
@@ -140,8 +144,9 @@ export function AstrologerHomeScreen({ navigation }: any) {
       });
       setRecentTxns(txns.slice(0, 5));
       setBlogs(blogData);
+      setNotifications(notifs);
     } catch {}
-  }, [astrologer?.userId, statsVersion, blogVersion]);
+  }, [astrologer?.userId, statsVersion, blogVersion, notificationVersion]);
 
   useEffect(() => {
     if (isFocused) loadData();
@@ -313,6 +318,13 @@ export function AstrologerHomeScreen({ navigation }: any) {
                   size={24}
                   color={iconColor}
                 />
+                {unreadCount > 0 && (
+                  <View style={styles.headerBadge}>
+                    <Text style={{ color: "#fff", fontSize: 10, fontWeight: "800" }}>
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </Text>
+                  </View>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -1315,6 +1327,7 @@ export function AstrologerReviewsScreen() {
 
 export function AstrologerNotificationsScreen() {
   const { astrologer } = useAuth();
+  const { notificationVersion } = useChat();
   const [notifs, setNotifs] = useState<Notification[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -1325,7 +1338,7 @@ export function AstrologerNotificationsScreen() {
       });
       setNotifs(n);
     } catch {}
-  }, [astrologer?.userId]);
+  }, [astrologer?.userId, notificationVersion]);
 
   useEffect(() => {
     loadData();
@@ -1405,9 +1418,14 @@ export function AstrologerNotificationsScreen() {
                     />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[typography.cardTitle, { fontSize: 14 }]}>
-                      {n.title}
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                      <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: n.type === 'system' ? colors.primary + '20' : n.type === 'promotional' ? '#9333EA30' : n.type === 'transactional' ? '#10B98130' : '#F59E0B30' }}>
+                        <Text style={{ fontSize: 9, fontWeight: '700', color: n.type === 'system' ? colors.primaryLight : n.type === 'promotional' ? '#A855F7' : n.type === 'transactional' ? '#10B981' : '#F59E0B', textTransform: 'uppercase' }}>{n.type}</Text>
+                      </View>
+                      <Text style={[typography.cardTitle, { fontSize: 14, flex: 1 }]}>
+                        {n.title}
+                      </Text>
+                    </View>
                     <Text
                       style={[typography.body, { fontSize: 13, marginTop: 2 }]}
                     >
@@ -2387,6 +2405,18 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     borderWidth: 1,
+  },
+  headerBadge: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    backgroundColor: "#DC2626",
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 3,
   },
 });
 
