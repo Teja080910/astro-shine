@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, CustomModal, colors, typography, radii, shadows } from '../../shared';
 import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
-import type { Blog, MandirPooja, Notification, PoojaBooking, SupportTicket, NewsItem, Video, PanchangRecord, CommissionLog } from '../../shared/types';
-import { useNavigation } from '@react-navigation/native';
+import type { Blog, MandirPooja, Notification, PoojaBooking, SupportTicket, TicketReply, NewsItem, Video, PanchangRecord, CommissionLog } from '../../shared/types';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
 import * as DocumentPicker from 'expo-document-picker';
@@ -131,13 +130,14 @@ export function BlogsScreen() {
 export function NotificationsScreen({ route }: any) {
   const isFocused = useIsFocused();
   const { user, astrologer } = useAuth();
+  const { notificationVersion } = useChat();
   const [notifs, setNotifs] = useState<Notification[]>([]);
 
   useEffect(() => {
     if (!isFocused) return;
     const uid = route?.params?.userId || user?.id || astrologer?.userId;
     if (uid) api.notifications.list({ userId: uid }).then(setNotifs).catch(() => {});
-  }, [isFocused, route?.params?.userId, user?.id, astrologer?.userId]);
+  }, [isFocused, route?.params?.userId, user?.id, astrologer?.userId, notificationVersion]);
 
   const markRead = async (id: string) => {
     try { await api.notifications.markRead(id); setNotifs(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n)); } catch {}
@@ -491,43 +491,7 @@ export function EditProfileScreen() {
   );
 }
 
-// Support
-export function SupportScreen() {
-  const isFocused = useIsFocused();
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
-  const [tickets, setTickets] = useState<SupportTicket[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => { if (isFocused) api.support.tickets().then(setTickets).catch(() => {}); }, [isFocused]);
-
-  const handleSubmit = async () => {
-    if (!subject.trim() || !message.trim()) return;
-    setLoading(true);
-    try {
-      await api.support.createTicket({ subject, description: message });
-      setSubject('');
-      setMessage('');
-      const list = await api.support.tickets();
-      setTickets(list);
-    } catch (e) {
-      console.log(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <ScreenWrapper scroll>
-      <SectionTitle title="Help & Support" />
-      <Text style={[typography.body, { marginBottom: 16 }]}>Create a support ticket</Text>
-      <View style={{ marginBottom: 14 }}><TextInput style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]} value={subject} onChangeText={setSubject} placeholder="Subject" placeholderTextColor={colors.textMuted} /></View>
-      <View style={{ marginBottom: 14 }}><TextInput style={[styles.input, { height: 100, backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]} value={message} onChangeText={setMessage} placeholder="Describe your issue" placeholderTextColor={colors.textMuted} multiline textAlignVertical="top" /></View>
-      <GradientButton title={loading ? 'Submitting...' : 'Submit Ticket'} onPress={handleSubmit} disabled={loading} />
-      {tickets.length > 0 && <><SectionHeader title="Your Tickets" style={{ marginTop: 20 }} /><FlatList data={tickets} scrollEnabled={false} keyExtractor={t => t.id} renderItem={({ item }) => <GlassCard style={{ marginBottom: 8, padding: 12 }}><Text style={typography.cardTitle}>{item.subject}</Text><Text style={typography.caption}>{item.status.toUpperCase()} - Priority: {item.priority}</Text><Text style={typography.body}>{item.message}</Text></GlassCard>} /></>}
-    </ScreenWrapper>
-  );
-}
+// Support (moved to SupportScreens.tsx)
 
 // Donation
 export function DonationScreen() {
@@ -1246,3 +1210,5 @@ export function AboutAppScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   input: { backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, color: colors.textPrimary, fontSize: 15 },
 });
+
+export { SupportScreen, TicketDetailScreen, AdminSupportScreen, AdminTicketDetailScreen } from './SupportScreens';

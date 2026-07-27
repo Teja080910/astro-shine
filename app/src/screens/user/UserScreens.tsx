@@ -3933,7 +3933,7 @@ function PasswordInput({
 
 // Profile
 export function ProfileScreen({ navigation }: any) {
-  const { user, logout, updateUser, theme, setTheme } = useAuth();
+  const { user, role, logout, updateUser, theme, setTheme } = useAuth();
   const isFocused = useIsFocused();
   const isDark = theme === "dark";
 
@@ -4010,6 +4010,15 @@ export function ProfileScreen({ navigation }: any) {
       category: "Preferences",
     },
   ];
+
+  if (role === "admin") {
+    items.push({
+      icon: "shield-checkmark-outline",
+      label: "Manage Support Tickets",
+      route: "AdminSupport",
+      category: "Admin",
+    });
+  }
 
   const toggleTheme = async (val: boolean) => {
     const newTheme = val ? "dark" : "light";

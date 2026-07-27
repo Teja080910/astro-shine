@@ -1600,6 +1600,10 @@ export function AstrologerProfileScreen({ navigation }: any) {
     { icon: "help-circle-outline", label: "Help & Support", route: "Support" },
   ];
 
+  if (role === "admin") {
+    items.push({ icon: "shield-checkmark-outline", label: "Manage Support Tickets", route: "AdminSupport" });
+  }
+
   const toggleTheme = async (val: boolean) => {
     try {
       await setTheme(val ? "dark" : "light");
