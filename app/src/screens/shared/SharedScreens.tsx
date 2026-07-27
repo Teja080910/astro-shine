@@ -916,11 +916,17 @@ export function AstrologerDocumentsScreen() {
       if (result.canceled || !result.assets?.[0]) return;
       const file = result.assets[0];
       setUploading(true);
-      const uploaded = await api.uploadFile({ uri: file.uri, name: file.name, mimeType: file.mimeType });
+      const uploaded = await api.uploadFile({ uri: file.uri, name: file.name, mimeType: file.mimeType }, 'supabase');
       const newDocs = [...docs, uploaded.url];
       setDocs(newDocs);
-      await api.astrologers.update((astrologer!.userId || astrologer!.id) as string, { verificationDoc: newDocs });
-      updateUser({ ...astrologer!, verificationDoc: newDocs });
+      const updatePayload: any = { verificationDoc: newDocs };
+      if (status === 'rejected') {
+        updatePayload.verificationStatus = 'pending';
+        setStatus('pending');
+        setNote('');
+      }
+      await api.astrologers.update((astrologer!.userId || astrologer!.id) as string, updatePayload);
+      updateUser({ ...astrologer!, verificationDoc: newDocs, verificationStatus: updatePayload.verificationStatus || status });
     } catch (e: any) {
       Alert.alert('Error', e?.response?.data?.message || e?.message || 'Upload failed');
     } finally {
