@@ -110,7 +110,7 @@ function getAstrologerOnlineStatus(
 // User Home Dashboard
 export function UserHomeScreen({ navigation }: any) {
   const { user, theme, setTheme } = useAuth();
-  const { astrologerStatuses, horoscopeVersion, blogVersion } = useChat();
+  const { astrologerStatuses, horoscopeVersion, blogVersion, notificationVersion } = useChat();
   const isFocused = useIsFocused();
   const isDark = theme === "dark";
 
@@ -213,7 +213,7 @@ export function UserHomeScreen({ navigation }: any) {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, selectedSign, todayStr, horoscopeVersion, blogVersion]);
+  }, [user?.id, selectedSign, todayStr, horoscopeVersion, blogVersion, notificationVersion]);
 
   useEffect(() => {
     if (isFocused) loadData();

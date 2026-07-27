@@ -9,7 +9,7 @@ export class NotificationsController {
   async findAll(@Query('userId') userId?: string, @Query('astrologerId') astrologerId?: string) {
     if (userId) return this.service.findByUserId(userId);
     if (astrologerId) return this.service.findByAstrologerId(astrologerId);
-    return [];
+    return this.service.findAll();
   }
 
   @Get(':id')
