@@ -110,7 +110,7 @@ function getAstrologerOnlineStatus(
 // User Home Dashboard
 export function UserHomeScreen({ navigation }: any) {
   const { user, theme, setTheme } = useAuth();
-  const { astrologerStatuses, horoscopeVersion } = useChat();
+  const { astrologerStatuses, horoscopeVersion, blogVersion } = useChat();
   const isFocused = useIsFocused();
   const isDark = theme === "dark";
 
@@ -213,7 +213,7 @@ export function UserHomeScreen({ navigation }: any) {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, selectedSign, todayStr, horoscopeVersion]);
+  }, [user?.id, selectedSign, todayStr, horoscopeVersion, blogVersion]);
 
   useEffect(() => {
     if (isFocused) loadData();
@@ -1697,7 +1697,7 @@ export function UserHomeScreen({ navigation }: any) {
               keyExtractor={(b) => b.id}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  onPress={() => navigation.navigate("Blogs")}
+                  onPress={() => navigation.navigate("BlogDetail", { blogId: item.id })}
                   style={{ width: 240, marginRight: 12 }}
                 >
                   <GlassCard style={{ padding: 14, height: 155 }}>

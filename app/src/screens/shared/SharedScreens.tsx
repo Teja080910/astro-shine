@@ -112,15 +112,32 @@ export function VideosScreen() {
 }
 
 // Blogs with data
-export function BlogsScreen() {
+export function BlogsScreen({ navigation }: any) {
   const isFocused = useIsFocused();
+  const { blogVersion } = useChat();
+  const { role } = useAuth();
   const [blogs, setBlogs] = useState<Blog[]>([]);
-  useEffect(() => { if (isFocused) api.blogs.list().then(setBlogs).catch(() => {}); }, [isFocused]);
+  useEffect(() => { if (isFocused) api.blogs.list({ published: 'true' }).then(setBlogs).catch(() => {}); }, [isFocused, blogVersion]);
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Blogs" />
+      {(role === 'astrologer' || role === 'admin') && (
+        <GradientButton
+          title="Create Blog"
+          onPress={() => navigation.navigate('CreateBlog')}
+          style={{ marginBottom: 16 }}
+        />
+      )}
       {blogs.length === 0 ? <EmptyState icon={<Ionicons name="newspaper-outline" size={48} color={colors.textMuted} />} title="No blogs yet" /> :
-        blogs.map(b => <GlassCard key={b.id} style={{ marginBottom: 12 }}><Text style={typography.cardTitle}>{b.title}</Text><Text style={typography.body} numberOfLines={3}>{b.excerpt || b.content?.slice(0, 150)}</Text><Text style={typography.caption}>{b.tags?.join(', ')}</Text></GlassCard>)}
+        blogs.map(b => (
+          <TouchableOpacity key={b.id} onPress={() => navigation.navigate('BlogDetail', { blogId: b.id })} style={{ marginBottom: 12 }}>
+            <GlassCard>
+              <Text style={typography.cardTitle}>{b.title}</Text>
+              <Text style={typography.body} numberOfLines={3}>{b.excerpt || b.content?.slice(0, 150)}</Text>
+              {b.tags?.length > 0 && <Text style={typography.caption}>{b.tags.join(', ')}</Text>}
+            </GlassCard>
+          </TouchableOpacity>
+        ))}
       <View style={{ height: 40 }} />
     </ScreenWrapper>
   );
@@ -1169,9 +1186,88 @@ export function AboutAppScreen({ navigation }: any) {
   );
 }
 
+// Create Blog
+export function CreateBlogScreen({ navigation, route }: any) {
+  const { role } = useAuth();
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [excerpt, setExcerpt] = useState('');
+  const [tags, setTags] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleCreate = async () => {
+    if (!title.trim() || !content.trim()) return;
+    setLoading(true);
+    try {
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now();
+      await api.blogs.create({
+        title: title.trim(),
+        content: content.trim(),
+        excerpt: excerpt.trim(),
+        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+        slug,
+        status: 'published',
+      });
+      navigation.goBack();
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <ScreenWrapper scroll>
+      <View style={{ padding: 16 }}>
+        <Text style={[typography.pageTitle, { marginBottom: 16 }]}>Create Blog</Text>
+        <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Title</Text>
+        <TextInput
+          style={[styles.input, { marginBottom: 12 }]}
+          value={title}
+          onChangeText={setTitle}
+          placeholder="Blog title"
+          placeholderTextColor={colors.textMuted}
+        />
+        <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Excerpt (optional)</Text>
+        <TextInput
+          style={[styles.input, { marginBottom: 12 }]}
+          value={excerpt}
+          onChangeText={setExcerpt}
+          placeholder="Short summary"
+          placeholderTextColor={colors.textMuted}
+        />
+        <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Content</Text>
+        <TextInput
+          style={[styles.input, { marginBottom: 12, height: 200, textAlignVertical: 'top', paddingTop: 12 }]}
+          value={content}
+          onChangeText={setContent}
+          placeholder="Write your blog content..."
+          placeholderTextColor={colors.textMuted}
+          multiline
+        />
+        <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Tags (comma separated, optional)</Text>
+        <TextInput
+          style={[styles.input, { marginBottom: 20 }]}
+          value={tags}
+          onChangeText={setTags}
+          placeholder="e.g. astrology, vedic, gemstones"
+          placeholderTextColor={colors.textMuted}
+        />
+        <GradientButton
+          title={loading ? 'Publishing...' : 'Publish Blog'}
+          onPress={handleCreate}
+          disabled={loading || !title.trim() || !content.trim()}
+        />
+      </View>
+    </ScreenWrapper>
+  );
+}
+
 const styles = StyleSheet.create({
   input: { backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, color: colors.textPrimary, fontSize: 15 },
 });
 
 export { SupportScreen, TicketDetailScreen, AdminSupportScreen, AdminTicketDetailScreen } from './SupportScreens';
 export { MandirPoojaDetailScreen } from './MandirPoojaDetailScreen';
+export { BlogDetailScreen } from './BlogDetailScreen';
+export { CreateBlogScreen };

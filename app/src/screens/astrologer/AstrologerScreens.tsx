@@ -3,6 +3,7 @@ import { useIsFocused } from "@react-navigation/native";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
+  FlatList,
   Image,
   RefreshControl,
   ScrollView,
@@ -32,6 +33,7 @@ import {
 } from "../../shared";
 import { api } from "../../shared/api-client";
 import type {
+  Blog,
   CallLog,
   Notification,
   Review,
@@ -42,7 +44,7 @@ import * as Location from "expo-location";
 
 export function AstrologerHomeScreen({ navigation }: any) {
   const { astrologer, theme, setTheme } = useAuth();
-  const { astrologerStatuses, statsVersion } = useChat();
+  const { astrologerStatuses, statsVersion, blogVersion } = useChat();
   const isFocused = useIsFocused();
   const isDark = theme === "dark";
   const [isOnline, setIsOnline] = useState(
@@ -55,6 +57,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
     totalEarnings: "₹0",
   });
   const [recentTxns, setRecentTxns] = useState<any[]>([]);
+  const [blogs, setBlogs] = useState<Blog[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [weather, setWeather] = useState<{
@@ -116,9 +119,10 @@ export function AstrologerHomeScreen({ navigation }: any) {
   const loadData = useCallback(async () => {
     if (!astrologer?.userId) return;
     try {
-      const [astro, txns] = await Promise.all([
+      const [astro, txns, blogData] = await Promise.all([
         api.astrologers.get(astrologer.userId),
         api.transactions.listMy(),
+        api.blogs.list({ published: 'true' }),
       ]);
       setIsOnline(astro.onlineStatus === "online");
       const todayTxns = txns.filter(
@@ -135,8 +139,9 @@ export function AstrologerHomeScreen({ navigation }: any) {
         totalEarnings: `₹${astro.totalEarnings || "0"}`,
       });
       setRecentTxns(txns.slice(0, 5));
+      setBlogs(blogData);
     } catch {}
-  }, [astrologer?.userId, statsVersion]);
+  }, [astrologer?.userId, statsVersion, blogVersion]);
 
   useEffect(() => {
     if (isFocused) loadData();
@@ -639,6 +644,54 @@ export function AstrologerHomeScreen({ navigation }: any) {
                   </View>
                 </GlassCard>
               ))}
+            </>
+          )}
+
+          {blogs.length > 0 && (
+            <>
+              <View style={{ height: 24 }} />
+              <SectionHeader
+                title="Latest Blogs"
+                onSeeAll={() => navigation.navigate("Blogs")}
+              />
+              <FlatList
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                data={blogs.slice(0, 5)}
+                keyExtractor={(b) => b.id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("BlogDetail", { blogId: item.id })}
+                    style={{ width: 240, marginRight: 12 }}
+                  >
+                    <GlassCard style={{ padding: 14, height: 155 }}>
+                      <Text style={typography.cardTitle} numberOfLines={2}>
+                        {item.title}
+                      </Text>
+                      <Text
+                        style={[typography.body, { marginTop: 4 }]}
+                        numberOfLines={2}
+                      >
+                        {item.excerpt || item.content?.slice(0, 120)}
+                      </Text>
+                      {item.tags && item.tags.length > 0 && (
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            gap: 4,
+                            marginTop: 6,
+                          }}
+                        >
+                          {item.tags.slice(0, 2).map((tag) => (
+                            <Chip key={tag} label={tag} />
+                          ))}
+                        </View>
+                      )}
+                    </GlassCard>
+                  </TouchableOpacity>
+                )}
+                style={{ marginLeft: 0 }}
+              />
             </>
           )}
         </View>
@@ -1592,6 +1645,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
     { icon: "star-outline", label: "Ratings & Reviews", route: "Reviews" },
     { icon: "cash-outline", label: "Withdrawals", route: "Withdrawals" },
     { icon: "gift-outline", label: "Gifts Received", route: "Gifts" },
+    { icon: "newspaper-outline", label: "Blogs & Articles", route: "Blogs" },
     {
       icon: "notifications-outline",
       label: "Notifications",
