@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Users, Star, DollarSign, Phone, MessageSquare, AlertTriangle, Bell, Settings, Key, Link2, Globe, FileText, Newspaper, LayoutDashboard, Receipt, ArrowDownUp, Percent, Calendar, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, Star, DollarSign, Phone, MessageSquare, AlertTriangle, Bell, Settings, Key, Link2, Globe, FileText, Newspaper, LayoutDashboard, Receipt, ArrowDownUp, Percent, Calendar, Clock, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 const iconMap: Record<string, any> = {
   Users, Star, DollarSign, Phone, MessageSquare, AlertTriangle, Bell, Settings, Key, Link2, Globe, FileText, Newspaper, LayoutDashboard, Receipt, ArrowDownUp, Percent,
@@ -12,7 +12,12 @@ export function CustomModal({ open, onClose, title, children }: { open: boolean;
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        {title && <h2 className="text-xl font-bold text-text-primary mb-4">{title}</h2>}
+        <div className="flex justify-between items-center mb-4">
+          {title && <h2 className="text-xl font-bold text-text-primary">{title}</h2>}
+          <button onClick={onClose} className="text-text-secondary hover:text-text-primary transition-colors ml-auto">
+            <X size={20} />
+          </button>
+        </div>
         {children}
       </div>
     </div>

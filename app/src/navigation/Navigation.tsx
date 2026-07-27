@@ -20,12 +20,16 @@ import {
   DonationScreen,
   EditProfileScreen,
   MandirPoojaScreen,
+  MandirPoojaDetailScreen,
   NotificationsScreen,
   OrderHistoryScreen,
   PanchangScreen,
   PrivacyPolicyScreen,
   ReportScreen,
   SupportScreen,
+  TicketDetailScreen,
+  AdminSupportScreen,
+  AdminTicketDetailScreen,
   TermsConditionsScreen,
   VideosScreen,
 } from '../screens/shared/SharedScreens';
@@ -164,8 +168,10 @@ export function Navigation() {
             <Stack.Screen name="Notifications" component={NotificationsScreen} options={headerOpts('Notifications')} />
             <Stack.Screen name="Blogs" component={BlogsScreen} options={headerOpts('Blogs')} />
             <Stack.Screen name="Support" component={SupportScreen} options={headerOpts('Support')} />
+            <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={headerOpts('Ticket')} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} options={headerOpts('Edit Profile')} />
             <Stack.Screen name="MandirPooja" component={MandirPoojaScreen} options={headerOpts('Mandir Pooja')} />
+            <Stack.Screen name="MandirPoojaDetail" component={MandirPoojaDetailScreen} options={headerOpts('Pooja Details')} />
             <Stack.Screen name="Donation" component={DonationScreen} options={headerOpts('Donation')} />
             <Stack.Screen name="Gifts" component={GiftScreen} options={headerOpts('Gifts')} />
             <Stack.Screen name="Report" component={ReportScreen} options={headerOpts('Report')} />
@@ -186,6 +192,7 @@ export function Navigation() {
             <Stack.Screen name="GoLive" component={AstrologerGoLiveScreen} options={headerOpts('Go Live')} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} options={headerOpts('Edit Profile')} />
             <Stack.Screen name="Support" component={SupportScreen} options={headerOpts('Support')} />
+            <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={headerOpts('Ticket')} />
             <Stack.Screen name="Notifications" component={AstrologerNotificationsScreen} options={headerOpts('Notifications')} />
             <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={headerOpts('Privacy Policy')} />
             <Stack.Screen name="TermsConditions" component={TermsConditionsScreen} options={headerOpts('Terms & Conditions')} />
@@ -200,6 +207,9 @@ export function Navigation() {
             <Stack.Screen name="PaymentFailure" component={PaymentFailureScreen} options={{ headerShown: false }} />
           </>
         )}
+        {/* Admin-only screens accessible from any role */}
+        <Stack.Screen name="AdminSupport" component={AdminSupportScreen} options={headerOpts('Support Tickets')} />
+        <Stack.Screen name="AdminTicketDetail" component={AdminTicketDetailScreen} options={headerOpts('Ticket')} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -326,8 +326,11 @@ class ApiClient {
     createTicket: (d: any) => this.post<SupportTicket>('/support/tickets', d),
     assign: (id: string, adminId: string) => this.put<SupportTicket>(`/support/tickets/${id}/assign`, { adminId }),
     resolve: (id: string) => this.put<SupportTicket>(`/support/tickets/${id}/resolve`),
+    updateStatus: (id: string, status: string) => this.put<SupportTicket>(`/support/tickets/${id}/status`, { status }),
+    updatePriority: (id: string, priority: string) => this.put<SupportTicket>(`/support/tickets/${id}/priority`, { priority }),
     replies: (ticketId: string) => this.get<TicketReply[]>(`/support/tickets/${ticketId}/replies`),
     addReply: (ticketId: string, d: any) => this.post<TicketReply>(`/support/tickets/${ticketId}/replies`, d),
+    adminTickets: (status?: string) => this.get<SupportTicket[]>('/support/admin/tickets', { status }),
   };
 
   // Releases

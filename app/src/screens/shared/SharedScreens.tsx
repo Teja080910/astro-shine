@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, CustomModal, colors, typography, radii, shadows } from '../../shared';
 import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
-import type { Blog, MandirPooja, Notification, PoojaBooking, SupportTicket, NewsItem, Video, PanchangRecord, CommissionLog } from '../../shared/types';
-import { useNavigation } from '@react-navigation/native';
+import type { Blog, MandirPooja, Notification, PoojaBooking, SupportTicket, TicketReply, NewsItem, Video, PanchangRecord, CommissionLog } from '../../shared/types';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
 import * as DocumentPicker from 'expo-document-picker';
@@ -131,13 +130,14 @@ export function BlogsScreen() {
 export function NotificationsScreen({ route }: any) {
   const isFocused = useIsFocused();
   const { user, astrologer } = useAuth();
+  const { notificationVersion } = useChat();
   const [notifs, setNotifs] = useState<Notification[]>([]);
 
   useEffect(() => {
     if (!isFocused) return;
     const uid = route?.params?.userId || user?.id || astrologer?.userId;
     if (uid) api.notifications.list({ userId: uid }).then(setNotifs).catch(() => {});
-  }, [isFocused, route?.params?.userId, user?.id, astrologer?.userId]);
+  }, [isFocused, route?.params?.userId, user?.id, astrologer?.userId, notificationVersion]);
 
   const markRead = async (id: string) => {
     try { await api.notifications.markRead(id); setNotifs(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n)); } catch {}
@@ -491,43 +491,7 @@ export function EditProfileScreen() {
   );
 }
 
-// Support
-export function SupportScreen() {
-  const isFocused = useIsFocused();
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
-  const [tickets, setTickets] = useState<SupportTicket[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => { if (isFocused) api.support.tickets().then(setTickets).catch(() => {}); }, [isFocused]);
-
-  const handleSubmit = async () => {
-    if (!subject.trim() || !message.trim()) return;
-    setLoading(true);
-    try {
-      await api.support.createTicket({ subject, description: message });
-      setSubject('');
-      setMessage('');
-      const list = await api.support.tickets();
-      setTickets(list);
-    } catch (e) {
-      console.log(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <ScreenWrapper scroll>
-      <SectionTitle title="Help & Support" />
-      <Text style={[typography.body, { marginBottom: 16 }]}>Create a support ticket</Text>
-      <View style={{ marginBottom: 14 }}><TextInput style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]} value={subject} onChangeText={setSubject} placeholder="Subject" placeholderTextColor={colors.textMuted} /></View>
-      <View style={{ marginBottom: 14 }}><TextInput style={[styles.input, { height: 100, backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]} value={message} onChangeText={setMessage} placeholder="Describe your issue" placeholderTextColor={colors.textMuted} multiline textAlignVertical="top" /></View>
-      <GradientButton title={loading ? 'Submitting...' : 'Submit Ticket'} onPress={handleSubmit} disabled={loading} />
-      {tickets.length > 0 && <><SectionHeader title="Your Tickets" style={{ marginTop: 20 }} /><FlatList data={tickets} scrollEnabled={false} keyExtractor={t => t.id} renderItem={({ item }) => <GlassCard style={{ marginBottom: 8, padding: 12 }}><Text style={typography.cardTitle}>{item.subject}</Text><Text style={typography.caption}>{item.status.toUpperCase()} - Priority: {item.priority}</Text><Text style={typography.body}>{item.message}</Text></GlassCard>} /></>}
-    </ScreenWrapper>
-  );
-}
+// Support (moved to SupportScreens.tsx)
 
 // Donation
 export function DonationScreen() {
@@ -615,10 +579,6 @@ export function MandirPoojaScreen({ navigation }: any) {
   const [poojas, setPoojas] = useState<MandirPooja[]>([]);
   const [bookings, setBookings] = useState<PoojaBooking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPooja, setSelectedPooja] = useState<MandirPooja | null>(null);
-  const [bookingDate, setBookingDate] = useState('');
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [booking, setBooking] = useState(false);
 
   useEffect(() => {
     if (isFocused) {
@@ -629,27 +589,6 @@ export function MandirPoojaScreen({ navigation }: any) {
     }
   }, [isFocused, user?.id]);
 
-  const handleBook = async () => {
-    if (!selectedPooja || !bookingDate) return;
-    setBooking(true);
-    try {
-      const order = await api.payments.createOrder({ amount: Number(selectedPooja.price), purpose: 'pooja_booking', purposeId: selectedPooja.id });
-      navigation.navigate('Payment', {
-        razorpayOrderId: order.razorpayOrderId, key: order.key, amount: order.amount,
-        currency: order.currency, purpose: 'pooja_booking', paymentOrderId: order.id,
-        onSuccess: async () => {
-          await api.mandirPooja.createBooking({ userId: user?.id, poojaId: selectedPooja.id, bookingDate, amount: selectedPooja.price });
-          setSelectedPooja(null);
-          setBookingDate('');
-          const b = await api.mandirPooja.bookings({ userId: user?.id });
-          setBookings(b);
-        },
-      });
-    } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Failed to initiate booking');
-    } finally { setBooking(false); }
-  };
-
   if (loading) return <ScreenWrapper scroll><SectionTitle title="Mandir Pooja" /><GlassCard><Text style={typography.body}>Loading...</Text></GlassCard></ScreenWrapper>;
 
   return (
@@ -659,7 +598,7 @@ export function MandirPoojaScreen({ navigation }: any) {
         <>
           <Text style={[typography.sectionTitle, { marginBottom: 12 }]}>Available Poojas</Text>
           {poojas.map(p => (
-            <TouchableOpacity key={p.id} onPress={() => setSelectedPooja(p)} style={{ marginBottom: 10 }}>
+            <TouchableOpacity key={p.id} onPress={() => navigation.navigate('MandirPoojaDetail', { poojaId: p.id })} style={{ marginBottom: 10 }}>
               <GlassCard style={{ padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.accentGold + '20', alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="flame" size={24} color={colors.accentGold} />
@@ -703,24 +642,11 @@ export function MandirPoojaScreen({ navigation }: any) {
           <Text style={[typography.body, { textAlign: 'center', marginTop: 8 }]}>Satyanarayan Pooja, Rudrabhishek, Navgraha Shanti and more</Text>
         </GlassCard>
       )}
-
-      <CustomModal visible={!!selectedPooja} onClose={() => setSelectedPooja(null)} title={`Book ${selectedPooja?.name || 'Pooja'}`}>
-        <View style={{ padding: 16, gap: 12 }}>
-          <Text style={[typography.body, { color: colors.textSecondary }]}>Price: ₹{selectedPooja?.price}</Text>
-          <TouchableOpacity onPress={() => setShowDatePicker(true)} style={{ backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, justifyContent: 'center' }}>
-            <Text style={{ color: bookingDate ? colors.textPrimary : colors.textMuted, fontSize: 15 }}>{bookingDate || 'Select booking date'}</Text>
-          </TouchableOpacity>
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <TouchableOpacity onPress={() => setSelectedPooja(null)} style={{ flex: 1, height: 48, borderRadius: radii.button, borderWidth: 1, borderColor: colors.cardBorder, justifyContent: 'center', alignItems: 'center' }}>
-              <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
-            </TouchableOpacity>
-            <View style={{ flex: 1 }}><GradientButton title={booking ? 'Processing...' : 'Pay & Book'} onPress={handleBook} disabled={booking || !bookingDate} /></View>
-          </View>
-        </View>
-      </CustomModal>
     </ScreenWrapper>
   );
 }
+
+// Mandir Pooja Detail (moved to MandirPoojaDetailScreen.tsx)
 
 // Order History
 export function OrderHistoryScreen() {
@@ -1246,3 +1172,6 @@ export function AboutAppScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   input: { backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, color: colors.textPrimary, fontSize: 15 },
 });
+
+export { SupportScreen, TicketDetailScreen, AdminSupportScreen, AdminTicketDetailScreen } from './SupportScreens';
+export { MandirPoojaDetailScreen } from './MandirPoojaDetailScreen';
