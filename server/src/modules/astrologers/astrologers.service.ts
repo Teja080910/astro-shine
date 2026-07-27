@@ -1,14 +1,16 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject, BadRequestException, Logger } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
 import { eq, desc, sql } from 'drizzle-orm';
 import { RealtimeService } from '../../common/realtime.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AstrologersService {
   constructor(
     @Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>,
     private readonly realtime: RealtimeService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async findAll() {
@@ -144,7 +146,31 @@ export class AstrologersService {
   }
 
   async verify(id: string, status: 'approved' | 'rejected', note?: string) {
-    return this.update(id, { verificationStatus: status, verificationNote: note } as any);
+    const result = await this.update(id, { verificationStatus: status, verificationNote: note } as any);
+
+    if (status === 'approved') {
+      try {
+        await this.db.insert(schema.wallets).values({
+          astrologerId: id,
+        }).onConflictDoNothing();
+      } catch (e: any) {
+        Logger.warn(`Failed to create wallet for astrologer ${id}: ${e.message}`);
+      }
+    }
+
+    try {
+      await this.notificationsService.create({
+        astrologerId: id,
+        type: 'transactional',
+        title: status === 'approved' ? 'KYC Approved' : 'KYC Rejected',
+        body: status === 'approved'
+          ? 'Your KYC documents have been approved. You now have full access to the platform.'
+          : (note ? `Your KYC verification was rejected: ${note}` : 'Your KYC documents were rejected. Please re-upload valid documents.'),
+      });
+    } catch {}
+
+    this.realtime.emitToUser(id, 'kyc:status-updated', { status, note });
+    return result;
   }
 
   async updateOnlineStatus(id: string, onlineStatus: 'online' | 'offline' | 'busy') {

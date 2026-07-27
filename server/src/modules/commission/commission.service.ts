@@ -91,8 +91,17 @@ export class CommissionService {
     const platformFee = (totalCost * effectivePercentage) / 100;
     const astrologerEarnings = totalCost - platformFee;
 
+    let adminWalletId: string | null = null;
+    if (platformFee > 0) {
+      try {
+        const adminWallet = await this.walletService.getOrCreateAdminWallet();
+        adminWalletId = adminWallet.id;
+      } catch (e: any) {
+        this.logger.error(`Failed to resolve admin wallet: ${e.message}`);
+      }
+    }
+
     await this.db.transaction(async (tx) => {
-      // Idempotency: skip if commission already logged for this call
       const [existingLog] = await tx
         .select()
         .from(schema.commissionLogs)
@@ -103,22 +112,15 @@ export class CommissionService {
         return;
       }
 
-      const result = await tx.execute<{
-        id: string; user_id: string | null; astrologer_id: string;
-        balance: string; total_added: string; total_deducted: string;
-      }>(sql`SELECT id, user_id, astrologer_id, balance, total_added, total_deducted
-        FROM wallets WHERE astrologer_id = ${astrologerId} LIMIT 1 FOR UPDATE`);
-      const wallet = result.rows?.[0] ? {
-        id: result.rows[0].id,
-        astrologerId: result.rows[0].astrologer_id,
-        balance: result.rows[0].balance,
-        totalAdded: result.rows[0].total_added,
-        totalDeducted: result.rows[0].total_deducted,
-      } : null;
-
+      let wallet = (await tx.execute<{
+        id: string; balance: string;
+      }>(sql`SELECT id, balance FROM wallets WHERE astrologer_id = ${astrologerId} LIMIT 1 FOR UPDATE`)).rows?.[0];
       if (!wallet) {
-        this.logger.warn(`No wallet found for astrologer ${astrologerId}, skipping earnings credit`);
-        return;
+        const [created] = await tx.insert(schema.wallets).values({
+          astrologerId,
+        }).returning({ id: schema.wallets.id, balance: schema.wallets.balance });
+        wallet = created;
+        this.logger.log(`Auto-created wallet for astrologer ${astrologerId}`);
       }
 
       const amountStr = astrologerEarnings.toFixed(2);
@@ -138,7 +140,7 @@ export class CommissionService {
         type: 'credit',
         category: 'commission',
         amount: amountStr,
-        fee: '0',
+        fee: platformFee.toFixed(2),
         netAmount: amountStr,
         status: 'success',
         description: `Earnings from call ${callId}`,
@@ -154,8 +156,7 @@ export class CommissionService {
         platformFee: platformFee.toFixed(2),
       });
 
-      if (platformFee > 0) {
-        const adminWallet = await this.walletService.getOrCreateAdminWallet();
+      if (platformFee > 0 && adminWalletId) {
         const feeStr = platformFee.toFixed(2);
         await tx
           .update(schema.wallets)
@@ -164,9 +165,9 @@ export class CommissionService {
             totalAdded: sql`${schema.wallets.totalAdded} + ${feeStr}::decimal`,
             updatedAt: new Date(),
           })
-          .where(eq(schema.wallets.id, adminWallet.id));
+          .where(eq(schema.wallets.id, adminWalletId));
         await tx.insert(schema.transactions).values({
-          walletId: adminWallet.id,
+          walletId: adminWalletId,
           type: 'credit',
           category: 'commission',
           amount: feeStr,
@@ -200,6 +201,16 @@ export class CommissionService {
     const platformFee = (chargeAmount * effectivePercentage) / 100;
     const astrologerEarnings = chargeAmount - platformFee;
 
+    let adminWalletId: string | null = null;
+    if (platformFee > 0) {
+      try {
+        const adminWallet = await this.walletService.getOrCreateAdminWallet();
+        adminWalletId = adminWallet.id;
+      } catch (e: any) {
+        this.logger.error(`Failed to resolve admin wallet for chat: ${e.message}`);
+      }
+    }
+
     await this.db.transaction(async (tx) => {
       const idempotent = await tx
         .select()
@@ -214,7 +225,6 @@ export class CommissionService {
         return;
       }
 
-      // Auto-create astrologer wallet if missing
       let wallet = (await tx.execute<{
         id: string; balance: string;
       }>(sql`SELECT id, balance FROM wallets WHERE astrologer_id = ${astrologerId} LIMIT 1 FOR UPDATE`)).rows?.[0];
@@ -223,11 +233,11 @@ export class CommissionService {
           astrologerId,
         }).returning({ id: schema.wallets.id, balance: schema.wallets.balance });
         wallet = created;
+        this.logger.log(`Auto-created wallet for astrologer ${astrologerId}`);
       }
 
       const amountStr = astrologerEarnings.toFixed(2);
 
-      // Credit astrologer wallet
       await tx
         .update(schema.wallets)
         .set({
@@ -237,7 +247,6 @@ export class CommissionService {
         })
         .where(eq(schema.wallets.id, wallet.id));
 
-      // Insert transaction record for astrologer credit
       const [txn] = await tx.insert(schema.transactions).values({
         walletId: wallet.id,
         astrologerId,
@@ -251,7 +260,6 @@ export class CommissionService {
         referenceId: messageId,
       }).returning();
 
-      // Insert commission_log for audit trail
       await tx.insert(schema.commissionLogs).values({
         astrologerId,
         transactionId: txn.id,
@@ -261,9 +269,7 @@ export class CommissionService {
         platformFee: platformFee.toFixed(2),
       });
 
-      // Credit platform fee to admin wallet
-      if (platformFee > 0) {
-        const adminWallet = await this.walletService.getOrCreateAdminWallet();
+      if (platformFee > 0 && adminWalletId) {
         const feeStr = platformFee.toFixed(2);
         await tx
           .update(schema.wallets)
@@ -272,9 +278,9 @@ export class CommissionService {
             totalAdded: sql`${schema.wallets.totalAdded} + ${feeStr}::decimal`,
             updatedAt: new Date(),
           })
-          .where(eq(schema.wallets.id, adminWallet.id));
+          .where(eq(schema.wallets.id, adminWalletId));
         await tx.insert(schema.transactions).values({
-          walletId: adminWallet.id,
+          walletId: adminWalletId,
           type: 'credit',
           category: 'commission',
           amount: feeStr,
@@ -285,6 +291,15 @@ export class CommissionService {
           referenceId: messageId,
         });
       }
+
+      await tx
+        .update(schema.astrologers)
+        .set({
+          totalEarnings: sql`${schema.astrologers.totalEarnings} + ${amountStr}::decimal`,
+          totalChats: sql`${schema.astrologers.totalChats} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.astrologers.userId, astrologerId));
     });
   }
 }
