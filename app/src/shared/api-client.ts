@@ -228,12 +228,13 @@ class ApiClient {
 
   // Blogs
   blogs = {
-    list: () => this.get<Blog[]>('/blogs'),
+    list: (params?: any) => this.get<Blog[]>('/blogs', params),
     bySlug: (slug: string) => this.get<Blog>(`/blogs/slug/${slug}`),
     get: (id: string) => this.get<Blog>(`/blogs/${id}`),
     create: (d: any) => this.post<Blog>('/blogs', d),
     update: (id: string, d: any) => this.put<Blog>(`/blogs/${id}`, d),
     delete: (id: string) => this.del(`/blogs/${id}`),
+    my: () => this.get<Blog[]>('/blogs/my'),
   };
 
   // News

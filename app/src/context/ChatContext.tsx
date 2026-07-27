@@ -23,6 +23,7 @@ interface ChatState {
   statsVersion: number;
   supportVersion: number;
   notificationVersion: number;
+  blogVersion: number;
   loadConversations: () => Promise<void>;
   openConversation: (participantId: string, participantRole: string) => Promise<string>;
   setActiveConversation: (conv: Conversation | null) => void;
@@ -57,6 +58,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [statsVersion, setStatsVersion] = useState(0);
   const [supportVersion, setSupportVersion] = useState(0);
   const [notificationVersion, setNotificationVersion] = useState(0);
+  const [blogVersion, setBlogVersion] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [chatBlockedMessage, setChatBlockedMessage] = useState<string | null>(null);
@@ -204,6 +206,18 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
     socket.on('notification:new', () => {
       setNotificationVersion(v => v + 1);
+    });
+
+    socket.on('blog:published', () => {
+      setBlogVersion(v => v + 1);
+    });
+
+    socket.on('blog:updated', () => {
+      setBlogVersion(v => v + 1);
+    });
+
+    socket.on('blog:deleted', () => {
+      setBlogVersion(v => v + 1);
     });
 
     socketRef.current = socket;
@@ -362,6 +376,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         statsVersion,
         supportVersion,
         notificationVersion,
+        blogVersion,
         loading,
         hasMore,
         chatBlockedMessage,
