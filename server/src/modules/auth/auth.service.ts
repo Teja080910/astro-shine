@@ -259,6 +259,15 @@ export class AuthService {
       experience: data.experience || 0,
     }).returning();
 
+    await this.db.insert(schema.commissions).values({
+      astrologerId: user.id,
+      type: 'percentage',
+      value: '0',
+      minAmount: '0',
+      maxCap: '0',
+      isActive: false,
+    }).onConflictDoNothing();
+
     await this.db.insert(schema.wallets).values({ userId: user.id, astrologerId: user.id }).onConflictDoNothing();
 
     try {
