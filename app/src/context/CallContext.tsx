@@ -27,6 +27,7 @@ interface CallContextType {
   endCall: () => void;
   incomingCall: CallData | null;
   setIncomingCall: (data: CallData | null) => void;
+  resetCallState: () => void;
 }
 
 async function requestCallPermissions(type: 'audio' | 'video'): Promise<boolean> {
@@ -74,8 +75,24 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       path: config.socketPath,
       auth: { token },
       transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
     });
     socketRef.current = socket;
+
+    socket.on('connect', () => {
+      console.log('[Call] Socket connected:', socket.id);
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log('[Call] Socket disconnected:', reason);
+    });
+
+    socket.on('connect_error', (err) => {
+      console.log('[Call] Socket connect error:', err.message);
+    });
 
     socket.on('call:incoming', (data: any) => {
       console.log('[Call] call:incoming received:', data.callId);
@@ -93,13 +110,19 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
     socket.on('call:initiated', (data: any) => {
       console.log('[Call] call:initiated received:', data);
-      setCallData(prev => prev ? { ...prev, callId: data.callId, channel: data.channel, token: data.token } : null);
+      setCallData(prev => {
+        if (prev) return { ...prev, callId: data.callId, channel: data.channel, token: data.token };
+        return { callId: data.callId, channel: data.channel, token: data.token, type: 'audio', callerName: '' };
+      });
     });
 
     socket.on('call:accepted', (data: any) => {
       console.log('[Call] call:accepted received:', data);
       setCallState('active');
-      setCallData(prev => prev ? { ...prev, channel: data.channel, token: data.token } : null);
+      setCallData(prev => {
+        if (prev) return { ...prev, channel: data.channel, token: data.token };
+        return { callId: data.callId, channel: data.channel, token: data.token, type: 'audio', callerName: '' };
+      });
     });
 
     socket.on('call:rejected', () => {
@@ -128,6 +151,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cleanupTimersRef.current.forEach(clearTimeout);
       cleanupTimersRef.current = [];
+      socket.removeAllListeners();
       socket.disconnect();
     };
   }, [token]);
@@ -139,7 +163,15 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     console.log('[Call] initiateCall:', astrologerId, type);
     setCallState('calling');
     setCallData({ callId: '', channel: '', token: '', type, callerName: astrologerName });
-    socketRef.current?.emit('call:initiate', { astrologerId, type });
+
+    if (!socketRef.current?.connected) {
+      console.log('[Call] Socket not connected, cannot initiate call');
+      setCallState('idle');
+      setCallData(null);
+      return;
+    }
+
+    socketRef.current.emit('call:initiate', { astrologerId, type });
     const callTimer = setTimeout(() => {
       setCallState(prev => prev === 'calling' ? 'idle' : prev);
       setCallData(prev => prev && !prev.callId ? null : prev);
@@ -175,8 +207,16 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     cleanupTimersRef.current.push(endTimer);
   }, [callData]);
 
+  const resetCallState = useCallback(() => {
+    cleanupTimersRef.current.forEach(clearTimeout);
+    cleanupTimersRef.current = [];
+    setCallState('idle');
+    setCallData(null);
+    setIncomingCall(null);
+  }, []);
+
   return (
-    <CallContext.Provider value={{ callState, callData, initiateCall, acceptCall, rejectCall, endCall, incomingCall, setIncomingCall }}>
+    <CallContext.Provider value={{ callState, callData, initiateCall, acceptCall, rejectCall, endCall, incomingCall, setIncomingCall, resetCallState }}>
       {children}
     </CallContext.Provider>
   );
