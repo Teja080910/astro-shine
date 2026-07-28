@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { View, Text, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, Keyboard, Alert } from 'react-native';
-import { ScreenWrapper, colors, radii, typography, GradientButton, ConfirmDialog } from '../../shared';
+import { ScreenWrapper, colors, radii, typography, GradientButton, ConfirmDialog, InsufficientBalanceDialog } from '../../shared';
 import { ChatBubble } from '../../shared/components/ChatBubble';
 import { TypingIndicator } from '../../shared/components/TypingIndicator';
 import { Avatar } from '../../shared/components/Avatar';
@@ -59,13 +59,18 @@ export function ChatRoomScreen({ route, navigation }: any) {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [chatPrice, setChatPrice] = useState(5);
+  const [audioCallPrice, setAudioCallPrice] = useState(10);
+  const [videoCallPrice, setVideoCallPrice] = useState(20);
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [walletLoading, setWalletLoading] = useState(true);
+  const [balanceDialogVisible, setBalanceDialogVisible] = useState(false);
 
   useEffect(() => {
     if (isUser && participantId) {
       api.astrologers.get(participantId).then(a => {
         setChatPrice(parseFloat(a.chatPricePerMin || a.pricePerMin || '5'));
+        setAudioCallPrice(parseFloat(a.audioCallPricePerMin || a.pricePerMin || '10'));
+        setVideoCallPrice(parseFloat(a.videoCallPricePerMin || a.pricePerMin || '20'));
       }).catch(() => {});
       api.wallet.get().then(w => {
         setWalletBalance(Number(w.balance));
@@ -147,6 +152,10 @@ export function ChatRoomScreen({ route, navigation }: any) {
                 Alert.alert('Astrologer Offline', `${participantName || 'Astrologer'} is currently offline.`);
                 return;
               }
+              if (walletBalance !== null && walletBalance < audioCallPrice) {
+                setBalanceDialogVisible(true);
+                return;
+              }
               initiateCall(participantId, participantName || 'Astrologer', 'audio');
             }}
             style={{ padding: 6 }}
@@ -157,6 +166,10 @@ export function ChatRoomScreen({ route, navigation }: any) {
             onPress={() => {
               if (!isOnline) {
                 Alert.alert('Astrologer Offline', `${participantName || 'Astrologer'} is currently offline.`);
+                return;
+              }
+              if (walletBalance !== null && walletBalance < videoCallPrice) {
+                setBalanceDialogVisible(true);
                 return;
               }
               initiateCall(participantId, participantName || 'Astrologer', 'video');
@@ -321,6 +334,14 @@ export function ChatRoomScreen({ route, navigation }: any) {
           { label: 'Close', onPress: () => clearChatBlocked(), variant: 'secondary' },
         ]}
         onClose={() => clearChatBlocked()}
+      />
+      <InsufficientBalanceDialog
+        visible={balanceDialogVisible}
+        onClose={() => setBalanceDialogVisible(false)}
+        onRecharge={() => {
+          setBalanceDialogVisible(false);
+          navigation.navigate('Main', { screen: 'Wallet' });
+        }}
       />
     </ScreenWrapper>
   );
