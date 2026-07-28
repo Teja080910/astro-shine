@@ -90,14 +90,9 @@ export function GiftScreen({ route, navigation }: any) {
       Alert.alert('Select a Gift', 'Please choose a gift first.');
       return;
     }
-    const currentBalance = Number(wallet?.balance || 0);
-    if (currentBalance < Number(selectedGift.price)) {
-      Alert.alert('Insufficient Balance', 'Please recharge your wallet to send this gift.');
-      return;
-    }
     setSending(true);
     try {
-      await api.gifts.send({
+      const result = await api.gifts.send({
         giftId: selectedGift.id,
         senderId: user?.id,
         receiverId: selectedAstrologer.userId,
@@ -106,7 +101,8 @@ export function GiftScreen({ route, navigation }: any) {
       Alert.alert('Gift Sent', `You sent ${selectedGift.name} to ${selectedAstrologer.name}!`);
       navigation.goBack();
     } catch (e: any) {
-      Alert.alert('Error', e?.response?.data?.message || 'Failed to send gift');
+      const errMsg = e?.response?.data?.message || e.message || 'Failed to send gift';
+      Alert.alert('Error', errMsg);
     } finally { setSending(false); }
   };
 
