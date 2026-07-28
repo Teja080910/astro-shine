@@ -1,13 +1,31 @@
-import { Injectable, Inject, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
 import { eq, and, sql } from 'drizzle-orm';
+import { RealtimeService } from '../../common/realtime.service';
 
 @Injectable()
 export class WalletService {
+  private readonly logger = new Logger(WalletService.name);
   constructor(
     @Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>,
+    private readonly realtime: RealtimeService,
   ) {}
+
+  private emitWalletUpdated(userId?: string, astrologerId?: string, adminId?: string, balance?: string) {
+    try {
+      const payload: any = {};
+      if (userId) payload.userId = userId;
+      if (astrologerId) payload.astrologerId = astrologerId;
+      if (adminId) payload.adminId = adminId;
+      if (balance !== undefined) payload.balance = balance;
+      if (userId) this.realtime.emitToUser(userId, 'wallet:updated', payload);
+      if (astrologerId) this.realtime.emitToUser(astrologerId, 'wallet:updated', payload);
+      if (adminId) this.realtime.emitToUser(adminId, 'wallet:updated', payload);
+    } catch (e) {
+      this.logger.warn(`Failed to emit wallet:updated: ${e.message}`);
+    }
+  }
 
   async findAll() {
     return this.db
@@ -88,6 +106,14 @@ export class WalletService {
       })
       .where(eq(schema.wallets.id, walletId))
       .returning();
+    if (wallet) {
+      this.emitWalletUpdated(
+        wallet.userId || undefined,
+        wallet.astrologerId || undefined,
+        wallet.adminId || undefined,
+        wallet.balance,
+      );
+    }
     return wallet;
   }
 
@@ -163,8 +189,9 @@ export class WalletService {
   }): Promise<void> {
     const { userId, astrologerId, amount, description, category, referenceId } = params;
 
+    let updatedBalance: string | undefined;
+
     await this.db.transaction(async (tx) => {
-      // Idempotency check: if a transaction with this referenceId + category already exists, skip
       if (referenceId) {
         const [existing] = await tx
           .select()
@@ -239,7 +266,13 @@ export class WalletService {
         description,
         referenceId: referenceId || null,
       });
+
+      updatedBalance = (Number(wallet.balance) - amount).toFixed(2);
     });
+
+    if (updatedBalance !== undefined) {
+      this.emitWalletUpdated(userId, astrologerId, undefined, updatedBalance);
+    }
   }
 
   async creditFunds(params: {
@@ -252,8 +285,9 @@ export class WalletService {
   }): Promise<void> {
     const { userId, astrologerId, amount, description, category, referenceId } = params;
 
+    let updatedBalance: string | undefined;
+
     await this.db.transaction(async (tx) => {
-      // Idempotency check: if a transaction with this referenceId + category already exists, skip
       if (referenceId) {
         const [existing] = await tx
           .select()
@@ -324,6 +358,12 @@ export class WalletService {
         description,
         referenceId: referenceId || null,
       });
+
+      updatedBalance = (Number(wallet.balance) + amount).toFixed(2);
     });
+
+    if (updatedBalance !== undefined) {
+      this.emitWalletUpdated(userId, astrologerId, undefined, updatedBalance);
+    }
   }
 }

@@ -18,3 +18,4 @@ export { ConfirmDialog } from './components/ConfirmDialog';
 export { TimePicker } from './components/TimePicker';
 export { DatePicker } from './components/DatePicker';
 export { GlobalAlert } from './components/GlobalAlert';
+export { InsufficientBalanceDialog } from './components/InsufficientBalanceDialog';

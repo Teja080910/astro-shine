@@ -92,7 +92,6 @@ export class CommissionService {
     const astrologerEarnings = totalCost - platformFee;
 
     await this.db.transaction(async (tx) => {
-      // Idempotency: skip if commission already logged for this call
       const [existingLog] = await tx
         .select()
         .from(schema.commissionLogs)
@@ -103,22 +102,16 @@ export class CommissionService {
         return;
       }
 
-      const result = await tx.execute<{
-        id: string; user_id: string | null; astrologer_id: string;
-        balance: string; total_added: string; total_deducted: string;
-      }>(sql`SELECT id, user_id, astrologer_id, balance, total_added, total_deducted
-        FROM wallets WHERE astrologer_id = ${astrologerId} LIMIT 1 FOR UPDATE`);
-      const wallet = result.rows?.[0] ? {
-        id: result.rows[0].id,
-        astrologerId: result.rows[0].astrologer_id,
-        balance: result.rows[0].balance,
-        totalAdded: result.rows[0].total_added,
-        totalDeducted: result.rows[0].total_deducted,
-      } : null;
-
+      // Auto-create astrologer wallet if missing
+      let wallet = (await tx.execute<{
+        id: string; balance: string;
+      }>(sql`SELECT id, balance FROM wallets WHERE astrologer_id = ${astrologerId} LIMIT 1 FOR UPDATE`)).rows?.[0];
       if (!wallet) {
-        this.logger.warn(`No wallet found for astrologer ${astrologerId}, skipping earnings credit`);
-        return;
+        this.logger.log(`Creating wallet for astrologer ${astrologerId}`);
+        const [created] = await tx.insert(schema.wallets).values({
+          astrologerId,
+        }).returning({ id: schema.wallets.id, balance: schema.wallets.balance });
+        wallet = created;
       }
 
       const amountStr = astrologerEarnings.toFixed(2);
@@ -132,9 +125,9 @@ export class CommissionService {
         })
         .where(eq(schema.wallets.id, wallet.id));
 
-      await tx.insert(schema.transactions).values({
+      const [astrologerTxn] = await tx.insert(schema.transactions).values({
         walletId: wallet.id,
-        astrologerId: astrologerId,
+        astrologerId,
         type: 'credit',
         category: 'commission',
         amount: amountStr,
@@ -143,11 +136,12 @@ export class CommissionService {
         status: 'success',
         description: `Earnings from call ${callId}`,
         referenceId: callId,
-      });
+      }).returning();
 
       await tx.insert(schema.commissionLogs).values({
         callId,
         astrologerId,
+        transactionId: astrologerTxn.id,
         amount: totalCost.toFixed(2),
         percentage: effectivePercentage.toFixed(2),
         totalEarned: astrologerEarnings.toFixed(2),
@@ -155,7 +149,31 @@ export class CommissionService {
       });
 
       if (platformFee > 0) {
-        const adminWallet = await this.walletService.getOrCreateAdminWallet();
+        // Inline admin wallet resolution inside transaction for proper locking
+        let adminWallet = (await tx.execute<{
+          id: string; balance: string;
+        }>(sql`SELECT w.id, w.balance FROM wallets w
+          INNER JOIN admins a ON w.admin_id = a.user_id
+          INNER JOIN users u ON a.user_id = u.id
+          WHERE u.is_active = true
+          LIMIT 1 FOR UPDATE`)).rows?.[0];
+        if (!adminWallet) {
+          const [admin] = await tx
+            .select({ id: schema.admins.userId })
+            .from(schema.admins)
+            .innerJoin(schema.users, eq(schema.admins.userId, schema.users.id))
+            .where(eq(schema.users.isActive, true))
+            .limit(1);
+          if (!admin) {
+            this.logger.error(`No active admin found for platform fee credit`);
+            return;
+          }
+          const [created] = await tx.insert(schema.wallets).values({
+            adminId: admin.id,
+          }).returning({ id: schema.wallets.id, balance: schema.wallets.balance });
+          adminWallet = created;
+        }
+
         const feeStr = platformFee.toFixed(2);
         await tx
           .update(schema.wallets)
@@ -263,7 +281,30 @@ export class CommissionService {
 
       // Credit platform fee to admin wallet
       if (platformFee > 0) {
-        const adminWallet = await this.walletService.getOrCreateAdminWallet();
+        let adminWallet = (await tx.execute<{
+          id: string; balance: string;
+        }>(sql`SELECT w.id, w.balance FROM wallets w
+          INNER JOIN admins a ON w.admin_id = a.user_id
+          INNER JOIN users u ON a.user_id = u.id
+          WHERE u.is_active = true
+          LIMIT 1 FOR UPDATE`)).rows?.[0];
+        if (!adminWallet) {
+          const [admin] = await tx
+            .select({ id: schema.admins.userId })
+            .from(schema.admins)
+            .innerJoin(schema.users, eq(schema.admins.userId, schema.users.id))
+            .where(eq(schema.users.isActive, true))
+            .limit(1);
+          if (!admin) {
+            this.logger.error(`No active admin found for chat platform fee credit`);
+            return;
+          }
+          const [created] = await tx.insert(schema.wallets).values({
+            adminId: admin.id,
+          }).returning({ id: schema.wallets.id, balance: schema.wallets.balance });
+          adminWallet = created;
+        }
+
         const feeStr = platformFee.toFixed(2);
         await tx
           .update(schema.wallets)

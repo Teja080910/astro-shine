@@ -20,7 +20,9 @@ export class GiftsController {
   async create(@Body() body: any) { return this.service.create(body); }
 
   @Post('send')
-  async sendGift(@Body() body: any) { return this.service.sendGift(body); }
+  async sendGift(@Body() body: { giftId: string; senderId: string; receiverId: string }) {
+    return this.service.sendGift(body);
+  }
 
   @Put(':id')
   async update(@Param('id') id: string, @Body() body: any) { return this.service.update(id, body); }

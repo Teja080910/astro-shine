@@ -1651,11 +1651,6 @@ export function AstrologerProfileScreen({ navigation }: any) {
     { icon: "time-outline", label: "Availability Schedule", route: "Schedule" },
     { icon: "wallet-outline", label: "Wallet & Earnings", route: "Wallet" },
     {
-      icon: "receipt-outline",
-      label: "Commission Logs",
-      route: "CommissionLogs",
-    },
-    {
       icon: "call-outline",
       label: "Consultation History",
       route: "Consultations",

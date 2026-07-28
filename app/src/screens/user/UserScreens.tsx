@@ -21,6 +21,7 @@ import {
   Avatar,
   Chip,
   ConfirmDialog,
+  InsufficientBalanceDialog,
   CustomModal,
   EmptyState,
   GlassCard,
@@ -110,7 +111,7 @@ function getAstrologerOnlineStatus(
 // User Home Dashboard
 export function UserHomeScreen({ navigation }: any) {
   const { user, theme, setTheme } = useAuth();
-  const { astrologerStatuses, horoscopeVersion, blogVersion, notificationVersion } = useChat();
+  const { astrologerStatuses, horoscopeVersion, blogVersion, notificationVersion, walletVersion } = useChat();
   const isFocused = useIsFocused();
   const isDark = theme === "dark";
 
@@ -213,7 +214,7 @@ export function UserHomeScreen({ navigation }: any) {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, selectedSign, todayStr, horoscopeVersion, blogVersion, notificationVersion]);
+  }, [user?.id, selectedSign, todayStr, horoscopeVersion, blogVersion, notificationVersion, walletVersion]);
 
   useEffect(() => {
     if (isFocused) loadData();
@@ -1907,6 +1908,8 @@ export function AstrologerListScreen({ route, navigation }: any) {
   const cats = ["All", "Vedic", "Palmistry", "Vastu"];
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [balanceDialogVisible, setBalanceDialogVisible] = useState(false);
   const onlyLive = route?.params?.onlyLive ?? false;
 
   const fetchData = useCallback(() => api.astrologers.list().then(setData), []);
@@ -1914,6 +1917,7 @@ export function AstrologerListScreen({ route, navigation }: any) {
     if (isFocused) {
       setLoading(true);
       fetchData().finally(() => setLoading(false));
+      api.wallet.get().then((w) => setWalletBalance(Number(w.balance))).catch(() => {});
     }
   }, [isFocused, fetchData]);
   const onRefresh = useCallback(() => {
@@ -2088,6 +2092,11 @@ export function AstrologerListScreen({ route, navigation }: any) {
                         );
                         return;
                       }
+                      const audioRate = parseFloat(item.audioCallPricePerMin || item.pricePerMin || '10');
+                      if (walletBalance < audioRate) {
+                        setBalanceDialogVisible(true);
+                        return;
+                      }
                       initiateCall(
                         (item.userId || item.id) as string,
                         item.name || "",
@@ -2129,6 +2138,11 @@ export function AstrologerListScreen({ route, navigation }: any) {
                         );
                         return;
                       }
+                      const videoRate = parseFloat(item.videoCallPricePerMin || item.pricePerMin || '20');
+                      if (walletBalance < videoRate) {
+                        setBalanceDialogVisible(true);
+                        return;
+                      }
                       initiateCall(
                         (item.userId || item.id) as string,
                         item.name || "",
@@ -2154,9 +2168,17 @@ export function AstrologerListScreen({ route, navigation }: any) {
                     </Text>
                   </TouchableOpacity>
                 </View>
-              </GlassCard>
+               </GlassCard>
             </TouchableOpacity>
           );
+        }}
+      />
+      <InsufficientBalanceDialog
+        visible={balanceDialogVisible}
+        onClose={() => setBalanceDialogVisible(false)}
+        onRecharge={() => {
+          setBalanceDialogVisible(false);
+          navigation.navigate('Main', { screen: 'Wallet' });
         }}
       />
     </ScreenWrapper>
@@ -2173,11 +2195,13 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
   const { astrologerStatuses } = useChat();
   const { initiateCall } = useCall();
   const [offlineDialogVisible, setOfflineDialogVisible] = useState(false);
+  const [balanceDialogVisible, setBalanceDialogVisible] = useState(false);
   const [feedbackVisible, setFeedbackVisible] = useState(false);
   const [feedbackRating, setFeedbackRating] = useState(0);
   const [feedbackComment, setFeedbackComment] = useState("");
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
   const [feedbackSuccessVisible, setFeedbackSuccessVisible] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
   const { user, theme } = useAuth();
   const isDark = theme === "dark";
 
@@ -2190,7 +2214,10 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
   const cardLightBg = isDark ? "rgba(255, 255, 255, 0.04)" : "#FFFBEB";
 
   useEffect(() => {
-    if (isFocused) api.astrologers.get(id).then(setAstro);
+    if (isFocused) {
+      api.astrologers.get(id).then(setAstro);
+      api.wallet.get().then((w) => setWalletBalance(Number(w.balance))).catch(() => {});
+    }
   }, [id, isFocused]);
   if (!astro)
     return (
@@ -2256,6 +2283,11 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
       setOfflineDialogVisible(true);
       return;
     }
+    const callRate = parseFloat(astro.audioCallPricePerMin || astro.pricePerMin || '10');
+    if (walletBalance < callRate) {
+      setBalanceDialogVisible(true);
+      return;
+    }
     initiateCall(id as string, astro.name || "", "audio");
   };
 
@@ -2266,6 +2298,11 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
     }
     if (!isOnline) {
       setOfflineDialogVisible(true);
+      return;
+    }
+    const callRate = parseFloat(astro.videoCallPricePerMin || astro.pricePerMin || '20');
+    if (walletBalance < callRate) {
+      setBalanceDialogVisible(true);
       return;
     }
     initiateCall(id as string, astro.name || "", "video");
@@ -3036,6 +3073,14 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
           },
         ]}
         onClose={() => setOfflineDialogVisible(false)}
+      />
+      <InsufficientBalanceDialog
+        visible={balanceDialogVisible}
+        onClose={() => setBalanceDialogVisible(false)}
+        onRecharge={() => {
+          setBalanceDialogVisible(false);
+          navigation.navigate('Main', { screen: 'Wallet' });
+        }}
       />
     </ScreenWrapper>
   );

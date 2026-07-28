@@ -179,7 +179,16 @@ export class AuthService {
 
   async loginWithEmail(email: string, password: string): Promise<{ token: string; user: any; astrologer?: any }> {
     const user = await this.findUserByEmail(email);
-    if (!user || !user.isActive || user.deletedAt || !user.password) {
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    if (user.deletedAt) {
+      throw new UnauthorizedException('This account has been deactivated. Please contact the administrator.');
+    }
+    if (!user.isActive) {
+      throw new UnauthorizedException('Your account has been deactivated. Please contact the administrator.');
+    }
+    if (!user.password) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
