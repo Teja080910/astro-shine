@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
-import { useIsFocused } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, CustomModal, colors, typography, radii, shadows } from '../../shared';
 import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
-import type { Blog, MandirPooja, Notification, PoojaBooking, SupportTicket, NewsItem, Video, PanchangRecord, CommissionLog } from '../../shared/types';
-import { useNavigation } from '@react-navigation/native';
+import type { Blog, MandirPooja, Notification, PoojaBooking, SupportTicket, TicketReply, NewsItem, Video, PanchangRecord, CommissionLog } from '../../shared/types';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
 import * as DocumentPicker from 'expo-document-picker';
@@ -113,15 +112,32 @@ export function VideosScreen() {
 }
 
 // Blogs with data
-export function BlogsScreen() {
+export function BlogsScreen({ navigation }: any) {
   const isFocused = useIsFocused();
+  const { blogVersion } = useChat();
+  const { role } = useAuth();
   const [blogs, setBlogs] = useState<Blog[]>([]);
-  useEffect(() => { if (isFocused) api.blogs.list().then(setBlogs).catch(() => {}); }, [isFocused]);
+  useEffect(() => { if (isFocused) api.blogs.list({ published: 'true' }).then(setBlogs).catch(() => {}); }, [isFocused, blogVersion]);
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Blogs" />
+      {(role === 'astrologer' || role === 'admin') && (
+        <GradientButton
+          title="Create Blog"
+          onPress={() => navigation.navigate('CreateBlog')}
+          style={{ marginBottom: 16 }}
+        />
+      )}
       {blogs.length === 0 ? <EmptyState icon={<Ionicons name="newspaper-outline" size={48} color={colors.textMuted} />} title="No blogs yet" /> :
-        blogs.map(b => <GlassCard key={b.id} style={{ marginBottom: 12 }}><Text style={typography.cardTitle}>{b.title}</Text><Text style={typography.body} numberOfLines={3}>{b.excerpt || b.content?.slice(0, 150)}</Text><Text style={typography.caption}>{b.tags?.join(', ')}</Text></GlassCard>)}
+        blogs.map(b => (
+          <TouchableOpacity key={b.id} onPress={() => navigation.navigate('BlogDetail', { blogId: b.id })} style={{ marginBottom: 12 }}>
+            <GlassCard>
+              <Text style={typography.cardTitle}>{b.title}</Text>
+              <Text style={typography.body} numberOfLines={3}>{b.excerpt || b.content?.slice(0, 150)}</Text>
+              {b.tags?.length > 0 && <Text style={typography.caption}>{b.tags.join(', ')}</Text>}
+            </GlassCard>
+          </TouchableOpacity>
+        ))}
       <View style={{ height: 40 }} />
     </ScreenWrapper>
   );
@@ -131,13 +147,14 @@ export function BlogsScreen() {
 export function NotificationsScreen({ route }: any) {
   const isFocused = useIsFocused();
   const { user, astrologer } = useAuth();
+  const { notificationVersion } = useChat();
   const [notifs, setNotifs] = useState<Notification[]>([]);
 
   useEffect(() => {
     if (!isFocused) return;
     const uid = route?.params?.userId || user?.id || astrologer?.userId;
     if (uid) api.notifications.list({ userId: uid }).then(setNotifs).catch(() => {});
-  }, [isFocused, route?.params?.userId, user?.id, astrologer?.userId]);
+  }, [isFocused, route?.params?.userId, user?.id, astrologer?.userId, notificationVersion]);
 
   const markRead = async (id: string) => {
     try { await api.notifications.markRead(id); setNotifs(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n)); } catch {}
@@ -157,7 +174,12 @@ export function NotificationsScreen({ route }: any) {
                     <Ionicons name={n.type === 'system' ? 'settings-outline' : n.type === 'promotional' ? 'megaphone-outline' : 'cash-outline'} size={20} color={n.isRead ? colors.textMuted : colors.primaryLight} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[typography.cardTitle, { fontSize: 14 }]}>{n.title}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                      <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: n.type === 'system' ? colors.primary + '20' : n.type === 'promotional' ? '#9333EA30' : n.type === 'transactional' ? '#10B98130' : '#F59E0B30' }}>
+                        <Text style={{ fontSize: 9, fontWeight: '700', color: n.type === 'system' ? colors.primaryLight : n.type === 'promotional' ? '#A855F7' : n.type === 'transactional' ? '#10B981' : '#F59E0B', textTransform: 'uppercase' }}>{n.type}</Text>
+                      </View>
+                      <Text style={[typography.cardTitle, { fontSize: 14, flex: 1 }]}>{n.title}</Text>
+                    </View>
                     <Text style={[typography.body, { fontSize: 13, marginTop: 2 }]}>{n.body}</Text>
                     <Text style={[typography.caption, { marginTop: 4 }]}>{new Date(n.createdAt).toLocaleDateString()}</Text>
                   </View>
@@ -491,43 +513,7 @@ export function EditProfileScreen() {
   );
 }
 
-// Support
-export function SupportScreen() {
-  const isFocused = useIsFocused();
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
-  const [tickets, setTickets] = useState<SupportTicket[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => { if (isFocused) api.support.tickets().then(setTickets).catch(() => {}); }, [isFocused]);
-
-  const handleSubmit = async () => {
-    if (!subject.trim() || !message.trim()) return;
-    setLoading(true);
-    try {
-      await api.support.createTicket({ subject, description: message });
-      setSubject('');
-      setMessage('');
-      const list = await api.support.tickets();
-      setTickets(list);
-    } catch (e) {
-      console.log(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <ScreenWrapper scroll>
-      <SectionTitle title="Help & Support" />
-      <Text style={[typography.body, { marginBottom: 16 }]}>Create a support ticket</Text>
-      <View style={{ marginBottom: 14 }}><TextInput style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]} value={subject} onChangeText={setSubject} placeholder="Subject" placeholderTextColor={colors.textMuted} /></View>
-      <View style={{ marginBottom: 14 }}><TextInput style={[styles.input, { height: 100, backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]} value={message} onChangeText={setMessage} placeholder="Describe your issue" placeholderTextColor={colors.textMuted} multiline textAlignVertical="top" /></View>
-      <GradientButton title={loading ? 'Submitting...' : 'Submit Ticket'} onPress={handleSubmit} disabled={loading} />
-      {tickets.length > 0 && <><SectionHeader title="Your Tickets" style={{ marginTop: 20 }} /><FlatList data={tickets} scrollEnabled={false} keyExtractor={t => t.id} renderItem={({ item }) => <GlassCard style={{ marginBottom: 8, padding: 12 }}><Text style={typography.cardTitle}>{item.subject}</Text><Text style={typography.caption}>{item.status.toUpperCase()} - Priority: {item.priority}</Text><Text style={typography.body}>{item.message}</Text></GlassCard>} /></>}
-    </ScreenWrapper>
-  );
-}
+// Support (moved to SupportScreens.tsx)
 
 // Donation
 export function DonationScreen() {
@@ -615,10 +601,6 @@ export function MandirPoojaScreen({ navigation }: any) {
   const [poojas, setPoojas] = useState<MandirPooja[]>([]);
   const [bookings, setBookings] = useState<PoojaBooking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPooja, setSelectedPooja] = useState<MandirPooja | null>(null);
-  const [bookingDate, setBookingDate] = useState('');
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [booking, setBooking] = useState(false);
 
   useEffect(() => {
     if (isFocused) {
@@ -629,27 +611,6 @@ export function MandirPoojaScreen({ navigation }: any) {
     }
   }, [isFocused, user?.id]);
 
-  const handleBook = async () => {
-    if (!selectedPooja || !bookingDate) return;
-    setBooking(true);
-    try {
-      const order = await api.payments.createOrder({ amount: Number(selectedPooja.price), purpose: 'pooja_booking', purposeId: selectedPooja.id });
-      navigation.navigate('Payment', {
-        razorpayOrderId: order.razorpayOrderId, key: order.key, amount: order.amount,
-        currency: order.currency, purpose: 'pooja_booking', paymentOrderId: order.id,
-        onSuccess: async () => {
-          await api.mandirPooja.createBooking({ userId: user?.id, poojaId: selectedPooja.id, bookingDate, amount: selectedPooja.price });
-          setSelectedPooja(null);
-          setBookingDate('');
-          const b = await api.mandirPooja.bookings({ userId: user?.id });
-          setBookings(b);
-        },
-      });
-    } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Failed to initiate booking');
-    } finally { setBooking(false); }
-  };
-
   if (loading) return <ScreenWrapper scroll><SectionTitle title="Mandir Pooja" /><GlassCard><Text style={typography.body}>Loading...</Text></GlassCard></ScreenWrapper>;
 
   return (
@@ -659,7 +620,7 @@ export function MandirPoojaScreen({ navigation }: any) {
         <>
           <Text style={[typography.sectionTitle, { marginBottom: 12 }]}>Available Poojas</Text>
           {poojas.map(p => (
-            <TouchableOpacity key={p.id} onPress={() => setSelectedPooja(p)} style={{ marginBottom: 10 }}>
+            <TouchableOpacity key={p.id} onPress={() => navigation.navigate('MandirPoojaDetail', { poojaId: p.id })} style={{ marginBottom: 10 }}>
               <GlassCard style={{ padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.accentGold + '20', alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="flame" size={24} color={colors.accentGold} />
@@ -703,24 +664,11 @@ export function MandirPoojaScreen({ navigation }: any) {
           <Text style={[typography.body, { textAlign: 'center', marginTop: 8 }]}>Satyanarayan Pooja, Rudrabhishek, Navgraha Shanti and more</Text>
         </GlassCard>
       )}
-
-      <CustomModal visible={!!selectedPooja} onClose={() => setSelectedPooja(null)} title={`Book ${selectedPooja?.name || 'Pooja'}`}>
-        <View style={{ padding: 16, gap: 12 }}>
-          <Text style={[typography.body, { color: colors.textSecondary }]}>Price: ₹{selectedPooja?.price}</Text>
-          <TouchableOpacity onPress={() => setShowDatePicker(true)} style={{ backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, justifyContent: 'center' }}>
-            <Text style={{ color: bookingDate ? colors.textPrimary : colors.textMuted, fontSize: 15 }}>{bookingDate || 'Select booking date'}</Text>
-          </TouchableOpacity>
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <TouchableOpacity onPress={() => setSelectedPooja(null)} style={{ flex: 1, height: 48, borderRadius: radii.button, borderWidth: 1, borderColor: colors.cardBorder, justifyContent: 'center', alignItems: 'center' }}>
-              <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
-            </TouchableOpacity>
-            <View style={{ flex: 1 }}><GradientButton title={booking ? 'Processing...' : 'Pay & Book'} onPress={handleBook} disabled={booking || !bookingDate} /></View>
-          </View>
-        </View>
-      </CustomModal>
     </ScreenWrapper>
   );
 }
+
+// Mandir Pooja Detail (moved to MandirPoojaDetailScreen.tsx)
 
 // Order History
 export function OrderHistoryScreen() {
@@ -916,11 +864,17 @@ export function AstrologerDocumentsScreen() {
       if (result.canceled || !result.assets?.[0]) return;
       const file = result.assets[0];
       setUploading(true);
-      const uploaded = await api.uploadFile({ uri: file.uri, name: file.name, mimeType: file.mimeType });
+      const uploaded = await api.uploadFile({ uri: file.uri, name: file.name, mimeType: file.mimeType }, 'supabase');
       const newDocs = [...docs, uploaded.url];
       setDocs(newDocs);
-      await api.astrologers.update((astrologer!.userId || astrologer!.id) as string, { verificationDoc: newDocs });
-      updateUser({ ...astrologer!, verificationDoc: newDocs });
+      const updatePayload: any = { verificationDoc: newDocs };
+      if (status === 'rejected') {
+        updatePayload.verificationStatus = 'pending';
+        setStatus('pending');
+        setNote('');
+      }
+      await api.astrologers.update((astrologer!.userId || astrologer!.id) as string, updatePayload);
+      updateUser({ ...astrologer!, verificationDoc: newDocs, verificationStatus: updatePayload.verificationStatus || status });
     } catch (e: any) {
       Alert.alert('Error', e?.response?.data?.message || e?.message || 'Upload failed');
     } finally {
@@ -1243,6 +1197,88 @@ export function AboutAppScreen({ navigation }: any) {
   );
 }
 
+// Create Blog
+export function CreateBlogScreen({ navigation, route }: any) {
+  const { role } = useAuth();
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [excerpt, setExcerpt] = useState('');
+  const [tags, setTags] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleCreate = async () => {
+    if (!title.trim() || !content.trim()) return;
+    setLoading(true);
+    try {
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now();
+      await api.blogs.create({
+        title: title.trim(),
+        content: content.trim(),
+        excerpt: excerpt.trim(),
+        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+        slug,
+        status: 'published',
+      });
+      navigation.goBack();
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <ScreenWrapper scroll>
+      <View style={{ padding: 16 }}>
+        <Text style={[typography.pageTitle, { marginBottom: 16 }]}>Create Blog</Text>
+        <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Title</Text>
+        <TextInput
+          style={[styles.input, { marginBottom: 12 }]}
+          value={title}
+          onChangeText={setTitle}
+          placeholder="Blog title"
+          placeholderTextColor={colors.textMuted}
+        />
+        <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Excerpt (optional)</Text>
+        <TextInput
+          style={[styles.input, { marginBottom: 12 }]}
+          value={excerpt}
+          onChangeText={setExcerpt}
+          placeholder="Short summary"
+          placeholderTextColor={colors.textMuted}
+        />
+        <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Content</Text>
+        <TextInput
+          style={[styles.input, { marginBottom: 12, height: 200, textAlignVertical: 'top', paddingTop: 12 }]}
+          value={content}
+          onChangeText={setContent}
+          placeholder="Write your blog content..."
+          placeholderTextColor={colors.textMuted}
+          multiline
+        />
+        <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Tags (comma separated, optional)</Text>
+        <TextInput
+          style={[styles.input, { marginBottom: 20 }]}
+          value={tags}
+          onChangeText={setTags}
+          placeholder="e.g. astrology, vedic, gemstones"
+          placeholderTextColor={colors.textMuted}
+        />
+        <GradientButton
+          title={loading ? 'Publishing...' : 'Publish Blog'}
+          onPress={handleCreate}
+          disabled={loading || !title.trim() || !content.trim()}
+        />
+      </View>
+    </ScreenWrapper>
+  );
+}
+
 const styles = StyleSheet.create({
   input: { backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, color: colors.textPrimary, fontSize: 15 },
 });
+
+export { SupportScreen, TicketDetailScreen, AdminSupportScreen, AdminTicketDetailScreen } from './SupportScreens';
+export { MandirPoojaDetailScreen } from './MandirPoojaDetailScreen';
+export { BlogDetailScreen } from './BlogDetailScreen';
+export { CreateBlogScreen };

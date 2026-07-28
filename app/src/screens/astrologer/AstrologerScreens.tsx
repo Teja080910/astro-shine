@@ -3,6 +3,7 @@ import { useIsFocused } from "@react-navigation/native";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
+  FlatList,
   Image,
   RefreshControl,
   ScrollView,
@@ -32,6 +33,7 @@ import {
 } from "../../shared";
 import { api } from "../../shared/api-client";
 import type {
+  Blog,
   CallLog,
   Notification,
   Review,
@@ -42,7 +44,7 @@ import * as Location from "expo-location";
 
 export function AstrologerHomeScreen({ navigation }: any) {
   const { astrologer, theme, setTheme } = useAuth();
-  const { astrologerStatuses, statsVersion } = useChat();
+  const { astrologerStatuses, statsVersion, blogVersion, notificationVersion } = useChat();
   const isFocused = useIsFocused();
   const isDark = theme === "dark";
   const [isOnline, setIsOnline] = useState(
@@ -55,6 +57,8 @@ export function AstrologerHomeScreen({ navigation }: any) {
     totalEarnings: "₹0",
   });
   const [recentTxns, setRecentTxns] = useState<any[]>([]);
+  const [blogs, setBlogs] = useState<Blog[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [weather, setWeather] = useState<{
@@ -74,6 +78,8 @@ export function AstrologerHomeScreen({ navigation }: any) {
   const bodyTextColor = isDark ? "#E5E7EB" : "#374151";
   const mutedTextColor = isDark ? "#9CA3AF" : "#6B7280";
   const goldTextColor = isDark ? "#FBBF24" : "#D97706";
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const greeting = (() => {
     const hour = new Date().getHours();
@@ -116,9 +122,11 @@ export function AstrologerHomeScreen({ navigation }: any) {
   const loadData = useCallback(async () => {
     if (!astrologer?.userId) return;
     try {
-      const [astro, txns] = await Promise.all([
+      const [astro, txns, blogData, notifs] = await Promise.all([
         api.astrologers.get(astrologer.userId),
         api.transactions.listMy(),
+        api.blogs.list({ published: 'true' }),
+        api.notifications.list({ astrologerId: astrologer.userId }),
       ]);
       setIsOnline(astro.onlineStatus === "online");
       const todayTxns = txns.filter(
@@ -135,8 +143,10 @@ export function AstrologerHomeScreen({ navigation }: any) {
         totalEarnings: `₹${astro.totalEarnings || "0"}`,
       });
       setRecentTxns(txns.slice(0, 5));
+      setBlogs(blogData);
+      setNotifications(notifs);
     } catch {}
-  }, [astrologer?.userId, statsVersion]);
+  }, [astrologer?.userId, statsVersion, blogVersion, notificationVersion]);
 
   useEffect(() => {
     if (isFocused) loadData();
@@ -308,6 +318,13 @@ export function AstrologerHomeScreen({ navigation }: any) {
                   size={24}
                   color={iconColor}
                 />
+                {unreadCount > 0 && (
+                  <View style={styles.headerBadge}>
+                    <Text style={{ color: "#fff", fontSize: 10, fontWeight: "800" }}>
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </Text>
+                  </View>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -639,6 +656,54 @@ export function AstrologerHomeScreen({ navigation }: any) {
                   </View>
                 </GlassCard>
               ))}
+            </>
+          )}
+
+          {blogs.length > 0 && (
+            <>
+              <View style={{ height: 24 }} />
+              <SectionHeader
+                title="Latest Blogs"
+                onSeeAll={() => navigation.navigate("Blogs")}
+              />
+              <FlatList
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                data={blogs.slice(0, 5)}
+                keyExtractor={(b) => b.id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("BlogDetail", { blogId: item.id })}
+                    style={{ width: 240, marginRight: 12 }}
+                  >
+                    <GlassCard style={{ padding: 14, height: 155 }}>
+                      <Text style={typography.cardTitle} numberOfLines={2}>
+                        {item.title}
+                      </Text>
+                      <Text
+                        style={[typography.body, { marginTop: 4 }]}
+                        numberOfLines={2}
+                      >
+                        {item.excerpt || item.content?.slice(0, 120)}
+                      </Text>
+                      {item.tags && item.tags.length > 0 && (
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            gap: 4,
+                            marginTop: 6,
+                          }}
+                        >
+                          {item.tags.slice(0, 2).map((tag) => (
+                            <Chip key={tag} label={tag} />
+                          ))}
+                        </View>
+                      )}
+                    </GlassCard>
+                  </TouchableOpacity>
+                )}
+                style={{ marginLeft: 0 }}
+              />
             </>
           )}
         </View>
@@ -1262,6 +1327,7 @@ export function AstrologerReviewsScreen() {
 
 export function AstrologerNotificationsScreen() {
   const { astrologer } = useAuth();
+  const { notificationVersion } = useChat();
   const [notifs, setNotifs] = useState<Notification[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -1272,7 +1338,7 @@ export function AstrologerNotificationsScreen() {
       });
       setNotifs(n);
     } catch {}
-  }, [astrologer?.userId]);
+  }, [astrologer?.userId, notificationVersion]);
 
   useEffect(() => {
     loadData();
@@ -1352,9 +1418,14 @@ export function AstrologerNotificationsScreen() {
                     />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[typography.cardTitle, { fontSize: 14 }]}>
-                      {n.title}
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                      <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: n.type === 'system' ? colors.primary + '20' : n.type === 'promotional' ? '#9333EA30' : n.type === 'transactional' ? '#10B98130' : '#F59E0B30' }}>
+                        <Text style={{ fontSize: 9, fontWeight: '700', color: n.type === 'system' ? colors.primaryLight : n.type === 'promotional' ? '#A855F7' : n.type === 'transactional' ? '#10B981' : '#F59E0B', textTransform: 'uppercase' }}>{n.type}</Text>
+                      </View>
+                      <Text style={[typography.cardTitle, { fontSize: 14, flex: 1 }]}>
+                        {n.title}
+                      </Text>
+                    </View>
                     <Text
                       style={[typography.body, { fontSize: 13, marginTop: 2 }]}
                     >
@@ -1592,6 +1663,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
     { icon: "star-outline", label: "Ratings & Reviews", route: "Reviews" },
     { icon: "cash-outline", label: "Withdrawals", route: "Withdrawals" },
     { icon: "gift-outline", label: "Gifts Received", route: "Gifts" },
+    { icon: "newspaper-outline", label: "Blogs & Articles", route: "Blogs" },
     {
       icon: "notifications-outline",
       label: "Notifications",
@@ -1599,6 +1671,10 @@ export function AstrologerProfileScreen({ navigation }: any) {
     },
     { icon: "help-circle-outline", label: "Help & Support", route: "Support" },
   ];
+
+  if (role === "admin") {
+    items.push({ icon: "shield-checkmark-outline", label: "Manage Support Tickets", route: "AdminSupport" });
+  }
 
   const toggleTheme = async (val: boolean) => {
     try {
@@ -2329,6 +2405,18 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     borderWidth: 1,
+  },
+  headerBadge: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    backgroundColor: "#DC2626",
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 3,
   },
 });
 

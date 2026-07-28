@@ -48,10 +48,10 @@ class ApiClient {
   private async put<T>(path: string, data?: any): Promise<T> { const r = await this.client.put(path, data); return r.data; }
   private async del(path: string): Promise<void> { await this.client.delete(path); }
 
-  async uploadFile(file: { uri: string; name: string; mimeType?: string }): Promise<{ filename: string; url: string }> {
+  async uploadFile(file: { uri: string; name: string; mimeType?: string }, destination: 'local' | 'supabase' | 'cloudinary' = 'supabase'): Promise<{ filename: string; url: string }> {
     const formData = new FormData();
     formData.append('file', { uri: file.uri, name: file.name, type: file.mimeType || 'application/octet-stream' } as any);
-    const r = await this.client.post('/upload', formData, {
+    const r = await this.client.post(`/upload?destination=${destination}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return r.data;
@@ -228,12 +228,13 @@ class ApiClient {
 
   // Blogs
   blogs = {
-    list: () => this.get<Blog[]>('/blogs'),
+    list: (params?: any) => this.get<Blog[]>('/blogs', params),
     bySlug: (slug: string) => this.get<Blog>(`/blogs/slug/${slug}`),
     get: (id: string) => this.get<Blog>(`/blogs/${id}`),
     create: (d: any) => this.post<Blog>('/blogs', d),
     update: (id: string, d: any) => this.put<Blog>(`/blogs/${id}`, d),
     delete: (id: string) => this.del(`/blogs/${id}`),
+    my: () => this.get<Blog[]>('/blogs/my'),
   };
 
   // News
@@ -326,8 +327,11 @@ class ApiClient {
     createTicket: (d: any) => this.post<SupportTicket>('/support/tickets', d),
     assign: (id: string, adminId: string) => this.put<SupportTicket>(`/support/tickets/${id}/assign`, { adminId }),
     resolve: (id: string) => this.put<SupportTicket>(`/support/tickets/${id}/resolve`),
+    updateStatus: (id: string, status: string) => this.put<SupportTicket>(`/support/tickets/${id}/status`, { status }),
+    updatePriority: (id: string, priority: string) => this.put<SupportTicket>(`/support/tickets/${id}/priority`, { priority }),
     replies: (ticketId: string) => this.get<TicketReply[]>(`/support/tickets/${ticketId}/replies`),
     addReply: (ticketId: string, d: any) => this.post<TicketReply>(`/support/tickets/${ticketId}/replies`, d),
+    adminTickets: (status?: string) => this.get<SupportTicket[]>('/support/admin/tickets', { status }),
   };
 
   // Releases

@@ -1,15 +1,16 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { ConfigService } from '@nestjs/config';
 import { extname } from 'path';
 
 const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.mp4', '.mp3', '.wav', '.doc', '.docx'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const BUCKET_NAME = 'kyc-documents';
 
 @Injectable()
 export class SupabaseStorageService {
   private supabase: SupabaseClient | null = null;
-  private bucketName = 'internal-docs';
+  private readonly logger = new Logger(SupabaseStorageService.name);
 
   constructor(private configService: ConfigService) {}
 
@@ -23,13 +24,21 @@ export class SupabaseStorageService {
   }
 
   async ensureBucket() {
-    const { data: buckets } = await this.getClient().storage.listBuckets();
-    if (!buckets?.find(b => b.name === this.bucketName)) {
-      await this.getClient().storage.createBucket(this.bucketName, {
-        public: false,
-        fileSizeLimit: MAX_FILE_SIZE,
-      });
+    const client = this.getClient();
+    const { data: buckets } = await client.storage.listBuckets();
+    const existing = buckets?.find(b => b.name === BUCKET_NAME);
+    if (existing) {
+      if (!existing.public) {
+        await client.storage.updateBucket(BUCKET_NAME, { public: true });
+        this.logger.log(`Updated ${BUCKET_NAME} bucket to public`);
+      }
+      return;
     }
+    await client.storage.createBucket(BUCKET_NAME, {
+      public: true,
+      fileSizeLimit: MAX_FILE_SIZE,
+    });
+    this.logger.log(`Created ${BUCKET_NAME} bucket as public`);
   }
 
   async saveFile(file: Express.Multer.File): Promise<{ filename: string; url: string; size: number }> {
@@ -47,7 +56,7 @@ export class SupabaseStorageService {
     const filename = `${Date.now()}-${safeName}`;
 
     const { error } = await this.getClient().storage
-      .from(this.bucketName)
+      .from(BUCKET_NAME)
       .upload(filename, file.buffer, {
         contentType: file.mimetype,
         upsert: false,
@@ -56,15 +65,16 @@ export class SupabaseStorageService {
     if (error) throw new BadRequestException(`Supabase upload failed: ${error.message}`);
 
     const { data: urlData } = this.getClient().storage
-      .from(this.bucketName)
+      .from(BUCKET_NAME)
       .getPublicUrl(filename);
 
+    this.logger.log(`Uploaded ${filename} to ${BUCKET_NAME}, url: ${urlData.publicUrl}`);
     return { filename, url: urlData.publicUrl, size: file.size };
   }
 
   async deleteFile(filename: string) {
     const { error } = await this.getClient().storage
-      .from(this.bucketName)
+      .from(BUCKET_NAME)
       .remove([filename]);
 
     if (error) throw new BadRequestException(`Supabase delete failed: ${error.message}`);
