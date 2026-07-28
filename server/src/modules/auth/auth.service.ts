@@ -122,7 +122,7 @@ export class AuthService {
     return { verified: true };
   }
 
-  async verifyEmailOtp(email: string, otp: string): Promise<{ token: string; user: any }> {
+  async verifyEmailOtp(email: string, otp: string): Promise<{ token: string; user: any; astrologer?: any }> {
     const stored = this.otpStore.get(`email:${email}`);
     if (!stored || stored.otp !== otp || stored.expiresAt < Date.now()) {
       throw new UnauthorizedException('Invalid or expired OTP');
@@ -135,6 +135,11 @@ export class AuthService {
 
     const token = this.generateToken(user.id, user.role);
     const { password: _, ...safeUser } = user;
+
+    if (user.role === 'astrologer') {
+      const astrologer = await this.getAstrologerProfile(user.id);
+      return { token, user: safeUser, astrologer };
+    }
     return { token, user: safeUser };
   }
 
@@ -152,7 +157,7 @@ export class AuthService {
     return { message: 'OTP sent to phone' };
   }
 
-  async loginWithPhone(phone: string, otp: string): Promise<{ token: string; user: any }> {
+  async loginWithPhone(phone: string, otp: string): Promise<{ token: string; user: any; astrologer?: any }> {
     const stored = this.otpStore.get(`phone:${phone}`);
     if (!stored || stored.otp !== otp || stored.expiresAt < Date.now()) {
       throw new UnauthorizedException('Invalid or expired OTP');
@@ -164,10 +169,15 @@ export class AuthService {
     if (!user.isActive || user.deletedAt) throw new UnauthorizedException('Account has been deleted or deactivated');
     const token = this.generateToken(user.id, user.role);
     const { password: _, ...safeUser } = user;
+
+    if (user.role === 'astrologer') {
+      const astrologer = await this.getAstrologerProfile(user.id);
+      return { token, user: safeUser, astrologer };
+    }
     return { token, user: safeUser };
   }
 
-  async loginWithEmail(email: string, password: string): Promise<{ token: string; user: any }> {
+  async loginWithEmail(email: string, password: string): Promise<{ token: string; user: any; astrologer?: any }> {
     const user = await this.findUserByEmail(email);
     if (!user || !user.isActive || user.deletedAt || !user.password) {
       throw new UnauthorizedException('Invalid credentials');
@@ -180,6 +190,11 @@ export class AuthService {
 
     const token = this.generateToken(user.id, user.role);
     const { password: _, ...safeUser } = user;
+
+    if (user.role === 'astrologer') {
+      const astrologer = await this.getAstrologerProfile(user.id);
+      return { token, user: safeUser, astrologer };
+    }
     return { token, user: safeUser };
   }
 
@@ -244,6 +259,15 @@ export class AuthService {
       experience: data.experience || 0,
     }).returning();
 
+    await this.db.insert(schema.commissions).values({
+      astrologerId: user.id,
+      type: 'percentage',
+      value: '0',
+      minAmount: '0',
+      maxCap: '0',
+      isActive: false,
+    }).onConflictDoNothing();
+
     await this.db.insert(schema.wallets).values({ userId: user.id, astrologerId: user.id }).onConflictDoNothing();
 
     try {
@@ -290,6 +314,38 @@ export class AuthService {
     } catch {
       throw new UnauthorizedException('Invalid or expired token');
     }
+  }
+
+  private async getAstrologerProfile(userId: string) {
+    const [astro] = await this.db
+      .select({
+        userId: schema.astrologers.userId,
+        experience: schema.astrologers.experience,
+        specialization: schema.astrologers.specialization,
+        languages: schema.astrologers.languages,
+        skills: schema.astrologers.skills,
+        pricePerMin: schema.astrologers.pricePerMin,
+        chatPricePerMin: schema.astrologers.chatPricePerMin,
+        audioCallPricePerMin: schema.astrologers.audioCallPricePerMin,
+        videoCallPricePerMin: schema.astrologers.videoCallPricePerMin,
+        rating: schema.astrologers.rating,
+        totalReviews: schema.astrologers.totalReviews,
+        totalCalls: schema.astrologers.totalCalls,
+        totalChats: schema.astrologers.totalChats,
+        totalAudioCalls: schema.astrologers.totalAudioCalls,
+        totalVideoCalls: schema.astrologers.totalVideoCalls,
+        totalEarnings: schema.astrologers.totalEarnings,
+        verificationStatus: schema.astrologers.verificationStatus,
+        verificationDoc: schema.astrologers.verificationDoc,
+        verificationNote: schema.astrologers.verificationNote,
+        onlineStatus: schema.astrologers.onlineStatus,
+        bio: schema.astrologers.bio,
+        createdAt: schema.astrologers.createdAt,
+        updatedAt: schema.astrologers.updatedAt,
+      })
+      .from(schema.astrologers)
+      .where(eq(schema.astrologers.userId, userId));
+    return astro || null;
   }
 
   async checkPassword(userId: string, password: string): Promise<boolean> {

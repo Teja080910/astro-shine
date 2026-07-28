@@ -48,10 +48,10 @@ class ApiClient {
   private async put<T>(path: string, data?: any): Promise<T> { const r = await this.client.put(path, data); return r.data; }
   private async del(path: string): Promise<void> { await this.client.delete(path); }
 
-  async uploadFile(file: { uri: string; name: string; mimeType?: string }): Promise<{ filename: string; url: string }> {
+  async uploadFile(file: { uri: string; name: string; mimeType?: string }, destination: 'local' | 'supabase' | 'cloudinary' = 'supabase'): Promise<{ filename: string; url: string }> {
     const formData = new FormData();
     formData.append('file', { uri: file.uri, name: file.name, type: file.mimeType || 'application/octet-stream' } as any);
-    const r = await this.client.post('/upload', formData, {
+    const r = await this.client.post(`/upload?destination=${destination}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return r.data;

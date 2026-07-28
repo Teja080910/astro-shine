@@ -2,14 +2,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { TouchableOpacity, View, Image, ActivityIndicator } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { FloatingBottomBar, colors } from '../shared';
+import { api } from '../shared/api-client';
 
 import { AstrologerConsultationScreen, AstrologerGiftScreen, AstrologerHomeScreen, AstrologerNotificationsScreen, AstrologerProfileScreen, AstrologerReviewsScreen, AstrologerWalletScreen, AstrologerWithdrawalScreen, AstrologerMuhuratScreen } from '../screens/astrologer/AstrologerScreens';
 import { LoginScreen, OtpLoginScreen, RegisterScreen, ForgotPasswordScreen } from '../screens/auth/AuthScreens';
 import { OnboardingScreen } from '../screens/auth/OnboardingScreen';
+import { KycGateScreen } from '../screens/shared/KycGateScreen';
 import {
   AboutAppScreen,
   AstrologerCommissionScreen,
@@ -127,6 +129,32 @@ function AstrologerTabs() {
   );
 }
 
+function AstrologerMainGate() {
+  const { astrologer, updateUser } = useAuth();
+  const [initialCheck, setInitialCheck] = useState(!astrologer?.verificationStatus);
+
+  useEffect(() => {
+    if (!astrologer?.userId) return;
+    if (astrologer.verificationStatus) {
+      if (initialCheck) setInitialCheck(false);
+      return;
+    }
+    api.astrologers.get(astrologer.userId)
+      .then(fresh => updateUser({ ...astrologer, ...fresh }))
+      .catch(() => {})
+      .finally(() => setInitialCheck(false));
+  }, [astrologer?.userId]);
+
+  if (initialCheck) return (
+    <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
+      <ActivityIndicator size="large" color={colors.primaryLight} />
+    </View>
+  );
+
+  if (astrologer?.verificationStatus === 'approved') return <AstrologerTabs />;
+  return <KycGateScreen />;
+}
+
 export function Navigation() {
   const { role, loading, theme } = useAuth();
   if (loading) {
@@ -188,7 +216,7 @@ export function Navigation() {
           </>
         ) : (
           <>
-            <Stack.Screen name="Main" component={AstrologerTabs} />
+            <Stack.Screen name="Main" component={AstrologerMainGate} />
             <Stack.Screen name="Schedule" component={AstrologerScheduleScreen} options={headerOpts('Schedule')} />
             <Stack.Screen name="Documents" component={AstrologerDocumentsScreen} options={headerOpts('Documents')} />
             <Stack.Screen name="CommissionLogs" component={AstrologerCommissionScreen} options={headerOpts('Commissions')} />
