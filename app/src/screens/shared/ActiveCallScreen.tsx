@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native
 import { colors } from '../../shared';
 import { Ionicons } from '@expo/vector-icons';
 import { useCall } from '../../context/CallContext';
+import { useChat } from '../../context/ChatContext';
 import { useLiveKit } from '../../shared/useLiveKit';
 import { api } from '../../shared/api-client';
 
@@ -29,6 +30,7 @@ const LocalVideo = Platform.OS === 'web'
 
 export function ActiveCallScreen() {
   const { callData, callState, endCall } = useCall();
+  const { walletVersion } = useChat();
   const { joinChannel, leaveChannel, toggleMute, toggleSpeaker, toggleCamera, switchCamera, isMuted, isSpeakerOn, isVideoEnabled, isCameraFront, remoteUid, isRemoteMuted, isRemoteVideoMuted, remoteVideoTrack, localVideoTrack } = useLiveKit();
   const [seconds, setSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -39,7 +41,7 @@ export function ActiveCallScreen() {
     if (callState === 'active') {
       api.wallet.get().then(w => setWalletBalance(Number(w.balance))).catch(() => {});
     }
-  }, [callState]);
+  }, [callState, walletVersion]);
 
   const otherName = callData?.callerName || 'Connected';
   const isVideo = callData?.type === 'video';

@@ -24,6 +24,7 @@ interface ChatState {
   supportVersion: number;
   notificationVersion: number;
   blogVersion: number;
+  walletVersion: number;
   loadConversations: () => Promise<void>;
   openConversation: (participantId: string, participantRole: string) => Promise<string>;
   setActiveConversation: (conv: Conversation | null) => void;
@@ -59,6 +60,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [supportVersion, setSupportVersion] = useState(0);
   const [notificationVersion, setNotificationVersion] = useState(0);
   const [blogVersion, setBlogVersion] = useState(0);
+  const [walletVersion, setWalletVersion] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [chatBlockedMessage, setChatBlockedMessage] = useState<string | null>(null);
@@ -220,6 +222,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setBlogVersion(v => v + 1);
     });
 
+    socket.on('wallet:updated', (data: { balance?: string }) => {
+      setWalletVersion(v => v + 1);
+    });
+
     socketRef.current = socket;
 
     return () => {
@@ -377,6 +383,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         supportVersion,
         notificationVersion,
         blogVersion,
+        walletVersion,
         loading,
         hasMore,
         chatBlockedMessage,
