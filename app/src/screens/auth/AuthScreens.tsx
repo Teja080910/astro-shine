@@ -5,7 +5,6 @@ import { colors, radii, typography, shadows } from '../../shared/theme';
 import { useAuth } from '../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../shared/api-client';
-import { OTPWidget } from '../../shared/msg91-otp-widget';
 import { LinearGradient } from 'expo-linear-gradient';
 
 function useKeyboard() {
@@ -121,18 +120,51 @@ export function RegisterScreen({ navigation }: any) {
       return;
     }
     setError(''); setSendingOtp(true);
+    console.log(`[Auth] Sending registration OTP via ${verMode}: ${verMode === 'email' ? email : phone}`);
+    try {
+      if (verMode === 'email') {
+        const { exists } = await api.auth.checkEmail(email);
+        if (exists) {
+          setError('Email already registered');
+          setSendingOtp(false);
+          return;
+        }
+        await api.auth.sendRegistrationOtp(email, 'email');
+      } else {
+        const { exists } = await api.auth.checkPhone(phone.replace(/\D/g, ''));
+        if (exists) {
+          setError('Phone number already registered');
+          setSendingOtp(false);
+          return;
+        }
+        await api.auth.sendRegistrationOtp(phone, 'phone');
+      }
+      console.log(`[Auth] Registration OTP sent successfully via ${verMode}`);
+      setOtpSent(true);
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 150);
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || e?.message || 'Failed to send OTP';
+      console.error(`[Auth] Registration OTP failed: ${msg}`);
+      setError(msg);
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  const resendRegistrationOtp = async () => {
+    setSendingOtp(true);
     try {
       if (verMode === 'email') {
         await api.auth.sendRegistrationOtp(email, 'email');
       } else {
         await api.auth.sendRegistrationOtp(phone, 'phone');
       }
-      setOtpSent(true);
-      setTimeout(() => {
-        scrollViewRef.current?.scrollToEnd({ animated: true });
-      }, 150);
     } catch (e: any) {
-      setError(e?.response?.data?.message || 'Failed to send OTP');
+      const msg = e?.response?.data?.message || e?.message || 'Failed to resend OTP';
+      console.error(`[Auth] Registration OTP resend failed: ${msg}`);
+      setError(msg);
     } finally {
       setSendingOtp(false);
     }
@@ -142,11 +174,15 @@ export function RegisterScreen({ navigation }: any) {
     if (!otp) { setError('Please enter OTP'); return; }
     setError(''); setVerifyingOtp(true);
     try {
-      const identifier = verMode === 'email' ? email : phone;
-      await api.auth.verifyRegistrationOtp(identifier, verMode, otp);
+      if (verMode === 'email') {
+        const identifier = email;
+        await api.auth.verifyRegistrationOtp(identifier, 'email', otp);
+      } else {
+        await api.auth.verifyRegistrationOtp(phone, 'phone', otp);
+      }
       setOtpVerified(true);
     } catch (e: any) {
-      setError(e?.response?.data?.message || 'Invalid OTP');
+      setError(e?.response?.data?.message || e?.message || 'Invalid OTP');
     } finally {
       setVerifyingOtp(false);
     }
@@ -260,7 +296,7 @@ export function RegisterScreen({ navigation }: any) {
                   <>
                     <Input icon="key-outline" placeholder="Enter OTP" value={otp} onChange={setOtp} keyboardType="number-pad" onFocus={() => { if (!keyboardVisible) { setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100); } }} />
                     <GradientButton title={verifyingOtp ? 'Verifying...' : 'Verify OTP'} onPress={verifyOtp} disabled={verifyingOtp} />
-                    <Text style={[styles.resend, sendingOtp && { opacity: 0.5 }]} onPress={sendingOtp ? undefined : sendRegistrationOtp}>
+                    <Text style={[styles.resend, sendingOtp && { opacity: 0.5 }]} onPress={sendingOtp ? undefined : resendRegistrationOtp}>
                       {sendingOtp ? 'Resending OTP...' : 'Resend OTP'}
                     </Text>
                   </>
@@ -291,40 +327,34 @@ export function OtpLoginScreen({ navigation }: any) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
-  const [reqId, setReqId] = useState('');
   const [showRegisterPrompt, setShowRegisterPrompt] = useState(false);
 
-  useEffect(() => {
-    OTPWidget.initializeWidget(
-      process.env.EXPO_PUBLIC_MSG91_WIDGET_ID || '',
-      process.env.EXPO_PUBLIC_MSG91_TOKEN_AUTH || '',
-    );
-  }, []);
-
-  const sendOtp = async () => {
+  const sendOtp = async (isResend = false) => {
     if (!identifier) return;
     setError('');
     setSending(true);
+    console.log(`[Auth] ${isResend ? 'Resending' : 'Sending'} OTP login via ${verType}: ${identifier}`);
     try {
       if (verType === 'email') {
-        try {
-          await api.auth.sendEmailOtp(identifier);
-        } catch (e: any) {
-          if (e?.response?.data?.message === 'USER_NOT_FOUND') {
-            setShowRegisterPrompt(true);
-            return;
-          }
-          throw e;
-        }
-      } else {
-        const { exists } = await api.auth.checkPhone(identifier.replace(/\D/g, ''));
+        const { exists } = await api.auth.checkEmail(identifier);
         if (!exists) {
+          console.log(`[Auth] Email not found: ${identifier}`);
           setShowRegisterPrompt(true);
           return;
         }
-        const res = await OTPWidget.sendOTP({ identifier: `91${identifier.replace(/\D/g, '')}` });
-        if (!res?.message) throw new Error('Failed to send OTP');
-        setReqId(res.message);
+        await api.auth.sendEmailOtp(identifier);
+      } else {
+        if (!isResend) {
+          const { exists } = await api.auth.checkPhone(identifier.replace(/\D/g, ''));
+          if (!exists) {
+            console.log(`[Auth] Phone not found: ${identifier}`);
+            setShowRegisterPrompt(true);
+            return;
+          }
+          await api.auth.sendPhoneOtp(identifier.replace(/\D/g, ''));
+        } else {
+          await api.auth.sendPhoneOtp(identifier.replace(/\D/g, ''));
+        }
       }
       setSent(true);
       setTimeout(() => {
@@ -332,6 +362,7 @@ export function OtpLoginScreen({ navigation }: any) {
       }, 150);
     } catch (e: any) {
       const detail = e?.response?.data?.message || e?.message || e?.toString() || 'Failed to send OTP';
+      console.error(`[Auth] OTP send failed: ${detail}`);
       setError(detail);
     } finally {
       setSending(false);
@@ -342,10 +373,12 @@ export function OtpLoginScreen({ navigation }: any) {
     if (!identifier || !otp) return;
     setLoading(true);
     setError('');
+    console.log(`[Auth] Verifying OTP for ${verType}: ${identifier}`);
     try {
       if (verType === 'email') {
         try {
           await loginWithOtp(identifier, otp, 'user', 'email');
+          console.log(`[Auth] Email OTP verified, logged in`);
         } catch (e: any) {
           if (e?.response?.data?.message === 'USER_NOT_FOUND') {
             setShowRegisterPrompt(true);
@@ -354,23 +387,20 @@ export function OtpLoginScreen({ navigation }: any) {
           }
         }
       } else {
-        const res = await OTPWidget.verifyOTP({ reqId, otp });
-        if (res.type === 'success') {
-          try {
-            await loginWithOtp(identifier, otp, 'user', 'phone');
-          } catch (e: any) {
-            if (e?.response?.data?.message === 'USER_NOT_FOUND') {
-              setShowRegisterPrompt(true);
-            } else {
-              throw e;
-            }
+        try {
+          await loginWithOtp(identifier, otp, 'user', 'phone');
+          console.log(`[Auth] Phone OTP verified, logged in`);
+        } catch (e: any) {
+          if (e?.response?.data?.message === 'USER_NOT_FOUND') {
+            setShowRegisterPrompt(true);
+          } else {
+            throw e;
           }
-        } else {
-          throw new Error(res.message || 'Invalid OTP');
         }
       }
     } catch (e: any) {
       const detail = e?.response?.data?.message || e?.message || e?.toString() || 'Invalid OTP';
+      console.error(`[Auth] OTP verify failed: ${detail}`);
       setError(detail);
     } finally {
       setLoading(false);
@@ -475,7 +505,7 @@ export function OtpLoginScreen({ navigation }: any) {
                 <GradientButton title={loading ? 'Verifying...' : 'Verify & Login'} onPress={verify} disabled={loading} />
                 <Text 
                   style={[styles.resend, sending && { opacity: 0.5 }]} 
-                  onPress={sending ? undefined : sendOtp}
+                  onPress={sending ? undefined : () => sendOtp(true)}
                 >
                   {sending ? 'Resending OTP...' : 'Resend OTP'}
                 </Text>
@@ -531,12 +561,16 @@ export function ForgotPasswordScreen({ navigation }: any) {
   const sendOtp = async () => {
     if (!identifier) { setError('Please enter your ' + (verType === 'email' ? 'email' : 'phone number')); return; }
     setLoading(true); setError('');
+    console.log(`[Auth] Sending forgot-password OTP via ${verType}: ${identifier}`);
     try {
       await api.auth.sendForgotPasswordOtp(identifier, verType);
+      console.log(`[Auth] Forgot-password OTP sent via ${verType}`);
       setStep('otp');
       setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
     } catch (e: any) {
-      setError(e?.response?.data?.message || 'Failed to send OTP');
+      const msg = e?.response?.data?.message || 'Failed to send OTP';
+      console.error(`[Auth] Forgot-password OTP failed: ${msg}`);
+      setError(msg);
     } finally { setLoading(false); }
   };
 

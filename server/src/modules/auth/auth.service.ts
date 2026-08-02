@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
 import { eq } from 'drizzle-orm';
@@ -6,9 +6,11 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as jwt from 'jsonwebtoken';
 import * as schema from '../../db/schemas';
 import { EmailService } from '../email/email.service';
+import { SmsService } from '../sms/sms.service';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private readonly jwtSecret: string;
   private readonly otpStore: Map<string, { otp: string; expiresAt: number }> = new Map();
 
@@ -16,6 +18,7 @@ export class AuthService {
     @Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>,
     private configService: ConfigService,
     private emailService: EmailService,
+    private smsService: SmsService,
   ) {
     this.jwtSecret = this.configService.get<string>('JWT_SECRET') || '';
     if (!this.jwtSecret) {
@@ -32,18 +35,28 @@ export class AuthService {
   }
 
   async sendEmailOtp(email: string): Promise<{ message: string }> {
+    this.logger.log(`sendEmailOtp called for email: ${email}`);
     const user = await this.findUserByEmail(email);
-    if (!user) throw new UnauthorizedException('USER_NOT_FOUND');
-    if (!user.isActive || user.deletedAt) throw new UnauthorizedException('Account has been deleted or deactivated');
+    if (!user) {
+      this.logger.warn(`sendEmailOtp failed: user not found for email: ${email}`);
+      throw new UnauthorizedException('USER_NOT_FOUND');
+    }
+    if (!user.isActive || user.deletedAt) {
+      this.logger.warn(`sendEmailOtp failed: account inactive/deleted for email: ${email}`);
+      throw new UnauthorizedException('Account has been deleted or deactivated');
+    }
     return this.generateAndSendOtp(`email:${email}`, email);
   }
 
   private async generateAndSendOtp(key: string, email: string): Promise<{ message: string }> {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     this.otpStore.set(key, { otp, expiresAt: Date.now() + 600000 });
+    this.logger.log(`OTP generated for key=${key}: ${otp}`);
     try {
       await this.emailService.sendOtpEmail(email, otp);
-    } catch (e) {
+      this.logger.log(`OTP email sent successfully to ${email}`);
+    } catch (e: any) {
+      this.logger.error(`Failed to send OTP email to ${email}: ${e.message}`);
       this.otpStore.delete(key);
       throw new BadRequestException('Failed to send OTP email');
     }
@@ -51,24 +64,51 @@ export class AuthService {
   }
 
   async sendForgotPasswordOtp(identifier: string, type: 'email' | 'phone'): Promise<{ message: string }> {
+    this.logger.log(`sendForgotPasswordOtp called for ${type}: ${identifier}`);
     const user = type === 'email' ? await this.findUserByEmail(identifier) : await this.findUserByPhone(identifier);
-    if (!user) throw new UnauthorizedException('USER_NOT_FOUND');
-    if (!user.isActive || user.deletedAt) throw new UnauthorizedException('Account has been deleted or deactivated');
+    if (!user) {
+      this.logger.warn(`sendForgotPasswordOtp failed: user not found for ${type}: ${identifier}`);
+      throw new UnauthorizedException('USER_NOT_FOUND');
+    }
+    if (!user.isActive || user.deletedAt) {
+      this.logger.warn(`sendForgotPasswordOtp failed: account inactive/deleted for ${type}: ${identifier}`);
+      throw new UnauthorizedException('Account has been deleted or deactivated');
+    }
 
     if (type === 'email') {
       return this.generateAndSendOtp(`reset:${identifier}`, identifier);
     }
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     this.otpStore.set(`reset:phone:${identifier}`, { otp, expiresAt: Date.now() + 600000 });
+    this.logger.log(`Phone OTP for reset key=reset:phone:${identifier}: ${otp}`);
+
+    const reqId = await this.smsService.sendOtp(identifier, otp);
+    if (reqId) {
+      this.otpStore.set(`reset:phone:${identifier}`, { otp: reqId, expiresAt: Date.now() + 600000 });
+      this.logger.log(`Reset phone OTP reqId stored: ${reqId}`);
+    } else {
+      this.logger.error(`Failed to send forgot-password SMS OTP to ${identifier}`);
+    }
+
     return { message: 'OTP sent to phone' };
   }
 
   async resetPassword(identifier: string, otp: string, newPassword: string, type: 'email' | 'phone' = 'email'): Promise<{ success: boolean }> {
     const key = type === 'email' ? `reset:${identifier}` : `reset:phone:${identifier}`;
     const stored = this.otpStore.get(key);
-    if (!stored || stored.otp !== otp || stored.expiresAt < Date.now()) {
+    if (!stored || stored.expiresAt < Date.now()) {
       throw new UnauthorizedException('Invalid or expired OTP');
     }
+
+    if (type === 'phone') {
+      const verified = await this.smsService.verifyWidgetOtp(stored.otp, otp);
+      if (!verified) {
+        throw new UnauthorizedException('Invalid or expired OTP');
+      }
+    } else if (stored.otp !== otp) {
+      throw new UnauthorizedException('Invalid or expired OTP');
+    }
+
     this.otpStore.delete(key);
 
     if (!newPassword || newPassword.length < 6) {
@@ -87,25 +127,42 @@ export class AuthService {
   }
 
   async sendRegistrationOtp(identifier: string, type: 'email' | 'phone'): Promise<{ message: string }> {
+    this.logger.log(`sendRegistrationOtp called for ${type}: ${identifier}`);
     if (type === 'email') {
       const existing = await this.findUserByEmail(identifier);
-      if (existing) throw new BadRequestException('Email already registered');
+      if (existing) {
+        this.logger.warn(`sendRegistrationOtp failed: email already registered: ${identifier}`);
+        throw new BadRequestException('Email already registered');
+      }
     } else {
       const existing = await this.findUserByPhone(identifier);
-      if (existing) throw new BadRequestException('Phone number already registered');
+      if (existing) {
+        this.logger.warn(`sendRegistrationOtp failed: phone already registered: ${identifier}`);
+        throw new BadRequestException('Phone number already registered');
+      }
       if (!identifier || identifier.length < 10) throw new BadRequestException('Valid phone number is required');
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const key = `reg:${type}:${identifier}`;
     this.otpStore.set(key, { otp, expiresAt: Date.now() + 600000 });
+    this.logger.log(`Registration OTP for key=${key}: ${otp}`);
 
     if (type === 'email') {
       try {
         await this.emailService.sendOtpEmail(identifier, otp);
-      } catch (e) {
+        this.logger.log(`Registration OTP email sent to ${identifier}`);
+      } catch (e: any) {
         this.otpStore.delete(key);
         throw new BadRequestException('Failed to send OTP email');
+      }
+    } else {
+      const reqId = await this.smsService.sendOtp(identifier, otp);
+      if (reqId) {
+        this.otpStore.set(key, { otp: reqId, expiresAt: Date.now() + 600000 });
+        this.logger.log(`Registration phone OTP reqId stored: ${reqId}`);
+      } else {
+        this.logger.error(`Failed to send registration SMS OTP to ${identifier}`);
       }
     }
 
@@ -115,9 +172,19 @@ export class AuthService {
   async verifyRegistrationOtp(identifier: string, type: 'email' | 'phone', otp: string): Promise<{ verified: true }> {
     const key = `reg:${type}:${identifier}`;
     const stored = this.otpStore.get(key);
-    if (!stored || stored.otp !== otp || stored.expiresAt < Date.now()) {
+    if (!stored || stored.expiresAt < Date.now()) {
       throw new UnauthorizedException('Invalid or expired OTP');
     }
+
+    if (type === 'phone') {
+      const verified = await this.smsService.verifyWidgetOtp(stored.otp, otp);
+      if (!verified) {
+        throw new UnauthorizedException('Invalid or expired OTP');
+      }
+    } else if (stored.otp !== otp) {
+      throw new UnauthorizedException('Invalid or expired OTP');
+    }
+
     this.otpStore.delete(key);
     return { verified: true };
   }
@@ -148,20 +215,49 @@ export class AuthService {
     return { exists: !!user };
   }
 
+  async checkEmail(email: string): Promise<{ exists: boolean }> {
+    const user = await this.findUserByEmail(email);
+    return { exists: !!user };
+  }
+
   async sendPhoneOtp(phone: string): Promise<{ message: string }> {
+    this.logger.log(`sendPhoneOtp called for phone: ${phone}`);
     const user = await this.findUserByPhone(phone);
-    if (!user) throw new UnauthorizedException('USER_NOT_FOUND');
-    if (!user.isActive || user.deletedAt) throw new UnauthorizedException('Account has been deleted or deactivated');
+    if (!user) {
+      this.logger.warn(`sendPhoneOtp failed: user not found for phone: ${phone}`);
+      throw new UnauthorizedException('USER_NOT_FOUND');
+    }
+    if (!user.isActive || user.deletedAt) {
+      this.logger.warn(`sendPhoneOtp failed: account inactive/deleted for phone: ${phone}`);
+      throw new UnauthorizedException('Account has been deleted or deactivated');
+    }
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     this.otpStore.set(`phone:${phone}`, { otp, expiresAt: Date.now() + 600000 });
+    this.logger.log(`Phone OTP for key=phone:${phone}: ${otp}`);
+
+    const reqId = await this.smsService.sendOtp(phone, otp);
+    if (reqId) {
+      this.otpStore.set(`phone:${phone}`, { otp: reqId, expiresAt: Date.now() + 600000 });
+      this.logger.log(`Phone OTP reqId stored: ${reqId}`);
+    } else {
+      this.logger.error(`Failed to send SMS OTP to ${phone}`);
+    }
+
     return { message: 'OTP sent to phone' };
   }
 
   async loginWithPhone(phone: string, otp: string): Promise<{ token: string; user: any; astrologer?: any }> {
     const stored = this.otpStore.get(`phone:${phone}`);
-    if (!stored || stored.otp !== otp || stored.expiresAt < Date.now()) {
+    if (!stored || stored.expiresAt < Date.now()) {
       throw new UnauthorizedException('Invalid or expired OTP');
     }
+
+    const reqId = stored.otp;
+    const verified = await this.smsService.verifyWidgetOtp(reqId, otp);
+    if (!verified) {
+      throw new UnauthorizedException('Invalid or expired OTP');
+    }
+
     this.otpStore.delete(`phone:${phone}`);
 
     const user = await this.findUserByPhone(phone);

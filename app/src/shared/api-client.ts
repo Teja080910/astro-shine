@@ -12,6 +12,7 @@ class ApiClient {
     this.client = axios.create({ baseURL: BASE_URL, timeout: 15000 });
     this.client.interceptors.request.use((config) => {
       if (this.token) config.headers.Authorization = `Bearer ${this.token}`;
+      console.log(`[API] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, config.data || '');
       return config;
     });
     this.client.interceptors.response.use(
@@ -71,6 +72,7 @@ class ApiClient {
     login: (d: LoginRequest) => this.post<AuthResponse>('/auth/login', d),
     registerAstrologer: (d: RegisterRequest) => this.post<AuthResponse>('/auth/register-astrologer', d),
     checkPhone: (phone: string) => this.post<{ exists: boolean }>('/auth/check-phone', { phone }),
+    checkEmail: (email: string) => this.post<{ exists: boolean }>('/auth/check-email', { email }),
     phoneLogin: (phone: string, otp: string) => this.post<AuthResponse>('/auth/phone-login', { phone, otp }),
     sendPhoneOtp: (phone: string) => this.post<{ message: string }>('/auth/send-phone-otp', { phone }),
     sendEmailOtp: (email: string) => this.post<{ message: string }>('/auth/send-email-otp', { email }),

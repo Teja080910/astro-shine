@@ -36,6 +36,7 @@ import { AppReleasesModule } from './modules/app-releases/app-releases.module';
 import { VideosModule } from './modules/videos/videos.module';
 import { FileUploadModule } from './modules/file-upload/file-upload.module';
 import { EmailModule } from './modules/email/email.module';
+import { SmsModule } from './modules/sms/sms.module';
 import { ConversationsModule } from './modules/conversations/conversations.module';
 import { AstrologerScheduleModule } from './modules/schedule/schedule.module';
 import { RealtimeModule } from './common/realtime.module';
@@ -84,6 +85,7 @@ import { AppService } from './app.service';
     VideosModule,
     FileUploadModule,
     EmailModule,
+    SmsModule,
     ConversationsModule,
     AstrologerScheduleModule,
     RealtimeModule,
