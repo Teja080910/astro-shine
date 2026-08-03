@@ -72,7 +72,7 @@ function Sidebar() {
   };
 
   return (
-    <aside className="fixed left-5 top-5 bottom-5 w-64 bg-surface/50 border border-card-border backdrop-blur-xl rounded-[28px] flex flex-col p-5 shadow-xl shadow-black/5 z-20 transition-all duration-300">
+    <aside className="fixed left-5 top-5 bottom-5 w-64 backdrop-blur-xl border border-card-border rounded-[28px] flex flex-col p-5 shadow-xl shadow-black/5 z-20 transition-all duration-300">
       <div className="flex justify-between items-center px-2 py-3 mb-6">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 flex items-center justify-center bg-gradient-to-tr from-primary/10 to-accent-gold/10 rounded-xl border border-card-border p-1">
@@ -160,7 +160,7 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
       {/* Main Content Area */}
       <div className="pl-[290px] pr-8 py-6 w-full flex flex-col min-h-screen z-10">
         {/* Modern Page Header */}
-        <header className="flex justify-between items-center mb-8 bg-surface/30 backdrop-blur-md border border-card-border px-6 py-4 rounded-[20px] shadow-sm">
+        <header className="flex justify-between items-center mb-8 backdrop-blur-md border border-card-border px-6 py-4 rounded-[20px] shadow-sm">
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider">Astro Shine</span>
             <span className="text-text-muted text-xs">/</span>
