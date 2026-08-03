@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Put, Param, Body, Query, Req, UseGuards } from '@nestjs/common';
 import { SupportTicketsService } from './support-tickets.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { RoleGuard, Roles } from '../../common/guards/role.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @Controller('support')
@@ -41,6 +42,27 @@ export class SupportTicketsController {
   @Post('tickets/:id/replies')
   @UseGuards(AuthGuard)
   async addReply(@Param('id') id: string, @Body() body: any, @Req() req: any) {
-    return this.service.addReply({ ...body, ticketId: id, userId: req.userId });
+    return this.service.addReply({ ...body, ticketId: id, senderId: req.userId, senderRole: req.userRole || 'user' });
+  }
+
+  // Admin endpoints
+  @Get('admin/tickets')
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles('admin')
+  async adminFindAll(@Query('status') status?: string) {
+    return this.service.findAll(status);
+  }
+
+  @Put('tickets/:id/status')
+  @UseGuards(AuthGuard)
+  async updateStatus(@Param('id') id: string, @Body('status') status: string) {
+    return this.service.updateStatus(id, status);
+  }
+
+  @Put('tickets/:id/priority')
+  @UseGuards(AuthGuard, RoleGuard)
+  @Roles('admin')
+  async updatePriority(@Param('id') id: string, @Body('priority') priority: string) {
+    return this.service.updatePriority(id, priority);
   }
 }

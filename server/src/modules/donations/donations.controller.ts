@@ -1,11 +1,23 @@
-import { Controller, Get, Post, Body, UseGuards, Req, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { DonationsService } from './donations.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @Controller('donations')
 @UseGuards(AuthGuard)
 export class DonationsController {
   constructor(private readonly service: DonationsService) {}
+
+  @Get()
+  async findAll(@Query('userId') userId?: string) {
+    if (userId) return this.service.findByUserId(userId);
+    return this.service.findAll();
+  }
+
+  @Post()
+  async create(@Body() body: { amount: string; transactionId?: string; message?: string }, @CurrentUser() userId: string) {
+    return this.service.create({ ...body, userId });
+  }
 
   @Get('stats')
   async getStats(@Req() req: any) {

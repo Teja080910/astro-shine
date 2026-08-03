@@ -23,6 +23,12 @@ export class AuthController {
     return this.authService.checkPhone(phone);
   }
 
+  @Post('check-email')
+  async checkEmail(@Body('email') email: string) {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new BadRequestException('Valid email is required');
+    return this.authService.checkEmail(email);
+  }
+
   @Post('send-phone-otp')
   async sendPhoneOtp(@Body('phone') phone: string) {
     if (!phone || phone.length < 10) throw new BadRequestException('Valid phone number is required');

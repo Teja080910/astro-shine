@@ -74,12 +74,14 @@ export function MuhuratScreen() {
 
   const renderItem = ({ item }: { item: MuhuratItem }) => (
     <GlassCard style={styles.card} key={item.id}>
-      <View style={styles.cardHeader}>
-        <View style={styles.titleContainer}>
-          <Ionicons name="time" size={18} color={colors.primary} style={{ marginRight: 6 }} />
-          <Text style={[typography.cardTitle, { color: colors.textPrimary, fontWeight: '700' }]}>{item.name}</Text>
+      <View style={{ marginBottom: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+          <Ionicons name="time" size={18} color={colors.primary} />
+          <Text style={[typography.cardTitle, { color: colors.textPrimary, fontWeight: '700', flex: 1 }]}>{item.name}</Text>
         </View>
-        <Chip label={item.categoryName || 'Timing'} selected />
+        <View style={{ flexDirection: 'row' }}>
+          <Chip label={item.categoryName || 'Timing'} selected style={{ marginBottom: 0, marginRight: 0 }} />
+        </View>
       </View>
 
       <Text style={[typography.body, { color: colors.textSecondary, marginBottom: 12 }]}>
@@ -110,10 +112,10 @@ export function MuhuratScreen() {
 
   return (
     <ScreenWrapper>
-      <View style={styles.header}>
-        <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>Muhurat Timings</Text>
-        <Text style={[typography.body, { color: colors.textSecondary }]}>Browse auspicious dates and timings</Text>
-      </View>
+      <View style={{ flex: 1, width: '100%', maxWidth: 600, alignSelf: 'center' }}>
+        <View style={styles.header}>
+          <Text style={[typography.body, { color: colors.textSecondary }]}>Browse auspicious dates and timings</Text>
+        </View>
 
       {/* Date Filters */}
       <View style={[styles.filterContainer, { borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }]}>
@@ -180,6 +182,7 @@ export function MuhuratScreen() {
           }
         />
       )}
+      </View>
     </ScreenWrapper>
   );
 }
@@ -204,9 +207,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   categoriesContainer: { marginBottom: 16, height: 40 },
-  listContainer: { paddingHorizontal: 16, paddingBottom: 120 },
+  listContainer: { paddingHorizontal: 16, paddingBottom: 100 },
   card: { padding: 16, marginBottom: 16 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 8 },
   titleContainer: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   metaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   metaItem: { flexDirection: 'row', alignItems: 'center', marginRight: 16 },

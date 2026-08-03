@@ -36,12 +36,14 @@ import { AppReleasesModule } from './modules/app-releases/app-releases.module';
 import { VideosModule } from './modules/videos/videos.module';
 import { FileUploadModule } from './modules/file-upload/file-upload.module';
 import { EmailModule } from './modules/email/email.module';
+import { SmsModule } from './modules/sms/sms.module';
 import { ConversationsModule } from './modules/conversations/conversations.module';
 import { AstrologerScheduleModule } from './modules/schedule/schedule.module';
 import { RealtimeModule } from './common/realtime.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { MuhuratCategoriesModule } from './modules/muhurat-categories/muhurat-categories.module';
 import { MuhuratModule } from './modules/muhurat/muhurat.module';
+import { AstrologyModule } from './modules/astrology/astrology.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -83,6 +85,7 @@ import { AppService } from './app.service';
     VideosModule,
     FileUploadModule,
     EmailModule,
+    SmsModule,
     ConversationsModule,
     AstrologerScheduleModule,
     RealtimeModule,
@@ -90,6 +93,7 @@ import { AppService } from './app.service';
     PaymentsModule,
     MuhuratCategoriesModule,
     MuhuratModule,
+    AstrologyModule,
   ],
   controllers: [AppController],
   providers: [

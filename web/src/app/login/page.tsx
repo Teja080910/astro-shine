@@ -13,7 +13,7 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, token } = useAuthStore();
+  const { login, token, hydrated } = useAuthStore();
   const router = useRouter();
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
@@ -33,8 +33,8 @@ function LoginForm() {
   };
 
   useEffect(() => {
-    if (token) router.replace('/dashboard');
-  }, [token, router]);
+    if (hydrated && token) router.replace('/dashboard');
+  }, [hydrated, token, router]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -66,6 +66,11 @@ function LoginForm() {
       </button>
 
       {/* Login Card */}
+      {!hydrated ? (
+        <div className="w-full max-w-md flex items-center justify-center py-20">
+          <div className="w-10 h-10 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+        </div>
+      ) : (
       <div className="w-full max-w-md bg-card-bg border border-card-border backdrop-blur-xl rounded-[28px] p-10 shadow-2xl relative z-10 transition-all duration-300">
         
         {/* Header Logo & Subtitle */}
@@ -152,6 +157,7 @@ function LoginForm() {
           </button>
         </form>
       </div>
+      )}
     </div>
   );
 }

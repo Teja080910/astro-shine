@@ -10,9 +10,10 @@ import type { User } from '@astro-shine/shared-types';
 export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [selected, setSelected] = useState<User | null>(null);
 
-  useEffect(() => { api.get<User[]>('/users').then(setUsers).finally(() => setLoading(false)); }, []);
+  useEffect(() => { api.get<User[]>('/users').then(setUsers).catch((e) => setError(e.message || 'Failed to load users')).finally(() => setLoading(false)); }, []);
 
   const handleToggleActive = async (user: User) => {
     const updated = await api.put<User>(`/users/${user.id}`, { isActive: !user.isActive });
@@ -27,7 +28,12 @@ export default function UsersPage() {
         <span className="text-text-secondary">{users.length} total</span>
       </div>
       <Table headers={['Name', 'Email', 'Phone', 'Status', 'Joined', '']} emptyMessage="No users found">
-        {users.map(u => (
+        {loading ? (
+          <tr><td colSpan={6} className="px-4 py-12 text-center text-text-secondary">Loading users...</td></tr>
+        ) : error ? (
+          <tr><td colSpan={6} className="px-4 py-3 text-center text-red-400">{error}</td></tr>
+        ) : (
+          users.map(u => (
           <tr key={u.id} className="border-b border-divider hover:bg-surface-light/50">
             <td className="px-4 py-3 text-text-primary font-medium">{u.name}</td>
             <td className="px-4 py-3 text-text-secondary">{u.email}</td>
@@ -36,7 +42,7 @@ export default function UsersPage() {
             <td className="px-4 py-3 text-text-muted text-sm">{formatDate(u.createdAt)}</td>
             <td className="px-4 py-3"><button onClick={() => setSelected(u)} className="text-primary-light hover:underline text-sm">View</button></td>
           </tr>
-        ))}
+          )))}
       </Table>
 
       <CustomModal open={!!selected} onClose={() => setSelected(null)} title="User Details">

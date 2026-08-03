@@ -37,9 +37,13 @@ export class UsersService {
   }
 
   async update(id: string, data: Partial<typeof schema.users.$inferInsert>) {
+    const cleanedData = { ...data };
+    if (cleanedData.dateOfBirth === '') {
+      cleanedData.dateOfBirth = null;
+    }
     const [user] = await this.db
       .update(schema.users)
-      .set({ ...data, updatedAt: new Date() })
+      .set({ ...cleanedData, updatedAt: new Date() })
       .where(eq(schema.users.id, id))
       .returning();
     return user;

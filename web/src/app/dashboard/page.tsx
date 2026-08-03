@@ -105,8 +105,8 @@ export default function DashboardPage() {
           </div>
           {stats?.pendingAstrologers && stats.pendingAstrologers.length > 0 ? (
             <Table headers={['Name', 'Experience', 'Status']}>
-              {stats.pendingAstrologers.map(a => (
-                <tr key={a.id} className="border-b border-divider hover:bg-surface-light/30 transition-colors">
+              {stats.pendingAstrologers.map((a, i) => (
+                <tr key={a.userId || a.id || `${a.name}-${i}`} className="border-b border-divider hover:bg-surface-light/30 transition-colors">
                   <td className="px-4 py-3.5 text-text-primary font-bold text-xs">{a.name}</td>
                   <td className="px-4 py-3.5 text-text-secondary text-xs font-medium">{a.experience} yrs</td>
                   <td className="px-4 py-3.5"><Badge variant="warning">Pending</Badge></td>

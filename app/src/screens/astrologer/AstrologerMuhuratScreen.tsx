@@ -75,10 +75,20 @@ export function AstrologerMuhuratScreen() {
     }
   }, [isFocused, loadData]);
 
-  const startNew = () => {
+  const startNew = async () => {
+    let cats = categories;
+    if (cats.length === 0) {
+      try {
+        cats = await api.muhuratCategories.list();
+        cats = cats.filter((c) => c.isActive);
+        setCategories(cats);
+      } catch (e) {
+        console.error('Failed to load categories:', e);
+      }
+    }
     setEditingItem(null);
     setFormName('');
-    setSelectedCatId(categories[0]?.id || '');
+    setSelectedCatId(cats[0]?.id || '');
     setFormDate(new Date());
     setFormTime(new Date());
     setFormDesc('');
@@ -259,11 +269,17 @@ export function AstrologerMuhuratScreen() {
           />
 
           <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Category</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-            {categories.map((c) => (
-              <Chip key={c.id} label={c.name} selected={selectedCatId === c.id} onPress={() => setSelectedCatId(c.id)} />
-            ))}
-          </ScrollView>
+          {categories.length === 0 ? (
+            <Text style={[typography.body, { color: colors.textMuted, marginBottom: 16 }]}>
+              No categories available. An admin must create categories first.
+            </Text>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+              {categories.map((c) => (
+                <Chip key={c.id} label={c.name} selected={selectedCatId === c.id} onPress={() => setSelectedCatId(c.id)} />
+              ))}
+            </ScrollView>
+          )}
 
           <View style={styles.dateTimeRow}>
             <View style={{ flex: 1, marginRight: 8 }}>
@@ -339,7 +355,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  listContainer: { paddingHorizontal: 16, paddingBottom: 120 },
+  listContainer: { paddingHorizontal: 16, paddingBottom: 100 },
   card: { padding: 16, marginBottom: 16 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   titleContainer: { flexDirection: 'row', alignItems: 'center', flex: 1 },

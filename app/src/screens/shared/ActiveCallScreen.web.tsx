@@ -3,11 +3,13 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors } from '../../shared';
 import { Ionicons } from '@expo/vector-icons';
 import { useCall } from '../../context/CallContext';
-import { useAgora } from '../../shared/useAgora';
+import { useLiveKit } from '../../shared/useLiveKit';
 
 export function ActiveCallScreen() {
   const { callData, callState, endCall } = useCall();
-  const { joinChannel, leaveChannel, toggleMute, toggleSpeaker, toggleCamera, switchCamera, isMuted, isSpeakerOn, isVideoEnabled, isCameraFront, remoteUid, isRemoteMuted, isRemoteVideoMuted } = useAgora();
+  const { joinChannel, leaveChannel, toggleMute, toggleSpeaker, toggleCamera, switchCamera, isMuted, isSpeakerOn, isVideoEnabled, isCameraFront, remoteUid, isRemoteMuted, isRemoteVideoMuted, remoteVideoTrack, localVideoTrack } = useLiveKit();
+  const remoteVideoRef = useRef<any>(null);
+  const localVideoRef = useRef<any>(null);
   const [seconds, setSeconds] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const joinedRef = useRef(false);
@@ -18,7 +20,7 @@ export function ActiveCallScreen() {
   useEffect(() => {
     if (callState === 'active' && callData?.channel && callData?.token && !joinedRef.current) {
       joinedRef.current = true;
-      joinChannel(callData.channel, callData.token, callData.uid, callData.type);
+      joinChannel(callData.channel, callData.token, 0, callData.type);
     }
   }, [callState, callData]);
 
@@ -48,6 +50,30 @@ export function ActiveCallScreen() {
     endCall();
   };
 
+  useEffect(() => {
+    if (!remoteVideoRef.current || !remoteVideoTrack) return;
+    const videoEl = remoteVideoRef.current;
+    try {
+      if (remoteVideoTrack.mediaStream) { videoEl.srcObject = remoteVideoTrack.mediaStream; }
+      else if (remoteVideoTrack.mediaStreamTrack) {
+        const stream = new MediaStream([remoteVideoTrack.mediaStreamTrack]);
+        videoEl.srcObject = stream;
+      }
+    } catch {}
+  }, [remoteVideoTrack]);
+
+  useEffect(() => {
+    if (!localVideoRef.current || !localVideoTrack) return;
+    const videoEl = localVideoRef.current;
+    try {
+      if (localVideoTrack.mediaStream) { videoEl.srcObject = localVideoTrack.mediaStream; }
+      else if (localVideoTrack.mediaStreamTrack) {
+        const stream = new MediaStream([localVideoTrack.mediaStreamTrack]);
+        videoEl.srcObject = stream;
+      }
+    } catch {}
+  }, [localVideoTrack]);
+
   if (callState === 'idle') return null;
 
   return (
@@ -58,10 +84,14 @@ export function ActiveCallScreen() {
             <View style={styles.remoteVideo}>
               {remoteUid && !isRemoteVideoMuted ? (
                 <>
-                  <View style={[StyleSheet.absoluteFill, { backgroundColor: '#1C1C1E', justifyContent: 'center', alignItems: 'center' }]}>
-                    <Ionicons name="videocam" size={48} color={colors.primary} />
-                    <Text style={{ color: colors.white, marginTop: 8, fontSize: 12 }}>Remote Web Stream</Text>
-                  </View>
+                  {remoteVideoTrack ? (
+                    <video ref={remoteVideoRef} autoPlay playsInline style={StyleSheet.absoluteFill as any} />
+                  ) : (
+                    <View style={[StyleSheet.absoluteFill, { backgroundColor: '#1C1C1E', justifyContent: 'center', alignItems: 'center' }]}>
+                      <Ionicons name="videocam" size={48} color={colors.primary} />
+                      <Text style={{ color: colors.white, marginTop: 8, fontSize: 12 }}>Remote Web Stream</Text>
+                    </View>
+                  )}
                   <View style={styles.remoteNameContainer}>
                     <Text style={styles.remoteVideoName}>{otherName}</Text>
                     {isRemoteMuted && (
@@ -86,13 +116,13 @@ export function ActiveCallScreen() {
               )}
             </View>
             <View style={[styles.localVideo, { opacity: isVideoEnabled ? 1 : 0.4 }]}>
-              {isVideoEnabled ? (
+              {isVideoEnabled && localVideoTrack ? (
+                <video ref={localVideoRef} autoPlay playsInline muted style={{ flex: 1 } as any} />
+              ) : (
                 <View style={[StyleSheet.absoluteFill, { backgroundColor: '#2C2C2E', justifyContent: 'center', alignItems: 'center' }]}>
                   <Ionicons name="person" size={24} color={colors.white} />
-                  <Text style={{ color: colors.textMuted, fontSize: 8, marginTop: 4 }}>Local Web Stream</Text>
+                  <Text style={{ color: colors.textMuted, fontSize: 8, marginTop: 4 }}>You</Text>
                 </View>
-              ) : (
-                <Ionicons name="person" size={24} color={colors.white} />
               )}
             </View>
           </View>

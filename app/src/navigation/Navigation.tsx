@@ -2,14 +2,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { TouchableOpacity, View, Image, ActivityIndicator } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { FloatingBottomBar, colors } from '../shared';
+import { api } from '../shared/api-client';
 
-import { AstrologerConsultationScreen, AstrologerHomeScreen, AstrologerNotificationsScreen, AstrologerProfileScreen, AstrologerReviewsScreen, AstrologerWalletScreen, AstrologerWithdrawalScreen, AstrologerMuhuratScreen } from '../screens/astrologer/AstrologerScreens';
+import { AstrologerConsultationScreen, AstrologerGiftScreen, AstrologerHomeScreen, AstrologerNotificationsScreen, AstrologerProfileScreen, AstrologerReviewsScreen, AstrologerWalletScreen, AstrologerWithdrawalScreen, AstrologerMuhuratScreen } from '../screens/astrologer/AstrologerScreens';
 import { LoginScreen, OtpLoginScreen, RegisterScreen, ForgotPasswordScreen } from '../screens/auth/AuthScreens';
 import { OnboardingScreen } from '../screens/auth/OnboardingScreen';
+import { KycGateScreen } from '../screens/shared/KycGateScreen';
 import {
   AboutAppScreen,
   AstrologerCommissionScreen,
@@ -17,15 +19,21 @@ import {
   AstrologerGoLiveScreen,
   AstrologerRequestsScreen, AstrologerScheduleScreen,
   BlogsScreen,
+  BlogDetailScreen,
+  CreateBlogScreen,
   DonationScreen,
   EditProfileScreen,
   MandirPoojaScreen,
+  MandirPoojaDetailScreen,
   NotificationsScreen,
   OrderHistoryScreen,
   PanchangScreen,
   PrivacyPolicyScreen,
   ReportScreen,
   SupportScreen,
+  TicketDetailScreen,
+  AdminSupportScreen,
+  AdminTicketDetailScreen,
   TermsConditionsScreen,
   VideosScreen,
 } from '../screens/shared/SharedScreens';
@@ -34,7 +42,7 @@ import { PaymentSuccessScreen } from '../screens/shared/PaymentSuccessScreen';
 import { PaymentFailureScreen } from '../screens/shared/PaymentFailureScreen';
 import { ChatListScreen } from '../screens/user/ChatListScreen';
 import { ChatRoomScreen } from '../screens/user/ChatRoomScreen';
-import { AstrologerDetailScreen, AstrologerListScreen, KundliScreen, MatchmakingScreen, ProfileScreen, ShopScreen, UserHomeScreen, WalletScreen, MuhuratScreen } from '../screens/user/UserScreens';
+import { AstrologerDetailScreen, AstrologerListScreen, GiftScreen, KundliScreen, MatchmakingScreen, ProfileScreen, ShopScreen, UserHomeScreen, WalletScreen, MuhuratScreen } from '../screens/user/UserScreens';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -94,7 +102,6 @@ function AstrologerTabs() {
   const { theme } = useAuth();
   const tabs = [
     { key: 'Home', icon: 'home-outline', label: 'Home' },
-    { key: 'Requests', icon: 'people-outline', label: 'Requests' },
     { key: 'Muhurat', icon: 'time-outline', label: 'Muhurat' },
     { key: 'Wallet', icon: 'wallet-outline', label: 'Wallet' },
     { key: 'Chat', icon: 'chatbubbles-outline', label: 'Chat' },
@@ -114,13 +121,38 @@ function AstrologerTabs() {
       tabBar={(props) => <FloatingBottomBar tabs={tabs} activeTab={props.state.routeNames[props.state.index]} onTabPress={(key) => props.navigation.navigate(key)} />}
     >
       <Tab.Screen name="Home" component={AstrologerHomeScreen} />
-      <Tab.Screen name="Requests" component={AstrologerRequestsScreen} />
       <Tab.Screen name="Muhurat" component={AstrologerMuhuratScreen} />
       <Tab.Screen name="Wallet" component={AstrologerWalletScreen} />
       <Tab.Screen name="Chat" component={ChatListScreen} />
       <Tab.Screen name="Profile" component={AstrologerProfileScreen} />
     </Tab.Navigator>
   );
+}
+
+function AstrologerMainGate() {
+  const { astrologer, updateUser } = useAuth();
+  const [initialCheck, setInitialCheck] = useState(!astrologer?.verificationStatus);
+
+  useEffect(() => {
+    if (!astrologer?.userId) return;
+    if (astrologer.verificationStatus) {
+      if (initialCheck) setInitialCheck(false);
+      return;
+    }
+    api.astrologers.get(astrologer.userId)
+      .then(fresh => updateUser({ ...astrologer, ...fresh }))
+      .catch(() => {})
+      .finally(() => setInitialCheck(false));
+  }, [astrologer?.userId]);
+
+  if (initialCheck) return (
+    <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
+      <ActivityIndicator size="large" color={colors.primaryLight} />
+    </View>
+  );
+
+  if (astrologer?.verificationStatus === 'approved') return <AstrologerTabs />;
+  return <KycGateScreen />;
 }
 
 export function Navigation() {
@@ -165,10 +197,14 @@ export function Navigation() {
             <Stack.Screen name="Videos" component={VideosScreen} options={headerOpts('Videos')} />
             <Stack.Screen name="Notifications" component={NotificationsScreen} options={headerOpts('Notifications')} />
             <Stack.Screen name="Blogs" component={BlogsScreen} options={headerOpts('Blogs')} />
+            <Stack.Screen name="BlogDetail" component={BlogDetailScreen} options={headerOpts('Blog')} />
             <Stack.Screen name="Support" component={SupportScreen} options={headerOpts('Support')} />
+            <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={headerOpts('Ticket')} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} options={headerOpts('Edit Profile')} />
             <Stack.Screen name="MandirPooja" component={MandirPoojaScreen} options={headerOpts('Mandir Pooja')} />
+            <Stack.Screen name="MandirPoojaDetail" component={MandirPoojaDetailScreen} options={headerOpts('Pooja Details')} />
             <Stack.Screen name="Donation" component={DonationScreen} options={headerOpts('Donation')} />
+            <Stack.Screen name="Gifts" component={GiftScreen} options={headerOpts('Gifts')} />
             <Stack.Screen name="Report" component={ReportScreen} options={headerOpts('Report')} />
             <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={headerOpts('Privacy Policy')} />
             <Stack.Screen name="TermsConditions" component={TermsConditionsScreen} options={headerOpts('Terms & Conditions')} />
@@ -180,13 +216,17 @@ export function Navigation() {
           </>
         ) : (
           <>
-            <Stack.Screen name="Main" component={AstrologerTabs} />
+            <Stack.Screen name="Main" component={AstrologerMainGate} />
             <Stack.Screen name="Schedule" component={AstrologerScheduleScreen} options={headerOpts('Schedule')} />
             <Stack.Screen name="Documents" component={AstrologerDocumentsScreen} options={headerOpts('Documents')} />
             <Stack.Screen name="CommissionLogs" component={AstrologerCommissionScreen} options={headerOpts('Commissions')} />
             <Stack.Screen name="GoLive" component={AstrologerGoLiveScreen} options={headerOpts('Go Live')} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} options={headerOpts('Edit Profile')} />
             <Stack.Screen name="Support" component={SupportScreen} options={headerOpts('Support')} />
+            <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={headerOpts('Ticket')} />
+            <Stack.Screen name="Blogs" component={BlogsScreen} options={headerOpts('Blogs')} />
+            <Stack.Screen name="BlogDetail" component={BlogDetailScreen} options={headerOpts('Blog')} />
+            <Stack.Screen name="CreateBlog" component={CreateBlogScreen} options={headerOpts('Create Blog')} />
             <Stack.Screen name="Notifications" component={AstrologerNotificationsScreen} options={headerOpts('Notifications')} />
             <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={headerOpts('Privacy Policy')} />
             <Stack.Screen name="TermsConditions" component={TermsConditionsScreen} options={headerOpts('Terms & Conditions')} />
@@ -195,11 +235,15 @@ export function Navigation() {
             <Stack.Screen name="Withdrawals" component={AstrologerWithdrawalScreen} options={headerOpts('Withdrawals')} />
             <Stack.Screen name="Reviews" component={AstrologerReviewsScreen} options={headerOpts('Ratings & Reviews')} />
             <Stack.Screen name="Consultations" component={AstrologerConsultationScreen} options={headerOpts('Consultation History')} />
+            <Stack.Screen name="Gifts" component={AstrologerGiftScreen} options={headerOpts('Gifts')} />
             <Stack.Screen name="Payment" component={PaymentScreen} options={{ headerShown: false }} />
             <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} options={{ headerShown: false }} />
             <Stack.Screen name="PaymentFailure" component={PaymentFailureScreen} options={{ headerShown: false }} />
           </>
         )}
+        {/* Admin-only screens accessible from any role */}
+        <Stack.Screen name="AdminSupport" component={AdminSupportScreen} options={headerOpts('Support Tickets')} />
+        <Stack.Screen name="AdminTicketDetail" component={AdminTicketDetailScreen} options={headerOpts('Ticket')} />
       </Stack.Navigator>
     </NavigationContainer>
   );

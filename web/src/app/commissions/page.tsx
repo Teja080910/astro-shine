@@ -8,6 +8,8 @@ import type { Commission } from '@astro-shine/shared-types';
 
 export default function CommissionsPage() {
   const [data, setData] = useState<Commission[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [selected, setSelected] = useState<Commission | null>(null);
   
   // Form fields
@@ -22,7 +24,8 @@ export default function CommissionsPage() {
   useEffect(() => {
     api.get<Commission[]>('/commissions')
       .then(setData)
-      .catch((e) => console.error('Failed to load commissions:', e));
+      .catch((e) => setError(e.message || 'Failed to load commissions'))
+      .finally(() => setLoading(false));
   }, []);
 
   const openEdit = (c: Commission) => {
@@ -74,7 +77,12 @@ export default function CommissionsPage() {
         <button onClick={() => openEdit({} as Commission)} className="gradient-btn">Add Commission</button>
       </div>
       <Table headers={['Astrologer', 'Type', 'Value', 'Min Amount', 'Max Cap', 'Status', '']} emptyMessage="No commissions found">
-        {data.map(c => (
+        {loading ? (
+          <tr><td colSpan={7} className="px-4 py-12 text-center text-text-secondary">Loading commissions...</td></tr>
+        ) : error ? (
+          <tr><td colSpan={7} className="px-4 py-3 text-center text-red-400">{error}</td></tr>
+        ) : (
+          data.map(c => (
           <tr key={c.id} className="border-b border-divider hover:bg-surface-light/50">
             <td className="px-4 py-3 text-text-primary">{(c as any).astrologerName || c.astrologerId?.slice(0, 12) + '...'}</td>
             <td className="px-4 py-3 text-text-secondary">{c.type}</td>
@@ -84,7 +92,8 @@ export default function CommissionsPage() {
             <td className="px-4 py-3">{c.isActive ? <Badge variant="success">Active</Badge> : <Badge variant="danger">Inactive</Badge>}</td>
             <td className="px-4 py-3"><button onClick={() => openEdit(c)} className="text-primary-light hover:underline text-sm font-medium">Edit</button></td>
           </tr>
-        ))}
+          ))
+        )}
       </Table>
 
       <CustomModal open={!!selected} onClose={() => setSelected(null)} title={selected?.id ? 'Edit Commission' : 'Add Commission'}>

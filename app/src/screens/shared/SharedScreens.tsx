@@ -1,17 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl } from 'react-native';
-import { useIsFocused } from '@react-navigation/native';
-import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, colors, typography, radii, shadows } from '../../shared';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
+import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, CustomModal, colors, typography, radii, shadows } from '../../shared';
 import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
-import type { Blog, Notification, SupportTicket, NewsItem, Video, PanchangRecord, CommissionLog } from '../../shared/types';
-import { useNavigation } from '@react-navigation/native';
+import type { Blog, MandirPooja, Notification, PoojaBooking, SupportTicket, TicketReply, NewsItem, Video, PanchangRecord, CommissionLog } from '../../shared/types';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
 import * as DocumentPicker from 'expo-document-picker';
 
 function SectionTitle({ title }: { title: string }) {
-  return <Text style={[typography.pageTitle, { marginBottom: 16 }]}>{title}</Text>;
+  return null;
 }
 
 function to12h(t: string): string {
@@ -113,15 +112,33 @@ export function VideosScreen() {
 }
 
 // Blogs with data
-export function BlogsScreen() {
+export function BlogsScreen({ navigation }: any) {
   const isFocused = useIsFocused();
+  const { blogVersion } = useChat();
+  const { role } = useAuth();
   const [blogs, setBlogs] = useState<Blog[]>([]);
-  useEffect(() => { if (isFocused) api.blogs.list().then(setBlogs).catch(() => {}); }, [isFocused]);
+  useEffect(() => { if (isFocused) api.blogs.list({ published: 'true' }).then(setBlogs).catch(() => {}); }, [isFocused, blogVersion]);
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Blogs" />
+      {(role === 'astrologer' || role === 'admin') && (
+        <GradientButton
+          title="Create Blog"
+          onPress={() => navigation.navigate('CreateBlog')}
+          style={{ marginBottom: 16 }}
+        />
+      )}
       {blogs.length === 0 ? <EmptyState icon={<Ionicons name="newspaper-outline" size={48} color={colors.textMuted} />} title="No blogs yet" /> :
-        blogs.map(b => <GlassCard key={b.id} style={{ marginBottom: 12 }}><Text style={typography.cardTitle}>{b.title}</Text><Text style={typography.body} numberOfLines={3}>{b.excerpt || b.content?.slice(0, 150)}</Text><Text style={typography.caption}>{b.tags?.join(', ')}</Text></GlassCard>)}
+        blogs.map(b => (
+          <TouchableOpacity key={b.id} onPress={() => navigation.navigate('BlogDetail', { blogId: b.id })} style={{ marginBottom: 12 }}>
+            <GlassCard>
+              <Text style={typography.cardTitle}>{b.title}</Text>
+              <Text style={typography.body} numberOfLines={3}>{b.excerpt || b.content?.slice(0, 150)}</Text>
+              {b.tags?.length > 0 && <Text style={typography.caption}>{b.tags.join(', ')}</Text>}
+            </GlassCard>
+          </TouchableOpacity>
+        ))}
+      <View style={{ height: 40 }} />
     </ScreenWrapper>
   );
 }
@@ -130,13 +147,14 @@ export function BlogsScreen() {
 export function NotificationsScreen({ route }: any) {
   const isFocused = useIsFocused();
   const { user, astrologer } = useAuth();
+  const { notificationVersion } = useChat();
   const [notifs, setNotifs] = useState<Notification[]>([]);
 
   useEffect(() => {
     if (!isFocused) return;
     const uid = route?.params?.userId || user?.id || astrologer?.userId;
     if (uid) api.notifications.list({ userId: uid }).then(setNotifs).catch(() => {});
-  }, [isFocused, route?.params?.userId, user?.id, astrologer?.userId]);
+  }, [isFocused, route?.params?.userId, user?.id, astrologer?.userId, notificationVersion]);
 
   const markRead = async (id: string) => {
     try { await api.notifications.markRead(id); setNotifs(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n)); } catch {}
@@ -156,7 +174,12 @@ export function NotificationsScreen({ route }: any) {
                     <Ionicons name={n.type === 'system' ? 'settings-outline' : n.type === 'promotional' ? 'megaphone-outline' : 'cash-outline'} size={20} color={n.isRead ? colors.textMuted : colors.primaryLight} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[typography.cardTitle, { fontSize: 14 }]}>{n.title}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                      <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: n.type === 'system' ? colors.primary + '20' : n.type === 'promotional' ? '#9333EA30' : n.type === 'transactional' ? '#10B98130' : '#F59E0B30' }}>
+                        <Text style={{ fontSize: 9, fontWeight: '700', color: n.type === 'system' ? colors.primaryLight : n.type === 'promotional' ? '#A855F7' : n.type === 'transactional' ? '#10B981' : '#F59E0B', textTransform: 'uppercase' }}>{n.type}</Text>
+                      </View>
+                      <Text style={[typography.cardTitle, { fontSize: 14, flex: 1 }]}>{n.title}</Text>
+                    </View>
                     <Text style={[typography.body, { fontSize: 13, marginTop: 2 }]}>{n.body}</Text>
                     <Text style={[typography.caption, { marginTop: 4 }]}>{new Date(n.createdAt).toLocaleDateString()}</Text>
                   </View>
@@ -176,6 +199,7 @@ export function EditProfileScreen() {
   const navigation = useNavigation<any>();
   const { user, astrologer, role, updateUser } = useAuth();
   const profile = role === 'astrologer' ? astrologer : user;
+  const scrollViewRef = useRef<ScrollView>(null);
   
   const [name, setName] = useState(profile?.name || '');
   const [phone, setPhone] = useState(profile?.phone || '');
@@ -183,6 +207,24 @@ export function EditProfileScreen() {
   const [dateOfBirth, setDateOfBirth] = useState((profile as any)?.dateOfBirth ? (profile as any).dateOfBirth.split('T')[0] : '');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSubscription = Keyboard.addListener(showEvent, () => {
+      setKeyboardOpen(true);
+    });
+    const hideSubscription = Keyboard.addListener(hideEvent, () => {
+      setKeyboardOpen(false);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   // Astrologer-specific fields
   const [bio, setBio] = useState((profile as any)?.bio || '');
@@ -245,233 +287,233 @@ export function EditProfileScreen() {
   };
 
   return (
-    <ScreenWrapper scroll>
-      <SectionTitle title="Edit Profile" />
-      <View style={{ marginBottom: 14 }}>
-        <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Name</Text>
-        <TextInput
-          style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-          value={name}
-          onChangeText={setName}
-          placeholder="Your name"
-          placeholderTextColor={colors.textMuted}
-        />
-      </View>
-      
-      {role !== 'admin' && (
-        <View style={{ marginBottom: 14 }}>
-          <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Phone</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-            value={phone}
-            onChangeText={setPhone}
-            placeholder="Phone number"
-            placeholderTextColor={colors.textMuted}
-            keyboardType="phone-pad"
-          />
-        </View>
-      )}
-
-      {role !== 'admin' && (
-        <>
+    <ScreenWrapper noPadding>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        <ScrollView
+          ref={scrollViewRef}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: keyboardOpen ? 300 : 20 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={{ width: '100%', maxWidth: 600, alignSelf: 'center', padding: 16 }}>
+            <SectionTitle title="Edit Profile" />
           <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Gender</Text>
-            <View style={{ flexDirection: 'row', gap: 10 }}>
-              <TouchableOpacity
-                onPress={() => setGender('male')}
-                style={{
-                  flex: 1,
-                  height: 48,
-                  borderRadius: radii.input,
-                  borderWidth: 1,
-                  borderColor: gender === 'male' ? colors.primary : colors.cardBorder,
-                  backgroundColor: gender === 'male' ? colors.primary + '15' : colors.surfaceLight,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Text style={{ color: gender === 'male' ? colors.primaryLight : colors.textPrimary, fontWeight: '600' }}>Male</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setGender('female')}
-                style={{
-                  flex: 1,
-                  height: 48,
-                  borderRadius: radii.input,
-                  borderWidth: 1,
-                  borderColor: gender === 'female' ? colors.primary : colors.cardBorder,
-                  backgroundColor: gender === 'female' ? colors.primary + '15' : colors.surfaceLight,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Text style={{ color: gender === 'female' ? colors.primaryLight : colors.textPrimary, fontWeight: '600' }}>Female</Text>
-              </TouchableOpacity>
+            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Name</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+              value={name}
+              onChangeText={setName}
+              placeholder="Your name"
+              placeholderTextColor={colors.textMuted}
+            />
+          </View>
+          
+          {role !== 'admin' && (
+            <View style={{ marginBottom: 14 }}>
+              <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Phone</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+                value={phone}
+                onChangeText={setPhone}
+                placeholder="Phone number"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="phone-pad"
+              />
             </View>
-          </View>
+          )}
 
-          <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Date of Birth</Text>
-            <TouchableOpacity
-              onPress={() => setShowDatePicker(true)}
-              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, justifyContent: 'center', paddingHorizontal: 14 }]}
-            >
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={{ color: dateOfBirth ? colors.textPrimary : colors.textMuted, fontSize: 15 }}>
-                  {dateOfBirth || "Select Date of Birth"}
-                </Text>
-                <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />
+          {role !== 'admin' && (
+            <>
+              <View style={{ marginBottom: 14 }}>
+                <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Gender</Text>
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  <TouchableOpacity
+                    onPress={() => setGender('male')}
+                    style={{
+                      flex: 1,
+                      height: 48,
+                      borderRadius: radii.input,
+                      borderWidth: 1,
+                      borderColor: gender === 'male' ? colors.primary : colors.cardBorder,
+                      backgroundColor: gender === 'male' ? colors.primary + '15' : colors.surfaceLight,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Text style={{ color: gender === 'male' ? colors.primaryLight : colors.textPrimary, fontWeight: '600' }}>Male</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setGender('female')}
+                    style={{
+                      flex: 1,
+                      height: 48,
+                      borderRadius: radii.input,
+                      borderWidth: 1,
+                      borderColor: gender === 'female' ? colors.primary : colors.cardBorder,
+                      backgroundColor: gender === 'female' ? colors.primary + '15' : colors.surfaceLight,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Text style={{ color: gender === 'female' ? colors.primaryLight : colors.textPrimary, fontWeight: '600' }}>Female</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </TouchableOpacity>
-          </View>
 
-          <DatePicker
-            visible={showDatePicker}
-            value={dateOfBirth}
-            onClose={() => setShowDatePicker(false)}
-            onSelect={setDateOfBirth}
-          />
-        </>
-      )}
+              <View style={{ marginBottom: 14 }}>
+                <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Date of Birth</Text>
+                <TouchableOpacity
+                  onPress={() => setShowDatePicker(true)}
+                  style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, justifyContent: 'center', paddingHorizontal: 14 }]}
+                >
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ color: dateOfBirth ? colors.textPrimary : colors.textMuted, fontSize: 15 }}>
+                      {dateOfBirth || "Select Date of Birth"}
+                    </Text>
+                    <Ionicons name="calendar-outline" size={20} color={colors.textSecondary} />
+                  </View>
+                </TouchableOpacity>
+              </View>
 
-      {role === 'astrologer' && (
-        <>
-          <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Bio</Text>
-            <TextInput
-              style={[styles.input, { height: 80, backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-              value={bio}
-              onChangeText={setBio}
-              placeholder="Tell clients about yourself"
-              placeholderTextColor={colors.textMuted}
-              multiline
-              textAlignVertical="top"
-            />
-          </View>
+              <DatePicker
+                visible={showDatePicker}
+                value={dateOfBirth}
+                onClose={() => setShowDatePicker(false)}
+                onSelect={setDateOfBirth}
+              />
+            </>
+          )}
 
-          <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Experience (years)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-              value={experience}
-              onChangeText={setExperience}
-              placeholder="e.g. 10"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="number-pad"
-            />
-          </View>
+          {role === 'astrologer' && (
+            <>
+              <View style={{ marginBottom: 14 }}>
+                <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Bio</Text>
+                <TextInput
+                  style={[styles.input, { height: 80, backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+                  value={bio}
+                  onChangeText={setBio}
+                  placeholder="Tell clients about yourself"
+                  placeholderTextColor={colors.textMuted}
+                  multiline
+                  textAlignVertical="top"
+                />
+              </View>
 
-          <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Specialization (comma separated)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-              value={specialization}
-              onChangeText={setSpecialization}
-              placeholder="e.g. Vedic, Tarot, Numerology"
-              placeholderTextColor={colors.textMuted}
-            />
-          </View>
+              <View style={{ marginBottom: 14 }}>
+                <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Experience (years)</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+                  value={experience}
+                  onChangeText={setExperience}
+                  placeholder="e.g. 10"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="number-pad"
+                />
+              </View>
 
-          <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Languages (comma separated)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-              value={languages}
-              onChangeText={setLanguages}
-              placeholder="e.g. Hindi, English, Tamil"
-              placeholderTextColor={colors.textMuted}
-            />
-          </View>
+              <View style={{ marginBottom: 14 }}>
+                <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Specialization (comma separated)</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+                  value={specialization}
+                  onChangeText={setSpecialization}
+                  placeholder="e.g. Vedic, Palmistry, Vastu"
+                  placeholderTextColor={colors.textMuted}
+                />
+              </View>
 
-          <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Skills (comma separated)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-              value={skills}
-              onChangeText={setSkills}
-              placeholder="e.g. Birth Chart, Predictions, Remedies"
-              placeholderTextColor={colors.textMuted}
-            />
-          </View>
+              <View style={{ marginBottom: 14 }}>
+                <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Languages (comma separated)</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+                  value={languages}
+                  onChangeText={setLanguages}
+                  placeholder="e.g. Hindi, English, Tamil"
+                  placeholderTextColor={colors.textMuted}
+                />
+              </View>
 
-          <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Chat price per minute (₹)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-              value={chatPricePerMin}
-              onChangeText={setChatPricePerMin}
-              placeholder="e.g. 10"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="decimal-pad"
-            />
-          </View>
-          <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Audio call price per minute (₹)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-              value={audioCallPricePerMin}
-              onChangeText={setAudioCallPricePerMin}
-              placeholder="e.g. 15"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="decimal-pad"
-            />
-          </View>
-          <View style={{ marginBottom: 14 }}>
-            <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Video call price per minute (₹)</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-              value={videoCallPricePerMin}
-              onChangeText={setVideoCallPricePerMin}
-              placeholder="e.g. 20"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="decimal-pad"
-            />
-          </View>
-        </>
-      )}
+              <View style={{ marginBottom: 14 }}>
+                <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Skills (comma separated)</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+                  value={skills}
+                  onChangeText={setSkills}
+                  placeholder="e.g. Birth Chart, Predictions, Remedies"
+                  placeholderTextColor={colors.textMuted}
+                  onFocus={() => {
+                    setTimeout(() => {
+                      scrollViewRef.current?.scrollToEnd({ animated: true });
+                    }, 300);
+                  }}
+                />
+              </View>
 
-      <GradientButton title={loading ? 'Saving...' : 'Save Changes'} onPress={handleSave} disabled={loading} style={{ marginTop: 8 }} />
+              <View style={{ marginBottom: 14 }}>
+                <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Chat price per minute (₹)</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+                  value={chatPricePerMin}
+                  onChangeText={setChatPricePerMin}
+                  placeholder="e.g. 10"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="decimal-pad"
+                  onFocus={() => {
+                    setTimeout(() => {
+                      scrollViewRef.current?.scrollToEnd({ animated: true });
+                    }, 300);
+                  }}
+                />
+              </View>
+              <View style={{ marginBottom: 14 }}>
+                <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Audio call price per minute (₹)</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+                  value={audioCallPricePerMin}
+                  onChangeText={setAudioCallPricePerMin}
+                  placeholder="e.g. 15"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="decimal-pad"
+                  onFocus={() => {
+                    setTimeout(() => {
+                      scrollViewRef.current?.scrollToEnd({ animated: true });
+                    }, 300);
+                  }}
+                />
+              </View>
+              <View style={{ marginBottom: 14 }}>
+                <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Video call price per minute (₹)</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+                  value={videoCallPricePerMin}
+                  onChangeText={setVideoCallPricePerMin}
+                  placeholder="e.g. 20"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="decimal-pad"
+                  onFocus={() => {
+                    setTimeout(() => {
+                      scrollViewRef.current?.scrollToEnd({ animated: true });
+                    }, 300);
+                  }}
+                />
+              </View>
+            </>
+          )}
+
+          <GradientButton title={loading ? 'Saving...' : 'Save Changes'} onPress={handleSave} disabled={loading} style={{ marginTop: 16 }} />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </ScreenWrapper>
   );
 }
 
-// Support
-export function SupportScreen() {
-  const isFocused = useIsFocused();
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
-  const [tickets, setTickets] = useState<SupportTicket[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => { if (isFocused) api.support.tickets().then(setTickets).catch(() => {}); }, [isFocused]);
-
-  const handleSubmit = async () => {
-    if (!subject.trim() || !message.trim()) return;
-    setLoading(true);
-    try {
-      await api.support.createTicket({ subject, description: message });
-      setSubject('');
-      setMessage('');
-      const list = await api.support.tickets();
-      setTickets(list);
-    } catch (e) {
-      console.log(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <ScreenWrapper scroll>
-      <SectionTitle title="Help & Support" />
-      <Text style={[typography.body, { marginBottom: 16 }]}>Create a support ticket</Text>
-      <View style={{ marginBottom: 14 }}><TextInput style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]} value={subject} onChangeText={setSubject} placeholder="Subject" placeholderTextColor={colors.textMuted} /></View>
-      <View style={{ marginBottom: 14 }}><TextInput style={[styles.input, { height: 100, backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]} value={message} onChangeText={setMessage} placeholder="Describe your issue" placeholderTextColor={colors.textMuted} multiline textAlignVertical="top" /></View>
-      <GradientButton title={loading ? 'Submitting...' : 'Submit Ticket'} onPress={handleSubmit} disabled={loading} />
-      {tickets.length > 0 && <><SectionHeader title="Your Tickets" style={{ marginTop: 20 }} /><FlatList data={tickets} scrollEnabled={false} keyExtractor={t => t.id} renderItem={({ item }) => <GlassCard style={{ marginBottom: 8, padding: 12 }}><Text style={typography.cardTitle}>{item.subject}</Text><Text style={typography.caption}>{item.status.toUpperCase()} - Priority: {item.priority}</Text><Text style={typography.body}>{item.message}</Text></GlassCard>} /></>}
-    </ScreenWrapper>
-  );
-}
+// Support (moved to SupportScreens.tsx)
 
 // Donation
 export function DonationScreen() {
@@ -554,18 +596,79 @@ export function ReportScreen({ route, navigation }: any) {
 
 // Mandir Pooja
 export function MandirPoojaScreen({ navigation }: any) {
+  const { user } = useAuth();
+  const isFocused = useIsFocused();
+  const [poojas, setPoojas] = useState<MandirPooja[]>([]);
+  const [bookings, setBookings] = useState<PoojaBooking[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isFocused) {
+      Promise.all([
+        api.mandirPooja.list(),
+        api.mandirPooja.bookings({ userId: user?.id }).catch(() => []),
+      ]).then(([p, b]) => { setPoojas(p); setBookings(b); }).finally(() => setLoading(false));
+    }
+  }, [isFocused, user?.id]);
+
+  if (loading) return <ScreenWrapper scroll><SectionTitle title="Mandir Pooja" /><GlassCard><Text style={typography.body}>Loading...</Text></GlassCard></ScreenWrapper>;
+
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Mandir Pooja" />
-      <GlassCard style={{ alignItems: 'center', padding: 24 }}>
-        <Ionicons name="flame" size={48} color={colors.accentGold} />
-        <Text style={[typography.cardTitle, { marginTop: 12 }]}>Book a Sacred Pooja</Text>
-        <Text style={[typography.body, { textAlign: 'center', marginTop: 8 }]}>Satyanarayan Pooja, Rudrabhishek, Navgraha Shanti and more</Text>
-        <GradientButton title="View Pooja List" onPress={() => navigation.navigate('MandirPooja')} variant="gold" style={{ marginTop: 16 }} />
-      </GlassCard>
+      {poojas.length > 0 && (
+        <>
+          <Text style={[typography.sectionTitle, { marginBottom: 12 }]}>Available Poojas</Text>
+          {poojas.map(p => (
+            <TouchableOpacity key={p.id} onPress={() => navigation.navigate('MandirPoojaDetail', { poojaId: p.id })} style={{ marginBottom: 10 }}>
+              <GlassCard style={{ padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.accentGold + '20', alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="flame" size={24} color={colors.accentGold} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={typography.cardTitle}>{p.name}</Text>
+                  {p.description && <Text style={typography.caption} numberOfLines={2}>{p.description}</Text>}
+                  <Text style={[typography.price, { marginTop: 4 }]}>₹{p.price}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </GlassCard>
+            </TouchableOpacity>
+          ))}
+        </>
+      )}
+
+      {bookings.length > 0 && (
+        <>
+          <Text style={[typography.sectionTitle, { marginTop: 20, marginBottom: 12 }]}>My Bookings</Text>
+          {bookings.map(b => {
+            const pooja = poojas.find(p => p.id === b.poojaId);
+            return (
+              <GlassCard key={b.id} style={{ marginBottom: 8, padding: 14 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <View>
+                    <Text style={[typography.cardTitle, { fontSize: 14 }]}>{pooja?.name || 'Pooja'}</Text>
+                    <Text style={typography.caption}>{new Date(b.bookingDate).toLocaleDateString()} · ₹{b.amount}</Text>
+                  </View>
+                  <Text style={[typography.caption, { color: b.status === 'confirmed' ? colors.success : colors.warning, fontWeight: '600' }]}>{b.status.toUpperCase()}</Text>
+                </View>
+              </GlassCard>
+            );
+          })}
+        </>
+      )}
+
+      {poojas.length === 0 && bookings.length === 0 && (
+        <GlassCard style={{ alignItems: 'center', padding: 24 }}>
+          <Ionicons name="flame" size={48} color={colors.accentGold} />
+          <Text style={[typography.cardTitle, { marginTop: 12 }]}>Book a Sacred Pooja</Text>
+          <Text style={[typography.body, { textAlign: 'center', marginTop: 8 }]}>Satyanarayan Pooja, Rudrabhishek, Navgraha Shanti and more</Text>
+        </GlassCard>
+      )}
     </ScreenWrapper>
   );
 }
+
+// Mandir Pooja Detail (moved to MandirPoojaDetailScreen.tsx)
 
 // Order History
 export function OrderHistoryScreen() {
@@ -609,10 +712,47 @@ export function OrderHistoryScreen() {
 
 // Astrologer: Requests
 export function AstrologerRequestsScreen() {
+  const { astrologer } = useAuth();
+  const isFocused = useIsFocused();
+  const [requests, setRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isFocused) {
+      if (astrologer?.userId) {
+        api.calls.list({ astrologerId: astrologer.userId })
+          .then(c => setRequests(c.filter((r: any) => r.status === 'initiated')))
+          .catch(() => {})
+          .finally(() => setLoading(false));
+      } else {
+        setLoading(false);
+      }
+    }
+  }, [isFocused, astrologer?.userId]);
+
+  if (loading) return <ScreenWrapper scroll><SectionTitle title="User Requests" /><GlassCard><Text style={typography.body}>Loading...</Text></GlassCard></ScreenWrapper>;
+
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="User Requests" />
-      <EmptyState icon={<Ionicons name="people-outline" size={48} color={colors.textMuted} />} title="No pending requests" subtitle="Users who want to connect will appear here" />
+      {requests.length === 0 ? (
+        <EmptyState icon={<Ionicons name="people-outline" size={48} color={colors.textMuted} />} title="No pending requests" subtitle="Users who want to connect will appear here" />
+      ) : (
+        requests.map(r => (
+          <GlassCard key={r.id} style={{ marginBottom: 8, padding: 14 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <View>
+                <Text style={[typography.cardTitle, { fontSize: 14 }]}>{(r as any).userName || 'User'}</Text>
+                <Text style={typography.caption}>{r.type === 'video' ? 'Video Call' : 'Audio Call'} · {new Date(r.createdAt).toLocaleString()}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <GradientButton title="Accept" onPress={() => api.calls.updateStatus(r.id, 'ongoing').then(() => setRequests(prev => prev.filter(x => x.id !== r.id)))} small />
+                <GradientButton title="Decline" variant="danger" onPress={() => api.calls.updateStatus(r.id, 'cancelled').then(() => setRequests(prev => prev.filter(x => x.id !== r.id)))} small />
+              </View>
+            </View>
+          </GlassCard>
+        ))
+      )}
     </ScreenWrapper>
   );
 }
@@ -652,37 +792,51 @@ export function AstrologerScheduleScreen() {
 
   return (
     <ScreenWrapper scroll>
-      <SectionTitle title="Availability Schedule" />
-      <Text style={[typography.body, { marginBottom: 16, paddingHorizontal: 4 }]}>Set your weekly availability for consultations</Text>
-      {days.map((d, i) => {
-        const s = schedules[i];
-        return (
-          <GlassCard key={d} style={{ marginBottom: 8, padding: 12 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Toggle
-                  value={s?.isAvailable ?? true}
-                  onValueChange={(v) => updateDay(i, 'isAvailable', v)}
-                  trackColor={{ false: colors.textMuted, true: colors.success }}
-                />
-                <Text style={[typography.cardTitle, { opacity: s?.isAvailable === false ? 0.4 : 1 }]}>{d}</Text>
+      <View style={{ width: '100%', maxWidth: 600, alignSelf: 'center', padding: 16 }}>
+        <SectionTitle title="Availability Schedule" />
+        <Text style={[typography.body, { marginBottom: 16, paddingHorizontal: 4 }]}>Set your weekly availability for consultations</Text>
+        {days.map((d, i) => {
+          const s = schedules[i];
+          const isAvail = s?.isAvailable ?? true;
+          return (
+            <GlassCard key={d} style={{ marginBottom: 8, padding: 14 }}>
+              <View style={{ gap: 8 }}>
+                {/* Header Row: Day Name + Toggle */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={[typography.cardTitle, { opacity: isAvail ? 1 : 0.4, fontSize: 15 }]}>
+                    {d}
+                  </Text>
+                  <Toggle
+                    value={isAvail}
+                    onValueChange={(v) => updateDay(i, 'isAvailable', v)}
+                    trackColor={{ false: colors.textMuted, true: colors.success }}
+                  />
+                </View>
+
+                {/* Time Picker Row (Fills width dynamically, hides if unavailable) */}
+                {isAvail && (
+                  <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+                    <View style={{ flex: 1 }}>
+                      <TimePicker
+                        value={s?.startTime || '09:00'}
+                        onChange={(v) => updateDay(i, 'startTime', v)}
+                      />
+                    </View>
+                    <Text style={[typography.caption, { color: colors.textSecondary }]}>to</Text>
+                    <View style={{ flex: 1 }}>
+                      <TimePicker
+                        value={s?.endTime || '18:00'}
+                        onChange={(v) => updateDay(i, 'endTime', v)}
+                      />
+                    </View>
+                  </View>
+                )}
               </View>
-              <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center', opacity: s?.isAvailable === false ? 0.4 : 1 }}>
-                <TimePicker
-                  value={s?.startTime || '09:00'}
-                  onChange={(v) => updateDay(i, 'startTime', v)}
-                />
-                <Text style={typography.caption}>to</Text>
-                <TimePicker
-                  value={s?.endTime || '18:00'}
-                  onChange={(v) => updateDay(i, 'endTime', v)}
-                />
-              </View>
-            </View>
-          </GlassCard>
-        );
-      })}
-      <GradientButton title={loading ? 'Saving...' : 'Save Schedule'} onPress={saveAll} disabled={loading} style={{ marginTop: 16 }} />
+            </GlassCard>
+          );
+        })}
+        <GradientButton title={loading ? 'Saving...' : 'Save Schedule'} onPress={saveAll} disabled={loading} style={{ marginTop: 16 }} />
+      </View>
     </ScreenWrapper>
   );
 }
@@ -710,11 +864,17 @@ export function AstrologerDocumentsScreen() {
       if (result.canceled || !result.assets?.[0]) return;
       const file = result.assets[0];
       setUploading(true);
-      const uploaded = await api.uploadFile({ uri: file.uri, name: file.name, mimeType: file.mimeType });
+      const uploaded = await api.uploadFile({ uri: file.uri, name: file.name, mimeType: file.mimeType }, 'supabase');
       const newDocs = [...docs, uploaded.url];
       setDocs(newDocs);
-      await api.astrologers.update((astrologer!.userId || astrologer!.id) as string, { verificationDoc: newDocs });
-      updateUser({ ...astrologer!, verificationDoc: newDocs });
+      const updatePayload: any = { verificationDoc: newDocs };
+      if (status === 'rejected') {
+        updatePayload.verificationStatus = 'pending';
+        setStatus('pending');
+        setNote('');
+      }
+      await api.astrologers.update((astrologer!.userId || astrologer!.id) as string, updatePayload);
+      updateUser({ ...astrologer!, verificationDoc: newDocs, verificationStatus: updatePayload.verificationStatus || status });
     } catch (e: any) {
       Alert.alert('Error', e?.response?.data?.message || e?.message || 'Upload failed');
     } finally {
@@ -863,15 +1023,69 @@ export function AstrologerCommissionScreen() {
 
 // Astrologer: Go Live
 export function AstrologerGoLiveScreen({ navigation }: any) {
+  const { astrologer } = useAuth();
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [title, setTitle] = useState('');
+  const [creating, setCreating] = useState(false);
+  const isFocused = useIsFocused();
+
+  useEffect(() => {
+    if (isFocused && astrologer?.userId) {
+      api.liveSessions.byAstrologer(astrologer.userId)
+        .then(setSessions)
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    }
+  }, [isFocused, astrologer?.userId]);
+
+  const handleGoLive = async () => {
+    if (!title.trim()) { Alert.alert('Required', 'Please enter a session title'); return; }
+    setCreating(true);
+    try {
+      const session = await api.liveSessions.create({ astrologerId: astrologer?.userId, title, status: 'live' });
+      setSessions(prev => [session, ...prev]);
+      setTitle('');
+      Alert.alert('Live!', 'Your live session has started.');
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.message || 'Failed to start live session');
+    } finally { setCreating(false); }
+  };
+
+  if (loading) return <ScreenWrapper scroll><SectionTitle title="Go Live" /><GlassCard><Text style={typography.body}>Loading...</Text></GlassCard></ScreenWrapper>;
+
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Go Live" />
-      <GlassCard style={{ alignItems: 'center', padding: 24 }}>
-        <Ionicons name="radio" size={48} color={colors.danger} />
-        <Text style={[typography.cardTitle, { marginTop: 12 }]}>Start a Live Session</Text>
-        <Text style={[typography.body, { textAlign: 'center', marginTop: 8 }]}>Stream to your followers in real-time. Share predictions, answer questions, and grow your audience.</Text>
-        <GradientButton title="Go Live Now" onPress={() => navigation.navigate('GoLive')} variant="gold" style={{ marginTop: 16 }} />
+      <GlassCard style={{ padding: 20, marginBottom: 16 }}>
+        <View style={{ alignItems: 'center', marginBottom: 16 }}>
+          <Ionicons name="radio" size={48} color={colors.danger} />
+          <Text style={[typography.cardTitle, { marginTop: 12 }]}>Start a Live Session</Text>
+          <Text style={[typography.body, { textAlign: 'center', marginTop: 8 }]}>Stream to your followers in real-time.</Text>
+        </View>
+        <TextInput
+          style={{ backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, color: colors.textPrimary, fontSize: 15, marginBottom: 12 }}
+          value={title} onChangeText={setTitle} placeholder="Session title" placeholderTextColor={colors.textMuted}
+        />
+        <GradientButton title={creating ? 'Starting...' : 'Go Live Now'} variant="gold" onPress={handleGoLive} disabled={creating} />
       </GlassCard>
+
+      {sessions.length > 0 && (
+        <>
+          <Text style={[typography.sectionTitle, { marginBottom: 12 }]}>Your Live Sessions</Text>
+          {sessions.map(s => (
+            <GlassCard key={s.id} style={{ marginBottom: 8, padding: 14 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.cardTitle, { fontSize: 14 }]}>{s.title || 'Live Session'}</Text>
+                  <Text style={typography.caption}>{new Date(s.createdAt).toLocaleDateString()} · {s.viewerCount || 0} viewers</Text>
+                </View>
+                <Text style={[typography.caption, { color: s.status === 'live' ? colors.success : colors.textMuted, fontWeight: '600' }]}>{s.status.toUpperCase()}</Text>
+              </View>
+            </GlassCard>
+          ))}
+        </>
+      )}
     </ScreenWrapper>
   );
 }
@@ -889,8 +1103,8 @@ export function PrivacyPolicyScreen({ navigation }: any) {
 
         <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>2. Information We Collect</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
-          • Personal Identification: Name, email address, telephone number, and gender.{"\n"}
-          • Astrological Profile Details: Date, time, and precise city/country of birth. This data is strictly used to compile your natal chart, horoscope calculations, and matching reports.{"\n"}
+          • Personal Identification: Name, email address, telephone number, and gender.{'\n'}
+          • Astrological Profile Details: Date, time, and precise city/country of birth. This data is strictly used to compile your natal chart, horoscope calculations, and matching reports.{'\n'}
           • Wallet & Billing: We record purchase transaction summaries and wallet ledger history. No full credit/debit card numbers or sensitive banking credentials are saved on our servers.
         </Text>
 
@@ -915,6 +1129,7 @@ export function PrivacyPolicyScreen({ navigation }: any) {
         </Text>
       </GlassCard>
       <GradientButton title="Back to Dashboard" onPress={() => navigation.navigate('Main')} style={{ marginTop: 12 }} />
+      <View style={{ height: 40 }} />
     </ScreenWrapper>
   );
 }
@@ -982,6 +1197,88 @@ export function AboutAppScreen({ navigation }: any) {
   );
 }
 
+// Create Blog
+export function CreateBlogScreen({ navigation, route }: any) {
+  const { role } = useAuth();
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [excerpt, setExcerpt] = useState('');
+  const [tags, setTags] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleCreate = async () => {
+    if (!title.trim() || !content.trim()) return;
+    setLoading(true);
+    try {
+      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Date.now();
+      await api.blogs.create({
+        title: title.trim(),
+        content: content.trim(),
+        excerpt: excerpt.trim(),
+        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+        slug,
+        status: 'published',
+      });
+      navigation.goBack();
+    } catch (e) {
+      console.log(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <ScreenWrapper scroll>
+      <View style={{ padding: 16 }}>
+        <Text style={[typography.pageTitle, { marginBottom: 16 }]}>Create Blog</Text>
+        <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Title</Text>
+        <TextInput
+          style={[styles.input, { marginBottom: 12 }]}
+          value={title}
+          onChangeText={setTitle}
+          placeholder="Blog title"
+          placeholderTextColor={colors.textMuted}
+        />
+        <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Excerpt (optional)</Text>
+        <TextInput
+          style={[styles.input, { marginBottom: 12 }]}
+          value={excerpt}
+          onChangeText={setExcerpt}
+          placeholder="Short summary"
+          placeholderTextColor={colors.textMuted}
+        />
+        <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Content</Text>
+        <TextInput
+          style={[styles.input, { marginBottom: 12, height: 200, textAlignVertical: 'top', paddingTop: 12 }]}
+          value={content}
+          onChangeText={setContent}
+          placeholder="Write your blog content..."
+          placeholderTextColor={colors.textMuted}
+          multiline
+        />
+        <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Tags (comma separated, optional)</Text>
+        <TextInput
+          style={[styles.input, { marginBottom: 20 }]}
+          value={tags}
+          onChangeText={setTags}
+          placeholder="e.g. astrology, vedic, gemstones"
+          placeholderTextColor={colors.textMuted}
+        />
+        <GradientButton
+          title={loading ? 'Publishing...' : 'Publish Blog'}
+          onPress={handleCreate}
+          disabled={loading || !title.trim() || !content.trim()}
+        />
+      </View>
+    </ScreenWrapper>
+  );
+}
+
 const styles = StyleSheet.create({
   input: { backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, color: colors.textPrimary, fontSize: 15 },
 });
+
+export { SupportScreen, TicketDetailScreen, AdminSupportScreen, AdminTicketDetailScreen } from './SupportScreens';
+export { MandirPoojaDetailScreen } from './MandirPoojaDetailScreen';
+export { BlogDetailScreen } from './BlogDetailScreen';
+export { CreateBlogScreen };

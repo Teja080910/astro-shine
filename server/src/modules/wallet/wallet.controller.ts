@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Req, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -26,6 +26,11 @@ export class WalletController {
       );
     }
     return wallet;
+  }
+
+  @Post('add-funds')
+  async addFunds(@Body() body: { walletId: string; amount: string }) {
+    return this.walletService.addFunds(body.walletId, body.amount);
   }
 
   @Get('all')

@@ -3,7 +3,7 @@ import { View, ViewStyle, StyleSheet } from 'react-native';
 import { radii } from '../theme';
 import { useAuth } from '../../context/AuthContext';
 
-interface Props { children: React.ReactNode; style?: ViewStyle; noPadding?: boolean; }
+interface Props { children?: React.ReactNode; style?: ViewStyle; noPadding?: boolean; }
 
 export function GlassCard({ children, style, noPadding }: Props) {
   const { theme } = useAuth();

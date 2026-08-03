@@ -15,4 +15,5 @@ export class ShopService {
   async update(id: string, data: Partial<typeof schema.shopProducts.$inferInsert>) {
     const [r] = await this.db.update(schema.shopProducts).set({ ...data, updatedAt: new Date() }).where(eq(schema.shopProducts.id, id)).returning(); return r;
   }
+  async delete(id: string) { await this.db.delete(schema.shopProducts).where(eq(schema.shopProducts.id, id)); }
 }

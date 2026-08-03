@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 export default function WalletPage() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [withdrawModal, setWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawing, setWithdrawing] = useState(false);
@@ -22,8 +23,8 @@ export default function WalletPage() {
       api.get<any[]>('/admins').catch(() => []),
     ]).then(([wallets, users, astros, admins]) => {
       const userMap = Object.fromEntries(users.map((u: any) => [u.id, u.name]));
-      const astroMap = Object.fromEntries(astros.map((a: any) => [a.id, a.name]));
-      const adminMap = Object.fromEntries(admins.map((a: any) => [a.id, a.name]));
+      const astroMap = Object.fromEntries(astros.map((a: any) => [a.userId || a.id, a.name]));
+      const adminMap = Object.fromEntries(admins.map((a: any) => [a.userId || a.id, a.name]));
       const enriched = wallets.map((w: any) => ({
         ...w,
         ownerName: w.adminId ? adminMap[w.adminId] || 'Admin' : w.astrologerId ? astroMap[w.astrologerId] : userMap[w.userId] || 'Unknown',
@@ -32,7 +33,7 @@ export default function WalletPage() {
       setData(enriched);
       setAdminWallet(enriched.find((w: any) => w.ownerType === 'Admin') || null);
       setLoading(false);
-    }).catch(() => { setLoading(false); setWithdrawError('Failed to load wallet data'); });
+    }).catch(() => { setLoading(false); setError('Failed to load wallet data'); });
   }, []);
 
   const handleWithdraw = async () => {
@@ -50,8 +51,8 @@ export default function WalletPage() {
         api.get<any[]>('/admins').catch(() => []),
       ]);
       const userMap = Object.fromEntries(updatedUsers.map((u: any) => [u.id, u.name]));
-      const astroMap = Object.fromEntries(updatedAstros.map((a: any) => [a.id, a.name]));
-      const adminMap = Object.fromEntries(updatedAdmins.map((a: any) => [a.id, a.name]));
+      const astroMap = Object.fromEntries(updatedAstros.map((a: any) => [a.userId || a.id, a.name]));
+      const adminMap = Object.fromEntries(updatedAdmins.map((a: any) => [a.userId || a.id, a.name]));
       const enriched = updated.map((w: any) => ({
         ...w,
         ownerName: w.adminId ? adminMap[w.adminId] || 'Admin' : w.astrologerId ? astroMap[w.astrologerId] : userMap[w.userId] || 'Unknown',
@@ -82,6 +83,12 @@ export default function WalletPage() {
         </div>
       </div>
 
+      {loading ? (
+        <div className="glass-card p-6 text-center text-text-secondary">Loading wallets...</div>
+      ) : error ? (
+        <div className="bg-red-900/20 border border-red-800 text-red-400 rounded-lg px-4 py-3 text-sm mb-4">{error}</div>
+      ) : (
+        <>
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-surface-light rounded-2xl p-4 border border-divider">
           <p className="text-text-muted text-sm">Total Balance</p>
@@ -108,6 +115,8 @@ export default function WalletPage() {
           </tr>
         ))}
       </Table>
+        </>
+      )}
 
       <CustomModal open={withdrawModal} onClose={() => { setWithdrawModal(false); setWithdrawError(''); }} title="Withdraw from Admin Wallet">
         <div className="space-y-3 text-text-secondary p-2">

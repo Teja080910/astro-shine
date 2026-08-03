@@ -3,12 +3,14 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
 import { eq, desc, sql } from 'drizzle-orm';
 import { RealtimeService } from '../../common/realtime.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AstrologersService {
   constructor(
     @Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>,
     private readonly realtime: RealtimeService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async findAll() {
@@ -41,6 +43,9 @@ export class AstrologersService {
         email: schema.users.email,
         phone: schema.users.phone,
         isActive: schema.users.isActive,
+        gender: schema.users.gender,
+        dateOfBirth: schema.users.dateOfBirth,
+        avatar: schema.users.avatar,
       })
       .from(schema.astrologers)
       .leftJoin(schema.users, eq(schema.astrologers.userId, schema.users.id));
@@ -76,6 +81,9 @@ export class AstrologersService {
         email: schema.users.email,
         phone: schema.users.phone,
         isActive: schema.users.isActive,
+        gender: schema.users.gender,
+        dateOfBirth: schema.users.dateOfBirth,
+        avatar: schema.users.avatar,
       })
       .from(schema.astrologers)
       .leftJoin(schema.users, eq(schema.astrologers.userId, schema.users.id))
@@ -98,14 +106,61 @@ export class AstrologersService {
     return result;
   }
 
-  async update(id: string, data: Partial<typeof schema.astrologers.$inferInsert>) {
+  async update(id: string, data: any) {
+    const { name, phone, gender, dateOfBirth, ...astroFields } = data;
+    console.log('DEBUG Astrologer Update payload:', { id, name, phone, gender, dateOfBirth, astroFields });
+
+    // Clean up empty strings for numeric fields to avoid PostgreSQL syntax errors
+    const cleanedAstroFields: any = { ...astroFields };
+    const numericFields = ['chatPricePerMin', 'audioCallPricePerMin', 'videoCallPricePerMin', 'pricePerMin', 'experience'];
+    for (const field of numericFields) {
+      if (cleanedAstroFields[field] === '') {
+        cleanedAstroFields[field] = '0';
+      } else if (cleanedAstroFields[field] !== undefined) {
+        cleanedAstroFields[field] = String(cleanedAstroFields[field]);
+      }
+    }
+
+    // Update users table if user fields are updated
+    const userUpdate: any = {};
+    if (name !== undefined) userUpdate.name = name;
+    if (phone !== undefined) userUpdate.phone = phone;
+    if (gender !== undefined) userUpdate.gender = gender;
+    if (dateOfBirth !== undefined) {
+      userUpdate.dateOfBirth = dateOfBirth === '' ? null : dateOfBirth;
+    }
+
+    if (Object.keys(userUpdate).length > 0) {
+      await this.db.update(schema.users)
+        .set({ ...userUpdate, updatedAt: new Date() })
+        .where(eq(schema.users.id, id));
+    }
+
+    // Update astrologers table
     const [result] = await this.db.update(schema.astrologers)
-      .set({ ...data, updatedAt: new Date() }).where(eq(schema.astrologers.userId, id)).returning();
-    return result;
+      .set({ ...cleanedAstroFields, updatedAt: new Date() })
+      .where(eq(schema.astrologers.userId, id))
+      .returning();
+
+    return (await this.findByUserId(id)) || result;
   }
 
   async verify(id: string, status: 'approved' | 'rejected', note?: string) {
-    return this.update(id, { verificationStatus: status, verificationNote: note } as any);
+    const result = await this.update(id, { verificationStatus: status, verificationNote: note } as any);
+
+    try {
+      await this.notificationsService.create({
+        astrologerId: id,
+        type: 'transactional',
+        title: status === 'approved' ? 'KYC Verification Approved' : 'KYC Verification Rejected',
+        body: status === 'approved'
+          ? 'Your KYC documents have been approved. You now have full access to the platform.'
+          : (note ? `Your KYC was rejected: ${note}` : 'Your KYC documents were rejected. Please re-upload valid documents.'),
+      });
+    } catch {}
+
+    this.realtime.emitToUser(id, 'kyc:status-updated', { status, note });
+    return result;
   }
 
   async updateOnlineStatus(id: string, onlineStatus: 'online' | 'offline' | 'busy') {
@@ -130,6 +185,23 @@ export class AstrologersService {
       ratings: ratings.toFixed(1),
       comments,
     }).returning();
+
+    // Increment cached totalReviews count on astrologers table
+    await this.db.update(schema.astrologers)
+      .set({
+        totalReviews: sql`${schema.astrologers.totalReviews} + 1`
+      })
+      .where(eq(schema.astrologers.userId, astrologerId));
+
+    // Mirror feedback to reviews table for Admin Dashboard / reviews module queries
+    await this.db.insert(schema.reviews).values({
+      astrologerId,
+      userId,
+      rating: ratings,
+      comment: comments || '',
+      isVisible: true,
+    }).catch(() => {});
+
     return feedback;
   }
 

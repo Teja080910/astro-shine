@@ -2,11 +2,12 @@ import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Req, Forbid
 import { AstrologersService } from './astrologers.service';
 import { AuthService } from '../auth/auth.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { KycVerificationGuard, SkipKyc } from '../../common/guards/kyc-verification.guard';
 
 function stripPassword(u: any) { if (!u) return u; const { password, ...r } = u; return r; }
 
 @Controller('astrologers')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, KycVerificationGuard)
 export class AstrologersController {
   constructor(
     private readonly service: AstrologersService,
@@ -14,6 +15,7 @@ export class AstrologersController {
   ) {}
 
   @Get()
+  @SkipKyc()
   async findAll(@Req() req: any) {
     const items = await this.service.findAll();
     return items.map((a: any) => {
@@ -26,6 +28,7 @@ export class AstrologersController {
   }
 
   @Get(':id')
+  @SkipKyc()
   async findOne(@Param('id') id: string) { return stripPassword(await this.service.findById(id)); }
 
   @Post()
@@ -38,7 +41,13 @@ export class AstrologersController {
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() body: any) { return stripPassword(await this.service.update(id, body)); }
+  @SkipKyc()
+  async update(@Param('id') id: string, @Body() body: any, @Req() req: any) {
+    if (req.userRole !== 'admin' && req.userId !== id) {
+      throw new ForbiddenException('You can only update your own profile');
+    }
+    return stripPassword(await this.service.update(id, body));
+  }
 
   @Post(':id/verify')
   async verify(@Param('id') id: string, @Body() body: { status: 'approved' | 'rejected'; note?: string }, @Req() req: any) {
