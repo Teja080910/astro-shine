@@ -279,7 +279,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
                     letterSpacing: 0.5,
                   }}
                 >
-                  ASTROŚHINE
+                  ASTROSHINE
                 </Text>
               </View>
               <Text

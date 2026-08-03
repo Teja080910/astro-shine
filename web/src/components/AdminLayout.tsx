@@ -79,7 +79,7 @@ function Sidebar() {
             <Image src={logoImg} alt="Astro Shine Logo" className="w-full h-full object-contain" />
           </div>
           <div className="flex flex-col">
-            <span className="text-base font-black text-text-primary leading-tight font-sans tracking-tight">ASTRO SHINE</span>
+            <span className="text-base font-black text-text-primary leading-tight font-sans tracking-tight">ASTROSHINE</span>
             <span className="text-[10px] font-bold text-accent-gold tracking-widest uppercase">Admin</span>
           </div>
         </div>
@@ -140,7 +140,7 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-          <p className="text-text-secondary text-sm font-semibold tracking-wider animate-pulse">Loading Astro Shine...</p>
+          <p className="text-text-secondary text-sm font-semibold tracking-wider animate-pulse">Loading Astroshine...</p>
         </div>
       </div>
     );
