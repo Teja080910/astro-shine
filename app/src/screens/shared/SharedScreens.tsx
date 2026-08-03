@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl, KeyboardAvoidingView, Platform, Keyboard, Dimensions, Image, Linking } from 'react-native';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, CustomModal, colors, typography, radii, shadows } from '../../shared';
 import { api } from '../../shared/api-client';
@@ -8,6 +8,7 @@ import type { Blog, MandirPooja, Notification, PoojaBooking, SupportTicket, Tick
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
 import * as DocumentPicker from 'expo-document-picker';
+import { Video as ExpoVideo, ResizeMode } from 'expo-av';
 
 function SectionTitle({ title }: { title: string }) {
   return null;
@@ -80,19 +81,40 @@ function Row({ icon, label, value }: { icon: string; label: string; value?: stri
 }
 
 // Videos
+function getYouTubeId(url: string): string | null {
+  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
+
 export function VideosScreen() {
   const isFocused = useIsFocused();
+  const { videoVersion } = useChat();
   const [videos, setVideos] = useState<Video[]>([]);
-  useEffect(() => { if (isFocused) api.videos.list().then(setVideos).catch(() => {}); }, [isFocused]);
+  const [playingVideo, setPlayingVideo] = useState<Video | null>(null);
+  const videoRef = useRef<ExpoVideo>(null);
+  const { width } = Dimensions.get('window');
+  useEffect(() => { if (isFocused) api.videos.list().then(setVideos).catch(() => {}); }, [isFocused, videoVersion]);
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Videos" />
       {videos.length === 0 ? <EmptyState icon={<Ionicons name="videocam-outline" size={48} color={colors.textMuted} />} title="No videos yet" /> :
-        videos.map(v => (
-          <TouchableOpacity key={v.id} style={{ marginBottom: 12 }}>
+        videos.map(v => {
+          const ytId = getYouTubeId(v.url);
+          const thumbUrl = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : v.thumbnail;
+          return (
+          <TouchableOpacity key={v.id} style={{ marginBottom: 12 }} onPress={() => {
+            if (ytId) {
+              Linking.openURL(v.url);
+            } else {
+              setPlayingVideo(v);
+            }
+          }}>
             <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
               <View style={{ height: 180, backgroundColor: colors.surfaceLight, alignItems: 'center', justifyContent: 'center' }}>
-                <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primary + '40', alignItems: 'center', justifyContent: 'center' }}>
+                {thumbUrl ? (
+                  <Image source={{ uri: thumbUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                ) : null}
+                <View style={{ position: 'absolute', width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="play" size={28} color={colors.white} style={{ marginLeft: 4 }} />
                 </View>
               </View>
@@ -106,7 +128,18 @@ export function VideosScreen() {
               </View>
             </GlassCard>
           </TouchableOpacity>
-        ))}
+          );
+        })}
+      <Modal visible={!!playingVideo} transparent animationType="slide" onRequestClose={() => { setPlayingVideo(null); videoRef.current?.stopAsync(); }}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' }}>
+          <TouchableOpacity style={{ position: 'absolute', top: 50, right: 20, zIndex: 10 }} onPress={() => { setPlayingVideo(null); videoRef.current?.stopAsync(); }}>
+            <Ionicons name="close" size={28} color="#FFF" />
+          </TouchableOpacity>
+          {playingVideo?.url ? (
+            <ExpoVideo ref={videoRef} source={{ uri: playingVideo.url }} style={{ width, height: width * 0.5625 }} resizeMode={ResizeMode.CONTAIN} shouldPlay useNativeControls />
+          ) : null}
+        </View>
+      </Modal>
     </ScreenWrapper>
   );
 }

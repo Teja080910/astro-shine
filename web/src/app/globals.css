@@ -3,10 +3,10 @@
 @tailwind utilities;
 
 :root {
-  --background: transparent;
-  --surface: transparent;
-  --surface-light: transparent;
-  --card-bg: transparent;
+  --background: #09090B;
+  --surface: #111827;
+  --surface-light: #1F2937;
+  --card-bg: rgba(255, 255, 255, 0.08);
   --card-border: rgba(255, 255, 255, 0.12);
   --text-primary: #FFFFFF;
   --text-secondary: #B6B6C2;
@@ -20,10 +20,10 @@
 }
 
 [data-theme="light"] {
-  --background: transparent;
-  --surface: transparent;
-  --surface-light: transparent;
-  --card-bg: transparent;
+  --background: #FFFFFF;
+  --surface: #FFFFFF;
+  --surface-light: #FFFBEB;
+  --card-bg: rgba(255, 255, 255, 0.95);
   --card-border: rgba(217, 119, 6, 0.15);
   --text-primary: #111827;
   --text-secondary: #4B5563;
