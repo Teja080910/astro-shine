@@ -43,4 +43,5 @@ export { muhuratCategories } from './muhurat-categories';
 export { muhurat } from './muhurat';
 export { feedback } from './feedback';
 export { donationLogs } from './donation-logs';
+export { favoriteAstrologers } from './favorite-astrologers';
 

@@ -37,6 +37,9 @@ export class AstrologersService {
         verificationDoc: schema.astrologers.verificationDoc,
         verificationNote: schema.astrologers.verificationNote,
         onlineStatus: schema.astrologers.onlineStatus,
+        isChatEnabled: schema.astrologers.isChatEnabled,
+        isAudioCallEnabled: schema.astrologers.isAudioCallEnabled,
+        isVideoCallEnabled: schema.astrologers.isVideoCallEnabled,
         createdAt: schema.astrologers.createdAt,
         updatedAt: schema.astrologers.updatedAt,
         name: schema.users.name,
@@ -75,6 +78,9 @@ export class AstrologersService {
         verificationDoc: schema.astrologers.verificationDoc,
         verificationNote: schema.astrologers.verificationNote,
         onlineStatus: schema.astrologers.onlineStatus,
+        isChatEnabled: schema.astrologers.isChatEnabled,
+        isAudioCallEnabled: schema.astrologers.isAudioCallEnabled,
+        isVideoCallEnabled: schema.astrologers.isVideoCallEnabled,
         createdAt: schema.astrologers.createdAt,
         updatedAt: schema.astrologers.updatedAt,
         name: schema.users.name,
@@ -142,7 +148,17 @@ export class AstrologersService {
       .where(eq(schema.astrologers.userId, id))
       .returning();
 
-    return (await this.findByUserId(id)) || result;
+    const updatedAstro = (await this.findByUserId(id)) || result;
+    if (updatedAstro) {
+      this.realtime.broadcast('astrologer:services-changed', {
+        astrologerId: id,
+        isChatEnabled: updatedAstro.isChatEnabled,
+        isAudioCallEnabled: updatedAstro.isAudioCallEnabled,
+        isVideoCallEnabled: updatedAstro.isVideoCallEnabled,
+      });
+    }
+
+    return updatedAstro;
   }
 
   async verify(id: string, status: 'approved' | 'rejected', note?: string) {

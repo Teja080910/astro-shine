@@ -1098,7 +1098,7 @@ export function PrivacyPolicyScreen({ navigation }: any) {
       <GlassCard style={{ marginBottom: 16 }}>
         <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>1. Overview & Commitment</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
-          Astro Shine respects your privacy and is committed to protecting your personal data. This privacy policy explains how we collect, store, share, and protect your personal information when you use our website, mobile application, or online consultation services.
+          Astroshine respects your privacy and is committed to protecting your personal data. This privacy policy explains how we collect, store, share, and protect your personal information when you use our website, mobile application, or online consultation services.
         </Text>
 
         <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>2. Information We Collect</Text>
@@ -1142,12 +1142,12 @@ export function TermsConditionsScreen({ navigation }: any) {
       <GlassCard style={{ marginBottom: 16 }}>
         <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>1. Acceptance of Terms</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
-          By registering an account, purchasing wallet credits, or using any feature on Astro Shine, you agree to be bound by these Terms & Conditions. If you do not accept these terms, you must immediately deactivate your account and exit our services.
+          By registering an account, purchasing wallet credits, or using any feature on Astroshine, you agree to be bound by these Terms & Conditions. If you do not accept these terms, you must immediately deactivate your account and exit our services.
         </Text>
 
         <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>2. Nature of Astrological Advice</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
-          Astro Shine offers guidance tools based on traditional Vedic astrology, Numerology, and Tarot cards. Predictions, advice, and charts are provided for entertainment and self-reflection purposes only. They do not constitute certified medical, psychiatric, legal, or financial advice.
+          Astroshine offers guidance tools based on traditional Vedic astrology, Numerology, and Tarot cards. Predictions, advice, and charts are provided for entertainment and self-reflection purposes only. They do not constitute certified medical, psychiatric, legal, or financial advice.
         </Text>
 
         <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>3. Wallet Recharge & Fees</Text>
@@ -1162,7 +1162,7 @@ export function TermsConditionsScreen({ navigation }: any) {
 
         <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>5. Limitation of Liability</Text>
         <Text style={typography.body}>
-          Astro Shine is not liable for any direct, indirect, incidental, or consequential damages resulting from user actions taken based on advice or readings provided by astrologers on the platform.
+          Astroshine is not liable for any direct, indirect, incidental, or consequential damages resulting from user actions taken based on advice or readings provided by astrologers on the platform.
         </Text>
       </GlassCard>
       <GradientButton title="Back to Dashboard" onPress={() => navigation.navigate('Main')} style={{ marginTop: 12 }} />
@@ -1177,11 +1177,11 @@ export function AboutAppScreen({ navigation }: any) {
       <SectionTitle title="About App" />
       <GlassCard style={{ alignItems: 'center', marginBottom: 16, paddingVertical: 32 }}>
         <Ionicons name="planet" size={64} color={colors.accentGold} style={{ marginBottom: 16 }} />
-        <Text style={[typography.sectionTitle, { marginBottom: 4 }]}>Astro Shine</Text>
+        <Text style={[typography.sectionTitle, { marginBottom: 4 }]}>Astroshine</Text>
         <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: 16 }]}>Version 1.0.0 (Release Build)</Text>
         
         <Text style={[typography.body, { textAlign: 'center', paddingHorizontal: 16, lineHeight: 22, marginBottom: 16 }]}>
-          Astro Shine is the world's premier platform for spiritual guidance, connecting you directly with Vedic astrologers, Tarot card readers, Numerologists, and Vastu experts.
+          Astroshine is the world's premier platform for spiritual guidance, connecting you directly with Vedic astrologers, Tarot card readers, Numerologists, and Vastu experts.
         </Text>
 
         <Text style={[typography.body, { textAlign: 'center', paddingHorizontal: 16, lineHeight: 22 }]}>
@@ -1189,7 +1189,7 @@ export function AboutAppScreen({ navigation }: any) {
         </Text>
 
         <Text style={[typography.caption, { color: colors.textMuted, marginTop: 24 }]}>
-          © 2026 Astro Shine Inc. All rights reserved.
+          © 2026 Astroshine Inc. All rights reserved.
         </Text>
       </GlassCard>
       <GradientButton title="Back to Dashboard" onPress={() => navigation.navigate('Main')} style={{ marginTop: 12 }} />

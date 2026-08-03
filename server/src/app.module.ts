@@ -44,6 +44,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { MuhuratCategoriesModule } from './modules/muhurat-categories/muhurat-categories.module';
 import { MuhuratModule } from './modules/muhurat/muhurat.module';
 import { AstrologyModule } from './modules/astrology/astrology.module';
+import { FavoritesModule } from './modules/favorites/favorites.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -94,6 +95,7 @@ import { AppService } from './app.service';
     MuhuratCategoriesModule,
     MuhuratModule,
     AstrologyModule,
+    FavoritesModule,
   ],
   controllers: [AppController],
   providers: [
