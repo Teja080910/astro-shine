@@ -51,7 +51,13 @@ export class MuhuratCronService {
         where: and(eq(schema.muhurat.date, entry.date), eq(schema.muhurat.time, entry.time)),
       });
       if (!existing) {
-        await this.db.insert(schema.muhurat).values(entry);
+        await this.db.insert(schema.muhurat).values({
+          categoryId: entry.categoryId,
+          name: entry.name,
+          date: entry.date,
+          time: entry.time,
+          description: entry.description,
+        });
         this.logger.log(`Created: ${entry.name} at ${entry.date} ${entry.time}`);
       }
     }
