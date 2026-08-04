@@ -20,6 +20,7 @@ async function seedMuhuratNew() {
     { name: 'Bhoomi Pujan Muhurat', description: 'Auspicious timing for ground-breaking / land worship' },
     { name: 'Naming Ceremony Muhurat', description: 'Auspicious timing for Naamkaran' },
     { name: 'Mundan Muhurat', description: 'Auspicious timing for first haircut ceremony' },
+    { name: 'Abhijit Muhurat', description: 'Auspicious midday muhurat ruled by Lord Brahma, ideal for new beginnings' },
   ];
 
   const createdCategories = [];
@@ -108,7 +109,31 @@ async function seedMuhuratNew() {
       time: '19:15:00',
       description: 'Evening marriage timing.',
       createdBy,
-    }
+    },
+    {
+      categoryId: createdCategories[5].id,
+      name: 'Abhijit Muhurat (Today)',
+      date: formatDateString(0),
+      time: '12:00:00',
+      description: 'The most powerful midday muhurat. Ideal for starting new ventures, ceremonies, and important work.',
+      createdBy,
+    },
+    {
+      categoryId: createdCategories[5].id,
+      name: 'Abhijit Muhurat (Tomorrow)',
+      date: formatDateString(1),
+      time: '12:00:00',
+      description: 'Midday Abhijit muhurat. Auspicious for all kinds of auspicious activities.',
+      createdBy,
+    },
+    {
+      categoryId: createdCategories[5].id,
+      name: 'Abhijit Muhurat (Day 3)',
+      date: formatDateString(3),
+      time: '12:00:00',
+      description: 'Abhijit muhurat at noon. Lord Brahma\'s favored time for new beginnings.',
+      createdBy,
+    },
   ];
 
   for (const entry of entries) {
