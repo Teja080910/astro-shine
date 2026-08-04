@@ -15,9 +15,11 @@ export class KundliService {
   async findById(id: string) { return this.db.query.kundliRecords.findFirst({ where: eq(schema.kundliRecords.id, id) }); }
 
   async create(data: typeof schema.kundliRecords.$inferInsert) {
+    const parts = (data.timeOfBirth || '').split(':');
+    const timeStr = parts.length === 2 ? `${data.timeOfBirth}:00` : parts.length === 3 ? data.timeOfBirth : '06:00:00';
     const details: BirthDetails = {
       dateString: data.dateOfBirth,
-      timeString: data.timeOfBirth,
+      timeString: timeStr,
       lat: Number(data.latitude) || 28.6139,
       lng: Number(data.longitude) || 77.209,
       timezone: Number(data.timezone) || 5.5,

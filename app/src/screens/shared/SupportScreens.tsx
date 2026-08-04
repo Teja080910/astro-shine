@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, Alert, RefreshControl, ScrollView } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, Alert, RefreshControl, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { ScreenWrapper, GlassCard, GradientButton, EmptyState, Chip, colors, typography, radii } from '../../shared';
 import { api } from '../../shared/api-client';
@@ -61,19 +61,19 @@ export function SupportScreen() {
 
   return (
     <ScreenWrapper>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
       <FlatList
         data={tickets}
         keyExtractor={t => t.id}
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>Help & Support</Text>
-              <TouchableOpacity onPress={() => setShowForm(!showForm)} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, backgroundColor: colors.accentGold + '20', borderWidth: 1, borderColor: colors.accentGold }}>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: colors.accentGold }}>{showForm ? 'Cancel' : '+ New Ticket'}</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={[typography.pageTitle, { color: colors.textPrimary, marginBottom: 8 }]}>Help & Support</Text>
+            <TouchableOpacity onPress={() => setShowForm(!showForm)} style={{ alignSelf: 'flex-start', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, backgroundColor: colors.accentGold + '20', borderWidth: 1, borderColor: colors.accentGold, marginBottom: 16 }}>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: colors.accentGold }}>{showForm ? 'Cancel' : '+ New Ticket'}</Text>
+            </TouchableOpacity>
 
             {showForm && (
               <GlassCard style={{ padding: 16, marginBottom: 16 }}>
@@ -124,6 +124,7 @@ export function SupportScreen() {
           </TouchableOpacity>
         )}
       />
+      </KeyboardAvoidingView>
     </ScreenWrapper>
   );
 }
@@ -174,10 +175,12 @@ export function TicketDetailScreen({ route }: any) {
 
   return (
     <ScreenWrapper>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
       <FlatList
         data={replies}
         keyExtractor={r => r.id}
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <>
             <GlassCard style={{ padding: 16, marginBottom: 16 }}>
@@ -239,6 +242,7 @@ export function TicketDetailScreen({ route }: any) {
           </View>
         }
       />
+      </KeyboardAvoidingView>
     </ScreenWrapper>
   );
 }
@@ -369,10 +373,12 @@ export function AdminTicketDetailScreen({ route }: any) {
 
   return (
     <ScreenWrapper>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
       <FlatList
         data={replies}
         keyExtractor={r => r.id}
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <>
             <GlassCard style={{ padding: 16, marginBottom: 16 }}>
@@ -453,6 +459,7 @@ export function AdminTicketDetailScreen({ route }: any) {
           </View>
         }
       />
+      </KeyboardAvoidingView>
     </ScreenWrapper>
   );
 }

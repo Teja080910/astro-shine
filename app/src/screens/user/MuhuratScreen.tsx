@@ -4,7 +4,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../shared/api-client';
-import { ScreenWrapper, GlassCard, Chip, SkeletonLoader, EmptyState, DatePicker, colors, typography, radii } from '../../shared';
+import { ScreenWrapper, GlassCard, Chip, SkeletonLoader, EmptyState, DatePicker, colors, typography, radii, Navbar } from '../../shared';
 import type { MuhuratItem, MuhuratCategory } from '../../shared/types';
 
 export function MuhuratScreen() {
@@ -111,7 +111,8 @@ export function MuhuratScreen() {
   );
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper noPadding>
+      <Navbar title="Auspicious Muhurat" showBack={false} />
       <View style={{ flex: 1, width: '100%', maxWidth: 600, alignSelf: 'center' }}>
         <View style={styles.header}>
           <Text style={[typography.body, { color: colors.textSecondary }]}>Browse auspicious dates and timings</Text>

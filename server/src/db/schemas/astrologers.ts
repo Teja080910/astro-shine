@@ -24,6 +24,9 @@ export const astrologers = pgTable('astrologers', {
   verificationDoc: text('verification_doc').array(),
   verificationNote: text('verification_note'),
   onlineStatus: onlineStatus('online_status').notNull().default('offline'),
+  isChatEnabled: boolean('is_chat_enabled').notNull().default(true),
+  isAudioCallEnabled: boolean('is_audio_call_enabled').notNull().default(true),
+  isVideoCallEnabled: boolean('is_video_call_enabled').notNull().default(true),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

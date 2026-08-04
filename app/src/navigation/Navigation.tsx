@@ -27,6 +27,7 @@ import {
   MandirPoojaDetailScreen,
   NotificationsScreen,
   OrderHistoryScreen,
+  HoroscopeScreen,
   PanchangScreen,
   PrivacyPolicyScreen,
   ReportScreen,
@@ -88,7 +89,7 @@ function UserTabs() {
       tabBar={(props) => <FloatingBottomBar tabs={tabs} activeTab={props.state.routeNames[props.state.index]} onTabPress={(key) => props.navigation.navigate(key)} />}
     >
       <Tab.Screen name="Home" component={UserHomeScreen} />
-      <Tab.Screen name="Horoscope" component={PanchangScreen} />
+      <Tab.Screen name="Horoscope" component={HoroscopeScreen} />
       <Tab.Screen name="Astrologers" component={AstrologerListScreen} />
       <Tab.Screen name="Muhurat" component={MuhuratScreen} />
       <Tab.Screen name="Wallet" component={WalletScreen} />

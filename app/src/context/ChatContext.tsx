@@ -18,6 +18,7 @@ interface ChatState {
   chatBlockedMessage: string | null;
   clearChatBlocked: () => void;
   astrologerStatuses: Record<string, 'online' | 'offline' | 'busy'>;
+  astrologerServices: Record<string, { isChatEnabled: boolean; isAudioCallEnabled: boolean; isVideoCallEnabled: boolean }>;
   horoscopeVersion: number;
   panchangVersion: number;
   statsVersion: number;
@@ -25,6 +26,7 @@ interface ChatState {
   notificationVersion: number;
   blogVersion: number;
   walletVersion: number;
+  videoVersion: number;
   loadConversations: () => Promise<void>;
   openConversation: (participantId: string, participantRole: string) => Promise<string>;
   setActiveConversation: (conv: Conversation | null) => void;
@@ -54,6 +56,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [typingUsers, setTypingUsers] = useState<Record<string, string | null>>({});
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [astrologerStatuses, setAstrologerStatuses] = useState<Record<string, 'online' | 'offline' | 'busy'>>({});
+  const [astrologerServices, setAstrologerServices] = useState<Record<string, { isChatEnabled: boolean; isAudioCallEnabled: boolean; isVideoCallEnabled: boolean }>>({});
   const [horoscopeVersion, setHoroscopeVersion] = useState(0);
   const [panchangVersion, setPanchangVersion] = useState(0);
   const [statsVersion, setStatsVersion] = useState(0);
@@ -61,6 +64,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [notificationVersion, setNotificationVersion] = useState(0);
   const [blogVersion, setBlogVersion] = useState(0);
   const [walletVersion, setWalletVersion] = useState(0);
+  const [videoVersion, setVideoVersion] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [chatBlockedMessage, setChatBlockedMessage] = useState<string | null>(null);
@@ -182,6 +186,17 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setAstrologerStatuses((prev) => ({ ...prev, [data.astrologerId]: data.onlineStatus }));
     });
 
+    socket.on('astrologer:services-changed', (data: { astrologerId: string; isChatEnabled: boolean; isAudioCallEnabled: boolean; isVideoCallEnabled: boolean }) => {
+      setAstrologerServices((prev) => ({
+        ...prev,
+        [data.astrologerId]: {
+          isChatEnabled: data.isChatEnabled,
+          isAudioCallEnabled: data.isAudioCallEnabled,
+          isVideoCallEnabled: data.isVideoCallEnabled,
+        }
+      }));
+    });
+
     socket.on('horoscope:updated', () => {
       setHoroscopeVersion(v => v + 1);
     });
@@ -220,6 +235,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
     socket.on('blog:deleted', () => {
       setBlogVersion(v => v + 1);
+    });
+
+    socket.on('videos:updated', () => {
+      setVideoVersion(v => v + 1);
     });
 
     socket.on('wallet:updated', (data: { balance?: string }) => {
@@ -377,6 +396,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         typingUsers,
         unreadCounts,
         astrologerStatuses,
+        astrologerServices,
         horoscopeVersion,
         panchangVersion,
         statsVersion,
@@ -384,6 +404,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         notificationVersion,
         blogVersion,
         walletVersion,
+        videoVersion,
         loading,
         hasMore,
         chatBlockedMessage,

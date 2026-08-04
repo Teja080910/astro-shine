@@ -12,7 +12,22 @@ export class PanchangService {
   ) {}
 
   async findAll() { return this.db.query.panchangRecords.findMany(); }
-  async findByDate(date: string) { return this.db.query.panchangRecords.findFirst({ where: eq(schema.panchangRecords.date, date) }); }
+  async findByDate(date: string) {
+    const existing = await this.db.query.panchangRecords.findFirst({ where: eq(schema.panchangRecords.date, date) });
+    if (existing) return existing;
+    const result = this.astrology.calculatePanchang(date, 28.6139, 77.209, 5.5);
+    const [r] = await this.db.insert(schema.panchangRecords).values({
+      date,
+      tithi: result.tithi,
+      nakshatra: result.nakshatra,
+      yoga: result.yoga,
+      karana: result.karana,
+      sunrise: result.sunrise,
+      sunset: result.sunset,
+      rahuKaal: result.rahuKaal as any,
+    }).returning();
+    return r;
+  }
 
   async create(data: typeof schema.panchangRecords.$inferInsert) {
     const result = this.astrology.calculatePanchang(data.date, 28.6139, 77.209, 5.5);

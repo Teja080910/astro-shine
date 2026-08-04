@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl, KeyboardAvoidingView, Platform, Keyboard, Dimensions, Image, Linking } from 'react-native';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
-import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, CustomModal, colors, typography, radii, shadows } from '../../shared';
+import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, CustomModal, colors, typography, radii, shadows, Navbar } from '../../shared';
 import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
-import type { Blog, MandirPooja, Notification, PoojaBooking, SupportTicket, TicketReply, NewsItem, Video, PanchangRecord, CommissionLog } from '../../shared/types';
+import type { Blog, MandirPooja, Notification, PoojaBooking, SupportTicket, TicketReply, NewsItem, Video, PanchangRecord, CommissionLog, HoroscopeRecord } from '../../shared/types';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
 import * as DocumentPicker from 'expo-document-picker';
+import { Video as ExpoVideo, ResizeMode } from 'expo-av';
 
 function SectionTitle({ title }: { title: string }) {
   return null;
@@ -20,6 +21,133 @@ function to12h(t: string): string {
   const ampm = hour >= 12 ? 'PM' : 'AM';
   const display = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
   return `${display}:${m} ${ampm}`;
+}
+
+// Horoscope
+export function HoroscopeScreen({ navigation }: any) {
+  const { horoscopeVersion } = useChat();
+  const [horoscope, setHoroscope] = useState<HoroscopeRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedSign, setSelectedSign] = useState('aries');
+  const [activeTab, setActiveTab] = useState<'general' | 'love' | 'career' | 'finance' | 'health'>('general');
+  const today = new Date().toISOString().split('T')[0];
+
+  const ZODIAC_SIGNS = [
+    { sign: 'aries', label: 'Aries' },
+    { sign: 'taurus', label: 'Taurus' },
+    { sign: 'gemini', label: 'Gemini' },
+    { sign: 'cancer', label: 'Cancer' },
+    { sign: 'leo', label: 'Leo' },
+    { sign: 'virgo', label: 'Virgo' },
+    { sign: 'libra', label: 'Libra' },
+    { sign: 'scorpio', label: 'Scorpio' },
+    { sign: 'sagittarius', label: 'Sagittarius' },
+    { sign: 'capricorn', label: 'Capricorn' },
+    { sign: 'aquarius', label: 'Aquarius' },
+    { sign: 'pisces', label: 'Pisces' },
+  ];
+
+  const CATEGORIES = [
+    { key: 'general' as const, label: 'General', icon: 'star' },
+    { key: 'love' as const, label: 'Love', icon: 'heart' },
+    { key: 'career' as const, label: 'Career', icon: 'briefcase' },
+    { key: 'finance' as const, label: 'Finance', icon: 'cash' },
+    { key: 'health' as const, label: 'Health', icon: 'pulse' },
+  ];
+
+  useEffect(() => {
+    api.horoscope.bySign(selectedSign, today).then((h) => {
+      setHoroscope(Array.isArray(h) ? h : [h]);
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, [selectedSign, horoscopeVersion]);
+
+  const current = horoscope[0];
+  const predictionText =
+    activeTab === 'general' ? current?.prediction :
+    activeTab === 'love' ? (current?.lovePrediction || current?.prediction) :
+    activeTab === 'career' ? (current?.careerPrediction || current?.prediction) :
+    activeTab === 'finance' ? (current?.financePrediction || current?.prediction) :
+    activeTab === 'health' ? (current?.healthPrediction || current?.prediction) :
+    current?.prediction;
+
+  return (
+    <ScreenWrapper scroll noPadding>
+      <Navbar title="Daily Horoscope" navigation={navigation} />
+      <View style={{ padding: 16 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, height: 44, marginBottom: 16 }} contentContainerStyle={{ alignItems: 'center' }}>
+          {ZODIAC_SIGNS.map((z) => (
+            <TouchableOpacity
+              key={z.sign}
+              onPress={() => setSelectedSign(z.sign)}
+              style={{
+                paddingHorizontal: 16, paddingVertical: 8, marginRight: 8,
+                borderRadius: 20, backgroundColor: selectedSign === z.sign ? colors.accentGold : colors.surfaceLight,
+              }}
+            >
+              <Text style={{ color: selectedSign === z.sign ? '#FFF' : colors.textPrimary, fontWeight: '600', fontSize: 14 }}>
+                {z.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, height: 36, marginBottom: 16 }} contentContainerStyle={{ alignItems: 'center', gap: 8 }}>
+          {CATEGORIES.map((cat) => (
+            <TouchableOpacity
+              key={cat.key}
+              onPress={() => setActiveTab(cat.key)}
+              style={{
+                flexDirection: 'row', alignItems: 'center', gap: 4,
+                paddingHorizontal: 14, paddingVertical: 6,
+                borderRadius: 16, backgroundColor: activeTab === cat.key ? colors.accentGold : colors.surfaceLight,
+              }}
+            >
+              <Ionicons name={cat.icon as any} size={14} color={activeTab === cat.key ? '#FFF' : colors.textSecondary} />
+              <Text style={{ color: activeTab === cat.key ? '#FFF' : colors.textPrimary, fontWeight: '600', fontSize: 12 }}>
+                {cat.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+        {loading ? (
+          <GlassCard><Text style={typography.body}>Loading...</Text></GlassCard>
+        ) : current ? (
+          <View style={{ paddingBottom: 100 }}>
+            <GlassCard style={{ padding: 16 }}>
+              <Text style={[typography.sectionTitle, { color: colors.accentGold, marginBottom: 8 }]}>
+                {selectedSign.charAt(0).toUpperCase() + selectedSign.slice(1)} — {CATEGORIES.find(c => c.key === activeTab)?.label}
+              </Text>
+              <Text style={[typography.body, { lineHeight: 22 }]}>{predictionText}</Text>
+              <View style={{ flexDirection: 'row', marginTop: 16, gap: 16 }}>
+                {current.luckyNumber && (
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.caption, { color: colors.textSecondary }]}>Lucky #</Text>
+                    <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>{current.luckyNumber}</Text>
+                  </View>
+                )}
+                {current.luckyColor && (
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.caption, { color: colors.textSecondary }]}>Color</Text>
+                    <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>{current.luckyColor}</Text>
+                  </View>
+                )}
+                {current.mood && (
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.caption, { color: colors.textSecondary }]}>Mood</Text>
+                    <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>{current.mood}</Text>
+                  </View>
+                )}
+              </View>
+            </GlassCard>
+            <Text style={[typography.caption, { textAlign: 'center', marginTop: 12, color: colors.textSecondary }]}>
+              {new Date(current.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+            </Text>
+          </View>
+        ) : (
+          <GlassCard><Text style={[typography.body, { textAlign: 'center', marginVertical: 16 }]}>No horoscope data available for today</Text></GlassCard>
+        )}
+      </View>
+    </ScreenWrapper>
+  );
 }
 
 // Panchang
@@ -39,7 +167,7 @@ export function PanchangScreen() {
     <ScreenWrapper scroll>
       <SectionTitle title="Panchang" />
       {data ? (
-        <>
+        <View style={{ paddingBottom: 100 }}>
           <Text style={[typography.caption, { marginBottom: 16, color: colors.textSecondary }]}>
             {new Date(data.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
           </Text>
@@ -60,8 +188,8 @@ export function PanchangScreen() {
               <Row icon="alert-circle" label="Rahu Kaal" value={`${to12h(data.rahuKaal.start)} - ${to12h(data.rahuKaal.end)}`} />
             </GlassCard>
           )}
-        </>
-      ) : (
+          </View>
+        ) : (
         <GlassCard><Text style={[typography.body, { textAlign: 'center', marginVertical: 16 }]}>No panchang data available for today</Text></GlassCard>
       )}
     </ScreenWrapper>
@@ -80,19 +208,40 @@ function Row({ icon, label, value }: { icon: string; label: string; value?: stri
 }
 
 // Videos
+function getYouTubeId(url: string): string | null {
+  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
+
 export function VideosScreen() {
   const isFocused = useIsFocused();
+  const { videoVersion } = useChat();
   const [videos, setVideos] = useState<Video[]>([]);
-  useEffect(() => { if (isFocused) api.videos.list().then(setVideos).catch(() => {}); }, [isFocused]);
+  const [playingVideo, setPlayingVideo] = useState<Video | null>(null);
+  const videoRef = useRef<ExpoVideo>(null);
+  const { width } = Dimensions.get('window');
+  useEffect(() => { if (isFocused) api.videos.list().then(setVideos).catch(() => {}); }, [isFocused, videoVersion]);
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Videos" />
       {videos.length === 0 ? <EmptyState icon={<Ionicons name="videocam-outline" size={48} color={colors.textMuted} />} title="No videos yet" /> :
-        videos.map(v => (
-          <TouchableOpacity key={v.id} style={{ marginBottom: 12 }}>
+        videos.map(v => {
+          const ytId = getYouTubeId(v.url);
+          const thumbUrl = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : v.thumbnail;
+          return (
+          <TouchableOpacity key={v.id} style={{ marginBottom: 12 }} onPress={() => {
+            if (ytId) {
+              Linking.openURL(v.url);
+            } else {
+              setPlayingVideo(v);
+            }
+          }}>
             <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
               <View style={{ height: 180, backgroundColor: colors.surfaceLight, alignItems: 'center', justifyContent: 'center' }}>
-                <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primary + '40', alignItems: 'center', justifyContent: 'center' }}>
+                {thumbUrl ? (
+                  <Image source={{ uri: thumbUrl }} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+                ) : null}
+                <View style={{ position: 'absolute', width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="play" size={28} color={colors.white} style={{ marginLeft: 4 }} />
                 </View>
               </View>
@@ -106,7 +255,18 @@ export function VideosScreen() {
               </View>
             </GlassCard>
           </TouchableOpacity>
-        ))}
+          );
+        })}
+      <Modal visible={!!playingVideo} transparent animationType="slide" onRequestClose={() => { setPlayingVideo(null); videoRef.current?.stopAsync(); }}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' }}>
+          <TouchableOpacity style={{ position: 'absolute', top: 50, right: 20, zIndex: 10 }} onPress={() => { setPlayingVideo(null); videoRef.current?.stopAsync(); }}>
+            <Ionicons name="close" size={28} color="#FFF" />
+          </TouchableOpacity>
+          {playingVideo?.url ? (
+            <ExpoVideo ref={videoRef} source={{ uri: playingVideo.url }} style={{ width, height: width * 0.5625 }} resizeMode={ResizeMode.CONTAIN} shouldPlay useNativeControls />
+          ) : null}
+        </View>
+      </Modal>
     </ScreenWrapper>
   );
 }
@@ -1098,7 +1258,7 @@ export function PrivacyPolicyScreen({ navigation }: any) {
       <GlassCard style={{ marginBottom: 16 }}>
         <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>1. Overview & Commitment</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
-          Astro Shine respects your privacy and is committed to protecting your personal data. This privacy policy explains how we collect, store, share, and protect your personal information when you use our website, mobile application, or online consultation services.
+          Astroshine respects your privacy and is committed to protecting your personal data. This privacy policy explains how we collect, store, share, and protect your personal information when you use our website, mobile application, or online consultation services.
         </Text>
 
         <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>2. Information We Collect</Text>
@@ -1142,12 +1302,12 @@ export function TermsConditionsScreen({ navigation }: any) {
       <GlassCard style={{ marginBottom: 16 }}>
         <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>1. Acceptance of Terms</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
-          By registering an account, purchasing wallet credits, or using any feature on Astro Shine, you agree to be bound by these Terms & Conditions. If you do not accept these terms, you must immediately deactivate your account and exit our services.
+          By registering an account, purchasing wallet credits, or using any feature on Astroshine, you agree to be bound by these Terms & Conditions. If you do not accept these terms, you must immediately deactivate your account and exit our services.
         </Text>
 
         <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>2. Nature of Astrological Advice</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
-          Astro Shine offers guidance tools based on traditional Vedic astrology, Numerology, and Tarot cards. Predictions, advice, and charts are provided for entertainment and self-reflection purposes only. They do not constitute certified medical, psychiatric, legal, or financial advice.
+          Astroshine offers guidance tools based on traditional Vedic astrology, Numerology, and Tarot cards. Predictions, advice, and charts are provided for entertainment and self-reflection purposes only. They do not constitute certified medical, psychiatric, legal, or financial advice.
         </Text>
 
         <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>3. Wallet Recharge & Fees</Text>
@@ -1162,7 +1322,7 @@ export function TermsConditionsScreen({ navigation }: any) {
 
         <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>5. Limitation of Liability</Text>
         <Text style={typography.body}>
-          Astro Shine is not liable for any direct, indirect, incidental, or consequential damages resulting from user actions taken based on advice or readings provided by astrologers on the platform.
+          Astroshine is not liable for any direct, indirect, incidental, or consequential damages resulting from user actions taken based on advice or readings provided by astrologers on the platform.
         </Text>
       </GlassCard>
       <GradientButton title="Back to Dashboard" onPress={() => navigation.navigate('Main')} style={{ marginTop: 12 }} />
@@ -1177,11 +1337,11 @@ export function AboutAppScreen({ navigation }: any) {
       <SectionTitle title="About App" />
       <GlassCard style={{ alignItems: 'center', marginBottom: 16, paddingVertical: 32 }}>
         <Ionicons name="planet" size={64} color={colors.accentGold} style={{ marginBottom: 16 }} />
-        <Text style={[typography.sectionTitle, { marginBottom: 4 }]}>Astro Shine</Text>
+        <Text style={[typography.sectionTitle, { marginBottom: 4 }]}>Astroshine</Text>
         <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: 16 }]}>Version 1.0.0 (Release Build)</Text>
         
         <Text style={[typography.body, { textAlign: 'center', paddingHorizontal: 16, lineHeight: 22, marginBottom: 16 }]}>
-          Astro Shine is the world's premier platform for spiritual guidance, connecting you directly with Vedic astrologers, Tarot card readers, Numerologists, and Vastu experts.
+          Astroshine is the world's premier platform for spiritual guidance, connecting you directly with Vedic astrologers, Tarot card readers, Numerologists, and Vastu experts.
         </Text>
 
         <Text style={[typography.body, { textAlign: 'center', paddingHorizontal: 16, lineHeight: 22 }]}>
@@ -1189,7 +1349,7 @@ export function AboutAppScreen({ navigation }: any) {
         </Text>
 
         <Text style={[typography.caption, { color: colors.textMuted, marginTop: 24 }]}>
-          © 2026 Astro Shine Inc. All rights reserved.
+          © 2026 Astroshine Inc. All rights reserved.
         </Text>
       </GlassCard>
       <GradientButton title="Back to Dashboard" onPress={() => navigation.navigate('Main')} style={{ marginTop: 12 }} />
@@ -1281,4 +1441,3 @@ const styles = StyleSheet.create({
 export { SupportScreen, TicketDetailScreen, AdminSupportScreen, AdminTicketDetailScreen } from './SupportScreens';
 export { MandirPoojaDetailScreen } from './MandirPoojaDetailScreen';
 export { BlogDetailScreen } from './BlogDetailScreen';
-export { CreateBlogScreen };

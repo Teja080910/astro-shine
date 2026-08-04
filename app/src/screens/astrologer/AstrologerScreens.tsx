@@ -30,6 +30,8 @@ import {
   colors,
   radii,
   typography,
+  OmIcon,
+  Navbar,
 } from "../../shared";
 import { api } from "../../shared/api-client";
 import type {
@@ -259,18 +261,10 @@ export function AstrologerHomeScreen({ navigation }: any) {
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: 4,
+                  gap: 6,
                 }}
               >
-                <Text
-                  style={{
-                    color: isDark ? "#FBBF24" : "#D97706",
-                    fontSize: 22,
-                    fontWeight: "900",
-                  }}
-                >
-                  ॐ
-                </Text>
+                <OmIcon isDark={isDark} />
                 <Text
                   style={{
                     fontSize: 20,
@@ -279,7 +273,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
                     letterSpacing: 0.5,
                   }}
                 >
-                  ASTROŚHINE
+                  ASTROSHINE
                 </Text>
               </View>
               <Text
@@ -818,7 +812,8 @@ export function AstrologerWalletScreen({ navigation }: any) {
     .reduce((s, t) => s + Number(t.amount), 0);
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper noPadding>
+      <Navbar title="My Wallet" showBack={false} />
       <ScrollView
         contentContainerStyle={{ padding: 16 }}
         refreshControl={
@@ -1641,6 +1636,51 @@ export function AstrologerProfileScreen({ navigation }: any) {
 
   const profile = astrologer;
 
+  const [isChatEnabled, setIsChatEnabled] = useState(astrologer?.isChatEnabled ?? true);
+  const [isAudioCallEnabled, setIsAudioCallEnabled] = useState(astrologer?.isAudioCallEnabled ?? true);
+  const [isVideoCallEnabled, setIsVideoCallEnabled] = useState(astrologer?.isVideoCallEnabled ?? true);
+
+  useEffect(() => {
+    if (astrologer) {
+      setIsChatEnabled(astrologer.isChatEnabled ?? true);
+      setIsAudioCallEnabled(astrologer.isAudioCallEnabled ?? true);
+      setIsVideoCallEnabled(astrologer.isVideoCallEnabled ?? true);
+    }
+  }, [astrologer]);
+
+  const toggleChat = async (val: boolean) => {
+    setIsChatEnabled(val);
+    try {
+      const updated = await api.astrologers.update(astrologer!.userId, { isChatEnabled: val });
+      updateUser({ ...astrologer, ...updated });
+    } catch {
+      Alert.alert("Error", "Failed to update chat service status");
+      setIsChatEnabled(!val);
+    }
+  };
+
+  const toggleAudioCall = async (val: boolean) => {
+    setIsAudioCallEnabled(val);
+    try {
+      const updated = await api.astrologers.update(astrologer!.userId, { isAudioCallEnabled: val });
+      updateUser({ ...astrologer, ...updated });
+    } catch {
+      Alert.alert("Error", "Failed to update voice call service status");
+      setIsAudioCallEnabled(!val);
+    }
+  };
+
+  const toggleVideoCall = async (val: boolean) => {
+    setIsVideoCallEnabled(val);
+    try {
+      const updated = await api.astrologers.update(astrologer!.userId, { isVideoCallEnabled: val });
+      updateUser({ ...astrologer, ...updated });
+    } catch {
+      Alert.alert("Error", "Failed to update video call service status");
+      setIsVideoCallEnabled(!val);
+    }
+  };
+
   const items = [
     { icon: "person-outline", label: "Edit Profile", route: "EditProfile" },
     {
@@ -2012,6 +2052,160 @@ export function AstrologerProfileScreen({ navigation }: any) {
                 <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
               </TouchableOpacity>
             ))}
+          </View>
+
+          {/* Service Configuration Group */}
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              padding: 14,
+              borderWidth: 1,
+              borderColor: colors.cardBorder,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: "800",
+                color: colors.primaryLight,
+                letterSpacing: 0.8,
+                marginBottom: 8,
+                marginLeft: 4,
+              }}
+            >
+              SERVICE CHANNELS CONFIGURATION
+            </Text>
+
+            {/* Chat Toggle Row */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 11,
+                borderBottomWidth: 1,
+                borderBottomColor: colors.divider,
+              }}
+            >
+              <View
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 12,
+                  backgroundColor: "rgba(16, 185, 129, 0.15)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons
+                  name="chatbubbles-outline"
+                  size={20}
+                  color="#10B981"
+                />
+              </View>
+              <Text
+                style={{
+                  flex: 1,
+                  fontSize: 14,
+                  fontWeight: "600",
+                  color: colors.textPrimary,
+                }}
+              >
+                Chat Service
+              </Text>
+              <Toggle
+                value={isChatEnabled}
+                onValueChange={toggleChat}
+                trackColor={{ false: "#D1D5DB", true: "#10B981" }}
+              />
+            </View>
+
+            {/* Voice Call Toggle Row */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 11,
+                borderBottomWidth: 1,
+                borderBottomColor: colors.divider,
+              }}
+            >
+              <View
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 12,
+                  backgroundColor: "rgba(59, 130, 246, 0.15)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons
+                  name="call-outline"
+                  size={20}
+                  color="#3B82F6"
+                />
+              </View>
+              <Text
+                style={{
+                  flex: 1,
+                  fontSize: 14,
+                  fontWeight: "600",
+                  color: colors.textPrimary,
+                }}
+              >
+                Voice Call Service
+              </Text>
+              <Toggle
+                value={isAudioCallEnabled}
+                onValueChange={toggleAudioCall}
+                trackColor={{ false: "#D1D5DB", true: "#3B82F6" }}
+              />
+            </View>
+
+            {/* Video Call Toggle Row */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 11,
+              }}
+            >
+              <View
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 12,
+                  backgroundColor: "rgba(236, 72, 153, 0.15)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons
+                  name="videocam-outline"
+                  size={20}
+                  color="#EC4899"
+                />
+              </View>
+              <Text
+                style={{
+                  flex: 1,
+                  fontSize: 14,
+                  fontWeight: "600",
+                  color: colors.textPrimary,
+                }}
+              >
+                Video Call Service
+              </Text>
+              <Toggle
+                value={isVideoCallEnabled}
+                onValueChange={toggleVideoCall}
+                trackColor={{ false: "#D1D5DB", true: "#EC4899" }}
+              />
+            </View>
           </View>
 
           {/* Account & Security Group */}

@@ -110,6 +110,13 @@ class ApiClient {
     getFeedback: (id: string) => this.get<any[]>(`/astrologers/${id}/feedback`),
   };
 
+  // Favorites
+  favorites = {
+    list: () => this.get<Astrologer[]>('/favorites'),
+    toggle: (id: string) => this.post<{ isFavorite: boolean }>(`/favorites/toggle/${id}`),
+    status: (id: string) => this.get<{ isFavorite: boolean }>(`/favorites/status/${id}`),
+  };
+
   // Admins
   admins = {
     list: () => this.get<Admin[]>('/admins'),

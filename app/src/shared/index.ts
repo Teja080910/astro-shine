@@ -19,3 +19,5 @@ export { TimePicker } from './components/TimePicker';
 export { DatePicker } from './components/DatePicker';
 export { GlobalAlert } from './components/GlobalAlert';
 export { InsufficientBalanceDialog } from './components/InsufficientBalanceDialog';
+export { OmIcon } from './components/OmIcon';
+export { Navbar } from './components/Navbar';

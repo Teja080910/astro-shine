@@ -49,6 +49,9 @@ export interface Astrologer {
   verificationStatus: VerificationStatus;
   verificationDoc?: string[]; verificationNote?: string;
   onlineStatus: OnlineStatus;
+  isChatEnabled?: boolean;
+  isAudioCallEnabled?: boolean;
+  isVideoCallEnabled?: boolean;
   createdAt: string; updatedAt: string;
 }
 
@@ -78,6 +81,7 @@ export interface MatchmakingRecord {
 // ============ Horoscope ============
 export interface HoroscopeRecord {
   id: string; zodiacSign: string; date: string; prediction: string;
+  lovePrediction?: string; careerPrediction?: string; financePrediction?: string; healthPrediction?: string;
   luckyNumber?: number; luckyColor?: string; mood?: string; createdAt: string;
 }
 

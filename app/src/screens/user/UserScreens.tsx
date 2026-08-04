@@ -5,6 +5,7 @@ import {
   Alert,
   FlatList,
   Image,
+  Modal,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -37,6 +38,8 @@ import {
   colors,
   radii,
   typography,
+  OmIcon,
+  Navbar,
 } from "../../shared";
 import { api } from "../../shared/api-client";
 import type {
@@ -125,6 +128,7 @@ export function UserHomeScreen({ navigation }: any) {
   const mutedTextColor = isDark ? "#9CA3AF" : "#6B7280";
   const goldTextColor = isDark ? "#FBBF24" : "#D97706";
   const [astrologers, setAstrologers] = useState<Astrologer[]>([]);
+  const [favoriteAstrologers, setFavoriteAstrologers] = useState<Astrologer[]>([]);
   const [horoscope, setHoroscope] = useState<HoroscopeRecord[]>([]);
   const [videos, setVideos] = useState<Video[]>([]);
   const [blogs, setBlogs] = useState<Blog[]>([]);
@@ -194,7 +198,7 @@ export function UserHomeScreen({ navigation }: any) {
 
   const loadData = useCallback(async () => {
     try {
-      const [a, h, v, b, p, n, w] = await Promise.all([
+      const [a, h, v, b, p, n, w, favs] = await Promise.all([
         api.astrologers.list(),
         api.horoscope.bySign(selectedSign, todayStr),
         api.videos.list(),
@@ -202,6 +206,7 @@ export function UserHomeScreen({ navigation }: any) {
         api.mandirPooja.list(),
         api.notifications.list({ userId: user?.id }),
         api.wallet.get().catch(() => null),
+        api.favorites.list().catch(() => []),
       ]);
       setAstrologers(a);
       setHoroscope(Array.isArray(h) ? h : [h]);
@@ -210,6 +215,7 @@ export function UserHomeScreen({ navigation }: any) {
       setPoojas(p);
       setNotifications(n);
       setWallet(w);
+      setFavoriteAstrologers(favs);
     } catch {
     } finally {
       setLoading(false);
@@ -317,18 +323,10 @@ export function UserHomeScreen({ navigation }: any) {
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: 4,
+                gap: 6,
               }}
             >
-              <Text
-                style={{
-                  color: isDark ? "#FBBF24" : "#D97706",
-                  fontSize: 22,
-                  fontWeight: "900",
-                }}
-              >
-                ॐ
-              </Text>
+              <OmIcon isDark={isDark} />
               <Text
                 style={{
                   fontSize: 20,
@@ -337,7 +335,7 @@ export function UserHomeScreen({ navigation }: any) {
                   letterSpacing: 0.5,
                 }}
               >
-                ASTROŚHINE
+                ASTROSHINE
               </Text>
             </View>
             <Text
@@ -665,7 +663,13 @@ export function UserHomeScreen({ navigation }: any) {
                   marginVertical: 6,
                 }}
               >
-                {horoscope[0]?.prediction ||
+                {horoscope[0]?.[
+                  activeHoroscopeTab === "love" ? "lovePrediction" :
+                  activeHoroscopeTab === "career" ? "careerPrediction" :
+                  activeHoroscopeTab === "finance" ? "financePrediction" :
+                  activeHoroscopeTab === "health" ? "healthPrediction" :
+                  "prediction"
+                ] || horoscope[0]?.prediction ||
                   "Today brings new opportunities in your career. Stay open to unexpected changes. Your confidence will help you achieve important goals."}
               </Text>
               <TouchableOpacity
@@ -1437,6 +1441,58 @@ export function UserHomeScreen({ navigation }: any) {
 
         <View style={{ height: 24 }} />
 
+        {favoriteAstrologers.length > 0 && (
+          <>
+            <SectionHeader
+              title="Favorite Astrologers"
+              onSeeAll={() => navigation.navigate("AstrologerList", { onlyFavorites: true })}
+            />
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              data={favoriteAstrologers}
+              keyExtractor={(a) => `fav-${a.userId}`}
+              renderItem={({ item }) => {
+                const isOnline = getAstrologerOnlineStatus(item, astrologerStatuses);
+                return (
+                  <TouchableOpacity
+                    onPress={() =>
+                      navigation.navigate("AstrologerDetail", { id: item.userId })
+                    }
+                    style={styles.astroCard}
+                  >
+                    <GlassCard style={styles.astroInner}>
+                      <Avatar
+                        size={56}
+                        online={isOnline}
+                      />
+                      <Text style={typography.cardTitle} numberOfLines={1}>
+                        {item.name}
+                      </Text>
+                      <StarRating
+                        rating={
+                          typeof item.rating === "string"
+                            ? parseFloat(item.rating)
+                            : item.rating
+                        }
+                        size={12}
+                      />
+                      <Text style={typography.caption}>
+                        {item.specialization?.[0] || "Astrologer"}
+                      </Text>
+                      <Text style={typography.price}>
+                        ₹{item.chatPricePerMin || item.pricePerMin}/min
+                      </Text>
+                    </GlassCard>
+                  </TouchableOpacity>
+                );
+              }}
+              style={{ marginLeft: 8 }}
+            />
+            <View style={{ height: 16 }} />
+          </>
+        )}
+
         <SectionHeader
           title="Live Astrologers"
           onSeeAll={() =>
@@ -1905,12 +1961,13 @@ export function AstrologerListScreen({ route, navigation }: any) {
   const [data, setData] = useState<Astrologer[]>([]);
   const [search, setSearch] = useState("");
   const [selectedCat, setSelectedCat] = useState("All");
-  const cats = ["All", "Vedic", "Palmistry", "Vastu"];
+  const cats = ["All", ...new Set(data.flatMap((a) => a.specialization || []).filter(Boolean))];
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [balanceDialogVisible, setBalanceDialogVisible] = useState(false);
   const onlyLive = route?.params?.onlyLive ?? false;
+  const onlyFavorites = route?.params?.onlyFavorites ?? false;
 
   const fetchData = useCallback(() => api.astrologers.list().then(setData), []);
   useEffect(() => {
@@ -1920,6 +1977,14 @@ export function AstrologerListScreen({ route, navigation }: any) {
       api.wallet.get().then((w) => setWalletBalance(Number(w.balance))).catch(() => {});
     }
   }, [isFocused, fetchData]);
+
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  useEffect(() => {
+    if (isFocused && onlyFavorites) {
+      api.favorites.list().then((favs: any[]) => setFavoriteIds(favs.map((f: any) => f.userId))).catch(() => {});
+    }
+  }, [isFocused, onlyFavorites]);
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchData().finally(() => setRefreshing(false));
@@ -1939,14 +2004,16 @@ export function AstrologerListScreen({ route, navigation }: any) {
       );
     const matchesLive =
       !onlyLive || getAstrologerOnlineStatus(a, astrologerStatuses);
-    return matchesSearch && matchesCategory && matchesLive;
+    const matchesFav =
+      !onlyFavorites || favoriteIds.includes(a.userId);
+    return matchesSearch && matchesCategory && matchesLive && matchesFav;
   });
 
   return (
     <ScreenWrapper noPadding>
       <View style={{ padding: 16, paddingBottom: 0 }}>
         <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>
-          {onlyLive ? "Live Astrologers" : "Astrologers"}
+          {onlyLive ? "Live Astrologers" : onlyFavorites ? "Favorite Astrologers" : "Astrologers"}
         </Text>
       </View>
       <SearchBar value={search} onChangeText={setSearch} />
@@ -2061,7 +2128,7 @@ export function AstrologerListScreen({ route, navigation }: any) {
                       flex: 1,
                       height: 36,
                       borderRadius: 12,
-                      backgroundColor: "#2563EB",
+                      backgroundColor: "#F59E0B",
                       flexDirection: "row",
                       alignItems: "center",
                       justifyContent: "center",
@@ -2107,7 +2174,7 @@ export function AstrologerListScreen({ route, navigation }: any) {
                       flex: 1,
                       height: 36,
                       borderRadius: 12,
-                      backgroundColor: "#16A34A",
+                      backgroundColor: "#F59E0B",
                       flexDirection: "row",
                       alignItems: "center",
                       justifyContent: "center",
@@ -2153,7 +2220,7 @@ export function AstrologerListScreen({ route, navigation }: any) {
                       flex: 1,
                       height: 36,
                       borderRadius: 12,
-                      backgroundColor: "#7C3AED",
+                      backgroundColor: "#F59E0B",
                       flexDirection: "row",
                       alignItems: "center",
                       justifyContent: "center",
@@ -2191,8 +2258,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
   const isFocused = useIsFocused();
   const [astro, setAstro] = useState<Astrologer | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
-  const { openConversation } = useChat();
-  const { astrologerStatuses } = useChat();
+  const { openConversation, astrologerStatuses, astrologerServices } = useChat();
   const { initiateCall } = useCall();
   const [offlineDialogVisible, setOfflineDialogVisible] = useState(false);
   const [balanceDialogVisible, setBalanceDialogVisible] = useState(false);
@@ -2202,6 +2268,10 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
   const [feedbackSuccessVisible, setFeedbackSuccessVisible] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [giftModalVisible, setGiftModalVisible] = useState(false);
+  const [gifts, setGifts] = useState<any[]>([]);
+  const [selectedGift, setSelectedGift] = useState<any>(null);
+  const [giftSending, setGiftSending] = useState(false);
   const { user, theme } = useAuth();
   const isDark = theme === "dark";
 
@@ -2217,6 +2287,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
     if (isFocused) {
       api.astrologers.get(id).then(setAstro);
       api.wallet.get().then((w) => setWalletBalance(Number(w.balance))).catch(() => {});
+      api.favorites.status(id).then((res) => setIsFavorite(res.isFavorite)).catch(() => {});
     }
   }, [id, isFocused]);
   if (!astro)
@@ -2307,6 +2378,47 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
     }
     initiateCall(id as string, astro.name || "", "video");
   };
+
+  const wsServices = astrologerServices[id];
+  const isChatEnabled = wsServices ? wsServices.isChatEnabled : (astro.isChatEnabled ?? true);
+  const isAudioCallEnabled = wsServices ? wsServices.isAudioCallEnabled : (astro.isAudioCallEnabled ?? true);
+  const isVideoCallEnabled = wsServices ? wsServices.isVideoCallEnabled : (astro.isVideoCallEnabled ?? true);
+
+  const statItems: any[] = [];
+  if (isChatEnabled) {
+    statItems.push({
+      icon: "chatbubble-ellipses-sharp",
+      color: "#8B5CF6",
+      value: astro.totalChats ? `${astro.totalChats}K+` : "12K+",
+      label: "Chats",
+      bgColor: "rgba(139, 92, 246, 0.15)"
+    });
+  }
+  if (isAudioCallEnabled) {
+    statItems.push({
+      icon: "call-sharp",
+      color: "#10B981",
+      value: astro.totalAudioCalls ? `${astro.totalAudioCalls}K+` : "9K+",
+      label: "Calls",
+      bgColor: "rgba(16, 185, 129, 0.15)"
+    });
+  }
+  if (isVideoCallEnabled) {
+    statItems.push({
+      icon: "videocam-sharp",
+      color: "#F59E0B",
+      value: astro.totalVideoCalls ? `${astro.totalVideoCalls}K+` : "5K+",
+      label: "Video Calls",
+      bgColor: "rgba(245, 158, 11, 0.15)"
+    });
+  }
+  statItems.push({
+    icon: "heart-sharp",
+    color: "#EC4899",
+    value: "98%",
+    label: "Happy Clients",
+    bgColor: "rgba(236, 72, 153, 0.15)"
+  });
 
   return (
     <ScreenWrapper scroll style={{ padding: 16 }}>
@@ -2572,262 +2684,216 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
             "Specialist in Kundli reading, marriage, career, business, health and relationship solutions."}
         </Text>
 
-        {/* 4 Stats Grid (2x2 Layout to prevent squishing) */}
-        <View
-          style={{
-            paddingVertical: 12,
-            borderTopWidth: 1,
-            borderBottomWidth: 1,
-            borderColor: isDark ? "rgba(255,255,255,0.08)" : "#FDE68A",
-            marginVertical: 10,
-            gap: 12,
-          }}
-        >
-          {/* Row 1 */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            {/* Chats Column */}
-            <View style={{ alignItems: "center", flex: 1 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                <View
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 14,
-                    backgroundColor: "rgba(139, 92, 246, 0.15)",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Ionicons name="chatbubble-ellipses-sharp" size={15} color="#8B5CF6" />
+        {/* Dynamic Stats Grid */}
+        {statItems.length > 0 && (
+          <View
+            style={{
+              paddingVertical: 12,
+              borderTopWidth: 1,
+              borderBottomWidth: 1,
+              borderColor: isDark ? "rgba(255,255,255,0.08)" : "#FDE68A",
+              marginVertical: 10,
+            }}
+          >
+            <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center" }}>
+              {statItems.map((item, idx) => {
+                const showDivider = idx > 0 && idx % 2 !== 0;
+                const isSecondRow = idx >= 2;
+                return (
+                  <React.Fragment key={item.label}>
+                    {idx === 2 && (
+                      <View style={{ width: "100%", height: 12 }} />
+                    )}
+                    {showDivider && (
+                      <View style={{ width: 1, height: 32, backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A" }} />
+                    )}
+                    <View style={{ alignItems: "center", flex: 1, minWidth: 120 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                        <View
+                          style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: 14,
+                            backgroundColor: item.bgColor,
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <Ionicons name={item.icon as any} size={15} color={item.color} />
+                        </View>
+                        <Text style={{ fontSize: 13, fontWeight: "800", color: titleColor }}>
+                          {item.value}
+                        </Text>
+                      </View>
+                      <Text style={{ fontSize: 10, color: mutedTextColor, marginTop: 2 }}>
+                        {item.label}
+                      </Text>
+                    </View>
+                  </React.Fragment>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
+        {/* Rates Box Container (Conditional) */}
+        {(isChatEnabled || isAudioCallEnabled || isVideoCallEnabled) && (
+          <View
+            style={{
+              backgroundColor: cardLightBg,
+              borderColor: cardBorderColor,
+              borderWidth: 1,
+              borderRadius: 16,
+              padding: 12,
+              marginTop: 6,
+              marginBottom: 16,
+              gap: 10,
+            }}
+          >
+            {isChatEnabled && (
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <Ionicons name="chatbox" size={16} color="#F59E0B" />
+                  <Text style={{ fontSize: 13, fontWeight: "600", color: titleColor }}>Chat Price</Text>
                 </View>
                 <Text style={{ fontSize: 13, fontWeight: "800", color: titleColor }}>
-                  {astro.totalChats ? `${astro.totalChats}K+` : "12K+"}
+                  ₹{astro.chatPricePerMin || 15}.00<Text style={{ fontSize: 11, color: mutedTextColor, fontWeight: "400" }}>/min</Text>
                 </Text>
               </View>
-              <Text style={{ fontSize: 10, color: mutedTextColor, marginTop: 2 }}>
-                Chats
-              </Text>
-            </View>
+            )}
 
-            {/* Vertical Divider */}
-            <View style={{ width: 1, height: 32, backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A" }} />
+            {isChatEnabled && (isAudioCallEnabled || isVideoCallEnabled) && (
+              <View style={{ height: 1, backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "#F3F4F6" }} />
+            )}
 
-            {/* Calls Column */}
-            <View style={{ alignItems: "center", flex: 1 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                <View
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 14,
-                    backgroundColor: "rgba(16, 185, 129, 0.15)",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Ionicons name="call-sharp" size={15} color="#10B981" />
+            {isAudioCallEnabled && (
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <Ionicons name="call" size={16} color="#10B981" />
+                  <Text style={{ fontSize: 13, fontWeight: "600", color: titleColor }}>Voice Call Price</Text>
                 </View>
                 <Text style={{ fontSize: 13, fontWeight: "800", color: titleColor }}>
-                  {astro.totalAudioCalls ? `${astro.totalAudioCalls}K+` : "9K+"}
+                  ₹{astro.audioCallPricePerMin || 22}.50<Text style={{ fontSize: 11, color: mutedTextColor, fontWeight: "400" }}>/min</Text>
                 </Text>
               </View>
-              <Text style={{ fontSize: 10, color: mutedTextColor, marginTop: 2 }}>
-                Calls
-              </Text>
-            </View>
-          </View>
+            )}
 
-          {/* Row 2 */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            {/* Video Calls Column */}
-            <View style={{ alignItems: "center", flex: 1 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                <View
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 14,
-                    backgroundColor: "rgba(245, 158, 11, 0.15)",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Ionicons name="videocam-sharp" size={15} color="#F59E0B" />
+            {isAudioCallEnabled && isVideoCallEnabled && (
+              <View style={{ height: 1, backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "#F3F4F6" }} />
+            )}
+
+            {isVideoCallEnabled && (
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <Ionicons name="videocam" size={16} color="#8B5CF6" />
+                  <Text style={{ fontSize: 13, fontWeight: "600", color: titleColor }}>Video Call Price</Text>
                 </View>
                 <Text style={{ fontSize: 13, fontWeight: "800", color: titleColor }}>
-                  {astro.totalVideoCalls ? `${astro.totalVideoCalls}K+` : "5K+"}
+                  ₹{astro.videoCallPricePerMin || 20}.00<Text style={{ fontSize: 11, color: mutedTextColor, fontWeight: "400" }}>/min</Text>
                 </Text>
               </View>
-              <Text style={{ fontSize: 10, color: mutedTextColor, marginTop: 2 }}>
-                Video Calls
-              </Text>
-            </View>
-
-            {/* Vertical Divider */}
-            <View style={{ width: 1, height: 32, backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A" }} />
-
-            {/* Happy Clients Column */}
-            <View style={{ alignItems: "center", flex: 1 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                <View
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: 14,
-                    backgroundColor: "rgba(236, 72, 153, 0.15)",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Ionicons name="heart-sharp" size={15} color="#EC4899" />
-                </View>
-                <Text style={{ fontSize: 13, fontWeight: "800", color: titleColor }}>
-                  98%
-                </Text>
-              </View>
-              <Text style={{ fontSize: 10, color: mutedTextColor, marginTop: 2 }}>
-                Happy Clients
-              </Text>
-            </View>
+            )}
           </View>
-        </View>
+        )}
 
-        {/* Rates Box Container (Vertical List to prevent horizontal cutoff) */}
-        <View
-          style={{
-            backgroundColor: cardLightBg,
-            borderColor: cardBorderColor,
-            borderWidth: 1,
-            borderRadius: 16,
-            padding: 12,
-            marginTop: 6,
-            marginBottom: 16,
-            gap: 10,
-          }}
-        >
-          {/* Chat Rate Row */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Ionicons name="chatbox" size={16} color="#F59E0B" />
-              <Text style={{ fontSize: 13, fontWeight: "600", color: titleColor }}>Chat Price</Text>
-            </View>
-            <Text style={{ fontSize: 13, fontWeight: "800", color: titleColor }}>
-              ₹{astro.chatPricePerMin || 15}.00<Text style={{ fontSize: 11, color: mutedTextColor, fontWeight: "400" }}>/min</Text>
-            </Text>
-          </View>
-
-          <View style={{ height: 1, backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "#F3F4F6" }} />
-
-          {/* Voice Call Rate Row */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Ionicons name="call" size={16} color="#10B981" />
-              <Text style={{ fontSize: 13, fontWeight: "600", color: titleColor }}>Voice Call Price</Text>
-            </View>
-            <Text style={{ fontSize: 13, fontWeight: "800", color: titleColor }}>
-              ₹{astro.audioCallPricePerMin || 22}.50<Text style={{ fontSize: 11, color: mutedTextColor, fontWeight: "400" }}>/min</Text>
-            </Text>
-          </View>
-
-          <View style={{ height: 1, backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "#F3F4F6" }} />
-
-          {/* Video Call Rate Row */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Ionicons name="videocam" size={16} color="#8B5CF6" />
-              <Text style={{ fontSize: 13, fontWeight: "600", color: titleColor }}>Video Call Price</Text>
-            </View>
-            <Text style={{ fontSize: 13, fontWeight: "800", color: titleColor }}>
-              ₹{astro.videoCallPricePerMin || 20}.00<Text style={{ fontSize: 11, color: mutedTextColor, fontWeight: "400" }}>/min</Text>
-            </Text>
-          </View>
-        </View>
-
-        {/* Action Buttons Rows (Stacked row structure to prevent label wrapping/cramming) */}
+        {/* Action Buttons Rows */}
         <View style={{ gap: 8, marginTop: 8 }}>
           {/* Row 1: Primary Communication Actions */}
           <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
             {/* Chat Button */}
-            <TouchableOpacity
-              onPress={handleChat}
-              activeOpacity={0.8}
-              style={{
-                flex: 1,
-                height: 48,
-                borderRadius: 16,
-                backgroundColor: "#2563EB",
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                shadowColor: "#2563EB",
-                shadowOpacity: 0.3,
-                shadowRadius: 6,
-                elevation: 3,
-              }}
-            >
-              <Ionicons name="chatbubbles" size={16} color="#FFFFFF" />
-              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>
-                Chat
-              </Text>
-            </TouchableOpacity>
+            {isChatEnabled && (
+              <TouchableOpacity
+                onPress={handleChat}
+                activeOpacity={0.8}
+                style={{
+                  flex: 1,
+                  height: 48,
+                  borderRadius: 16,
+                  backgroundColor: "#F59E0B",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  shadowColor: "#F59E0B",
+                  shadowOpacity: 0.3,
+                  shadowRadius: 6,
+                  elevation: 3,
+                }}
+              >
+                <Ionicons name="chatbubbles" size={16} color="#FFFFFF" />
+                <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>
+                  Chat
+                </Text>
+              </TouchableOpacity>
+            )}
 
             {/* Call Button */}
-            <TouchableOpacity
-              onPress={handleAudioCall}
-              activeOpacity={0.8}
-              style={{
-                flex: 1,
-                height: 48,
-                borderRadius: 16,
-                backgroundColor: "#16A34A",
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                shadowColor: "#16A34A",
-                shadowOpacity: 0.3,
-                shadowRadius: 6,
-                elevation: 3,
-              }}
-            >
-              <Ionicons name="call" size={16} color="#FFFFFF" />
-              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>
-                Call
-              </Text>
-            </TouchableOpacity>
+            {isAudioCallEnabled && (
+              <TouchableOpacity
+                onPress={handleAudioCall}
+                activeOpacity={0.8}
+                style={{
+                  flex: 1,
+                  height: 48,
+                  borderRadius: 16,
+                  backgroundColor: "#F59E0B",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  shadowColor: "#F59E0B",
+                  shadowOpacity: 0.3,
+                  shadowRadius: 6,
+                  elevation: 3,
+                }}
+              >
+                <Ionicons name="call" size={16} color="#FFFFFF" />
+                <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>
+                  Call
+                </Text>
+              </TouchableOpacity>
+            )}
 
             {/* Video Button */}
-            <TouchableOpacity
-              onPress={handleVideoCall}
-              activeOpacity={0.8}
-              style={{
-                flex: 1,
-                height: 48,
-                borderRadius: 16,
-                backgroundColor: "#7C3AED",
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                shadowColor: "#7C3AED",
-                shadowOpacity: 0.3,
-                shadowRadius: 6,
-                elevation: 3,
-              }}
-            >
-              <Ionicons name="videocam" size={16} color="#FFFFFF" />
-              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>
-                Video
-              </Text>
-            </TouchableOpacity>
+            {isVideoCallEnabled && (
+              <TouchableOpacity
+                onPress={handleVideoCall}
+                activeOpacity={0.8}
+                style={{
+                  flex: 1,
+                  height: 48,
+                  borderRadius: 16,
+                  backgroundColor: "#F59E0B",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  shadowColor: "#F59E0B",
+                  shadowOpacity: 0.3,
+                  shadowRadius: 6,
+                  elevation: 3,
+                }}
+              >
+                <Ionicons name="videocam" size={16} color="#FFFFFF" />
+                <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>
+                  Video
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Row 2: Secondary Engagement Actions */}
           <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
             {/* Favorite Button */}
             <TouchableOpacity
-              onPress={() => setIsFavorite(!isFavorite)}
+              onPress={async () => {
+                try {
+                  const res = await api.favorites.toggle(id);
+                  setIsFavorite(res.isFavorite);
+                } catch {
+                  Alert.alert("Error", "Failed to update favorite status");
+                }
+              }}
               activeOpacity={0.7}
               style={{
                 flex: 1,
@@ -2854,12 +2920,13 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
 
             {/* Gift Button */}
             <TouchableOpacity
-              onPress={() =>
-                navigation.navigate("Gifts", {
-                  astrologerId: id,
-                  astrologerName: astro.name,
-                })
-              }
+              onPress={async () => {
+                try {
+                  const g = await api.gifts.list();
+                  setGifts(g.filter((x: any) => x.isActive));
+                } catch {}
+                setGiftModalVisible(true);
+              }}
               activeOpacity={0.7}
               style={{
                 flex: 1,
@@ -3082,6 +3149,53 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
           navigation.navigate('Main', { screen: 'Wallet' });
         }}
       />
+
+      {/* Gift Modal */}
+      <Modal visible={giftModalVisible} transparent animationType="fade" onRequestClose={() => setGiftModalVisible(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: isDark ? '#1F2937' : '#FFFFFF', borderRadius: 24, padding: 20, maxHeight: '80%' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <Text style={{ fontSize: 18, fontWeight: '800', color: isDark ? '#FFF' : '#1E293B' }}>Send Gift to {astro?.name}</Text>
+              <TouchableOpacity onPress={() => { setGiftModalVisible(false); setSelectedGift(null); }}>
+                <Ionicons name="close" size={24} color={isDark ? '#9CA3AF' : '#64748B'} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center', paddingBottom: 16 }}>
+              {gifts.map((item: any) => {
+                const isSelected = selectedGift?.id === item.id;
+                return (
+                  <TouchableOpacity key={item.id} onPress={() => setSelectedGift(item)}
+                    style={{ width: '30%', backgroundColor: isDark ? '#111827' : '#FFF', borderRadius: 14, borderWidth: 1, borderColor: isSelected ? colors.accentGold : isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0', paddingVertical: 12, alignItems: 'center', gap: 4, backgroundColor: isSelected ? (isDark ? 'rgba(217,119,6,0.15)' : '#FFFBEB') : undefined }}>
+                    <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isDark ? '#1F2937' : '#FFF', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9', alignItems: 'center', justifyContent: 'center' }}>
+                      <Ionicons name="gift" size={24} color={colors.accentGold} />
+                    </View>
+                    <Text style={{ fontSize: 12, color: isDark ? '#9CA3AF' : '#64748B', fontWeight: '500', textAlign: 'center' }} numberOfLines={1}>{item.name}</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: isDark ? '#FFF' : '#0F172A' }}>₹{item.price}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+            <View style={{ alignItems: 'center', gap: 4, marginBottom: 12 }}>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: isDark ? '#FFF' : '#0F172A' }}>Your Balance: ₹{walletBalance}</Text>
+              <Text style={{ fontSize: 11, color: isDark ? '#9CA3AF' : '#64748B', textAlign: 'center' }}>Entire amount will be provided to expert</Text>
+            </View>
+            <TouchableOpacity onPress={async () => {
+              if (!selectedGift) { Alert.alert('Select a Gift', 'Please choose a gift first.'); return; }
+              setGiftSending(true);
+              try {
+                await api.gifts.send({ giftId: selectedGift.id, senderId: user?.id, receiverId: id });
+                setGiftModalVisible(false);
+                setSelectedGift(null);
+                Alert.alert('Gift Sent', `You sent ${selectedGift.name} to ${astro?.name}!`);
+              } catch (e: any) {
+                Alert.alert('Error', e?.response?.data?.message || 'Failed to send gift');
+              } finally { setGiftSending(false); }
+            }} disabled={giftSending} style={{ backgroundColor: isDark ? colors.accentGold : '#5C3214', borderRadius: 24, height: 48, alignItems: 'center', justifyContent: 'center', opacity: giftSending ? 0.7 : 1 }}>
+              <Text style={{ color: isDark ? '#000' : '#FFF', fontSize: 15, fontWeight: '700' }}>{giftSending ? 'Sending...' : 'Send Gift'}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScreenWrapper>
   );
 }
@@ -3142,7 +3256,8 @@ export function WalletScreen() {
   };
 
   return (
-    <ScreenWrapper scroll style={{ padding: 0 }}>
+    <ScreenWrapper scroll noPadding>
+      <Navbar title="My Wallet" showBack={false} />
       <View style={{ width: "100%", maxWidth: 600, alignSelf: "center", padding: 16 }}>
         <GlassCard style={styles.balanceCard}>
         <Text style={typography.caption}>Available Balance</Text>
@@ -3435,6 +3550,32 @@ export function KundliScreen() {
           </Text>
           <Text style={typography.body}>Time: {result.timeOfBirth}</Text>
           <Text style={typography.body}>Place: {result.placeOfBirth}</Text>
+          {result.chartData?.planetaryPositions && (
+            <View style={{ marginTop: 12 }}>
+              <Text style={[typography.cardTitle, { marginBottom: 8 }]}>Planetary Positions</Text>
+              {Object.entries(result.chartData.planetaryPositions).map(([name, p]: any) => (
+                <View key={name} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: colors.cardBorder }}>
+                  <Text style={[typography.body, { fontWeight: '600' }]}>{name}</Text>
+                  <Text style={typography.body}>
+                    {p.rashi} | {p.nakshatra?.name || ''} | {p.longitude?.toFixed(2)}°
+                    {p.isRetrograde ? ' ℞' : ''}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+          {result.chartData?.houses && result.chartData.houses.length > 0 && (
+            <View style={{ marginTop: 12 }}>
+              <Text style={[typography.cardTitle, { marginBottom: 8 }]}>Houses</Text>
+              <Text style={typography.body}>{result.chartData.houses.join(', ')}</Text>
+            </View>
+          )}
+          {result.chartData?.lagna && (
+            <View style={{ marginTop: 12 }}>
+              <Text style={[typography.cardTitle, { marginBottom: 4 }]}>Lagna (Ascendant)</Text>
+              <Text style={typography.body}>Rashi: {result.chartData.lagna.rashi} | Longitude: {result.chartData.lagna.longitude?.toFixed(2)}°</Text>
+            </View>
+          )}
         </GlassCard>
       )}
     </ScreenWrapper>
@@ -3667,21 +3808,38 @@ export function MatchmakingScreen() {
             Compatibility Result
           </Text>
           {result.matchScore != null && (
-            <Text
-              style={{
-                fontSize: 36,
-                fontWeight: "800",
-                color: colors.accentGold,
-                textAlign: "center",
-              }}
-            >
-              {result.matchScore}%
-            </Text>
+            <>
+              <Text
+                style={{
+                  fontSize: 36,
+                  fontWeight: "800",
+                  color: colors.accentGold,
+                  textAlign: "center",
+                }}
+              >
+                {result.matchScore}%
+              </Text>
+              <Text style={[typography.body, { textAlign: 'center', marginBottom: 12, color: colors.textSecondary }]}>
+                {result.matchDetails?.compatibility || ''}
+              </Text>
+            </>
           )}
-          {result.matchDetails && (
-            <Text style={typography.body}>
-              {JSON.stringify(result.matchDetails)}
-            </Text>
+          {result.matchDetails?.kootas && (
+            <View style={{ gap: 8 }}>
+              {Object.entries(result.matchDetails.kootas).map(([key, k]: any) => (
+                <View key={key} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.cardBorder }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.body, { fontWeight: '600' }]}>{k.description || key}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View style={{ width: 60, height: 6, borderRadius: 3, backgroundColor: colors.surfaceLight, overflow: 'hidden' }}>
+                      <View style={{ width: `${(k.score / k.maxScore) * 100}%`, height: '100%', backgroundColor: k.score >= k.maxScore ? '#16A34A' : k.score > 0 ? '#F59E0B' : '#EF4444', borderRadius: 3 }} />
+                    </View>
+                    <Text style={[typography.body, { fontWeight: '700', minWidth: 30, textAlign: 'right' }]}>{k.score}/{k.maxScore}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
           )}
         </GlassCard>
       )}

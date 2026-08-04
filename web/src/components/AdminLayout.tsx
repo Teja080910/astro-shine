@@ -71,15 +71,15 @@ function Sidebar({ mobileOpen, onMobileClose }: { mobileOpen: boolean; onMobileC
     document.documentElement.setAttribute('data-theme', next);
   };
 
-  const sidebarContent = (
-    <>
+  return (
+    <aside className="fixed left-5 top-5 bottom-5 w-64 backdrop-blur-xl border border-card-border rounded-[28px] flex flex-col p-5 shadow-xl shadow-black/5 z-20 transition-all duration-300">
       <div className="flex justify-between items-center px-2 py-3 mb-6">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 flex items-center justify-center bg-gradient-to-tr from-primary/10 to-accent-gold/10 rounded-xl border border-card-border p-1">
             <Image src={logoImg} alt="Astro Shine Logo" className="w-full h-full object-contain" />
           </div>
           <div className="flex flex-col">
-            <span className="text-base font-black text-text-primary leading-tight font-sans tracking-tight">ASTRO SHINE</span>
+            <span className="text-base font-black text-text-primary leading-tight font-sans tracking-tight">ASTROSHINE</span>
             <span className="text-[10px] font-bold text-accent-gold tracking-widest uppercase">Admin</span>
           </div>
         </div>
@@ -172,7 +172,7 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-          <p className="text-text-secondary text-sm font-semibold tracking-wider animate-pulse">Loading Astro Shine...</p>
+          <p className="text-text-secondary text-sm font-semibold tracking-wider animate-pulse">Loading Astroshine...</p>
         </div>
       </div>
     );
@@ -192,7 +192,7 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
       {/* Main Content Area */}
       <div className="pl-4 pr-4 sm:pl-6 sm:pr-6 lg:pl-[290px] lg:pr-8 py-4 sm:py-6 w-full flex flex-col min-h-screen z-10">
         {/* Modern Page Header */}
-        <header className="flex justify-between items-center mb-6 sm:mb-8 bg-surface/30 backdrop-blur-md border border-card-border px-4 sm:px-6 py-3 sm:py-4 rounded-[20px] shadow-sm">
+        <header className="flex justify-between items-center mb-8 backdrop-blur-md border border-card-border px-6 py-4 rounded-[20px] shadow-sm">
           <div className="flex items-center gap-2">
             <button onClick={() => setMobileSidebarOpen(true)} className="p-2 rounded-xl bg-surface-light/40 border border-card-border hover:bg-surface-light text-text-secondary hover:text-text-primary transition-all duration-200 lg:hidden mr-1">
               <Menu size={18} />
