@@ -42,6 +42,13 @@ export interface PanchangResult {
   rahuKaal: { start: string; end: string };
 }
 
+export interface HoroscopeResult {
+  prediction: string;
+  luckyNumber: number;
+  luckyColor: string;
+  mood: string;
+}
+
 const NAKSHATRA_LORDS: Record<string, string> = {
   Ashwini: 'Ketu', Bharani: 'Venus', Krittika: 'Sun', Rohini: 'Moon',
   Mrigashira: 'Mars', Ardra: 'Rahu', Punarvasu: 'Jupiter', Pushya: 'Saturn',
@@ -193,5 +200,100 @@ export class AstrologyService {
     const rahuKaal = { start: '07:30:00', end: '09:00:00' };
 
     return { tithi, nakshatra: nakshatraName, yoga, karana, sunrise, sunset, rahuKaal };
+  }
+
+  calculateHoroscope(sign: string, dateStr: string): HoroscopeResult {
+    const details: BirthDetails = { dateString: dateStr, timeString: '06:00:00', lat: 28.6139, lng: 77.209, timezone: 5.5 };
+    const positions = jyotish.grahas.getGrahasPosition(details);
+
+    const westernToVedic: Record<string, string> = {
+      aries: 'Mesha', taurus: 'Vrishabha', gemini: 'Mithuna', cancer: 'Karka',
+      leo: 'Simha', virgo: 'Kanya', libra: 'Tula', scorpio: 'Vrishchika',
+      sagittarius: 'Dhanu', capricorn: 'Makara', aquarius: 'Kumbha', pisces: 'Meena',
+    };
+    const vedicSign = westernToVedic[sign.toLowerCase()];
+    const signIndex = RASHI_NAMES.indexOf(vedicSign || '');
+    if (signIndex < 0) {
+      const idx = Math.abs(sign.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % 12;
+      const predictions = [
+        'Today brings new opportunities in your career. Stay open to unexpected changes.',
+        'Focus on your relationships today. A heartfelt conversation will bring clarity.',
+        'Financial gains are indicated. Review your investments for long-term growth.',
+        'Your creative energy is at its peak. Channel it into a passion project.',
+        'Take time for self-care today. A short break will recharge your spirits.',
+        'Communication flows smoothly. Perfect day for important discussions.',
+        'Trust your intuition today. It will guide you toward the right decision.',
+        'A pleasant surprise awaits you in the evening. Stay positive.',
+        'Health needs attention. Incorporate some physical activity into your routine.',
+        'Family matters come to the forefront. Your wisdom will resolve conflicts.',
+        'Travel plans may materialize sooner than expected. Be prepared.',
+        'Spiritual growth is highlighted. Meditation will bring inner peace.',
+      ];
+      const colors = ['Red', 'Yellow', 'Green', 'White', 'Orange', 'Blue', 'Pink', 'Purple', 'Silver', 'Gold'];
+      const moods = ['Energetic', 'Calm', 'Focused', 'Reflective', 'Joyful', 'Determined', 'Peaceful', 'Curious', 'Ambitious', 'Grateful'];
+      return {
+        prediction: predictions[idx],
+        luckyNumber: Math.floor(Math.random() * 100) + 1,
+        luckyColor: colors[Math.floor(Math.random() * colors.length)],
+        mood: moods[Math.floor(Math.random() * moods.length)],
+      };
+    }
+
+    const signLongStart = signIndex * 30;
+    const signLongEnd = signLongStart + 30;
+
+    const planetsInSign: string[] = [];
+    for (const [name, data] of Object.entries(positions)) {
+      if (name === 'houses') continue;
+      const p = data as any;
+      if (p.longitude >= signLongStart && p.longitude < signLongEnd) {
+        planetsInSign.push(name);
+      }
+    }
+
+    const moon = positions['Mo'] || positions['Moon'] || { longitude: 0 };
+    const moonNakshatra = jyotish.nakshatras.getNakshatras(moon.longitude || 0);
+    const moonRashi = jyotish.rashis.getRashi(moon.longitude || 0);
+    const sunRashi = jyotish.rashis.getRashi((positions['Su'] || positions['Sun'] || { longitude: 0 }).longitude || 0);
+
+    const nakshatraLord = NAKSHATRA_LORDS[moonNakshatra?.name || ''] || '';
+    const rashiLord = RASHI_LORDS[moonRashi?.name || ''] || '';
+
+    const planetCount = planetsInSign.length;
+    const hasBenefic = planetsInSign.some((p) => ['Ju', 'Ve', 'Mo'].includes(p));
+    const hasMalefic = planetsInSign.some((p) => ['Sa', 'Ma', 'Ra', 'Ke'].includes(p));
+
+    const predictions: string[] = [];
+    if (planetCount === 0) {
+      predictions.push('The day brings a sense of calm as no major planets transit your sign.');
+    } else if (hasBenefic && !hasMalefic) {
+      predictions.push('Beneficial planetary influences bring positive energy and opportunities today.');
+    } else if (hasMalefic && !hasBenefic) {
+      predictions.push('Challenging planetary aspects may require patience and careful decision-making.');
+    } else {
+      predictions.push('A balanced mix of planetary energies offers both opportunities and challenges today.');
+    }
+
+    if (moonRashi?.name && RASHI_NAMES[signIndex] === moonRashi.name) {
+      predictions.push('The Moon transits your sign, heightening emotional awareness and intuition.');
+    }
+    if (sunRashi?.name && RASHI_NAMES[signIndex] === sunRashi.name) {
+      predictions.push('The Sun illuminates your sign, boosting confidence and vitality.');
+    }
+
+    if (nakshatraLord) {
+      predictions.push(`The Moon is in ${moonNakshatra?.name || ''} nakshatra, ruled by ${nakshatraLord}, influencing your emotional responses.`);
+    }
+
+    const luckyNumber = ((signIndex + 1) * 7 + new Date(dateStr).getDate()) % 100 + 1;
+    const luckyColor = ['Red', 'Yellow', 'Green', 'White', 'Orange', 'Blue', 'Pink', 'Purple', 'Silver', 'Gold', 'Brown', 'Cream'][signIndex];
+    const mood = ['Energetic', 'Calm', 'Focused', 'Reflective', 'Joyful', 'Determined', 'Peaceful', 'Curious', 'Ambitious', 'Grateful', 'Hopeful', 'Bold'][signIndex];
+
+    return {
+      prediction: predictions.join(' '),
+      luckyNumber,
+      luckyColor,
+      mood,
+    };
   }
 }

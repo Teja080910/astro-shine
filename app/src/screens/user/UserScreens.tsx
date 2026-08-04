@@ -38,6 +38,7 @@ import {
   radii,
   typography,
   OmIcon,
+  Navbar,
 } from "../../shared";
 import { api } from "../../shared/api-client";
 import type {
@@ -3185,7 +3186,8 @@ export function WalletScreen() {
   };
 
   return (
-    <ScreenWrapper scroll style={{ padding: 0 }}>
+    <ScreenWrapper scroll noPadding>
+      <Navbar title="My Wallet" showBack={false} />
       <View style={{ width: "100%", maxWidth: 600, alignSelf: "center", padding: 16 }}>
         <GlassCard style={styles.balanceCard}>
         <Text style={typography.caption}>Available Balance</Text>

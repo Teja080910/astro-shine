@@ -31,6 +31,7 @@ import {
   radii,
   typography,
   OmIcon,
+  Navbar,
 } from "../../shared";
 import { api } from "../../shared/api-client";
 import type {
@@ -811,7 +812,8 @@ export function AstrologerWalletScreen({ navigation }: any) {
     .reduce((s, t) => s + Number(t.amount), 0);
 
   return (
-    <ScreenWrapper>
+    <ScreenWrapper noPadding>
+      <Navbar title="My Wallet" showBack={false} />
       <ScrollView
         contentContainerStyle={{ padding: 16 }}
         refreshControl={

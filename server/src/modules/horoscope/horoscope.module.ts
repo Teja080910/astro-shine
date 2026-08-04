@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { HoroscopeService } from './horoscope.service';
 import { HoroscopeController } from './horoscope.controller';
+import { AstrologyModule } from '../astrology/astrology.module';
 
-@Module({ controllers: [HoroscopeController], providers: [HoroscopeService], exports: [HoroscopeService] })
+@Module({ imports: [AstrologyModule], controllers: [HoroscopeController], providers: [HoroscopeService], exports: [HoroscopeService] })
 export class HoroscopeModule {}

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl, KeyboardAvoidingView, Platform, Keyboard, Dimensions, Image, Linking } from 'react-native';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
-import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, CustomModal, colors, typography, radii, shadows } from '../../shared';
+import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, CustomModal, colors, typography, radii, shadows, Navbar } from '../../shared';
 import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
-import type { Blog, MandirPooja, Notification, PoojaBooking, SupportTicket, TicketReply, NewsItem, Video, PanchangRecord, CommissionLog } from '../../shared/types';
+import type { Blog, MandirPooja, Notification, PoojaBooking, SupportTicket, TicketReply, NewsItem, Video, PanchangRecord, CommissionLog, HoroscopeRecord } from '../../shared/types';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
 import * as DocumentPicker from 'expo-document-picker';
@@ -21,6 +21,97 @@ function to12h(t: string): string {
   const ampm = hour >= 12 ? 'PM' : 'AM';
   const display = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
   return `${display}:${m} ${ampm}`;
+}
+
+// Horoscope
+export function HoroscopeScreen({ navigation }: any) {
+  const { horoscopeVersion } = useChat();
+  const [horoscope, setHoroscope] = useState<HoroscopeRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedSign, setSelectedSign] = useState('aries');
+  const today = new Date().toISOString().split('T')[0];
+
+  const ZODIAC_SIGNS = [
+    { sign: 'aries', label: 'Aries' },
+    { sign: 'taurus', label: 'Taurus' },
+    { sign: 'gemini', label: 'Gemini' },
+    { sign: 'cancer', label: 'Cancer' },
+    { sign: 'leo', label: 'Leo' },
+    { sign: 'virgo', label: 'Virgo' },
+    { sign: 'libra', label: 'Libra' },
+    { sign: 'scorpio', label: 'Scorpio' },
+    { sign: 'sagittarius', label: 'Sagittarius' },
+    { sign: 'capricorn', label: 'Capricorn' },
+    { sign: 'aquarius', label: 'Aquarius' },
+    { sign: 'pisces', label: 'Pisces' },
+  ];
+
+  useEffect(() => {
+    api.horoscope.bySign(selectedSign, today).then((h) => {
+      setHoroscope(Array.isArray(h) ? h : [h]);
+    }).catch(() => {}).finally(() => setLoading(false));
+  }, [selectedSign, horoscopeVersion]);
+
+  const current = horoscope[0];
+
+  return (
+    <ScreenWrapper scroll noPadding>
+      <Navbar title="Daily Horoscope" navigation={navigation} />
+      <View style={{ padding: 16 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, height: 44, marginBottom: 16 }} contentContainerStyle={{ alignItems: 'center' }}>
+          {ZODIAC_SIGNS.map((z) => (
+            <TouchableOpacity
+              key={z.sign}
+              onPress={() => setSelectedSign(z.sign)}
+              style={{
+                paddingHorizontal: 16, paddingVertical: 8, marginRight: 8,
+                borderRadius: 20, backgroundColor: selectedSign === z.sign ? colors.accentGold : colors.surfaceLight,
+              }}
+            >
+              <Text style={{ color: selectedSign === z.sign ? '#FFF' : colors.textPrimary, fontWeight: '600', fontSize: 14 }}>
+                {z.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+        {loading ? (
+          <GlassCard><Text style={typography.body}>Loading...</Text></GlassCard>
+        ) : current ? (
+          <View style={{ paddingBottom: 100 }}>
+            <GlassCard style={{ padding: 16 }}>
+              <Text style={[typography.sectionTitle, { color: colors.accentGold, marginBottom: 8 }]}>{selectedSign.charAt(0).toUpperCase() + selectedSign.slice(1)}</Text>
+              <Text style={[typography.body, { lineHeight: 22 }]}>{current.prediction}</Text>
+              <View style={{ flexDirection: 'row', marginTop: 16, gap: 16 }}>
+                {current.luckyNumber && (
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.caption, { color: colors.textSecondary }]}>Lucky #</Text>
+                    <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>{current.luckyNumber}</Text>
+                  </View>
+                )}
+                {current.luckyColor && (
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.caption, { color: colors.textSecondary }]}>Color</Text>
+                    <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>{current.luckyColor}</Text>
+                  </View>
+                )}
+                {current.mood && (
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.caption, { color: colors.textSecondary }]}>Mood</Text>
+                    <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>{current.mood}</Text>
+                  </View>
+                )}
+              </View>
+            </GlassCard>
+            <Text style={[typography.caption, { textAlign: 'center', marginTop: 12, color: colors.textSecondary }]}>
+              {new Date(current.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+            </Text>
+          </View>
+        ) : (
+          <GlassCard><Text style={[typography.body, { textAlign: 'center', marginVertical: 16 }]}>No horoscope data available for today</Text></GlassCard>
+        )}
+      </View>
+    </ScreenWrapper>
+  );
 }
 
 // Panchang
@@ -40,7 +131,7 @@ export function PanchangScreen() {
     <ScreenWrapper scroll>
       <SectionTitle title="Panchang" />
       {data ? (
-        <>
+        <View style={{ paddingBottom: 100 }}>
           <Text style={[typography.caption, { marginBottom: 16, color: colors.textSecondary }]}>
             {new Date(data.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
           </Text>
@@ -61,8 +152,8 @@ export function PanchangScreen() {
               <Row icon="alert-circle" label="Rahu Kaal" value={`${to12h(data.rahuKaal.start)} - ${to12h(data.rahuKaal.end)}`} />
             </GlassCard>
           )}
-        </>
-      ) : (
+          </View>
+        ) : (
         <GlassCard><Text style={[typography.body, { textAlign: 'center', marginVertical: 16 }]}>No panchang data available for today</Text></GlassCard>
       )}
     </ScreenWrapper>
@@ -1314,4 +1405,3 @@ const styles = StyleSheet.create({
 export { SupportScreen, TicketDetailScreen, AdminSupportScreen, AdminTicketDetailScreen } from './SupportScreens';
 export { MandirPoojaDetailScreen } from './MandirPoojaDetailScreen';
 export { BlogDetailScreen } from './BlogDetailScreen';
-export { CreateBlogScreen };
