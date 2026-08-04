@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 const jyotish = require('jyotish');
+const SunCalc = require('suncalc');
 
 export interface BirthDetails {
   dateString: string;
@@ -199,11 +200,25 @@ export class AstrologyService {
     const karanaNames = ['Bava', 'Balava', 'Kaulava', 'Taitila', 'Garija', 'Vanija', 'Vishti', 'Shakuni', 'Chatushpada', 'Naga', 'Kimstughna'];
     const karana = karanaNames[((karanaIdx % 11) + 11) % 11] || '';
 
-    const sunrise = '06:00:00';
-    const sunset = '18:00:00';
-    const rahuKaal = { start: '07:30:00', end: '09:00:00' };
+    const date = new Date(dateStr + 'T00:00:00Z');
+    const sunTimes = SunCalc.getTimes(date, lat, lng);
+    const sunriseDate = new Date(sunTimes.sunrise.getTime() + timezone * 60 * 60 * 1000);
+    const sunsetDate = new Date(sunTimes.sunset.getTime() + timezone * 60 * 60 * 1000);
 
-    return { tithi, nakshatra: nakshatraName, yoga, karana, sunrise, sunset, rahuKaal };
+    const sunriseStr = sunriseDate.toISOString().split('T')[1].split('.')[0];
+    const sunsetStr = sunsetDate.toISOString().split('T')[1].split('.')[0];
+
+    const dayLength = (sunsetDate.getTime() - sunriseDate.getTime()) / (8 * 60 * 60 * 1000);
+    const dayOfWeek = date.getUTCDay();
+    const rahuSlots: Record<number, number> = { 0: 7, 1: 1, 2: 5, 3: 3, 4: 4, 5: 2, 6: 6 };
+    const rahuSlot = rahuSlots[dayOfWeek] ?? 0;
+    const rahuStart = new Date(sunriseDate.getTime() + rahuSlot * dayLength * 60 * 60 * 1000);
+    const rahuEnd = new Date(rahuStart.getTime() + dayLength * 60 * 60 * 1000);
+
+    const rahuStartStr = rahuStart.toISOString().split('T')[1].split('.')[0];
+    const rahuEndStr = rahuEnd.toISOString().split('T')[1].split('.')[0];
+
+    return { tithi, nakshatra: nakshatraName, yoga, karana, sunrise: sunriseStr, sunset: sunsetStr, rahuKaal: { start: rahuStartStr, end: rahuEndStr } };
   }
 
   calculateHoroscope(sign: string, dateStr: string): HoroscopeResult {

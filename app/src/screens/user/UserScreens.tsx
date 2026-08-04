@@ -3486,6 +3486,32 @@ export function KundliScreen() {
           </Text>
           <Text style={typography.body}>Time: {result.timeOfBirth}</Text>
           <Text style={typography.body}>Place: {result.placeOfBirth}</Text>
+          {result.chartData?.planetaryPositions && (
+            <View style={{ marginTop: 12 }}>
+              <Text style={[typography.cardTitle, { marginBottom: 8 }]}>Planetary Positions</Text>
+              {Object.entries(result.chartData.planetaryPositions).map(([name, p]: any) => (
+                <View key={name} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: colors.cardBorder }}>
+                  <Text style={[typography.body, { fontWeight: '600' }]}>{name}</Text>
+                  <Text style={typography.body}>
+                    {p.rashi} | {p.nakshatra?.name || ''} | {p.longitude?.toFixed(2)}°
+                    {p.isRetrograde ? ' ℞' : ''}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          )}
+          {result.chartData?.houses && result.chartData.houses.length > 0 && (
+            <View style={{ marginTop: 12 }}>
+              <Text style={[typography.cardTitle, { marginBottom: 8 }]}>Houses</Text>
+              <Text style={typography.body}>{result.chartData.houses.join(', ')}</Text>
+            </View>
+          )}
+          {result.chartData?.lagna && (
+            <View style={{ marginTop: 12 }}>
+              <Text style={[typography.cardTitle, { marginBottom: 4 }]}>Lagna (Ascendant)</Text>
+              <Text style={typography.body}>Rashi: {result.chartData.lagna.rashi} | Longitude: {result.chartData.lagna.longitude?.toFixed(2)}°</Text>
+            </View>
+          )}
         </GlassCard>
       )}
     </ScreenWrapper>
@@ -3718,21 +3744,38 @@ export function MatchmakingScreen() {
             Compatibility Result
           </Text>
           {result.matchScore != null && (
-            <Text
-              style={{
-                fontSize: 36,
-                fontWeight: "800",
-                color: colors.accentGold,
-                textAlign: "center",
-              }}
-            >
-              {result.matchScore}%
-            </Text>
+            <>
+              <Text
+                style={{
+                  fontSize: 36,
+                  fontWeight: "800",
+                  color: colors.accentGold,
+                  textAlign: "center",
+                }}
+              >
+                {result.matchScore}%
+              </Text>
+              <Text style={[typography.body, { textAlign: 'center', marginBottom: 12, color: colors.textSecondary }]}>
+                {result.matchDetails?.compatibility || ''}
+              </Text>
+            </>
           )}
-          {result.matchDetails && (
-            <Text style={typography.body}>
-              {JSON.stringify(result.matchDetails)}
-            </Text>
+          {result.matchDetails?.kootas && (
+            <View style={{ gap: 8 }}>
+              {Object.entries(result.matchDetails.kootas).map(([key, k]: any) => (
+                <View key={key} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.cardBorder }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.body, { fontWeight: '600' }]}>{k.description || key}</Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View style={{ width: 60, height: 6, borderRadius: 3, backgroundColor: colors.surfaceLight, overflow: 'hidden' }}>
+                      <View style={{ width: `${(k.score / k.maxScore) * 100}%`, height: '100%', backgroundColor: k.score >= k.maxScore ? '#16A34A' : k.score > 0 ? '#F59E0B' : '#EF4444', borderRadius: 3 }} />
+                    </View>
+                    <Text style={[typography.body, { fontWeight: '700', minWidth: 30, textAlign: 'right' }]}>{k.score}/{k.maxScore}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
           )}
         </GlassCard>
       )}
