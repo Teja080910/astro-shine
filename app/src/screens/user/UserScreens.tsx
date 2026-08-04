@@ -662,7 +662,13 @@ export function UserHomeScreen({ navigation }: any) {
                   marginVertical: 6,
                 }}
               >
-                {horoscope[0]?.prediction ||
+                {horoscope[0]?.[
+                  activeHoroscopeTab === "love" ? "lovePrediction" :
+                  activeHoroscopeTab === "career" ? "careerPrediction" :
+                  activeHoroscopeTab === "finance" ? "financePrediction" :
+                  activeHoroscopeTab === "health" ? "healthPrediction" :
+                  "prediction"
+                ] || horoscope[0]?.prediction ||
                   "Today brings new opportunities in your career. Stay open to unexpected changes. Your confidence will help you achieve important goals."}
               </Text>
               <TouchableOpacity

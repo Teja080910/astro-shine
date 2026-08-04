@@ -29,6 +29,7 @@ export function HoroscopeScreen({ navigation }: any) {
   const [horoscope, setHoroscope] = useState<HoroscopeRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSign, setSelectedSign] = useState('aries');
+  const [activeTab, setActiveTab] = useState<'general' | 'love' | 'career' | 'finance' | 'health'>('general');
   const today = new Date().toISOString().split('T')[0];
 
   const ZODIAC_SIGNS = [
@@ -46,6 +47,14 @@ export function HoroscopeScreen({ navigation }: any) {
     { sign: 'pisces', label: 'Pisces' },
   ];
 
+  const CATEGORIES = [
+    { key: 'general' as const, label: 'General', icon: 'star' },
+    { key: 'love' as const, label: 'Love', icon: 'heart' },
+    { key: 'career' as const, label: 'Career', icon: 'briefcase' },
+    { key: 'finance' as const, label: 'Finance', icon: 'cash' },
+    { key: 'health' as const, label: 'Health', icon: 'pulse' },
+  ];
+
   useEffect(() => {
     api.horoscope.bySign(selectedSign, today).then((h) => {
       setHoroscope(Array.isArray(h) ? h : [h]);
@@ -53,6 +62,13 @@ export function HoroscopeScreen({ navigation }: any) {
   }, [selectedSign, horoscopeVersion]);
 
   const current = horoscope[0];
+  const predictionText =
+    activeTab === 'general' ? current?.prediction :
+    activeTab === 'love' ? (current?.lovePrediction || current?.prediction) :
+    activeTab === 'career' ? (current?.careerPrediction || current?.prediction) :
+    activeTab === 'finance' ? (current?.financePrediction || current?.prediction) :
+    activeTab === 'health' ? (current?.healthPrediction || current?.prediction) :
+    current?.prediction;
 
   return (
     <ScreenWrapper scroll noPadding>
@@ -74,13 +90,33 @@ export function HoroscopeScreen({ navigation }: any) {
             </TouchableOpacity>
           ))}
         </ScrollView>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, height: 36, marginBottom: 16 }} contentContainerStyle={{ alignItems: 'center', gap: 8 }}>
+          {CATEGORIES.map((cat) => (
+            <TouchableOpacity
+              key={cat.key}
+              onPress={() => setActiveTab(cat.key)}
+              style={{
+                flexDirection: 'row', alignItems: 'center', gap: 4,
+                paddingHorizontal: 14, paddingVertical: 6,
+                borderRadius: 16, backgroundColor: activeTab === cat.key ? colors.accentGold : colors.surfaceLight,
+              }}
+            >
+              <Ionicons name={cat.icon as any} size={14} color={activeTab === cat.key ? '#FFF' : colors.textSecondary} />
+              <Text style={{ color: activeTab === cat.key ? '#FFF' : colors.textPrimary, fontWeight: '600', fontSize: 12 }}>
+                {cat.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
         {loading ? (
           <GlassCard><Text style={typography.body}>Loading...</Text></GlassCard>
         ) : current ? (
           <View style={{ paddingBottom: 100 }}>
             <GlassCard style={{ padding: 16 }}>
-              <Text style={[typography.sectionTitle, { color: colors.accentGold, marginBottom: 8 }]}>{selectedSign.charAt(0).toUpperCase() + selectedSign.slice(1)}</Text>
-              <Text style={[typography.body, { lineHeight: 22 }]}>{current.prediction}</Text>
+              <Text style={[typography.sectionTitle, { color: colors.accentGold, marginBottom: 8 }]}>
+                {selectedSign.charAt(0).toUpperCase() + selectedSign.slice(1)} — {CATEGORIES.find(c => c.key === activeTab)?.label}
+              </Text>
+              <Text style={[typography.body, { lineHeight: 22 }]}>{predictionText}</Text>
               <View style={{ flexDirection: 'row', marginTop: 16, gap: 16 }}>
                 {current.luckyNumber && (
                   <View style={{ flex: 1 }}>

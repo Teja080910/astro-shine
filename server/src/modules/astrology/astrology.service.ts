@@ -44,6 +44,10 @@ export interface PanchangResult {
 
 export interface HoroscopeResult {
   prediction: string;
+  lovePrediction: string;
+  careerPrediction: string;
+  financePrediction: string;
+  healthPrediction: string;
   luckyNumber: number;
   luckyColor: string;
   mood: string;
@@ -229,10 +233,18 @@ export class AstrologyService {
         'Travel plans may materialize sooner than expected. Be prepared.',
         'Spiritual growth is highlighted. Meditation will bring inner peace.',
       ];
+      const love = ['Romance blossoms today. Express your feelings openly.', 'Deepen your emotional bonds through honest communication.', 'A romantic surprise may brighten your day.', 'Venus favors love and harmony in relationships.', 'Single? Someone special may enter your life soon.'];
+      const career = ['Leadership opportunities arise. Step up with confidence.', 'Collaboration with colleagues will yield great results.', 'A new project or responsibility comes your way.', 'Your hard work is about to be recognized.', 'Networking today opens future career doors.'];
+      const finance = ['A positive financial trend begins today.', 'Review your budget — a saving opportunity awaits.', 'An unexpected financial gain is possible.', 'Invest wisely. Long-term gains are indicated.', 'Avoid impulsive spending. Patience brings rewards.'];
+      const health = ['Prioritize rest today. Your energy needs replenishing.', 'A light workout will boost your mood and vitality.', 'Pay attention to digestion. Eat light and healthy.', 'Mental wellness matters. Take a mindfulness break.', 'Your vitality is strong. Channel it productively.'];
       const colors = ['Red', 'Yellow', 'Green', 'White', 'Orange', 'Blue', 'Pink', 'Purple', 'Silver', 'Gold'];
       const moods = ['Energetic', 'Calm', 'Focused', 'Reflective', 'Joyful', 'Determined', 'Peaceful', 'Curious', 'Ambitious', 'Grateful'];
       return {
         prediction: predictions[idx],
+        lovePrediction: love[idx % love.length],
+        careerPrediction: career[idx % career.length],
+        financePrediction: finance[idx % finance.length],
+        healthPrediction: health[idx % health.length],
         luckyNumber: Math.floor(Math.random() * 100) + 1,
         luckyColor: colors[Math.floor(Math.random() * colors.length)],
         mood: moods[Math.floor(Math.random() * moods.length)],
@@ -257,7 +269,6 @@ export class AstrologyService {
     const sunRashi = jyotish.rashis.getRashi((positions['Su'] || positions['Sun'] || { longitude: 0 }).longitude || 0);
 
     const nakshatraLord = NAKSHATRA_LORDS[moonNakshatra?.name || ''] || '';
-    const rashiLord = RASHI_LORDS[moonRashi?.name || ''] || '';
 
     const planetCount = planetsInSign.length;
     const hasBenefic = planetsInSign.some((p) => ['Ju', 'Ve', 'Mo'].includes(p));
@@ -285,12 +296,58 @@ export class AstrologyService {
       predictions.push(`The Moon is in ${moonNakshatra?.name || ''} nakshatra, ruled by ${nakshatraLord}, influencing your emotional responses.`);
     }
 
+    const venus = positions['Ve'] || positions['Venus'] || { longitude: 0 };
+    const jupiter = positions['Ju'] || positions['Jupiter'] || { longitude: 0 };
+    const saturn = positions['Sa'] || positions['Saturn'] || { longitude: 0 };
+    const mars = positions['Ma'] || positions['Mars'] || { longitude: 0 };
+    const mercury = positions['Me'] || positions['Mercury'] || { longitude: 0 };
+
+    const venusRashi = jyotish.rashis.getRashi(venus.longitude || 0);
+    const jupiterRashi = jyotish.rashis.getRashi(jupiter.longitude || 0);
+    const saturnRashi = jyotish.rashis.getRashi(saturn.longitude || 0);
+    const marsRashi = jyotish.rashis.getRashi(mars.longitude || 0);
+    const mercuryRashi = jyotish.rashis.getRashi(mercury.longitude || 0);
+
+    const inSign = (rashi: any) => rashi?.name === RASHI_NAMES[signIndex];
+
+    const lovePrediction = inSign(venusRashi)
+      ? 'Venus graces your sign, bringing romance, harmony, and emotional connection.'
+      : inSign(moonRashi)
+        ? 'The Moon enhances your emotional sensitivity — a good day for heartfelt conversations.'
+        : 'Love requires patience today. Small gestures of kindness go a long way.';
+
+    const careerPrediction = inSign(saturnRashi)
+      ? 'Saturn in your sign demands discipline and hard work — long-term rewards follow.'
+      : inSign(jupiterRashi)
+        ? 'Jupiter expands your career prospects. Opportunities for growth and learning arise.'
+        : inSign(sunRashi)
+          ? 'The Sun empowers your leadership abilities. Take initiative at work.'
+          : 'Steady progress at work. Focus on completing pending tasks.';
+
+    const financePrediction = inSign(jupiterRashi)
+      ? 'Jupiter brings financial expansion. A good time for investments and planning.'
+      : inSign(mercuryRashi)
+        ? 'Mercury sharpens your financial acumen. Review and optimize your budget.'
+        : 'Financial stability is indicated. Avoid unnecessary risks today.';
+
+    const healthPrediction = inSign(marsRashi)
+      ? 'Mars energizes your body. Channel this vitality into exercise and physical activity.'
+      : inSign(sunRashi)
+        ? 'The Sun boosts your vitality. A great day for health routines and wellness.'
+        : inSign(moonRashi)
+          ? 'The Moon influences your emotions — stress may affect your health. Rest and relax.'
+          : 'Maintain your routine. Moderate exercise and a balanced diet keep you strong.';
+
     const luckyNumber = ((signIndex + 1) * 7 + new Date(dateStr).getDate()) % 100 + 1;
     const luckyColor = ['Red', 'Yellow', 'Green', 'White', 'Orange', 'Blue', 'Pink', 'Purple', 'Silver', 'Gold', 'Brown', 'Cream'][signIndex];
     const mood = ['Energetic', 'Calm', 'Focused', 'Reflective', 'Joyful', 'Determined', 'Peaceful', 'Curious', 'Ambitious', 'Grateful', 'Hopeful', 'Bold'][signIndex];
 
     return {
       prediction: predictions.join(' '),
+      lovePrediction,
+      careerPrediction,
+      financePrediction,
+      healthPrediction,
       luckyNumber,
       luckyColor,
       mood,
