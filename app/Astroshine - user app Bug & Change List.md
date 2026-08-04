@@ -16,6 +16,8 @@ In chat sceeen we need to stop call and video.
 
 video and audio call not working.
 
+Notification module.
+
 8. Videos
 
 Videos are not playing. (Partially fixed, but still not working properly.)
