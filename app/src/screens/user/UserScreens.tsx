@@ -5,6 +5,7 @@ import {
   Alert,
   FlatList,
   Image,
+  Modal,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -1444,7 +1445,7 @@ export function UserHomeScreen({ navigation }: any) {
           <>
             <SectionHeader
               title="Favorite Astrologers"
-              onSeeAll={() => navigation.navigate("AstrologerList")}
+              onSeeAll={() => navigation.navigate("AstrologerList", { onlyFavorites: true })}
             />
             <FlatList
               horizontal
@@ -1960,12 +1961,13 @@ export function AstrologerListScreen({ route, navigation }: any) {
   const [data, setData] = useState<Astrologer[]>([]);
   const [search, setSearch] = useState("");
   const [selectedCat, setSelectedCat] = useState("All");
-  const cats = ["All", "Vedic", "Palmistry", "Vastu"];
+  const cats = ["All", ...new Set(data.flatMap((a) => a.specialization || []).filter(Boolean))];
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [balanceDialogVisible, setBalanceDialogVisible] = useState(false);
   const onlyLive = route?.params?.onlyLive ?? false;
+  const onlyFavorites = route?.params?.onlyFavorites ?? false;
 
   const fetchData = useCallback(() => api.astrologers.list().then(setData), []);
   useEffect(() => {
@@ -1975,6 +1977,14 @@ export function AstrologerListScreen({ route, navigation }: any) {
       api.wallet.get().then((w) => setWalletBalance(Number(w.balance))).catch(() => {});
     }
   }, [isFocused, fetchData]);
+
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  useEffect(() => {
+    if (isFocused && onlyFavorites) {
+      api.favorites.list().then((favs: any[]) => setFavoriteIds(favs.map((f: any) => f.userId))).catch(() => {});
+    }
+  }, [isFocused, onlyFavorites]);
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchData().finally(() => setRefreshing(false));
@@ -1994,14 +2004,16 @@ export function AstrologerListScreen({ route, navigation }: any) {
       );
     const matchesLive =
       !onlyLive || getAstrologerOnlineStatus(a, astrologerStatuses);
-    return matchesSearch && matchesCategory && matchesLive;
+    const matchesFav =
+      !onlyFavorites || favoriteIds.includes(a.userId);
+    return matchesSearch && matchesCategory && matchesLive && matchesFav;
   });
 
   return (
     <ScreenWrapper noPadding>
       <View style={{ padding: 16, paddingBottom: 0 }}>
         <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>
-          {onlyLive ? "Live Astrologers" : "Astrologers"}
+          {onlyLive ? "Live Astrologers" : onlyFavorites ? "Favorite Astrologers" : "Astrologers"}
         </Text>
       </View>
       <SearchBar value={search} onChangeText={setSearch} />
@@ -2256,6 +2268,10 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
   const [feedbackSuccessVisible, setFeedbackSuccessVisible] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [giftModalVisible, setGiftModalVisible] = useState(false);
+  const [gifts, setGifts] = useState<any[]>([]);
+  const [selectedGift, setSelectedGift] = useState<any>(null);
+  const [giftSending, setGiftSending] = useState(false);
   const { user, theme } = useAuth();
   const isDark = theme === "dark";
 
@@ -2904,12 +2920,13 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
 
             {/* Gift Button */}
             <TouchableOpacity
-              onPress={() =>
-                navigation.navigate("Gifts", {
-                  astrologerId: id,
-                  astrologerName: astro.name,
-                })
-              }
+              onPress={async () => {
+                try {
+                  const g = await api.gifts.list();
+                  setGifts(g.filter((x: any) => x.isActive));
+                } catch {}
+                setGiftModalVisible(true);
+              }}
               activeOpacity={0.7}
               style={{
                 flex: 1,
@@ -3132,6 +3149,53 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
           navigation.navigate('Main', { screen: 'Wallet' });
         }}
       />
+
+      {/* Gift Modal */}
+      <Modal visible={giftModalVisible} transparent animationType="fade" onRequestClose={() => setGiftModalVisible(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: isDark ? '#1F2937' : '#FFFFFF', borderRadius: 24, padding: 20, maxHeight: '80%' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <Text style={{ fontSize: 18, fontWeight: '800', color: isDark ? '#FFF' : '#1E293B' }}>Send Gift to {astro?.name}</Text>
+              <TouchableOpacity onPress={() => { setGiftModalVisible(false); setSelectedGift(null); }}>
+                <Ionicons name="close" size={24} color={isDark ? '#9CA3AF' : '#64748B'} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center', paddingBottom: 16 }}>
+              {gifts.map((item: any) => {
+                const isSelected = selectedGift?.id === item.id;
+                return (
+                  <TouchableOpacity key={item.id} onPress={() => setSelectedGift(item)}
+                    style={{ width: '30%', backgroundColor: isDark ? '#111827' : '#FFF', borderRadius: 14, borderWidth: 1, borderColor: isSelected ? colors.accentGold : isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0', paddingVertical: 12, alignItems: 'center', gap: 4, backgroundColor: isSelected ? (isDark ? 'rgba(217,119,6,0.15)' : '#FFFBEB') : undefined }}>
+                    <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isDark ? '#1F2937' : '#FFF', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9', alignItems: 'center', justifyContent: 'center' }}>
+                      <Ionicons name="gift" size={24} color={colors.accentGold} />
+                    </View>
+                    <Text style={{ fontSize: 12, color: isDark ? '#9CA3AF' : '#64748B', fontWeight: '500', textAlign: 'center' }} numberOfLines={1}>{item.name}</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: isDark ? '#FFF' : '#0F172A' }}>₹{item.price}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+            <View style={{ alignItems: 'center', gap: 4, marginBottom: 12 }}>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: isDark ? '#FFF' : '#0F172A' }}>Your Balance: ₹{walletBalance}</Text>
+              <Text style={{ fontSize: 11, color: isDark ? '#9CA3AF' : '#64748B', textAlign: 'center' }}>Entire amount will be provided to expert</Text>
+            </View>
+            <TouchableOpacity onPress={async () => {
+              if (!selectedGift) { Alert.alert('Select a Gift', 'Please choose a gift first.'); return; }
+              setGiftSending(true);
+              try {
+                await api.gifts.send({ giftId: selectedGift.id, senderId: user?.id, receiverId: id });
+                setGiftModalVisible(false);
+                setSelectedGift(null);
+                Alert.alert('Gift Sent', `You sent ${selectedGift.name} to ${astro?.name}!`);
+              } catch (e: any) {
+                Alert.alert('Error', e?.response?.data?.message || 'Failed to send gift');
+              } finally { setGiftSending(false); }
+            }} disabled={giftSending} style={{ backgroundColor: isDark ? colors.accentGold : '#5C3214', borderRadius: 24, height: 48, alignItems: 'center', justifyContent: 'center', opacity: giftSending ? 0.7 : 1 }}>
+              <Text style={{ color: isDark ? '#000' : '#FFF', fontSize: 15, fontWeight: '700' }}>{giftSending ? 'Sending...' : 'Send Gift'}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScreenWrapper>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, Alert, RefreshControl, ScrollView } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, Alert, RefreshControl, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { ScreenWrapper, GlassCard, GradientButton, EmptyState, Chip, colors, typography, radii } from '../../shared';
 import { api } from '../../shared/api-client';
@@ -61,10 +61,12 @@ export function SupportScreen() {
 
   return (
     <ScreenWrapper>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
       <FlatList
         data={tickets}
         keyExtractor={t => t.id}
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        keyboardShouldPersistTaps="handled"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListHeaderComponent={
           <>
@@ -122,6 +124,7 @@ export function SupportScreen() {
           </TouchableOpacity>
         )}
       />
+      </KeyboardAvoidingView>
     </ScreenWrapper>
   );
 }
@@ -172,10 +175,12 @@ export function TicketDetailScreen({ route }: any) {
 
   return (
     <ScreenWrapper>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
       <FlatList
         data={replies}
         keyExtractor={r => r.id}
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <>
             <GlassCard style={{ padding: 16, marginBottom: 16 }}>
@@ -237,6 +242,7 @@ export function TicketDetailScreen({ route }: any) {
           </View>
         }
       />
+      </KeyboardAvoidingView>
     </ScreenWrapper>
   );
 }
@@ -367,10 +373,12 @@ export function AdminTicketDetailScreen({ route }: any) {
 
   return (
     <ScreenWrapper>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
       <FlatList
         data={replies}
         keyExtractor={r => r.id}
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <>
             <GlassCard style={{ padding: 16, marginBottom: 16 }}>
@@ -451,6 +459,7 @@ export function AdminTicketDetailScreen({ route }: any) {
           </View>
         }
       />
+      </KeyboardAvoidingView>
     </ScreenWrapper>
   );
 }
