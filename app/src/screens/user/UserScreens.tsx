@@ -1445,7 +1445,7 @@ export function UserHomeScreen({ navigation }: any) {
           <>
             <SectionHeader
               title="Favorite Astrologers"
-              onSeeAll={() => navigation.navigate("AstrologerList")}
+              onSeeAll={() => navigation.navigate("AstrologerList", { onlyFavorites: true })}
             />
             <FlatList
               horizontal
@@ -1961,12 +1961,13 @@ export function AstrologerListScreen({ route, navigation }: any) {
   const [data, setData] = useState<Astrologer[]>([]);
   const [search, setSearch] = useState("");
   const [selectedCat, setSelectedCat] = useState("All");
-  const cats = ["All", "Vedic", "Palmistry", "Vastu"];
+  const cats = ["All", ...new Set(data.flatMap((a) => a.specialization || []).filter(Boolean))];
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [balanceDialogVisible, setBalanceDialogVisible] = useState(false);
   const onlyLive = route?.params?.onlyLive ?? false;
+  const onlyFavorites = route?.params?.onlyFavorites ?? false;
 
   const fetchData = useCallback(() => api.astrologers.list().then(setData), []);
   useEffect(() => {
@@ -1976,6 +1977,14 @@ export function AstrologerListScreen({ route, navigation }: any) {
       api.wallet.get().then((w) => setWalletBalance(Number(w.balance))).catch(() => {});
     }
   }, [isFocused, fetchData]);
+
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  useEffect(() => {
+    if (isFocused && onlyFavorites) {
+      api.favorites.list().then((favs: any[]) => setFavoriteIds(favs.map((f: any) => f.userId))).catch(() => {});
+    }
+  }, [isFocused, onlyFavorites]);
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     fetchData().finally(() => setRefreshing(false));
@@ -1995,14 +2004,16 @@ export function AstrologerListScreen({ route, navigation }: any) {
       );
     const matchesLive =
       !onlyLive || getAstrologerOnlineStatus(a, astrologerStatuses);
-    return matchesSearch && matchesCategory && matchesLive;
+    const matchesFav =
+      !onlyFavorites || favoriteIds.includes(a.userId);
+    return matchesSearch && matchesCategory && matchesLive && matchesFav;
   });
 
   return (
     <ScreenWrapper noPadding>
       <View style={{ padding: 16, paddingBottom: 0 }}>
         <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>
-          {onlyLive ? "Live Astrologers" : "Astrologers"}
+          {onlyLive ? "Live Astrologers" : onlyFavorites ? "Favorite Astrologers" : "Astrologers"}
         </Text>
       </View>
       <SearchBar value={search} onChangeText={setSearch} />
