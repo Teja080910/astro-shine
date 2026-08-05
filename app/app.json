@@ -14,14 +14,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.astroshine.mobile"
+      "bundleIdentifier": "com.astroshine.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo_clean.png",
         "backgroundColor": "#09090B"
       },
-      "package": "com.astroshine.mobile",
+      "package": "com.astroshine.app",
       "softwareKeyboardLayoutMode": "resize",
       "permissions": [
         "android.permission.CAMERA",
