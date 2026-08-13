@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Param, Body, Query, UseGuards, Req, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { MandirPoojaService } from './mandir-pooja.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 
@@ -27,6 +27,13 @@ export class MandirPoojaController {
   async update(@Param('id') id: string, @Body() body: any, @Req() req: any) {
     if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can update poojas');
     return this.service.update(id, body);
+  }
+
+  @Delete(':id')
+  @UseGuards(AuthGuard)
+  async delete(@Param('id') id: string, @Req() req: any) {
+    if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can delete poojas');
+    return this.service.delete(id);
   }
 
   @Get('bookings/list')

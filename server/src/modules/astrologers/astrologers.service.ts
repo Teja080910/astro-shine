@@ -1,7 +1,7 @@
 import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
-import { eq, desc, sql } from 'drizzle-orm';
+import { eq, desc, sql, aliasedTable } from 'drizzle-orm';
 import { RealtimeService } from '../../common/realtime.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -14,6 +14,7 @@ export class AstrologersService {
   ) {}
 
   async findAll() {
+    const wr = aliasedTable(schema.withdrawalRequests, 'wr');
     return this.db
       .select({
         userId: schema.astrologers.userId,
@@ -33,6 +34,7 @@ export class AstrologersService {
         totalVideoCalls: schema.astrologers.totalVideoCalls,
         totalCalls: schema.astrologers.totalCalls,
         totalEarnings: schema.astrologers.totalEarnings,
+        totalWithdrawn: sql<string>`COALESCE(SUM(CASE WHEN ${wr.status} = 'approved' THEN ${wr.amount}::decimal ELSE 0 END), 0)`,
         verificationStatus: schema.astrologers.verificationStatus,
         verificationDoc: schema.astrologers.verificationDoc,
         verificationNote: schema.astrologers.verificationNote,
@@ -51,7 +53,9 @@ export class AstrologersService {
         avatar: schema.users.avatar,
       })
       .from(schema.astrologers)
-      .leftJoin(schema.users, eq(schema.astrologers.userId, schema.users.id));
+      .leftJoin(schema.users, eq(schema.astrologers.userId, schema.users.id))
+      .leftJoin(wr, eq(wr.astrologerId, schema.astrologers.userId))
+      .groupBy(schema.astrologers.userId, schema.users.id);
   }
 
   async findByUserId(userId: string) {

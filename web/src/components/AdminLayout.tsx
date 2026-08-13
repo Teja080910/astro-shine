@@ -25,8 +25,6 @@ const menuItems = [
   { href: '/support', icon: Ticket, label: 'Support' },
   { href: '/shop', icon: ShoppingBag, label: 'Shop' },
   { href: '/videos', icon: Video, label: 'Videos' },
-  { href: '/releases', icon: Package, label: 'Releases' },
-  { href: '/settings', icon: Settings, label: 'Settings' },
   { href: '/horoscope', icon: Sparkles, label: 'Horoscopes' },
   { href: '/panchang', icon: Calendar, label: 'Panchang' },
   { href: '/muhurat', icon: Clock, label: 'Muhurat' },
@@ -36,9 +34,6 @@ const menuItems = [
   { href: '/notifications', icon: Bell, label: 'Notifications' },
   { href: '/blogs', icon: FileText, label: 'Blogs' },
   { href: '/news', icon: Newspaper, label: 'News' },
-  { href: '/api-keys', icon: Key, label: 'API Keys' },
-  { href: '/dynamic-links', icon: Link2, label: 'Links' },
-  { href: '/website-content', icon: Globe, label: 'Website' },
 ];
 
 function Sidebar({ mobileOpen, onMobileClose }: { mobileOpen: boolean; onMobileClose: () => void }) {

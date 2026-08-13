@@ -11,6 +11,7 @@ export default function PanchangPage() {
   const [data, setData] = useState<PanchangRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<PanchangRecord | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<PanchangRecord | null>(null);
 
   // Form states
   const [date, setDate] = useState('');
@@ -83,11 +84,12 @@ export default function PanchangPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this panchang record?')) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await api.del(`/panchang/${id}`);
-      setData(data.filter(p => p.id !== id));
+      await api.del(`/panchang/${deleteTarget.id}`);
+      setData(data.filter(p => p.id !== deleteTarget.id));
+      setDeleteTarget(null);
     } catch (err) {
       console.error(err);
     }
@@ -121,7 +123,7 @@ export default function PanchangPage() {
                   Edit
                 </button>
                 <button
-                  onClick={() => handleDelete(p.id)}
+                  onClick={() => setDeleteTarget(p)}
                   className="text-red-400 hover:underline text-sm font-medium"
                 >
                   Delete
@@ -222,6 +224,16 @@ export default function PanchangPage() {
           <div className="flex gap-3 pt-3 border-t border-divider">
             <GradientButton onClick={handleSave}>Save</GradientButton>
             <GradientButton onClick={() => setSelected(null)}>Cancel</GradientButton>
+          </div>
+        </div>
+      </CustomModal>
+
+      <CustomModal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete Panchang">
+        <div className="space-y-4">
+          <p className="text-text-secondary text-sm">Are you sure you want to delete the panchang record for <strong className="text-text-primary">{deleteTarget?.date ? formatDate(deleteTarget.date) : 'this date'}</strong>? This action cannot be undone.</p>
+          <div className="flex gap-2">
+            <button onClick={() => setDeleteTarget(null)} className="flex-1 px-4 py-2 rounded-lg border border-divider text-text-secondary text-sm font-semibold">Cancel</button>
+            <button onClick={handleDelete} className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold">Delete</button>
           </div>
         </div>
       </CustomModal>

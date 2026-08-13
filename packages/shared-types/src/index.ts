@@ -41,7 +41,7 @@ export interface Astrologer {
   bio?: string; experience: number; specialization: string[];
   languages: string[]; skills: string[];
   pricePerMin: string; chatPricePerMin?: string; audioCallPricePerMin?: string; videoCallPricePerMin?: string; rating: number; totalReviews: number;
-  totalCalls: number; totalEarnings: string;
+  totalCalls: number; totalEarnings: string; totalWithdrawn?: string;
   verificationStatus: VerificationStatus;
   verificationDoc?: string[]; verificationNote?: string;
   onlineStatus: OnlineStatus;

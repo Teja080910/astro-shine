@@ -2258,7 +2258,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
   const isFocused = useIsFocused();
   const [astro, setAstro] = useState<Astrologer | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
-  const { openConversation, astrologerStatuses, astrologerServices } = useChat();
+  const { openConversation, astrologerStatuses, astrologerServices, giftVersion } = useChat();
   const { initiateCall } = useCall();
   const [offlineDialogVisible, setOfflineDialogVisible] = useState(false);
   const [balanceDialogVisible, setBalanceDialogVisible] = useState(false);
@@ -2290,6 +2290,12 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
       api.favorites.status(id).then((res) => setIsFavorite(res.isFavorite)).catch(() => {});
     }
   }, [id, isFocused]);
+
+  useEffect(() => {
+    if (giftModalVisible) {
+      api.gifts.list().then((g) => setGifts(g.filter((x: any) => x.isActive))).catch(() => {});
+    }
+  }, [giftModalVisible, giftVersion]);
   if (!astro)
     return (
       <ScreenWrapper>
@@ -2920,13 +2926,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
 
             {/* Gift Button */}
             <TouchableOpacity
-              onPress={async () => {
-                try {
-                  const g = await api.gifts.list();
-                  setGifts(g.filter((x: any) => x.isActive));
-                } catch {}
-                setGiftModalVisible(true);
-              }}
+              onPress={() => setGiftModalVisible(true)}
               activeOpacity={0.7}
               style={{
                 flex: 1,
@@ -3165,9 +3165,13 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
                 const isSelected = selectedGift?.id === item.id;
                 return (
                   <TouchableOpacity key={item.id} onPress={() => setSelectedGift(item)}
-                    style={{ width: '30%', backgroundColor: isDark ? '#111827' : '#FFF', borderRadius: 14, borderWidth: 1, borderColor: isSelected ? colors.accentGold : isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0', paddingVertical: 12, alignItems: 'center', gap: 4, backgroundColor: isSelected ? (isDark ? 'rgba(217,119,6,0.15)' : '#FFFBEB') : undefined }}>
-                    <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isDark ? '#1F2937' : '#FFF', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9', alignItems: 'center', justifyContent: 'center' }}>
-                      <Ionicons name="gift" size={24} color={colors.accentGold} />
+                    style={{ width: '30%', backgroundColor: isSelected ? (isDark ? 'rgba(217,119,6,0.15)' : '#FFFBEB') : (isDark ? '#111827' : '#FFF'), borderRadius: 14, borderWidth: 1, borderColor: isSelected ? colors.accentGold : isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0', paddingVertical: 12, alignItems: 'center', gap: 4 }}>
+                    <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isDark ? '#1F2937' : '#FFF', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      {item.image ? (
+                        <Image source={{ uri: item.image }} style={{ width: 48, height: 48 }} resizeMode="cover" />
+                      ) : (
+                        <Ionicons name="gift" size={24} color={colors.accentGold} />
+                      )}
                     </View>
                     <Text style={{ fontSize: 12, color: isDark ? '#9CA3AF' : '#64748B', fontWeight: '500', textAlign: 'center' }} numberOfLines={1}>{item.name}</Text>
                     <Text style={{ fontSize: 13, fontWeight: '800', color: isDark ? '#FFF' : '#0F172A' }}>₹{item.price}</Text>
