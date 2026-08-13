@@ -1922,6 +1922,49 @@ export function AstrologerProfileScreen({ navigation }: any) {
 
         {/* Main Options Cards */}
         <View style={{ gap: 14, marginTop: 16 }}>
+          {/* Profile Details */}
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              padding: 14,
+              borderWidth: 1,
+              borderColor: colors.cardBorder,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: "800",
+                color: colors.primaryLight,
+                letterSpacing: 1,
+                marginBottom: 8,
+              }}
+            >
+              PROFILE DETAILS
+            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.divider }}>
+              <Ionicons name="call-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
+              <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>Phone</Text>
+              <Text style={[typography.body, { fontWeight: "600", color: colors.textPrimary }]}>{profile?.phone || "Not set"}</Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.divider }}>
+              <Ionicons name="male-female-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
+              <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>Gender</Text>
+              <Text style={[typography.body, { fontWeight: "600", color: colors.textPrimary }]}>{(profile as any)?.gender ? String((profile as any).gender).charAt(0).toUpperCase() + String((profile as any).gender).slice(1) : "Not set"}</Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.divider }}>
+              <Ionicons name="calendar-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
+              <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>Date of Birth</Text>
+              <Text style={[typography.body, { fontWeight: "600", color: colors.textPrimary }]}>{(profile as any)?.dateOfBirth ? String((profile as any).dateOfBirth).split("T")[0] : "Not set"}</Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8 }}>
+              <Ionicons name="ribbon-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
+              <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>Specialization</Text>
+              <Text style={[typography.body, { fontWeight: "600", color: colors.textPrimary, flexShrink: 1, textAlign: "right" }]}>{profile?.specialization?.join(", ") || "Not set"}</Text>
+            </View>
+          </View>
+
           {/* Services & Schedule Group */}
           <View
             style={{

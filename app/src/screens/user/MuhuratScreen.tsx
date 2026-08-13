@@ -35,6 +35,11 @@ export function MuhuratScreen() {
     return `${yyyy}-${mm}-${dd}`;
   };
 
+  const parseDateString = (dateStr: string): Date => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, (m || 1) - 1, d || 1);
+  };
+
   const formatTimeString12 = (timeStr: string) => {
     if (!timeStr) return '';
     const parts = timeStr.split(':');
@@ -141,14 +146,14 @@ export function MuhuratScreen() {
         visible={showStartPicker}
         value={formatDateString(startDate)}
         onClose={() => setShowStartPicker(false)}
-        onSelect={(dateStr) => setStartDate(new Date(dateStr))}
+        onSelect={(dateStr) => setStartDate(parseDateString(dateStr))}
       />
 
       <DatePicker
         visible={showEndPicker}
         value={formatDateString(endDate)}
         onClose={() => setShowEndPicker(false)}
-        onSelect={(dateStr) => setEndDate(new Date(dateStr))}
+        onSelect={(dateStr) => setEndDate(parseDateString(dateStr))}
       />
 
       {/* Categories Horizontal Scroll */}

@@ -202,7 +202,7 @@ export function UserHomeScreen({ navigation }: any) {
         api.astrologers.list(),
         api.horoscope.bySign(selectedSign, todayStr),
         api.videos.list(),
-        api.blogs.list(),
+        api.blogs.list({ published: 'true' }),
         api.mandirPooja.list(),
         api.notifications.list({ userId: user?.id }),
         api.wallet.get().catch(() => null),
@@ -225,6 +225,10 @@ export function UserHomeScreen({ navigation }: any) {
   useEffect(() => {
     if (isFocused) loadData();
   }, [isFocused, loadData]);
+
+  useEffect(() => {
+    if (blogVersion > 0) loadData();
+  }, [blogVersion]);
 
   useEffect(() => {
     (async () => {
@@ -1691,8 +1695,11 @@ export function UserHomeScreen({ navigation }: any) {
               showsHorizontalScrollIndicator={false}
               data={videos.slice(0, 5)}
               keyExtractor={(v) => v.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity style={{ width: 220, marginRight: 12 }}>
+              renderItem={({ item }) => {
+                const ytMatch = (item.url || "").match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+                const thumbUrl = ytMatch ? `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg` : item.thumbnail;
+                return (
+                <TouchableOpacity style={{ width: 220, marginRight: 12 }} onPress={() => navigation.navigate("Videos", { videoId: item.id })}>
                   <GlassCard style={{ padding: 0, overflow: "hidden", height: 175 }}>
                     <View
                       style={{
@@ -1702,14 +1709,19 @@ export function UserHomeScreen({ navigation }: any) {
                         justifyContent: "center",
                         borderTopLeftRadius: 24,
                         borderTopRightRadius: 24,
+                        overflow: "hidden",
                       }}
                     >
+                      {thumbUrl ? (
+                        <Image source={{ uri: thumbUrl }} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
+                      ) : null}
                       <View
                         style={{
+                          position: "absolute",
                           width: 44,
                           height: 44,
                           borderRadius: 22,
-                          backgroundColor: colors.primary + "40",
+                          backgroundColor: "rgba(0,0,0,0.5)",
                           alignItems: "center",
                           justifyContent: "center",
                         }}
@@ -1734,7 +1746,8 @@ export function UserHomeScreen({ navigation }: any) {
                     </View>
                   </GlassCard>
                 </TouchableOpacity>
-              )}
+                );
+              }}
               style={{ marginLeft: 0 }}
             />
           </>
@@ -4350,6 +4363,33 @@ export function ProfileScreen({ navigation }: any) {
 
         {/* Main Options Cards */}
         <View style={{ gap: 14, marginTop: 16 }}>
+          {/* Profile Details */}
+          <View
+            style={[
+              styles.menuGroupCard,
+              { backgroundColor: cardBg, borderColor: cardBorderColor },
+            ]}
+          >
+            <Text style={[styles.groupHeaderTitle, { color: goldTextColor }]}>
+              PROFILE DETAILS
+            </Text>
+            <View style={[styles.menuRowItem, { borderBottomColor: rowBorderColor }]}>
+              <Ionicons name="call-outline" size={18} color={goldTextColor} />
+              <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Phone</Text>
+              <Text style={{ color: mutedTextColor, fontSize: 13 }}>{user?.phone || "Not set"}</Text>
+            </View>
+            <View style={[styles.menuRowItem, { borderBottomColor: rowBorderColor }]}>
+              <Ionicons name="male-female-outline" size={18} color={goldTextColor} />
+              <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Gender</Text>
+              <Text style={{ color: mutedTextColor, fontSize: 13 }}>{(user as any)?.gender ? String((user as any).gender).charAt(0).toUpperCase() + String((user as any).gender).slice(1) : "Not set"}</Text>
+            </View>
+            <View style={[styles.menuRowItem, { borderBottomColor: rowBorderColor }]}>
+              <Ionicons name="calendar-outline" size={18} color={goldTextColor} />
+              <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Date of Birth</Text>
+              <Text style={{ color: mutedTextColor, fontSize: 13 }}>{(user as any)?.dateOfBirth ? String((user as any).dateOfBirth).split("T")[0] : "Not set"}</Text>
+            </View>
+          </View>
+
           {/* Account Group */}
           <View
             style={[
