@@ -49,6 +49,7 @@
     "livekit-server-sdk": "^2.17.0",
     "pg": "^8.22.0",
     "razorpay": "^2.9.6",
+    "razorpayx": "^1.0.3",
     "reflect-metadata": "^0.2.2",
     "resend": "^6.17.2",
     "rxjs": "^7.8.1",

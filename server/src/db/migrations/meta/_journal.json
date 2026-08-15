@@ -15,6 +15,13 @@
       "when": 1785734979088,
       "tag": "0001_nosy_ronan",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786770914438,
+      "tag": "0002_payout_fields",
+      "breakpoints": true
     }
   ]
 }

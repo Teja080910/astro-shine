@@ -1,4 +1,4 @@
-import { pgTable, uuid, decimal, text, jsonb, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, decimal, text, jsonb, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { astrologers } from './astrologers';
 import { admins } from './admins';
 import { withdrawalStatus } from '../enums';
@@ -10,6 +10,10 @@ export const withdrawalRequests = pgTable('withdrawal_requests', {
   amount: decimal('amount', { precision: 12, scale: 2 }).notNull(),
   status: withdrawalStatus('status').notNull().default('pending'),
   bankAccount: jsonb('bank_account'),
+  payoutId: varchar('payout_id', { length: 100 }),
+  payoutUtr: varchar('payout_utr', { length: 100 }),
+  payoutStatus: varchar('payout_status', { length: 50 }),
+  payoutResponse: jsonb('payout_response'),
   adminNote: text('admin_note'),
   processedBy: uuid('processed_by').references(() => admins.userId, { onDelete: 'set null' }),
   processedAt: timestamp('processed_at'),

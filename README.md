@@ -25,17 +25,36 @@ cp .env.example .env
 npx expo start
 ```
 
-## Build APK
+## Build APK / AAB
 
 ```bash
 cd app
-npm run prebuild          # Generate android/ folder (required first time)
-npm run apk:debug         # Debug APK
-npm run apk:release       # Release APK
-npm run aab:release       # Release AAB (for Play Store)
+npm run prebuild              # Generate android/ folder (required first time)
+npm run aab                   # Build release AAB (for Play Store)
 ```
 
-APK output: `app/android/app/build/outputs/apk/`
+Output: `app/android/app/build/outputs/bundle/release/app-release.aab`
+
+### Release Signing
+
+```bash
+# Generate keystore (one time)
+keytool -genkey -v -keystore android/app/release.keystore -alias astroshine -keyalg RSA -keysize 2048 -validity 10000
+
+# Build signed AAB
+cd android && ./gradlew bundleRelease
+```
+
+**Keystore**: `app/android/app/release.keystore`  
+**Alias**: `astroshine`  
+**Password**: `astroshine123`
+
+### Package Name
+
+- **Android**: `com.astroshine.app`
+- **iOS**: `com.astroshine.app`
+
+Configured in `app/app.json`.
 
 ## Project Structure
 
@@ -72,7 +91,24 @@ APK output: `app/android/app/build/outputs/apk/`
 | `RAZORPAY_KEY_ID` | Razorpay API Key ID (public) |
 | `RAZORPAY_KEY_SECRET` | Razorpay API Key Secret (server only) |
 | `RAZORPAY_WEBHOOK_SECRET` | Webhook signature secret (server only) |
+| `RAZORPAYX_KEY_ID` | RazorpayX API Key ID for payouts (server only) |
+| `RAZORPAYX_KEY_SECRET` | RazorpayX API Key Secret for payouts (server only) |
+| `RAZORPAYX_DEFAULT_ACCOUNT` | RazorpayX payout account number used for transfers |
 | `EXPO_PUBLIC_RAZORPAY_KEY_ID` | Same as RAZORPAY_KEY_ID, for mobile |
+
+### Payouts (RazorpayX)
+
+Withdrawals approved by an admin automatically trigger a RazorpayX payout to the
+astrologer's bank account:
+
+1. A RazorpayX **contact** is created/retrieved for the astrologer.
+2. A **fund account** is created/retrieved for their bank details.
+3. A **payout** is initiated (IMPS, queue_if_low_balance).
+4. The withdrawal request is marked `completed` when the payout is processed.
+
+Payout reference data (`payout_id`, `payout_utr`, `payout_status`) is stored on the
+`withdrawal_requests` table and surfaced in the admin panel. Payouts require a
+separate RazorpayX account — the keys are distinct from the standard Razorpay keys.
 
 ## Database Migrations
 
