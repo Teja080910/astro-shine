@@ -40,7 +40,7 @@ function isConsecutive(prev: any, curr: any): boolean {
 }
 
 export function ChatRoomScreen({ route, navigation }: any) {
-  const { conversationId, participantId, participantRole, participantName } = route.params;
+  const { conversationId, participantId, participantRole, participantName, participantAvatar } = route.params;
   const { messages, loadMessages, loadMoreMessages, sendMessage, startTyping, stopTyping, markAsRead, typingUsers, hasMore, loading, onlineUsers, connected, joinRoom, setActiveConversation, astrologerStatuses, chatBlockedMessage, clearChatBlocked } = useChat();
   const { initiateCall } = useCall();
   const { user, astrologer: authAstrologer } = useAuth();
@@ -130,7 +130,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
           disabled={participantRole !== 'astrologer'}
           style={headerStyles.container}
         >
-          <Avatar size={36} online={isOnline} />
+          <Avatar size={36} online={isOnline} uri={participantAvatar} name={participantName} />
           <View style={headerStyles.textContainer}>
             <Text style={[headerStyles.name, { color: colors.textPrimary }]}>{participantName || (participantId === currentUserId ? 'You' : 'Astrologer')}</Text>
             {typing ? (

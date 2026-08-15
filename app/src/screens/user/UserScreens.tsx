@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused, useNavigation } from "@react-navigation/native";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useMemo } from "react";
 import {
   Alert,
   FlatList,
@@ -42,9 +42,11 @@ import {
   Navbar,
 } from "../../shared";
 import { api } from "../../shared/api-client";
+import { config } from "../../config";
 import type {
   Astrologer,
   Blog,
+  CallLog,
   HoroscopeRecord,
   MandirPooja,
   Notification,
@@ -114,7 +116,8 @@ function getAstrologerOnlineStatus(
 // User Home Dashboard
 export function UserHomeScreen({ navigation }: any) {
   const { user, theme, setTheme } = useAuth();
-  const { astrologerStatuses, horoscopeVersion, blogVersion, notificationVersion, walletVersion } = useChat();
+  const { conversations, openConversation, astrologerStatuses, horoscopeVersion, blogVersion, notificationVersion, walletVersion } = useChat();
+  const { initiateCall } = useCall();
   const isFocused = useIsFocused();
   const isDark = theme === "dark";
 
@@ -129,6 +132,8 @@ export function UserHomeScreen({ navigation }: any) {
   const goldTextColor = isDark ? "#FBBF24" : "#D97706";
   const [astrologers, setAstrologers] = useState<Astrologer[]>([]);
   const [favoriteAstrologers, setFavoriteAstrologers] = useState<Astrologer[]>([]);
+  const [callLogs, setCallLogs] = useState<CallLog[]>([]);
+  const [balanceDialogVisible, setBalanceDialogVisible] = useState(false);
   const [horoscope, setHoroscope] = useState<HoroscopeRecord[]>([]);
   const [videos, setVideos] = useState<Video[]>([]);
   const [blogs, setBlogs] = useState<Blog[]>([]);
@@ -198,7 +203,7 @@ export function UserHomeScreen({ navigation }: any) {
 
   const loadData = useCallback(async () => {
     try {
-      const [a, h, v, b, p, n, w, favs] = await Promise.all([
+      const [a, h, v, b, p, n, w, favs, calls] = await Promise.all([
         api.astrologers.list(),
         api.horoscope.bySign(selectedSign, todayStr),
         api.videos.list(),
@@ -207,6 +212,7 @@ export function UserHomeScreen({ navigation }: any) {
         api.notifications.list({ userId: user?.id }),
         api.wallet.get().catch(() => null),
         api.favorites.list().catch(() => []),
+        user?.id ? api.calls.list({ userId: user.id }).catch(() => []) : Promise.resolve([]),
       ]);
       setAstrologers(a);
       setHoroscope(Array.isArray(h) ? h : [h]);
@@ -216,6 +222,7 @@ export function UserHomeScreen({ navigation }: any) {
       setNotifications(n);
       setWallet(w);
       setFavoriteAstrologers(favs);
+      setCallLogs(calls);
     } catch {
     } finally {
       setLoading(false);
@@ -286,6 +293,171 @@ export function UserHomeScreen({ navigation }: any) {
             (s) => s.toLowerCase() === selectedCategory.toLowerCase(),
           ),
         );
+
+  const chattedAstroIds = useMemo(() => {
+    return (conversations || [])
+      .filter((c) => c.participantRole === "astrologer")
+      .map((c) => c.participantId);
+  }, [conversations]);
+
+  const chatAstrologers = useMemo(() => {
+    const chatted = astrologers.filter((a) => chattedAstroIds.includes(a.userId));
+    return chatted.length > 0 ? chatted : astrologers;
+  }, [astrologers, chattedAstroIds]);
+
+  const audioCallAstroIds = useMemo(() => {
+    const ids = (callLogs || [])
+      .filter((c) => c.type === "audio")
+      .map((c) => c.astrologerId);
+    return ids.filter((val, index) => ids.indexOf(val) === index);
+  }, [callLogs]);
+
+  const audioCallAstrologers = useMemo(() => {
+    const talked = astrologers.filter((a) => audioCallAstroIds.includes(a.userId));
+    return talked.length > 0 ? talked : astrologers;
+  }, [astrologers, audioCallAstroIds]);
+
+  const videoCallAstroIds = useMemo(() => {
+    const ids = (callLogs || [])
+      .filter((c) => c.type === "video")
+      .map((c) => c.astrologerId);
+    return ids.filter((val, index) => ids.indexOf(val) === index);
+  }, [callLogs]);
+
+  const videoCallAstrologers = useMemo(() => {
+    const talked = astrologers.filter((a) => videoCallAstroIds.includes(a.userId));
+    return talked.length > 0 ? talked : astrologers;
+  }, [astrologers, videoCallAstroIds]);
+
+  const handleAstroAction = async (item: Astrologer, type: "chat" | "audio" | "video") => {
+    const isOnline = getAstrologerOnlineStatus(item, astrologerStatuses);
+    const isVerified = item.verificationStatus === "approved";
+
+    if (!isVerified) {
+      Alert.alert("Not Verified", "This astrologer is not yet verified.");
+      return;
+    }
+
+    if (type === "chat") {
+      try {
+        const convId = await openConversation(item.userId, "astrologer");
+        navigation.navigate("ChatRoom", {
+          conversationId: convId,
+          participantId: item.userId,
+          participantRole: "astrologer",
+          participantName: item.name,
+          participantAvatar: item.avatar,
+        });
+      } catch (err: any) {
+        Alert.alert("Error", err?.message || "Failed to start chat");
+      }
+    } else {
+      // Audio or Video Call
+      if (!isOnline) {
+        Alert.alert("Offline", `${item.name || "Astrologer"} is currently offline.`);
+        return;
+      }
+      
+      let rate = "0";
+      if (type === "audio") rate = item.audioCallPricePerMin || item.pricePerMin || "10";
+      else if (type === "video") rate = item.videoCallPricePerMin || item.pricePerMin || "20";
+      
+      const rateNum = parseFloat(rate);
+      const balance = wallet?.balance ? parseFloat(wallet.balance) : 0;
+      if (balance < rateNum) {
+        setBalanceDialogVisible(true);
+        return;
+      }
+      
+      initiateCall(
+        item.userId,
+        item.name || "",
+        type,
+      );
+    }
+  };
+
+  const renderAstroRowCard = (item: Astrologer, type: "chat" | "audio" | "video") => {
+    const isOnline = getAstrologerOnlineStatus(item, astrologerStatuses);
+    const isVerified = item.verificationStatus === "approved";
+    
+    let rate = "0";
+    if (type === "chat") rate = item.chatPricePerMin || item.pricePerMin || "0";
+    else if (type === "audio") rate = item.audioCallPricePerMin || item.pricePerMin || "0";
+    else if (type === "video") rate = item.videoCallPricePerMin || item.pricePerMin || "0";
+    
+    const rateNum = parseFloat(rate);
+    const priceDisplay = rateNum === 0 ? "Free" : `₹${rate}/min`;
+
+    return (
+      <TouchableOpacity
+        onPress={() => handleAstroAction(item, type)}
+        style={[styles.astroRowCard, { backgroundColor: cardBg, borderColor: cardBorderColor }]}
+      >
+        <View style={styles.astroRowInner}>
+          <View style={styles.avatarContainer}>
+            <Avatar size={56} online={isOnline} uri={item.avatar} name={item.name} />
+            {isVerified && (
+              <View style={styles.verifiedBadgeOnAvatar}>
+                <Ionicons name="checkmark" size={10} color="#7c2d12" />
+              </View>
+            )}
+          </View>
+
+          <View style={styles.astroRowRight}>
+            <View style={styles.astroRowNameRow}>
+              <Text
+                style={[typography.cardTitle, { color: textPrimaryColor, fontSize: 13, flexShrink: 1 }]}
+                numberOfLines={1}
+              >
+                {item.name}
+              </Text>
+              <View
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: isOnline ? "#22C55E" : "#9CA3AF",
+                }}
+              />
+            </View>
+
+            <Text
+              style={[typography.caption, { color: mutedTextColor, fontSize: 10 }]}
+              numberOfLines={1}
+            >
+              {item.specialization?.join(", ") || "Vedic Astrologer"}
+            </Text>
+
+            <StarRating
+              rating={
+                typeof item.rating === "string"
+                  ? parseFloat(item.rating)
+                  : item.rating
+              }
+              size={10}
+            />
+
+            <View style={styles.astroRowPriceRow}>
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontWeight: "800",
+                  color: rateNum === 0 ? "#16A34A" : goldTextColor,
+                }}
+              >
+                {priceDisplay}
+              </Text>
+              
+              <View style={styles.astroRowBadge}>
+                <Text style={styles.astroRowBadgeText}>Best Offer</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   if (loading)
     return (
@@ -1445,6 +1617,78 @@ export function UserHomeScreen({ navigation }: any) {
 
         <View style={{ height: 24 }} />
 
+        {/* Chat with Astrologer Section */}
+        <SectionHeader
+          title="Chat With Astrologer"
+          onSeeAll={() => navigation.navigate("AstrologerList", { onlyChat: true })}
+        />
+        {chatAstrologers.length > 0 ? (
+          <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={chatAstrologers.slice(0, 8)}
+            keyExtractor={(a) => `chat-${a.userId}`}
+            renderItem={({ item }) => renderAstroRowCard(item, "chat")}
+            style={{ marginLeft: 8 }}
+          />
+        ) : (
+          <GlassCard style={{ marginHorizontal: 16, padding: 12 }}>
+            <Text style={[typography.body, { textAlign: "center", color: bodyTextColor }]}>
+              No chat astrologers available
+            </Text>
+          </GlassCard>
+        )}
+
+        <View style={{ height: 20 }} />
+
+        {/* Audio Call with Astrologer Section */}
+        <SectionHeader
+          title="Audio Call With Astrologer"
+          onSeeAll={() => navigation.navigate("AstrologerList", { onlyAudio: true })}
+        />
+        {audioCallAstrologers.length > 0 ? (
+          <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={audioCallAstrologers.slice(0, 8)}
+            keyExtractor={(a) => `audio-${a.userId}`}
+            renderItem={({ item }) => renderAstroRowCard(item, "audio")}
+            style={{ marginLeft: 8 }}
+          />
+        ) : (
+          <GlassCard style={{ marginHorizontal: 16, padding: 12 }}>
+            <Text style={[typography.body, { textAlign: "center", color: bodyTextColor }]}>
+              No audio call astrologers available
+            </Text>
+          </GlassCard>
+        )}
+
+        <View style={{ height: 20 }} />
+
+        {/* Video Call with Astrologer Section */}
+        <SectionHeader
+          title="Video Call With Astrologer"
+          onSeeAll={() => navigation.navigate("AstrologerList", { onlyVideo: true })}
+        />
+        {videoCallAstrologers.length > 0 ? (
+          <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={videoCallAstrologers.slice(0, 8)}
+            keyExtractor={(a) => `video-${a.userId}`}
+            renderItem={({ item }) => renderAstroRowCard(item, "video")}
+            style={{ marginLeft: 8 }}
+          />
+        ) : (
+          <GlassCard style={{ marginHorizontal: 16, padding: 12 }}>
+            <Text style={[typography.body, { textAlign: "center", color: bodyTextColor }]}>
+              No video call astrologers available
+            </Text>
+          </GlassCard>
+        )}
+
+        <View style={{ height: 24 }} />
+
         {favoriteAstrologers.length > 0 && (
           <>
             <SectionHeader
@@ -1469,6 +1713,8 @@ export function UserHomeScreen({ navigation }: any) {
                       <Avatar
                         size={56}
                         online={isOnline}
+                        uri={item.avatar}
+                        name={item.name}
                       />
                       <Text style={typography.cardTitle} numberOfLines={1}>
                         {item.name}
@@ -1522,6 +1768,8 @@ export function UserHomeScreen({ navigation }: any) {
                   <Avatar
                     size={56}
                     online={getAstrologerOnlineStatus(item, astrologerStatuses)}
+                    uri={item.avatar}
+                    name={item.name}
                   />
                   <Text style={typography.cardTitle} numberOfLines={1}>
                     {item.name}
@@ -1591,6 +1839,8 @@ export function UserHomeScreen({ navigation }: any) {
                   <Avatar
                     size={56}
                     online={getAstrologerOnlineStatus(item, astrologerStatuses)}
+                    uri={item.avatar}
+                    name={item.name}
                   />
                   <Text style={typography.cardTitle} numberOfLines={1}>
                     {item.name}
@@ -1962,6 +2212,15 @@ export function UserHomeScreen({ navigation }: any) {
           </View>
         </TouchableOpacity>
       )}
+
+      <InsufficientBalanceDialog
+        visible={balanceDialogVisible}
+        onClose={() => setBalanceDialogVisible(false)}
+        onRecharge={() => {
+          setBalanceDialogVisible(false);
+          navigation.navigate("Wallet");
+        }}
+      />
     </ScreenWrapper>
   );
 }
@@ -1974,13 +2233,18 @@ export function AstrologerListScreen({ route, navigation }: any) {
   const [data, setData] = useState<Astrologer[]>([]);
   const [search, setSearch] = useState("");
   const [selectedCat, setSelectedCat] = useState("All");
-  const cats = ["All", ...new Set(data.flatMap((a) => a.specialization || []).filter(Boolean))];
+  const rawCats = data.flatMap((a) => a.specialization || []).filter(Boolean);
+  const uniqueCats = rawCats.filter((val, index) => rawCats.indexOf(val) === index);
+  const cats = ["All", ...uniqueCats];
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [balanceDialogVisible, setBalanceDialogVisible] = useState(false);
   const onlyLive = route?.params?.onlyLive ?? false;
   const onlyFavorites = route?.params?.onlyFavorites ?? false;
+  const onlyChat = route?.params?.onlyChat ?? false;
+  const onlyAudio = route?.params?.onlyAudio ?? false;
+  const onlyVideo = route?.params?.onlyVideo ?? false;
 
   const fetchData = useCallback(() => api.astrologers.list().then(setData), []);
   useEffect(() => {
@@ -2019,14 +2283,29 @@ export function AstrologerListScreen({ route, navigation }: any) {
       !onlyLive || getAstrologerOnlineStatus(a, astrologerStatuses);
     const matchesFav =
       !onlyFavorites || favoriteIds.includes(a.userId);
-    return matchesSearch && matchesCategory && matchesLive && matchesFav;
+    const matchesChat =
+      !onlyChat || a.isChatEnabled !== false;
+    const matchesAudio =
+      !onlyAudio || a.isAudioCallEnabled !== false;
+    const matchesVideo =
+      !onlyVideo || a.isVideoCallEnabled !== false;
+    return matchesSearch && matchesCategory && matchesLive && matchesFav && matchesChat && matchesAudio && matchesVideo;
   });
+
+  const getHeaderTitle = () => {
+    if (onlyLive) return "Live Astrologers";
+    if (onlyFavorites) return "Favorite Astrologers";
+    if (onlyChat) return "Chat with Astrologer";
+    if (onlyAudio) return "Audio Call with Astrologer";
+    if (onlyVideo) return "Video Call with Astrologer";
+    return "Astrologers";
+  };
 
   return (
     <ScreenWrapper noPadding>
       <View style={{ padding: 16, paddingBottom: 0 }}>
         <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>
-          {onlyLive ? "Live Astrologers" : onlyFavorites ? "Favorite Astrologers" : "Astrologers"}
+          {getHeaderTitle()}
         </Text>
       </View>
       <SearchBar value={search} onChangeText={setSearch} />
@@ -2078,7 +2357,7 @@ export function AstrologerListScreen({ route, navigation }: any) {
             >
               <GlassCard>
                 <View style={styles.row}>
-                  <Avatar size={56} online={isOnline} />
+                  <Avatar size={56} online={isOnline} uri={item.avatar} name={item.name} />
                   <View style={{ flex: 1, marginLeft: 12 }}>
                     <Text style={typography.cardTitle} numberOfLines={1}>
                       {item.name}
@@ -2285,6 +2564,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
   const [gifts, setGifts] = useState<any[]>([]);
   const [selectedGift, setSelectedGift] = useState<any>(null);
   const [giftSending, setGiftSending] = useState(false);
+  const [reviews, setReviews] = useState<any[]>([]);
   const { user, theme } = useAuth();
   const isDark = theme === "dark";
 
@@ -2296,11 +2576,28 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
   const cardBorderColor = isDark ? "rgba(245, 158, 11, 0.3)" : "#FDE68A";
   const cardLightBg = isDark ? "rgba(255, 255, 255, 0.04)" : "#FFFBEB";
 
+  const getAbsoluteImageUrl = (path?: string) => {
+    if (!path) return undefined;
+    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
+      return path;
+    }
+    return `${config.apiUrl}${path}`;
+  };
+
   useEffect(() => {
     if (isFocused) {
       api.astrologers.get(id).then(setAstro);
       api.wallet.get().then((w) => setWalletBalance(Number(w.balance))).catch(() => {});
       api.favorites.status(id).then((res) => setIsFavorite(res.isFavorite)).catch(() => {});
+      api.astrologers.getFeedback(id).then((res) => {
+        setReviews(res.map((item: any) => ({
+          id: item.id,
+          userName: item.userName || "User",
+          rating: Number(item.ratings || 0),
+          comment: item.comments || "",
+          createdAt: item.createdAt,
+        })));
+      }).catch(() => {});
     }
   }, [id, isFocused]);
 
@@ -2340,6 +2637,15 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
       setFeedbackRating(0);
       setFeedbackComment("");
       api.astrologers.get(id).then(setAstro);
+      api.astrologers.getFeedback(id).then((res) => {
+        setReviews(res.map((item: any) => ({
+          id: item.id,
+          userName: item.userName || "User",
+          rating: Number(item.ratings || 0),
+          comment: item.comments || "",
+          createdAt: item.createdAt,
+        })));
+      }).catch(() => {});
     } catch (e) {
       Alert.alert("Error", "Failed to submit feedback");
     } finally {
@@ -2361,6 +2667,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
       participantId: id,
       participantRole: "astrologer",
       participantName: astro.name,
+      participantAvatar: astro.avatar,
     });
   };
 
@@ -2408,7 +2715,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
     statItems.push({
       icon: "chatbubble-ellipses-sharp",
       color: "#8B5CF6",
-      value: astro.totalChats ? `${astro.totalChats}K+` : "12K+",
+      value: astro.totalChats !== undefined && astro.totalChats !== null ? String(astro.totalChats) : "0",
       label: "Chats",
       bgColor: "rgba(139, 92, 246, 0.15)"
     });
@@ -2417,7 +2724,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
     statItems.push({
       icon: "call-sharp",
       color: "#10B981",
-      value: astro.totalAudioCalls ? `${astro.totalAudioCalls}K+` : "9K+",
+      value: astro.totalAudioCalls !== undefined && astro.totalAudioCalls !== null ? String(astro.totalAudioCalls) : "0",
       label: "Calls",
       bgColor: "rgba(16, 185, 129, 0.15)"
     });
@@ -2426,7 +2733,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
     statItems.push({
       icon: "videocam-sharp",
       color: "#F59E0B",
-      value: astro.totalVideoCalls ? `${astro.totalVideoCalls}K+` : "5K+",
+      value: astro.totalVideoCalls !== undefined && astro.totalVideoCalls !== null ? String(astro.totalVideoCalls) : "0",
       label: "Video Calls",
       bgColor: "rgba(245, 158, 11, 0.15)"
     });
@@ -2466,21 +2773,42 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
         >
           {/* Avatar Container with Verified Badge */}
           <View style={{ position: "relative", alignItems: "center" }}>
-            <Image
-              source={
-                astro.avatar
-                  ? { uri: astro.avatar }
-                  : require("../../../assets/aries_ram.png")
-              }
-              style={{
-                width: 110,
-                height: 110,
-                borderRadius: 20,
-                borderWidth: 2,
-                borderColor: "#F59E0B",
-              }}
-              resizeMode="cover"
-            />
+            {astro.avatar ? (
+              <Image
+                source={{ uri: getAbsoluteImageUrl(astro.avatar) }}
+                style={{
+                  width: 110,
+                  height: 110,
+                  borderRadius: 20,
+                  borderWidth: 2,
+                  borderColor: "#F59E0B",
+                }}
+                resizeMode="cover"
+              />
+            ) : (
+              <View
+                style={{
+                  width: 110,
+                  height: 110,
+                  borderRadius: 20,
+                  borderWidth: 2,
+                  borderColor: "#F59E0B",
+                  backgroundColor: colors.primary,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={{ color: colors.white, fontSize: 36, fontWeight: "800" }}>
+                  {(() => {
+                    const n = astro.name || "?";
+                    const parts = n.trim().split(/\s+/);
+                    if (parts.length === 0) return "?";
+                    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+                    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                  })()}
+                </Text>
+              </View>
+            )}
             {isVerified && (
               <View
                 style={{
@@ -2619,10 +2947,10 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
               <Text
                 style={{ fontSize: 12, fontWeight: "800", color: titleColor }}
               >
-                {astro.rating || "4.4"}
+                {parseFloat(String(astro.rating || "0")).toFixed(1)}
               </Text>
               <Text style={{ fontSize: 11, color: mutedTextColor }}>
-                | {astro.totalReviews || "128"} Reviews
+                | {astro.totalReviews !== undefined && astro.totalReviews !== null ? astro.totalReviews : 0} Reviews
               </Text>
             </View>
 
@@ -5125,6 +5453,65 @@ const styles = StyleSheet.create({
     height: 48,
     color: colors.textPrimary,
     fontSize: 15,
+  },
+  astroRowCard: {
+    width: 260,
+    marginRight: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  astroRowInner: {
+    flexDirection: "row",
+    padding: 12,
+    alignItems: "center",
+    gap: 12,
+    position: "relative",
+  },
+  avatarContainer: {
+    position: "relative",
+  },
+  verifiedBadgeOnAvatar: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    backgroundColor: "#FFF",
+    borderRadius: 8,
+    width: 16,
+    height: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+  },
+  astroRowRight: {
+    flex: 1,
+    gap: 2,
+  },
+  astroRowNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  astroRowPriceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 4,
+  },
+  astroRowBadge: {
+    backgroundColor: "#7c2d12",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  astroRowBadgeText: {
+    color: "#FFF",
+    fontSize: 9,
+    fontWeight: "700",
   },
 });
 

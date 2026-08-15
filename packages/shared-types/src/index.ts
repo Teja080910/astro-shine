@@ -45,6 +45,9 @@ export interface Astrologer {
   verificationStatus: VerificationStatus;
   verificationDoc?: string[]; verificationNote?: string;
   onlineStatus: OnlineStatus;
+  isChatEnabled?: boolean;
+  isAudioCallEnabled?: boolean;
+  isVideoCallEnabled?: boolean;
   createdAt: string; updatedAt: string;
 }
 

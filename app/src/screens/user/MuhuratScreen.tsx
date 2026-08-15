@@ -103,15 +103,6 @@ export function MuhuratScreen() {
           <Text style={[typography.caption, { color: colors.textMuted }]}>{formatTimeString12(item.time)}</Text>
         </View>
       </View>
-
-      <View style={[styles.divider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' }]} />
-
-      <View style={styles.cardFooter}>
-        <Text style={[typography.caption, { color: colors.textMuted }]}>Recommended by:</Text>
-        <Text style={[typography.caption, { color: colors.primary, fontWeight: '700' }]}>
-          {item.createdByName || 'System'}
-        </Text>
-      </View>
     </GlassCard>
   );
 

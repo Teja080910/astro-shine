@@ -226,8 +226,18 @@ export class AstrologersService {
   }
 
   async getFeedback(astrologerId: string) {
-    return this.db.select()
+    return this.db.select({
+      id: schema.feedback.id,
+      astrologerId: schema.feedback.astrologerId,
+      userId: schema.feedback.userId,
+      ratings: schema.feedback.ratings,
+      comments: schema.feedback.comments,
+      createdAt: schema.feedback.createdAt,
+      updatedAt: schema.feedback.updatedAt,
+      userName: schema.users.name,
+    })
       .from(schema.feedback)
+      .leftJoin(schema.users, eq(schema.feedback.userId, schema.users.id))
       .where(eq(schema.feedback.astrologerId, astrologerId))
       .orderBy(desc(schema.feedback.createdAt));
   }

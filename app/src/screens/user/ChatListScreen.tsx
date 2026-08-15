@@ -35,10 +35,10 @@ export function ChatListScreen({ navigation }: any) {
     return (
       <TouchableOpacity
         style={[styles.item, { borderBottomColor: colors.divider }]}
-        onPress={() => navigation.navigate('ChatRoom', { conversationId: item.id, participantId: item.participantId, participantRole: item.participantRole, participantName: item.participantName })}
+        onPress={() => navigation.navigate('ChatRoom', { conversationId: item.id, participantId: item.participantId, participantRole: item.participantRole, participantName: item.participantName, participantAvatar: item.participantAvatar })}
       >
         <View style={styles.avatarContainer}>
-          <Avatar size={52} online={isOnline} />
+          <Avatar size={52} online={isOnline} uri={item.participantAvatar} name={item.participantName || 'User'} />
         </View>
         <View style={styles.content}>
           <View style={styles.topRow}>

@@ -20,7 +20,6 @@ const menuItems = [
   { href: '/donations', icon: Gift, label: 'Donations' },
   { href: '/commissions', icon: Percent, label: 'Commissions' },
   { href: '/calls', icon: Phone, label: 'Calls' },
-  { href: '/live-sessions', icon: Radio, label: 'Live Sessions' },
   { href: '/mandir-pooja', icon: Sparkles, label: 'Mandir Pooja' },
   { href: '/support', icon: Ticket, label: 'Support' },
   { href: '/shop', icon: ShoppingBag, label: 'Shop' },
@@ -33,7 +32,6 @@ const menuItems = [
   { href: '/reports', icon: AlertTriangle, label: 'Reports' },
   { href: '/notifications', icon: Bell, label: 'Notifications' },
   { href: '/blogs', icon: FileText, label: 'Blogs' },
-  { href: '/news', icon: Newspaper, label: 'News' },
 ];
 
 function Sidebar({ mobileOpen, onMobileClose }: { mobileOpen: boolean; onMobileClose: () => void }) {
