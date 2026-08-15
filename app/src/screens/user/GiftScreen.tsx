@@ -3,6 +3,7 @@ import { useIsFocused, useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Image, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
+import { useChat } from '../../context/ChatContext';
 import { Avatar, Chip, ConfirmDialog, CustomModal, EmptyState, GlassCard, GradientButton, ScreenWrapper, colors, radii, typography } from '../../shared';
 import { api } from '../../shared/api-client';
 import type { Astrologer, Gift, GiftTransaction } from '../../shared/types';
@@ -12,6 +13,7 @@ import type { Astrologer, Gift, GiftTransaction } from '../../shared/types';
 export function GiftScreen({ route, navigation }: any) {
   const { user } = useAuth();
   const { theme } = useAuth();
+  const { giftVersion } = useChat();
   const isDark = theme === 'dark';
   const isFocused = useIsFocused();
   const [gifts, setGifts] = useState<Gift[]>([]);
@@ -53,7 +55,7 @@ export function GiftScreen({ route, navigation }: any) {
     if (isFocused) {
       loadData();
     }
-  }, [isFocused, loadData]);
+  }, [isFocused, loadData, giftVersion]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -167,9 +169,14 @@ export function GiftScreen({ route, navigation }: any) {
                   >
                     <View style={[styles.giftIconCircle, {
                       backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
-                      borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9'
+                      borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9',
+                      overflow: 'hidden',
                     }]}>
-                      <Ionicons name="gift" size={24} color={colors.accentGold} />
+                      {item.image ? (
+                        <Image source={{ uri: item.image }} style={{ width: 48, height: 48 }} resizeMode="cover" />
+                      ) : (
+                        <Ionicons name="gift" size={24} color={colors.accentGold} />
+                      )}
                     </View>
                     <Text style={[styles.giftNameCompact, { color: isDark ? '#9CA3AF' : '#64748B' }]} numberOfLines={1}>
                       {item.name}
@@ -250,8 +257,12 @@ export function GiftScreen({ route, navigation }: any) {
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => openSendGift(item)} style={{ flex: 0.5 }}>
             <GlassCard style={{ alignItems: 'center', padding: 20, marginBottom: 12 }}>
-              <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.accentGold + '20', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
-                <Ionicons name="gift" size={32} color={colors.accentGold} />
+              <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.accentGold + '20', alignItems: 'center', justifyContent: 'center', marginBottom: 10, overflow: 'hidden' }}>
+                {item.image ? (
+                  <Image source={{ uri: item.image }} style={{ width: 64, height: 64 }} resizeMode="cover" />
+                ) : (
+                  <Ionicons name="gift" size={32} color={colors.accentGold} />
+                )}
               </View>
               <Text style={[typography.cardTitle, { textAlign: 'center' }]}>{item.name}</Text>
               <Text style={[typography.price, { marginTop: 4 }]}>₹{item.price}</Text>

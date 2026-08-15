@@ -1,14 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useIsFocused } from '@react-navigation/native';
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Image, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
+import { useChat } from '../../context/ChatContext';
 import { Avatar, Chip, ConfirmDialog, EmptyState, GlassCard, GradientButton, ScreenWrapper, colors, radii, typography } from '../../shared';
 import { api } from '../../shared/api-client';
 import type { Gift, GiftTransaction } from '../../shared/types';
 
 export function AstrologerGiftScreen() {
   const { astrologer } = useAuth();
+  const { giftVersion } = useChat();
   const isFocused = useIsFocused();
   const [gifts, setGifts] = useState<Gift[]>([]);
   const [transactions, setTransactions] = useState<GiftTransaction[]>([]);
@@ -28,7 +30,7 @@ export function AstrologerGiftScreen() {
     } catch {} finally { setLoading(false); }
   }, [astrologer?.userId]);
 
-  useEffect(() => { if (isFocused) loadData(); }, [isFocused, loadData]);
+  useEffect(() => { if (isFocused) loadData(); }, [isFocused, loadData, giftVersion]);
   const onRefresh = useCallback(() => { setRefreshing(true); loadData().finally(() => setRefreshing(false)); }, [loadData]);
 
   const handleRedeem = async (id: string) => {
@@ -89,8 +91,12 @@ export function AstrologerGiftScreen() {
           return (
             <GlassCard style={{ marginBottom: 10, padding: 16 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.accentGold + '20', alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="gift" size={24} color={colors.accentGold} />
+                <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.accentGold + '20', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  {gift?.image ? (
+                    <Image source={{ uri: gift.image }} style={{ width: 48, height: 48 }} resizeMode="cover" />
+                  ) : (
+                    <Ionicons name="gift" size={24} color={colors.accentGold} />
+                  )}
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[typography.cardTitle]}>{gift?.name || 'Gift'}</Text>

@@ -11,6 +11,7 @@ export default function VideosPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<any>(null);
+  const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [url, setUrl] = useState('');
@@ -26,11 +27,17 @@ export default function VideosPage() {
 
   const openForm = (v: any) => {
     setSelected(v);
+    setShowForm(true);
     setTitle(v?.title || '');
     setDescription(v?.description || '');
     setUrl(v?.url || '');
     setCategory(v?.category || '');
     setDuration(String(v?.duration ?? ''));
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    setSelected(null);
   };
 
   const handleSave = async () => {
@@ -44,7 +51,7 @@ export default function VideosPage() {
         const created = await api.post('/videos', payload);
         setData([...data, created]);
       }
-      setSelected(null);
+      closeForm();
     } catch (e: any) { alert(e.message || 'Failed to save'); }
   };
 
@@ -73,7 +80,7 @@ export default function VideosPage() {
         </Table>
       )}
 
-      <CustomModal open={!!selected || selected === null} onClose={() => setSelected(undefined)} title={selected?.id ? 'Edit Video' : 'Add Video'}>
+      <CustomModal open={showForm} onClose={closeForm} title={selected?.id ? 'Edit Video' : 'Add Video'}>
         <div className="space-y-4 text-text-secondary text-sm p-2">
           <div><label className="block text-text-primary font-medium mb-1">Title</label><input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className="input-field text-sm" /></div>
           <div><label className="block text-text-primary font-medium mb-1">Description</label><textarea value={description} onChange={(e) => setDescription(e.target.value)} className="input-field h-20 text-sm" /></div>
@@ -84,7 +91,7 @@ export default function VideosPage() {
           </div>
           <div className="flex gap-3 pt-3 border-t border-divider">
             <GradientButton onClick={handleSave}>Save</GradientButton>
-            <GradientButton onClick={() => setSelected(null)}>Cancel</GradientButton>
+            <GradientButton onClick={closeForm}>Cancel</GradientButton>
           </div>
         </div>
       </CustomModal>

@@ -40,20 +40,14 @@ export default function ReviewsPage() {
       ) : error ? (
         <div className="bg-red-900/20 border border-red-800 text-red-400 rounded-lg px-4 py-3 text-sm">{error}</div>
       ) : (
-        <Table headers={['User', 'Astrologer', 'Rating', 'Comment', 'Visible', 'Date', '']} emptyMessage="No reviews found">
+        <Table headers={['User', 'Astrologer', 'Rating', 'Comment', 'Date']} emptyMessage="No reviews found">
           {data.map(r => (
             <tr key={r.id} className="border-b border-divider hover:bg-surface-light/50">
               <td className="px-4 py-3 text-text-primary">{(r as any).userName || r.userId?.slice(0, 8) + '...'}</td>
               <td className="px-4 py-3 text-text-primary">{(r as any).astrologerName || r.astrologerId?.slice(0, 8) + '...'}</td>
               <td className="px-4 py-3 text-text-primary">{'⭐'.repeat(r.rating)} {r.rating}/5</td>
               <td className="px-4 py-3 text-text-secondary max-w-xs truncate">{r.comment || '-'}</td>
-              <td className="px-4 py-3">{r.isVisible ? <Badge variant="success">Visible</Badge> : <Badge variant="warning">Hidden</Badge>}</td>
               <td className="px-4 py-3 text-text-muted text-sm">{formatDate(r.createdAt)}</td>
-              <td className="px-4 py-3">
-                <button onClick={() => toggleVisibility(r.id, !r.isVisible)} className="text-primary-light hover:underline text-sm">
-                  {r.isVisible ? 'Hide' : 'Show'}
-                </button>
-              </td>
             </tr>
           ))}
         </Table>

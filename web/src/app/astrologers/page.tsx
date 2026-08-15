@@ -119,11 +119,11 @@ export default function AstrologersPage() {
         </div>
       </div>
 
-      <Table headers={['Astrologer', 'Specialization', 'Pricing', 'KYC Status', 'Actions']} emptyMessage="No astrologers found">
+      <Table headers={['Astrologer', 'Specialization', 'Pricing', 'Withdrawn', 'KYC Status', 'Actions']} emptyMessage="No astrologers found">
         {loading ? (
-          <tr><td colSpan={5} className="px-4 py-12 text-center text-text-secondary">Loading astrologers...</td></tr>
+          <tr><td colSpan={6} className="px-4 py-12 text-center text-text-secondary">Loading astrologers...</td></tr>
         ) : error ? (
-          <tr><td colSpan={5} className="px-4 py-3 text-center text-red-400">{error}</td></tr>
+          <tr><td colSpan={6} className="px-4 py-3 text-center text-red-400">{error}</td></tr>
         ) : (
           filtered.map(a => (
           <tr key={a.userId || a.id} className="border-b border-divider hover:bg-surface-light/50 transition-colors">
@@ -148,6 +148,9 @@ export default function AstrologersPage() {
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-surface-light/40 border border-card-border text-text-secondary">A ₹{(a as any).audioCallPricePerMin || a.pricePerMin}</span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-surface-light/40 border border-card-border text-text-secondary">V ₹{(a as any).videoCallPricePerMin || a.pricePerMin}</span>
               </div>
+            </td>
+            <td className="px-4 py-3">
+              <span className="text-xs font-bold text-text-primary">₹{Number((a as any).totalWithdrawn || 0).toFixed(2)}</span>
             </td>
             <td className="px-4 py-3">
               <div className="flex items-center gap-2">

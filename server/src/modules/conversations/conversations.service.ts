@@ -39,6 +39,14 @@ export class ConversationsService {
       participantTwoRole: participantRole as any,
     }).returning();
 
+    const astroId = requesterRole === 'astrologer' ? requesterId : (participantRole === 'astrologer' ? participantId : null);
+    if (astroId) {
+      await this.db.update(schema.astrologers)
+        .set({ totalChats: sql`${schema.astrologers.totalChats} + 1` })
+        .where(eq(schema.astrologers.userId, astroId))
+        .catch(() => {});
+    }
+
     return conversation;
   }
 

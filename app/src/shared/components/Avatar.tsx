@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Image, TouchableOpacity, StyleSheet, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radii } from '../theme';
+import { config } from '../../config';
 
 interface Props {
   uri?: string;
@@ -12,11 +13,31 @@ interface Props {
 }
 
 export function Avatar({ uri, size = 48, online, onPress, name }: Props) {
-  const content = uri ? (
-    <Image source={{ uri }} style={[{ width: size, height: size, borderRadius: size / 2 }]} />
+  const getAbsoluteUri = (path?: string) => {
+    if (!path) return undefined;
+    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
+      return path;
+    }
+    return `${config.apiUrl}${path}`;
+  };
+
+  const getInitials = (n?: string) => {
+    if (!n) return '?';
+    const parts = n.trim().split(/\s+/);
+    if (parts.length === 0) return '?';
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  const absoluteUri = getAbsoluteUri(uri);
+
+  const content = absoluteUri ? (
+    <Image source={{ uri: absoluteUri }} style={[{ width: size, height: size, borderRadius: size / 2 }]} />
   ) : (
     <View style={[{ width: size, height: size, borderRadius: size / 2, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' }]}>
-      <Ionicons name="person" size={size * 0.5} color={colors.white} />
+      <Text style={{ color: colors.white, fontSize: size * 0.38, fontWeight: '700' }}>
+        {getInitials(name)}
+      </Text>
     </View>
   );
 
