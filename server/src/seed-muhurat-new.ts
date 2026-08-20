@@ -21,6 +21,7 @@ async function seedMuhuratNew() {
     { name: 'Naming Ceremony Muhurat', description: 'Auspicious timing for Naamkaran' },
     { name: 'Mundan Muhurat', description: 'Auspicious timing for first haircut ceremony' },
     { name: 'Abhijit Muhurat', description: 'Auspicious midday muhurat ruled by Lord Brahma, ideal for new beginnings' },
+    { name: 'Chaughadiya Muhurat', description: 'Daily auspicious choghadiya time periods based on the day/night eight divisions' },
   ];
 
   const createdCategories = [];

@@ -13,36 +13,57 @@ export class HoroscopeService {
     private readonly astrology: AstrologyService,
   ) {}
 
-  async findAll() { return this.db.query.horoscopeRecords.findMany(); }
-  async findBySign(sign: string) { return this.db.query.horoscopeRecords.findMany({ where: ilike(schema.horoscopeRecords.zodiacSign, sign) }); }
+  async findAll() {
+    return this.db.query.horoscopeRecords.findMany();
+  }
+  async findBySign(sign: string) {
+    return this.db.query.horoscopeRecords.findMany({
+      where: ilike(schema.horoscopeRecords.zodiacSign, sign),
+    });
+  }
   async findBySignAndDate(sign: string, date: string) {
-    const existing = await this.db.query.horoscopeRecords.findFirst({ where: and(ilike(schema.horoscopeRecords.zodiacSign, sign), eq(schema.horoscopeRecords.date, date)) });
+    const existing = await this.db.query.horoscopeRecords.findFirst({
+      where: and(
+        ilike(schema.horoscopeRecords.zodiacSign, sign),
+        eq(schema.horoscopeRecords.date, date),
+      ),
+    });
     if (existing) return existing;
-    const result = this.astrology.calculateHoroscope(sign, date);
-    const [r] = await this.db.insert(schema.horoscopeRecords).values({
-      zodiacSign: sign,
-      date,
-      prediction: result.prediction,
-      lovePrediction: result.lovePrediction,
-      careerPrediction: result.careerPrediction,
-      financePrediction: result.financePrediction,
-      healthPrediction: result.healthPrediction,
-      luckyNumber: result.luckyNumber,
-      luckyColor: result.luckyColor,
-      mood: result.mood,
-    }).returning();
+    const result = await this.astrology.calculateHoroscope(sign, date);
+    const [r] = await this.db
+      .insert(schema.horoscopeRecords)
+      .values({
+        zodiacSign: sign,
+        date,
+        prediction: result.prediction,
+        lovePrediction: result.lovePrediction,
+        careerPrediction: result.careerPrediction,
+        financePrediction: result.financePrediction,
+        healthPrediction: result.healthPrediction,
+        luckyNumber: result.luckyNumber,
+        luckyColor: result.luckyColor,
+        mood: result.mood,
+      })
+      .returning();
     this.realtime.broadcast('horoscope:updated', r);
     return r;
   }
 
   async create(data: typeof schema.horoscopeRecords.$inferInsert) {
-    const [r] = await this.db.insert(schema.horoscopeRecords).values(data).returning();
+    const [r] = await this.db
+      .insert(schema.horoscopeRecords)
+      .values(data)
+      .returning();
     this.realtime.broadcast('horoscope:updated', r);
     return r;
   }
 
-  async update(id: string, data: Partial<typeof schema.horoscopeRecords.$inferInsert>) {
-    const [r] = await this.db.update(schema.horoscopeRecords)
+  async update(
+    id: string,
+    data: Partial<typeof schema.horoscopeRecords.$inferInsert>,
+  ) {
+    const [r] = await this.db
+      .update(schema.horoscopeRecords)
       .set(data)
       .where(eq(schema.horoscopeRecords.id, id))
       .returning();
@@ -51,7 +72,8 @@ export class HoroscopeService {
   }
 
   async delete(id: string) {
-    const [r] = await this.db.delete(schema.horoscopeRecords)
+    const [r] = await this.db
+      .delete(schema.horoscopeRecords)
       .where(eq(schema.horoscopeRecords.id, id))
       .returning();
     this.realtime.broadcast('horoscope:deleted', { id });

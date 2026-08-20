@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query, Req, ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  Query,
+  Req,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { MuhuratService } from './muhurat.service';
 import { AuthService } from '../auth/auth.service';
 

@@ -3,6 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
 import { eq, and, lt } from 'drizzle-orm';
+import { AstrologyService } from '../astrology/astrology.service';
 
 const formatDateString = (offsetDays = 0) => {
   const d = new Date();
@@ -13,42 +14,120 @@ const formatDateString = (offsetDays = 0) => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
+const AUSPICIOUS_CHAUGHADIYA = ['Labh', 'Amrit', 'Shubh'];
+
+const parseSlotStart = (slotTime: string): string => {
+  const m = (slotTime || '').match(/(\d+)\s*:\s*(\d+)\s*:\s*(\d+)/);
+  if (!m) return '';
+  const h = String(Number(m[1])).padStart(2, '0');
+  const min = String(Number(m[2])).padStart(2, '0');
+  const sec = String(Number(m[3])).padStart(2, '0');
+  return `${h}:${min}:${sec}`;
+};
+
 @Injectable()
 export class MuhuratCronService {
   private readonly logger = new Logger(MuhuratCronService.name);
 
   constructor(
     @Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>,
+    private readonly astrology: AstrologyService,
   ) {}
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async seedDailyMuhurat() {
-    this.logger.log('Running daily muhurat seed...');
+    this.logger.log('Running daily muhurat seed from AstrologyAPI...');
 
     const today = formatDateString(0);
     await this.db.delete(schema.muhurat).where(lt(schema.muhurat.date, today));
 
     const categories = await this.db.query.muhuratCategories.findMany();
-    const catMap = (name: string) => categories.find((c) => c.name === name)?.id;
+    const chaughadiyaCat = categories.find(
+      (c) =>
+        c.name === 'Chaughadiya Muhurat' || c.name === 'Choghadiya Muhurat',
+    )?.id;
+    const abhijitCat = categories.find((c) => c.name === 'Abhijit Muhurat')?.id;
 
-    const entries = [
-      { categoryId: catMap('Marriage Muhurat'), name: 'Vivah Shubh Muhurat (Today)', date: formatDateString(0), time: '11:15:00', description: 'Highly auspicious timing for weddings today.' },
-      { categoryId: catMap('Marriage Muhurat'), name: 'Sandhya Vivah Muhurat (Today)', date: formatDateString(0), time: '18:30:00', description: 'Auspicious evening wedding muhurat.' },
-      { categoryId: catMap('Housewarming Muhurat'), name: 'Griha Pravesh Muhurat (Tomorrow)', date: formatDateString(1), time: '09:30:00', description: 'Auspicious morning timing for housewarming tomorrow.' },
-      { categoryId: catMap('Mundan Muhurat'), name: 'Mundan Sanskar Shubh Muhurat (Tomorrow)', date: formatDateString(1), time: '11:00:00', description: 'Auspicious mundan timing tomorrow.' },
-      { categoryId: catMap('Bhoomi Pujan Muhurat'), name: 'Bhoomi Pujan (Day 2)', date: formatDateString(2), time: '14:45:00', description: 'Groundbreaking timing recommended by astrologers.' },
-      { categoryId: catMap('Naming Ceremony Muhurat'), name: 'Namkaran Sanskar (Day 2)', date: formatDateString(2), time: '16:00:00', description: 'Auspicious naming ceremony timing.' },
-      { categoryId: catMap('Naming Ceremony Muhurat'), name: 'Namkaran Sanskar (Day 3)', date: formatDateString(3), time: '10:00:00', description: 'Beautiful timing for naming ceremony.' },
-      { categoryId: catMap('Marriage Muhurat'), name: 'Vivah Shubh Muhurat (Day 3)', date: formatDateString(3), time: '19:15:00', description: 'Evening marriage timing.' },
-      { categoryId: catMap('Abhijit Muhurat'), name: 'Abhijit Muhurat (Today)', date: formatDateString(0), time: '12:00:00', description: 'The most powerful midday muhurat. Ideal for starting new ventures.' },
-      { categoryId: catMap('Abhijit Muhurat'), name: 'Abhijit Muhurat (Tomorrow)', date: formatDateString(1), time: '12:00:00', description: 'Midday Abhijit muhurat for all auspicious activities.' },
-      { categoryId: catMap('Abhijit Muhurat'), name: 'Abhijit Muhurat (Day 3)', date: formatDateString(3), time: '12:00:00', description: 'Abhijit muhurat at noon. Lord Brahma\'s favored time.' },
-    ];
+    if (!chaughadiyaCat) {
+      this.logger.warn(
+        'No Chaughadiya Muhurat category found; skipping chaughadiya seeding.',
+      );
+    }
+    if (!abhijitCat) {
+      this.logger.warn(
+        'No Abhijit Muhurat category found; skipping abhijit seeding.',
+      );
+    }
 
-    for (const entry of entries) {
-      if (!entry.categoryId) continue;
+    const entriesToCreate: {
+      categoryId: string;
+      name: string;
+      date: string;
+      time: string;
+      description: string;
+    }[] = [];
+
+    for (let offset = 0; offset < 3; offset++) {
+      const date = formatDateString(offset);
+
+      if (chaughadiyaCat) {
+        try {
+          const res = await this.astrology.getChaughadiyaMuhurta(
+            date,
+            28.6139,
+            77.209,
+            5.5,
+          );
+          const daySlots: any[] = res?.chaughadiya?.day || [];
+          for (const slot of daySlots) {
+            if (!AUSPICIOUS_CHAUGHADIYA.includes(slot.muhurta)) continue;
+            const time = parseSlotStart(slot.time);
+            if (!time) continue;
+            entriesToCreate.push({
+              categoryId: chaughadiyaCat,
+              name: `${slot.muhurta} Choghadiya (Day)`,
+              date,
+              time,
+              description: `Auspicious ${slot.muhurta} choghadiya period today. Good for starting new ventures.`,
+            });
+          }
+        } catch (e: any) {
+          this.logger.error(
+            `Chaughadiya fetch failed for ${date}: ${e.message}`,
+          );
+        }
+      }
+
+      if (abhijitCat) {
+        try {
+          const panchang = await this.astrology.calculatePanchang(
+            date,
+            28.6139,
+            77.209,
+            5.5,
+          );
+          const abhijit = panchang.abhijitMuhurta;
+          if (abhijit?.start) {
+            entriesToCreate.push({
+              categoryId: abhijitCat,
+              name: `Abhijit Muhurat (${date})`,
+              date,
+              time: abhijit.start,
+              description: `Auspicious midday muhurat ${abhijit.start} - ${abhijit.end}. Ideal for starting new ventures.`,
+            });
+          }
+        } catch (e: any) {
+          this.logger.error(`Panchang fetch failed for ${date}: ${e.message}`);
+        }
+      }
+    }
+
+    for (const entry of entriesToCreate) {
       const existing = await this.db.query.muhurat.findFirst({
-        where: and(eq(schema.muhurat.date, entry.date), eq(schema.muhurat.time, entry.time)),
+        where: and(
+          eq(schema.muhurat.date, entry.date),
+          eq(schema.muhurat.time, entry.time),
+        ),
       });
       if (!existing) {
         await this.db.insert(schema.muhurat).values({
@@ -58,10 +137,14 @@ export class MuhuratCronService {
           time: entry.time,
           description: entry.description,
         });
-        this.logger.log(`Created: ${entry.name} at ${entry.date} ${entry.time}`);
+        this.logger.log(
+          `Created: ${entry.name} at ${entry.date} ${entry.time}`,
+        );
       }
     }
 
-    this.logger.log('Daily muhurat seed complete');
+    this.logger.log(
+      `Daily muhurat seed complete (${entriesToCreate.length} entries planned)`,
+    );
   }
 }

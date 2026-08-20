@@ -6,11 +6,17 @@ export class MatchmakingController {
   constructor(private readonly service: MatchmakingService) {}
 
   @Get()
-  async findByUser(@Query('userId') userId: string) { return userId ? this.service.findByUserId(userId) : []; }
+  async findByUser(@Query('userId') userId: string) {
+    return userId ? this.service.findByUserId(userId) : [];
+  }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) { return this.service.findById(id); }
+  async findOne(@Param('id') id: string) {
+    return this.service.findById(id);
+  }
 
   @Post()
-  async create(@Body() body: any) { return this.service.create(body); }
+  async create(@Body() body: any) {
+    return this.service.create(body);
+  }
 }
