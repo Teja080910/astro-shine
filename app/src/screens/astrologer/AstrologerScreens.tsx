@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useMemo } from "react";
 import {
   Alert,
   FlatList,
@@ -41,17 +41,56 @@ import type {
   Review,
   Transaction,
   WithdrawalRequest,
+  Conversation,
 } from "../../shared/types";
 import * as Location from "expo-location";
 
 export function AstrologerHomeScreen({ navigation }: any) {
-  const { astrologer, theme, setTheme } = useAuth();
+  const { astrologer, theme, setTheme, updateUser } = useAuth();
   const { astrologerStatuses, statsVersion, blogVersion, notificationVersion } = useChat();
   const isFocused = useIsFocused();
   const isDark = theme === "dark";
   const [isOnline, setIsOnline] = useState(
     astrologer?.onlineStatus === "online",
   );
+
+  const [isChatEnabled, setIsChatEnabled] = useState(astrologer?.isChatEnabled ?? true);
+  const [isAudioCallEnabled, setIsAudioCallEnabled] = useState(astrologer?.isAudioCallEnabled ?? true);
+  const [isVideoCallEnabled, setIsVideoCallEnabled] = useState(astrologer?.isVideoCallEnabled ?? true);
+
+  const toggleChat = async (val: boolean) => {
+    setIsChatEnabled(val);
+    try {
+      const updated = await api.astrologers.update(astrologer!.userId, { isChatEnabled: val });
+      updateUser({ ...astrologer, ...updated });
+    } catch {
+      Alert.alert("Error", "Failed to update chat service status");
+      setIsChatEnabled(!val);
+    }
+  };
+
+  const toggleAudioCall = async (val: boolean) => {
+    setIsAudioCallEnabled(val);
+    try {
+      const updated = await api.astrologers.update(astrologer!.userId, { isAudioCallEnabled: val });
+      updateUser({ ...astrologer, ...updated });
+    } catch {
+      Alert.alert("Error", "Failed to update voice call service status");
+      setIsAudioCallEnabled(!val);
+    }
+  };
+
+  const toggleVideoCall = async (val: boolean) => {
+    setIsVideoCallEnabled(val);
+    try {
+      const updated = await api.astrologers.update(astrologer!.userId, { isVideoCallEnabled: val });
+      updateUser({ ...astrologer, ...updated });
+    } catch {
+      Alert.alert("Error", "Failed to update video call service status");
+      setIsVideoCallEnabled(!val);
+    }
+  };
+
   const [stats, setStats] = useState({
     todayEarnings: "₹0",
     totalCalls: "0",
@@ -144,6 +183,9 @@ export function AstrologerHomeScreen({ navigation }: any) {
         rating: astro.rating || "0",
         totalEarnings: `₹${astro.totalEarnings || "0"}`,
       });
+      setIsChatEnabled(astro.isChatEnabled ?? true);
+      setIsAudioCallEnabled(astro.isAudioCallEnabled ?? true);
+      setIsVideoCallEnabled(astro.isVideoCallEnabled ?? true);
       setRecentTxns(txns.slice(0, 5));
       setBlogs(blogData);
       setNotifications(notifs);
@@ -153,6 +195,14 @@ export function AstrologerHomeScreen({ navigation }: any) {
   useEffect(() => {
     if (isFocused) loadData();
   }, [isFocused, loadData]);
+
+  useEffect(() => {
+    if (astrologer) {
+      setIsChatEnabled(astrologer.isChatEnabled ?? true);
+      setIsAudioCallEnabled(astrologer.isAudioCallEnabled ?? true);
+      setIsVideoCallEnabled(astrologer.isVideoCallEnabled ?? true);
+    }
+  }, [astrologer]);
 
   useEffect(() => {
     if (astrologer?.userId && astrologerStatuses[astrologer.userId]) {
@@ -536,6 +586,180 @@ export function AstrologerHomeScreen({ navigation }: any) {
             />
           </View>
 
+          {/* Service Channels Configuration */}
+          <GlassCard
+            style={{
+              marginTop: 12,
+              padding: 16,
+              borderWidth: 1.5,
+              borderColor: cardBorderColor,
+              borderRadius: 24,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: "800",
+                color: goldTextColor,
+                letterSpacing: 1.5,
+                textTransform: "uppercase",
+                marginBottom: 12,
+              }}
+            >
+              Service Status Configuration
+            </Text>
+
+            {/* Chat Service Row */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: colors.cardBorder,
+              }}
+            >
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 12,
+                  backgroundColor: isChatEnabled
+                    ? "rgba(16, 185, 129, 0.15)"
+                    : "rgba(156, 163, 175, 0.15)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons
+                  name="chatbubbles"
+                  size={20}
+                  color={isChatEnabled ? "#10B981" : mutedTextColor}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: colors.textPrimary,
+                  }}
+                >
+                  Chat Service
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 1 }}>
+                  Allow users to initiate chats
+                </Text>
+              </View>
+              <Toggle
+                value={isChatEnabled}
+                onValueChange={toggleChat}
+                trackColor={{ false: "#D1D5DB", true: "#10B981" }}
+              />
+            </View>
+
+            {/* Voice Call Service Row */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: colors.cardBorder,
+              }}
+            >
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 12,
+                  backgroundColor: isAudioCallEnabled
+                    ? "rgba(59, 130, 246, 0.15)"
+                    : "rgba(156, 163, 175, 0.15)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons
+                  name="call"
+                  size={20}
+                  color={isAudioCallEnabled ? "#3B82F6" : mutedTextColor}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: colors.textPrimary,
+                  }}
+                >
+                  Voice Call Service
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 1 }}>
+                  Allow users to make audio calls
+                </Text>
+              </View>
+              <Toggle
+                value={isAudioCallEnabled}
+                onValueChange={toggleAudioCall}
+                trackColor={{ false: "#D1D5DB", true: "#3B82F6" }}
+              />
+            </View>
+
+            {/* Video Call Service Row */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 12,
+              }}
+            >
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 12,
+                  backgroundColor: isVideoCallEnabled
+                    ? "rgba(236, 72, 153, 0.15)"
+                    : "rgba(156, 163, 175, 0.15)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons
+                  name="videocam"
+                  size={20}
+                  color={isVideoCallEnabled ? "#EC4899" : mutedTextColor}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: colors.textPrimary,
+                  }}
+                >
+                  Video Call Service
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 1 }}>
+                  Allow users to start video calls
+                </Text>
+              </View>
+              <Toggle
+                value={isVideoCallEnabled}
+                onValueChange={toggleVideoCall}
+                trackColor={{ false: "#D1D5DB", true: "#EC4899" }}
+              />
+            </View>
+          </GlassCard>
+
+          <View style={{ height: 12 }} />
+
           <View style={styles.statsGrid}>
             {statItems.map((s) => (
               <GlassCard key={s.label} style={styles.stat}>
@@ -612,6 +836,107 @@ export function AstrologerHomeScreen({ navigation }: any) {
               </Text>
             </TouchableOpacity>
           </View>
+
+          <SectionHeader title="History" />
+          <GlassCard style={{ marginTop: 8, paddingVertical: 16, paddingHorizontal: 10, borderRadius: 24, borderWidth: 1.5, borderColor: cardBorderColor }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-around", alignItems: "center" }}>
+              {/* Call History */}
+              <TouchableOpacity
+                onPress={() => navigation.navigate("Consultations", { filter: "audio" })}
+                style={{ alignItems: "center", width: 70 }}
+              >
+                <View
+                  style={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: 26,
+                    backgroundColor: isDark ? "rgba(59, 130, 246, 0.15)" : "rgba(59, 130, 246, 0.08)",
+                    borderWidth: 1.5,
+                    borderColor: "#3B82F6",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Ionicons name="call" size={22} color="#3B82F6" />
+                </View>
+                <Text style={{ fontSize: 11, fontWeight: "700", color: colors.textPrimary, marginTop: 6, textAlign: "center" }}>
+                  Call
+                </Text>
+              </TouchableOpacity>
+
+              {/* Chat History */}
+              <TouchableOpacity
+                onPress={() => navigation.navigate("Consultations", { filter: "chat" })}
+                style={{ alignItems: "center", width: 70 }}
+              >
+                <View
+                  style={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: 26,
+                    backgroundColor: isDark ? "rgba(16, 185, 129, 0.15)" : "rgba(16, 185, 129, 0.08)",
+                    borderWidth: 1.5,
+                    borderColor: "#10B981",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Ionicons name="chatbubbles" size={22} color="#10B981" />
+                </View>
+                <Text style={{ fontSize: 11, fontWeight: "700", color: colors.textPrimary, marginTop: 6, textAlign: "center" }}>
+                  Chat
+                </Text>
+              </TouchableOpacity>
+
+              {/* Video History */}
+              <TouchableOpacity
+                onPress={() => navigation.navigate("Consultations", { filter: "video" })}
+                style={{ alignItems: "center", width: 70 }}
+              >
+                <View
+                  style={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: 26,
+                    backgroundColor: isDark ? "rgba(236, 72, 153, 0.15)" : "rgba(236, 72, 153, 0.08)",
+                    borderWidth: 1.5,
+                    borderColor: "#EC4899",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Ionicons name="videocam" size={22} color="#EC4899" />
+                </View>
+                <Text style={{ fontSize: 11, fontWeight: "700", color: colors.textPrimary, marginTop: 6, textAlign: "center" }}>
+                  Video
+                </Text>
+              </TouchableOpacity>
+
+              {/* Gifts History */}
+              <TouchableOpacity
+                onPress={() => navigation.navigate("Gifts")}
+                style={{ alignItems: "center", width: 70 }}
+              >
+                <View
+                  style={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: 26,
+                    backgroundColor: isDark ? "rgba(245, 158, 11, 0.15)" : "rgba(245, 158, 11, 0.08)",
+                    borderWidth: 1.5,
+                    borderColor: "#F59E0B",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Ionicons name="gift" size={22} color="#F59E0B" />
+                </View>
+                <Text style={{ fontSize: 11, fontWeight: "700", color: colors.textPrimary, marginTop: 6, textAlign: "center" }}>
+                  Gift
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </GlassCard>
 
           {recentTxns.length > 0 && (
             <>
@@ -1451,19 +1776,32 @@ export function AstrologerNotificationsScreen() {
   );
 }
 
-export function AstrologerConsultationScreen() {
+export function AstrologerConsultationScreen({ route, navigation }: any) {
   const { astrologer } = useAuth();
   const [calls, setCalls] = useState<CallLog[]>([]);
-  const [filter, setFilter] = useState<"all" | "audio" | "video">("all");
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [filter, setFilter] = useState<"all" | "chat" | "audio" | "video">(
+    route?.params?.filter || "all"
+  );
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!astrologer?.userId) return;
     try {
-      const c = await api.calls.list({ astrologerId: astrologer.userId });
+      const [c, convs] = await Promise.all([
+        api.calls.list({ astrologerId: astrologer.userId }),
+        api.conversations.list(),
+      ]);
       setCalls(c);
+      setConversations(convs.data || []);
     } catch {}
   }, [astrologer?.userId]);
+
+  useEffect(() => {
+    if (route?.params?.filter) {
+      setFilter(route.params.filter);
+    }
+  }, [route?.params?.filter]);
 
   useEffect(() => {
     loadData();
@@ -1475,8 +1813,44 @@ export function AstrologerConsultationScreen() {
     setRefreshing(false);
   };
 
-  const filtered =
-    filter === "all" ? calls : calls.filter((c) => c.type === filter);
+  const combinedItems = useMemo(() => {
+    const callItems = calls.map((c) => ({
+      id: c.id,
+      itemType: "call" as const,
+      type: c.type,
+      createdAt: c.createdAt,
+      duration: c.duration,
+      status: c.status,
+      cost: c.cost,
+      userName: (c as any).userName || "User",
+    }));
+
+    const chatItems = conversations.map((cv) => ({
+      id: cv.id,
+      itemType: "chat" as const,
+      type: "chat" as const,
+      createdAt: cv.lastMessageAt || cv.createdAt,
+      duration: undefined,
+      status: "completed",
+      cost: undefined,
+      userName: cv.participantName || "User",
+      avatar: cv.participantAvatar,
+      lastMessage: cv.lastMessagePreview,
+    }));
+
+    const all = [...callItems, ...chatItems];
+    all.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    return all;
+  }, [calls, conversations]);
+
+  const filtered = useMemo(() => {
+    if (filter === "all") return combinedItems;
+    return combinedItems.filter((item) => item.type === filter);
+  }, [combinedItems, filter]);
+
   const statusColors: Record<string, string> = {
     completed: colors.success,
     missed: colors.danger,
@@ -1494,7 +1868,7 @@ export function AstrologerConsultationScreen() {
         }
       >
         <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
-          {(["all", "audio", "video"] as const).map((f) => (
+          {(["all", "chat", "audio", "video"] as const).map((f) => (
             <Chip
               key={f}
               label={
@@ -1516,107 +1890,183 @@ export function AstrologerConsultationScreen() {
               />
             }
             title="No consultations yet"
-            subtitle="Your call history will appear here"
+            subtitle="Your consultation history will appear here"
           />
         ) : (
-          filtered.map((c) => (
-            <GlassCard key={c.id} style={{ marginBottom: 8, padding: 14 }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 10,
-                  }}
+          filtered.map((item) => {
+            if (item.itemType === "chat") {
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  onPress={() =>
+                    navigation.navigate("ChatRoom", {
+                      conversationId: item.id,
+                      participantName: item.userName,
+                      participantAvatar: item.avatar,
+                    })
+                  }
                 >
-                  <View
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 20,
-                      backgroundColor:
-                        c.type === "video"
-                          ? colors.secondary + "20"
-                          : colors.primary + "20",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Ionicons
-                      name={
-                        c.type === "video" ? "videocam-outline" : "call-outline"
-                      }
-                      size={20}
-                      color={
-                        c.type === "video"
-                          ? colors.secondary
-                          : colors.primaryLight
-                      }
-                    />
-                  </View>
-                  <View>
-                    <Text style={[typography.cardTitle, { fontSize: 14 }]}>
-                      {c.type === "video" ? "Video Call" : "Audio Call"}
-                    </Text>
-                    <Text style={typography.caption}>
-                      {(c as any).userName || "User"} ·{" "}
-                      {new Date(c.createdAt).toLocaleString("en-IN", {
-                        timeZone: "Asia/Kolkata",
-                        day: "numeric",
-                        month: "short",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}{" "}
-                      {c.duration
-                        ? `· ${Math.floor(c.duration / 60)}m ${c.duration % 60}s`
-                        : ""}
-                    </Text>
-                  </View>
-                </View>
-                <View style={{ alignItems: "flex-end" }}>
+                  <GlassCard style={{ marginBottom: 8, padding: 14 }}>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 10,
+                          flex: 1,
+                        }}
+                      >
+                        <View
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 20,
+                            backgroundColor: "rgba(16, 185, 129, 0.15)",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <Ionicons
+                            name="chatbubbles-outline"
+                            size={20}
+                            color="#10B981"
+                          />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[typography.cardTitle, { fontSize: 14 }]}>
+                            Chat Consultation
+                          </Text>
+                          <Text style={typography.caption} numberOfLines={1}>
+                            {item.userName} ·{" "}
+                            {new Date(item.createdAt).toLocaleString("en-IN", {
+                              timeZone: "Asia/Kolkata",
+                              day: "numeric",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                            {item.lastMessage ? ` · ${item.lastMessage}` : ""}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={{ alignItems: "flex-end" }}>
+                        <Ionicons
+                          name="chevron-forward"
+                          size={16}
+                          color={colors.textMuted}
+                        />
+                      </View>
+                    </View>
+                  </GlassCard>
+                </TouchableOpacity>
+              );
+            } else {
+              return (
+                <GlassCard key={item.id} style={{ marginBottom: 8, padding: 14 }}>
                   <View
                     style={{
                       flexDirection: "row",
+                      justifyContent: "space-between",
                       alignItems: "center",
-                      gap: 4,
                     }}
                   >
                     <View
                       style={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: 3,
-                        backgroundColor:
-                          statusColors[c.status] || colors.textMuted,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 10,
                       }}
-                    />
-                    <Text
-                      style={[
-                        typography.caption,
-                        {
-                          color: statusColors[c.status] || colors.textMuted,
-                          fontWeight: "600",
-                        },
-                      ]}
                     >
-                      {c.status.toUpperCase()}
-                    </Text>
+                      <View
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                          backgroundColor:
+                            item.type === "video"
+                              ? colors.secondary + "20"
+                              : colors.primary + "20",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Ionicons
+                          name={
+                            item.type === "video" ? "videocam-outline" : "call-outline"
+                          }
+                          size={20}
+                          color={
+                            item.type === "video"
+                              ? colors.secondary
+                              : colors.primaryLight
+                          }
+                        />
+                      </View>
+                      <View>
+                        <Text style={[typography.cardTitle, { fontSize: 14 }]}>
+                          {item.type === "video" ? "Video Call" : "Audio Call"}
+                        </Text>
+                        <Text style={typography.caption}>
+                          {item.userName} ·{" "}
+                          {new Date(item.createdAt).toLocaleString("en-IN", {
+                            timeZone: "Asia/Kolkata",
+                            day: "numeric",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}{" "}
+                          {item.duration
+                            ? `· ${Math.floor(item.duration / 60)}m ${item.duration % 60}s`
+                            : ""}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={{ alignItems: "flex-end" }}>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        <View
+                          style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: 3,
+                            backgroundColor:
+                              statusColors[item.status] || colors.textMuted,
+                          }}
+                        />
+                        <Text
+                          style={[
+                            typography.caption,
+                            {
+                              color: statusColors[item.status] || colors.textMuted,
+                              fontWeight: "600",
+                            },
+                          ]}
+                        >
+                          {item.status.toUpperCase()}
+                        </Text>
+                      </View>
+                      {item.cost && (
+                        <Text style={[typography.caption, { marginTop: 2 }]}>
+                          ₹{item.cost}
+                        </Text>
+                      )}
+                    </View>
                   </View>
-                  {c.cost && (
-                    <Text style={[typography.caption, { marginTop: 2 }]}>
-                      ₹{c.cost}
-                    </Text>
-                  )}
-                </View>
-              </View>
-            </GlassCard>
-          ))
+                </GlassCard>
+              );
+            }
+          })
         )}
       </ScrollView>
     </ScreenWrapper>
@@ -2095,160 +2545,6 @@ export function AstrologerProfileScreen({ navigation }: any) {
                 <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
               </TouchableOpacity>
             ))}
-          </View>
-
-          {/* Service Configuration Group */}
-          <View
-            style={{
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              padding: 14,
-              borderWidth: 1,
-              borderColor: colors.cardBorder,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 11,
-                fontWeight: "800",
-                color: colors.primaryLight,
-                letterSpacing: 0.8,
-                marginBottom: 8,
-                marginLeft: 4,
-              }}
-            >
-              SERVICE CHANNELS CONFIGURATION
-            </Text>
-
-            {/* Chat Toggle Row */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingVertical: 11,
-                borderBottomWidth: 1,
-                borderBottomColor: colors.divider,
-              }}
-            >
-              <View
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 12,
-                  backgroundColor: "rgba(16, 185, 129, 0.15)",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: 12,
-                }}
-              >
-                <Ionicons
-                  name="chatbubbles-outline"
-                  size={20}
-                  color="#10B981"
-                />
-              </View>
-              <Text
-                style={{
-                  flex: 1,
-                  fontSize: 14,
-                  fontWeight: "600",
-                  color: colors.textPrimary,
-                }}
-              >
-                Chat Service
-              </Text>
-              <Toggle
-                value={isChatEnabled}
-                onValueChange={toggleChat}
-                trackColor={{ false: "#D1D5DB", true: "#10B981" }}
-              />
-            </View>
-
-            {/* Voice Call Toggle Row */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingVertical: 11,
-                borderBottomWidth: 1,
-                borderBottomColor: colors.divider,
-              }}
-            >
-              <View
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 12,
-                  backgroundColor: "rgba(59, 130, 246, 0.15)",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: 12,
-                }}
-              >
-                <Ionicons
-                  name="call-outline"
-                  size={20}
-                  color="#3B82F6"
-                />
-              </View>
-              <Text
-                style={{
-                  flex: 1,
-                  fontSize: 14,
-                  fontWeight: "600",
-                  color: colors.textPrimary,
-                }}
-              >
-                Voice Call Service
-              </Text>
-              <Toggle
-                value={isAudioCallEnabled}
-                onValueChange={toggleAudioCall}
-                trackColor={{ false: "#D1D5DB", true: "#3B82F6" }}
-              />
-            </View>
-
-            {/* Video Call Toggle Row */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                paddingVertical: 11,
-              }}
-            >
-              <View
-                style={{
-                  width: 38,
-                  height: 38,
-                  borderRadius: 12,
-                  backgroundColor: "rgba(236, 72, 153, 0.15)",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: 12,
-                }}
-              >
-                <Ionicons
-                  name="videocam-outline"
-                  size={20}
-                  color="#EC4899"
-                />
-              </View>
-              <Text
-                style={{
-                  flex: 1,
-                  fontSize: 14,
-                  fontWeight: "600",
-                  color: colors.textPrimary,
-                }}
-              >
-                Video Call Service
-              </Text>
-              <Toggle
-                value={isVideoCallEnabled}
-                onValueChange={toggleVideoCall}
-                trackColor={{ false: "#D1D5DB", true: "#EC4899" }}
-              />
-            </View>
           </View>
 
           {/* Account & Security Group */}
