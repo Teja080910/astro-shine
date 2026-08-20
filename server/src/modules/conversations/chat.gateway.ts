@@ -349,17 +349,22 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     });
     const caller = await this.usersService.findById(userId);
     const callerName = caller?.name || 'User';
-    const astrologerSocket = this.findSocketByUserId(data.astrologerId);
-    if (astrologerSocket) {
-      astrologerSocket.emit('call:incoming', {
-        callId: callLog.id,
-        callerId: userId,
-        callerRole: role,
-        callerName,
-        type: data.type,
-        channel: roomName,
-        token: calleeToken,
-      });
+    const astrologerSockets = this.findAllSocketsByUserId(data.astrologerId);
+    if (astrologerSockets.length > 0) {
+      this.logger.log(`[Call] Emitting call:incoming to astrologer ${data.astrologerId}, ${astrologerSockets.length} socket(s) found`);
+      for (const sock of astrologerSockets) {
+        sock.emit('call:incoming', {
+          callId: callLog.id,
+          callerId: userId,
+          callerRole: role,
+          callerName,
+          type: data.type,
+          channel: roomName,
+          token: calleeToken,
+        });
+      }
+    } else {
+      this.logger.warn(`[Call] Astrologer ${data.astrologerId} has no active socket, call:incoming NOT delivered`);
     }
     client.emit('call:initiated', { callId: callLog.id, channel: roomName, token: callerToken });
   }
