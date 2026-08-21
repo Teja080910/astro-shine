@@ -53,10 +53,11 @@ export function ActiveCallScreen() {
   useEffect(() => {
     if (!remoteVideoRef.current || !remoteVideoTrack) return;
     const videoEl = remoteVideoRef.current;
+    const track = remoteVideoTrack.track || remoteVideoTrack.publication?.track;
     try {
-      if (remoteVideoTrack.mediaStream) { videoEl.srcObject = remoteVideoTrack.mediaStream; }
-      else if (remoteVideoTrack.mediaStreamTrack) {
-        const stream = new MediaStream([remoteVideoTrack.mediaStreamTrack]);
+      if (track?.mediaStream) { videoEl.srcObject = track.mediaStream; }
+      else if (track?.mediaStreamTrack) {
+        const stream = new MediaStream([track.mediaStreamTrack]);
         videoEl.srcObject = stream;
       }
     } catch {}
@@ -65,10 +66,11 @@ export function ActiveCallScreen() {
   useEffect(() => {
     if (!localVideoRef.current || !localVideoTrack) return;
     const videoEl = localVideoRef.current;
+    const track = localVideoTrack.track || localVideoTrack.publication?.track;
     try {
-      if (localVideoTrack.mediaStream) { videoEl.srcObject = localVideoTrack.mediaStream; }
-      else if (localVideoTrack.mediaStreamTrack) {
-        const stream = new MediaStream([localVideoTrack.mediaStreamTrack]);
+      if (track?.mediaStream) { videoEl.srcObject = track.mediaStream; }
+      else if (track?.mediaStreamTrack) {
+        const stream = new MediaStream([track.mediaStreamTrack]);
         videoEl.srcObject = stream;
       }
     } catch {}

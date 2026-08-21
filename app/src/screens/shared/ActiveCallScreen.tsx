@@ -16,16 +16,16 @@ if (Platform.OS !== 'web') {
 
 const RemoteVideo = Platform.OS === 'web'
   ? ({ track, style }: any) => null
-  : React.memo(({ track, style }: any) => {
-      if (!track || !VideoTrackComponent) return null;
-      return <VideoTrackComponent trackRef={track} style={style} />;
+  : React.memo(({ trackRef, style }: any) => {
+      if (!trackRef || !trackRef.publication || !VideoTrackComponent) return null;
+      return <VideoTrackComponent trackRef={trackRef} style={style} />;
     });
 
 const LocalVideo = Platform.OS === 'web'
   ? ({ track, style }: any) => null
-  : React.memo(({ track, style }: any) => {
-      if (!track || !VideoTrackComponent) return null;
-      return <VideoTrackComponent trackRef={track} style={style} mirror={true} />;
+  : React.memo(({ trackRef, style }: any) => {
+      if (!trackRef || !trackRef.publication || !VideoTrackComponent) return null;
+      return <VideoTrackComponent trackRef={trackRef} style={style} mirror={true} />;
     });
 
 export function ActiveCallScreen() {
@@ -107,7 +107,7 @@ export function ActiveCallScreen() {
                       <Text style={{ color: '#FFFFFF', marginTop: 8, fontSize: 12 }}>{otherName}</Text>
                     </View>
                   ) : (
-                    <RemoteVideo track={remoteVideoTrack} style={StyleSheet.absoluteFill} />
+                    <RemoteVideo trackRef={remoteVideoTrack} style={StyleSheet.absoluteFill} />
                   )}
                   <View style={styles.remoteNameContainer}>
                     <Text style={styles.remoteVideoName}>{otherName}</Text>
@@ -134,7 +134,7 @@ export function ActiveCallScreen() {
             </View>
             <View style={[styles.localVideo, { opacity: isVideoEnabled ? 1 : 0.4 }]}>
               {isVideoEnabled && localVideoTrack && Platform.OS !== 'web' ? (
-                <LocalVideo track={localVideoTrack} style={{ flex: 1 }} />
+                <LocalVideo trackRef={localVideoTrack} style={{ flex: 1 }} />
               ) : (
                 <View style={[StyleSheet.absoluteFill, { backgroundColor: '#2C2C2E', justifyContent: 'center', alignItems: 'center' }]}>
                   <Ionicons name="person" size={24} color={colors.white} />

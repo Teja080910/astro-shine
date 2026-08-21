@@ -55,12 +55,12 @@ export function useLiveKit() {
       const room = new RoomClass({ adaptiveStream: true, dynacast: true });
       roomRef.current = room;
 
-      room.on(RoomEventEnum.TrackSubscribed, (track: any, participant: any) => {
+      room.on(RoomEventEnum.TrackSubscribed, (track: any, publication: any, participant: any) => {
         console.log('[LiveKit] Track subscribed:', track.kind, participant.identity);
         if (track.kind === TrackEnum.Kind.Audio) setIsRemoteMuted(false);
         if (track.kind === TrackEnum.Kind.Video) {
           setIsRemoteVideoMuted(false);
-          setRemoteVideoTrack(track);
+          setRemoteVideoTrack({ participant, publication, source: publication?.source, track });
         }
       });
 
@@ -68,16 +68,22 @@ export function useLiveKit() {
         if (track.kind === TrackEnum.Kind.Video) { setIsRemoteVideoMuted(true); setRemoteVideoTrack(null); }
       });
 
-      room.on(RoomEventEnum.TrackMuted, (pub: any) => {
+      room.on(RoomEventEnum.TrackMuted, (pub: any, participant: any) => {
         if (pub.kind === TrackEnum.Kind.Audio) setIsRemoteMuted(true);
-        if (pub.kind === TrackEnum.Kind.Video) { setIsRemoteVideoMuted(true); setRemoteVideoTrack(null); }
+        if (pub.kind === TrackEnum.Kind.Video) {
+          setIsRemoteVideoMuted(true);
+          setRemoteVideoTrack(null);
+          if (pub.isLocal) setLocalVideoTrack(null);
+        }
       });
 
-      room.on(RoomEventEnum.TrackUnmuted, (pub: any) => {
+      room.on(RoomEventEnum.TrackUnmuted, (pub: any, participant: any) => {
         if (pub.kind === TrackEnum.Kind.Audio) setIsRemoteMuted(false);
         if (pub.kind === TrackEnum.Kind.Video) {
           setIsRemoteVideoMuted(false);
-          setRemoteVideoTrack(pub.videoTrack);
+          const ref = { participant, publication: pub, source: pub?.source, track: pub?.track };
+          if (pub.isLocal) setLocalVideoTrack(ref);
+          else setRemoteVideoTrack(ref);
         }
       });
 
@@ -90,8 +96,10 @@ export function useLiveKit() {
         setRemoteUid(null); setRemoteVideoTrack(null);
       });
 
-      room.on(RoomEventEnum.LocalTrackPublished, (pub: any) => {
-        if (pub.kind === TrackEnum.Kind.Video) { setLocalVideoTrack(pub.track); }
+      room.on(RoomEventEnum.LocalTrackPublished, (pub: any, participant: any) => {
+        if (pub.kind === TrackEnum.Kind.Video) {
+          setLocalVideoTrack({ participant, publication: pub, source: pub?.source, track: pub?.track });
+        }
       });
 
       room.on(RoomEventEnum.LocalTrackUnpublished, (pub: any) => {
@@ -111,6 +119,17 @@ export function useLiveKit() {
       if (type === 'video') {
         await room.localParticipant.setCameraEnabled(true);
         setIsVideoEnabled(true);
+        // If the camera publication was already published (e.g. camera enabled
+        // immediately on connect) build the local track reference explicitly.
+        const cameraPub = room.localParticipant.getTrackPublication(TrackEnum.Source.Camera);
+        if (cameraPub?.track) {
+          setLocalVideoTrack({
+            participant: room.localParticipant,
+            publication: cameraPub,
+            source: cameraPub.source,
+            track: cameraPub.track,
+          });
+        }
       } else {
         setIsVideoEnabled(false);
       }
@@ -156,7 +175,10 @@ export function useLiveKit() {
   const toggleCamera = useCallback(async () => {
     const e = !isVideoEnabled;
     setIsVideoEnabled(e);
-    try { await roomRef.current?.localParticipant?.setCameraEnabled(e); } catch {}
+    try {
+      await roomRef.current?.localParticipant?.setCameraEnabled(e);
+      if (!e) setLocalVideoTrack(null);
+    } catch {}
   }, [isVideoEnabled]);
 
   const switchCamera = useCallback(async () => {
