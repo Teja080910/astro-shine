@@ -3546,14 +3546,45 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
 }
 
 // Wallet
+type WalletTxnFilter = "wallet_recharge" | "donation" | "pooja_booking";
+
+const WALLET_TXN_FILTERS: { key: WalletTxnFilter; label: string }[] = [
+  { key: "wallet_recharge", label: "Wallet Recharge" },
+  { key: "donation", label: "Donation" },
+  { key: "pooja_booking", label: "Pooja Booking" },
+];
+
+const matchesWalletTxnType = (t: Transaction, filter: WalletTxnFilter): boolean => {
+  const desc = (t.description || "").toLowerCase();
+  const metaType = String(t.metadata?.paymentType || "").toLowerCase();
+  switch (filter) {
+    case "wallet_recharge":
+      return t.category === "add_funds" || desc.includes("wallet_recharge") || metaType === "wallet_recharge";
+    case "donation":
+      return t.category === "donation" || desc.includes("donation payment") || metaType === "donation";
+    case "pooja_booking":
+      return desc.includes("pooja_booking") || metaType === "pooja_booking";
+    default:
+      return false;
+  }
+};
+
 export function WalletScreen() {
   const navigation = useNavigation<any>();
   const isFocused = useIsFocused();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [txns, setTxns] = useState<Transaction[]>([]);
+  const [txnFilter, setTxnFilter] = useState<WalletTxnFilter>("wallet_recharge");
+  const [showTxnFilter, setShowTxnFilter] = useState(false);
   const [amount, setAmount] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [loadingPayment, setLoadingPayment] = useState(false);
+
+  const filteredTxns = useMemo(() => {
+    return txns
+      .filter((t) => matchesWalletTxnType(t, txnFilter))
+      .slice(0, 10);
+  }, [txns, txnFilter]);
 
   const load = useCallback(async () => {
     const w = await api.wallet.get();
@@ -3674,7 +3705,110 @@ export function WalletScreen() {
         </GlassCard>
       )}
 
-      {txns.map((t) => (
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginTop: 16,
+        }}
+      >
+        <Text style={[typography.sectionTitle, { color: colors.textPrimary }]}>
+          Transactions
+        </Text>
+        <TouchableOpacity
+          onPress={() => setShowTxnFilter(true)}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            backgroundColor: colors.surfaceLight,
+            borderColor: colors.cardBorder,
+            borderWidth: 1,
+            borderRadius: radii.input,
+            paddingHorizontal: 12,
+            height: 40,
+          }}
+        >
+          <Text style={{ fontSize: 13, fontWeight: "600", color: colors.textPrimary }}>
+            {WALLET_TXN_FILTERS.find((f) => f.key === txnFilter)?.label}
+          </Text>
+          <Ionicons name="chevron-down" size={16} color={colors.textMuted} />
+        </TouchableOpacity>
+      </View>
+
+      <Modal
+        visible={showTxnFilter}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowTxnFilter(false)}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setShowTxnFilter(false)}
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.6)",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 24,
+          }}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={{
+              width: "100%",
+              maxWidth: 340,
+              backgroundColor: colors.surface,
+              borderRadius: radii.card,
+              borderWidth: 1,
+              borderColor: colors.cardBorder,
+              padding: 16,
+            }}
+          >
+            <Text style={[typography.sectionTitle, { marginBottom: 12, color: colors.textPrimary }]}>
+              Filter by Type
+            </Text>
+            {WALLET_TXN_FILTERS.map((f) => {
+              const active = txnFilter === f.key;
+              return (
+                <TouchableOpacity
+                  key={f.key}
+                  onPress={() => {
+                    setTxnFilter(f.key);
+                    setShowTxnFilter(false);
+                  }}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    paddingVertical: 14,
+                    borderBottomWidth: 1,
+                    borderBottomColor: colors.divider,
+                  }}
+                >
+                  <Text style={{ fontSize: 15, fontWeight: "600", color: colors.textPrimary }}>
+                    {f.label}
+                  </Text>
+                  {active && (
+                    <Ionicons name="checkmark-circle" size={20} color={colors.accentGold} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
+
+      {filteredTxns.length === 0 ? (
+        <View style={{ marginTop: 24, alignItems: "center", paddingVertical: 24 }}>
+          <Ionicons name="receipt-outline" size={44} color={colors.textMuted} />
+          <Text style={[typography.body, { color: colors.textMuted, marginTop: 10 }]}>
+            No {WALLET_TXN_FILTERS.find((f) => f.key === txnFilter)?.label} transactions yet
+          </Text>
+        </View>
+      ) : (
+        filteredTxns.map((t) => (
         <GlassCard key={t.id} style={{ marginTop: 8, padding: 12 }}>
           <View
             style={{ flexDirection: "row", justifyContent: "space-between" }}
@@ -3699,7 +3833,8 @@ export function WalletScreen() {
             </Text>
           </View>
         </GlassCard>
-      ))}
+        ))
+      )}
       </View>
     </ScreenWrapper>
   );
