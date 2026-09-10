@@ -116,7 +116,7 @@ function getAstrologerOnlineStatus(
 // User Home Dashboard
 export function UserHomeScreen({ navigation }: any) {
   const { user, theme, setTheme } = useAuth();
-  const { conversations, openConversation, astrologerStatuses, horoscopeVersion, blogVersion, notificationVersion, walletVersion } = useChat();
+  const { conversations, openConversation, astrologerStatuses, horoscopeVersion, blogVersion, notificationVersion, walletVersion, panchangVersion } = useChat();
   const { initiateCall } = useCall();
   const isFocused = useIsFocused();
   const isDark = theme === "dark";
@@ -262,7 +262,7 @@ export function UserHomeScreen({ navigation }: any) {
       .byDate(todayStr)
       .then(setPanchangData)
       .catch(() => {});
-  }, [todayStr]);
+  }, [todayStr, panchangVersion]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
