@@ -42,12 +42,11 @@ export function useLiveKit() {
     try {
       if (Platform.OS !== 'web') {
         try {
-          const { Audio } = require('expo-av');
-          Audio.setAudioModeAsync({
-            playsInSilentModeIOS: true,
-            staysActiveInBackground: true,
-            shouldDuckAndroid: true,
-            playThroughEarpieceAndroid: true,
+          const { setAudioModeAsync } = require('expo-audio');
+          setAudioModeAsync({
+            playsInSilentMode: true,
+            shouldPlayInBackground: true,
+            interruptionMode: 'duckOthers',
           }).catch(() => {});
         } catch {}
       }
@@ -142,12 +141,12 @@ export function useLiveKit() {
     setIsSpeakerOn(newVal);
     if (Platform.OS !== 'web') {
       try {
-        const { Audio } = require('expo-av');
-        await Audio.setAudioModeAsync({
-          playsInSilentModeIOS: true,
-          staysActiveInBackground: true,
-          shouldDuckAndroid: true,
-          playThroughEarpieceAndroid: !newVal,
+        const { setAudioModeAsync } = require('expo-audio');
+        await setAudioModeAsync({
+          playsInSilentMode: true,
+          shouldPlayInBackground: true,
+          interruptionMode: 'duckOthers',
+          routeOverride: !newVal ? 'earpiece' : undefined,
         });
       } catch {}
     }

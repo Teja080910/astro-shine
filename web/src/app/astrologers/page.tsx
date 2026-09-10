@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
 import { api } from '@/lib/api';
+import { config } from '@/config';
 import { FileText, ExternalLink, Search, Shield, CheckCircle, XCircle } from 'lucide-react';
 import type { Astrologer } from '@astro-shine/shared-types';
 
@@ -305,10 +306,12 @@ export default function AstrologersPage() {
                   Uploaded Documents ({verify.verificationDoc.length})
                 </p>
                 <div className="space-y-2">
-                  {verify.verificationDoc.map((doc, idx) => (
+                  {verify.verificationDoc.map((doc, idx) => {
+                    const docUrl = doc.startsWith('http') ? doc : `${config.apiUrl}${doc}`;
+                    return (
                     <a
                       key={idx}
-                      href={doc}
+                      href={docUrl}
                       target="_blank"
                       rel="noreferrer"
                       className="flex items-center justify-between p-3 rounded-xl bg-surface-light/30 border border-card-border hover:bg-surface-light/60 transition-all group"
@@ -326,7 +329,8 @@ export default function AstrologersPage() {
                       </div>
                       <ExternalLink size={14} className="text-text-muted group-hover:text-primary-light transition-colors shrink-0" />
                     </a>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
