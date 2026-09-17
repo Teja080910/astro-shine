@@ -15,6 +15,8 @@ export default function GiftsPage() {
   const [tab, setTab] = useState<'gifts' | 'transactions'>('gifts');
 
   const [selected, setSelected] = useState<Gift | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Gift | null>(null);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [image, setImage] = useState('');
@@ -36,10 +38,16 @@ export default function GiftsPage() {
 
   const openForm = (g?: Gift) => {
     setSelected(g || null);
+    setShowForm(true);
     setName(g?.name || '');
     setPrice(g?.price || '');
     setImage(g?.image || '');
     setIsActive(g?.isActive ?? true);
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    setSelected(null);
   };
 
   const handleSave = async () => {
@@ -53,15 +61,16 @@ export default function GiftsPage() {
         const created = await api.post<Gift>('/gifts', payload);
         setGifts([...gifts, created]);
       }
-      setSelected(null);
+      closeForm();
     } catch (err) { console.error(err); }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this gift?')) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await api.del(`/gifts/${id}`);
-      setGifts(gifts.filter(g => g.id !== id));
+      await api.del(`/gifts/${deleteTarget.id}`);
+      setGifts(gifts.filter(g => g.id !== deleteTarget.id));
+      setDeleteTarget(null);
     } catch (err) { console.error(err); }
   };
 
@@ -93,7 +102,7 @@ export default function GiftsPage() {
               <td className="px-4 py-3 text-text-muted text-sm">{formatDate(g.createdAt)}</td>
               <td className="px-4 py-3 flex gap-2">
                 <button onClick={() => openForm(g)} className="text-primary-light hover:underline text-sm font-medium">Edit</button>
-                <button onClick={() => handleDelete(g.id)} className="text-red-400 hover:underline text-sm font-medium">Delete</button>
+                <button onClick={() => setDeleteTarget(g)} className="text-red-400 hover:underline text-sm font-medium">Delete</button>
               </td>
             </tr>
           ))}
@@ -116,7 +125,7 @@ export default function GiftsPage() {
         </Table>
       )}
 
-      <CustomModal open={!!selected} onClose={() => setSelected(null)} title={selected?.id ? 'Edit Gift' : 'Add Gift'}>
+      <CustomModal open={showForm} onClose={closeForm} title={selected?.id ? 'Edit Gift' : 'Add Gift'}>
         <div className="space-y-4 text-text-secondary text-sm">
           <div>
             <label className="block text-text-primary font-medium mb-1">Gift Name</label>
@@ -136,7 +145,17 @@ export default function GiftsPage() {
           </div>
           <div className="flex gap-3 pt-3 border-t border-divider">
             <GradientButton onClick={handleSave}>Save</GradientButton>
-            <GradientButton onClick={() => setSelected(null)}>Cancel</GradientButton>
+            <GradientButton onClick={closeForm}>Cancel</GradientButton>
+          </div>
+        </div>
+      </CustomModal>
+
+      <CustomModal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete Gift">
+        <div className="space-y-4">
+          <p className="text-text-secondary text-sm">Are you sure you want to delete <strong className="text-text-primary">{deleteTarget?.name}</strong>? This action cannot be undone.</p>
+          <div className="flex gap-2">
+            <button onClick={() => setDeleteTarget(null)} className="flex-1 px-4 py-2 rounded-lg border border-divider text-text-secondary text-sm font-semibold">Cancel</button>
+            <button onClick={handleDelete} className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold">Delete</button>
           </div>
         </div>
       </CustomModal>

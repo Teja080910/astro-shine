@@ -12,9 +12,11 @@ Order placement is not connected with Razorpay.
 Verify whether all three features are working properly.
 
 
+In chat sceeen we need to stop call and video.
 
+video and audio call not working.
 
-
+Notification module.
 
 8. Videos
 

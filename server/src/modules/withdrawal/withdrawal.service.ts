@@ -4,6 +4,7 @@ import * as schema from '../../db/schemas';
 import { eq, sql, desc } from 'drizzle-orm';
 import { WalletService } from '../wallet/wallet.service';
 import { RealtimeService } from '../../common/realtime.service';
+import { PayoutService } from '../payout/payout.service';
 
 @Injectable()
 export class WithdrawalService {
@@ -13,6 +14,7 @@ export class WithdrawalService {
     @Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>,
     private readonly walletService: WalletService,
     private readonly realtime: RealtimeService,
+    private readonly payoutService: PayoutService,
   ) {}
 
   async findByAstrologerId(astrologerId: string) { return this.db.query.withdrawalRequests.findMany({ where: eq(schema.withdrawalRequests.astrologerId, astrologerId) }); }
@@ -22,10 +24,12 @@ export class WithdrawalService {
     const rows = await this.db.execute<{
       id: string; astrologer_id: string; admin_id: string; astrologer_name: string; admin_name: string;
       amount: string; status: string; bank_account: any; admin_note: string;
+      payout_id: string; payout_utr: string; payout_status: string; payout_response: any;
       created_at: string; updated_at: string;
     }>(sql`
       SELECT wr.id, wr.astrologer_id, wr.admin_id, wr.amount, wr.status,
              wr.bank_account, wr.admin_note, wr.created_at, wr.updated_at,
+             wr.payout_id, wr.payout_utr, wr.payout_status, wr.payout_response,
              COALESCE(u_astro.name, '') AS astrologer_name,
              COALESCE(u_admin.name, '') AS admin_name
       FROM withdrawal_requests wr
@@ -45,6 +49,10 @@ export class WithdrawalService {
       status: r.status,
       bankAccount: r.bank_account,
       adminNote: r.admin_note,
+      payoutId: r.payout_id,
+      payoutUtr: r.payout_utr,
+      payoutStatus: r.payout_status,
+      payoutResponse: r.payout_response,
       createdAt: r.created_at,
       updatedAt: r.updated_at,
     }));
@@ -174,6 +182,46 @@ export class WithdrawalService {
         })
         .where(eq(schema.withdrawalRequests.id, id));
     });
+
+    // Initiate RazorpayX payout to astrologer's bank account
+    try {
+      const user = await this.db.query.users.findFirst({
+        where: eq(schema.users.id, request.astrologerId!),
+      });
+
+      const payout = await this.payoutService.createPayout({
+        astrologerId: request.astrologerId!,
+        astrologerName: user?.name || 'Astrologer',
+        email: user?.email || undefined,
+        phone: user?.phone || undefined,
+        bank: request.bankAccount as any,
+        amount,
+        referenceId: request.id,
+      });
+
+      await this.db.update(schema.withdrawalRequests).set({
+        payoutId: payout.payoutId,
+        payoutStatus: payout.payoutStatus,
+        payoutUtr: payout.utr || null,
+        payoutResponse: payout.response as any,
+        updatedAt: new Date(),
+      }).where(eq(schema.withdrawalRequests.id, id));
+
+      if (payout.payoutStatus === 'processed') {
+        await this.db.update(schema.withdrawalRequests).set({
+          status: 'completed',
+          updatedAt: new Date(),
+        }).where(eq(schema.withdrawalRequests.id, id));
+      }
+    } catch (e: any) {
+      this.logger.error(`[Withdrawal] Payout initiation failed for ${id}: ${e.message}`);
+      await this.db.update(schema.withdrawalRequests).set({
+        payoutStatus: 'failed',
+        payoutResponse: { error: e.message } as any,
+        updatedAt: new Date(),
+      }).where(eq(schema.withdrawalRequests.id, id));
+    }
+
     this.realtime.broadcast('withdrawal:updated', { id, status: 'approved' });
   }
 

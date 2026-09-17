@@ -34,16 +34,27 @@ function WithdrawalsContent() {
   return (
     <>
       <h1 className="text-3xl font-extrabold text-text-primary mb-6">Withdrawals</h1>
-      <Table headers={['Requester', 'Type', 'Amount', 'Status', 'Date', '']} emptyMessage="No withdrawals found">
+      <Table headers={['Requester', 'Type', 'Amount', 'Status', 'Payout', 'Date', '']} emptyMessage="No withdrawals found">
         {data.map((w: any) => (
           <tr key={w.id} className="border-b border-divider hover:bg-surface-light/50">
             <td className="px-4 py-3 text-text-primary">{w.astrologerName || w.adminName || w.astrologerId?.slice(0, 8) || 'Admin'}</td>
             <td className="px-4 py-3 text-text-secondary">{w.adminId ? 'Admin' : 'Astrologer'}</td>
             <td className="px-4 py-3 text-text-primary">₹{w.amount}</td>
             <td className="px-4 py-3">
+              {w.status === 'completed' && <Badge variant="success">Completed</Badge>}
               {w.status === 'approved' && <Badge variant="success">Approved</Badge>}
               {w.status === 'pending' && <Badge variant="warning">Pending</Badge>}
               {w.status === 'rejected' && <Badge variant="danger">Rejected</Badge>}
+            </td>
+            <td className="px-4 py-3">
+              {w.payoutId ? (
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs font-semibold capitalize">{w.payoutStatus || 'queued'}</span>
+                  {w.payoutUtr && <span className="text-[11px] text-text-muted">UTR: {w.payoutUtr}</span>}
+                </div>
+              ) : (
+                <span className="text-text-muted text-sm">—</span>
+              )}
             </td>
             <td className="px-4 py-3 text-text-muted text-sm">{formatDate(w.createdAt)}</td>
             <td className="px-4 py-3">
@@ -60,6 +71,12 @@ function WithdrawalsContent() {
           <div className="space-y-3 text-text-secondary">
             <p><span className="font-medium text-text-primary">Astrologer:</span> {selected.astrologerName}</p>
             <p><span className="font-medium text-text-primary">Amount:</span> ₹{selected.amount}</p>
+            {selected.payoutId && (
+              <>
+                <p><span className="font-medium text-text-primary">Payout Status:</span> <span className="capitalize">{selected.payoutStatus || 'queued'}</span></p>
+                {selected.payoutUtr && <p><span className="font-medium text-text-primary">UTR:</span> {selected.payoutUtr}</p>}
+              </>
+            )}
             <div className="flex gap-3 mt-4">
               <GradientButton onClick={() => handleAction(selected.id, 'approve')}>Approve</GradientButton>
               <GradientButton variant="danger" onClick={() => handleAction(selected.id, 'reject')}>Reject</GradientButton>

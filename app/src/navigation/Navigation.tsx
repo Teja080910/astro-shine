@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useEffect, useState } from 'react';
-import { TouchableOpacity, View, Image, ActivityIndicator } from 'react-native';
+import { TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { FloatingBottomBar, colors } from '../shared';
 import { api } from '../shared/api-client';
@@ -162,12 +162,7 @@ export function Navigation() {
     const bg = theme === 'dark' ? '#09090B' : '#FFFFFF';
     return (
       <View style={{ flex: 1, backgroundColor: bg, justifyContent: 'center', alignItems: 'center' }}>
-        <Image 
-          source={require('../../assets/logo_clean.png')} 
-          style={{ width: 200, height: 145 }} 
-          resizeMode="contain" 
-        />
-        <ActivityIndicator size="small" color={theme === 'dark' ? '#D97706' : '#F59E0B'} style={{ marginTop: 24 }} />
+        <ActivityIndicator size="small" color={theme === 'dark' ? '#D97706' : '#F59E0B'} />
       </View>
     );
   }

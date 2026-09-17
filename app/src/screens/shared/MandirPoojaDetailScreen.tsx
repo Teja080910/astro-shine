@@ -4,10 +4,8 @@ import { ScreenWrapper, GlassCard, GradientButton, DatePicker, colors, typograph
 import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
 import type { MandirPooja } from '../../shared/types';
-import { useAuth } from '../../context/AuthContext';
 
 export function MandirPoojaDetailScreen({ route, navigation }: any) {
-  const { user } = useAuth();
   const { poojaId } = route.params;
   const [pooja, setPooja] = useState<MandirPooja | null>(null);
   const [bookingDate, setBookingDate] = useState('');
@@ -23,14 +21,14 @@ export function MandirPoojaDetailScreen({ route, navigation }: any) {
     if (!pooja || !bookingDate) return;
     setBooking(true);
     try {
-      const order = await api.payments.createOrder({ amount: Number(pooja.price), purpose: 'pooja_booking', purposeId: pooja.id });
+      const order = await api.payments.createOrder({
+        amount: Number(pooja.price),
+        purpose: 'pooja_booking',
+        metadata: { poojaId: pooja.id, bookingDate },
+      });
       navigation.navigate('Payment', {
         razorpayOrderId: order.razorpayOrderId, key: order.key, amount: order.amount,
         currency: order.currency, purpose: 'pooja_booking', paymentOrderId: order.id,
-        onSuccess: async () => {
-          await api.mandirPooja.createBooking({ userId: user?.id, poojaId: pooja.id, bookingDate, amount: pooja.price });
-          navigation.goBack();
-        },
       });
     } catch (e: any) {
       Alert.alert('Error', e?.message || 'Failed to initiate booking');

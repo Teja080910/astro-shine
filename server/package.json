@@ -25,7 +25,8 @@
     "seed": "ts-node -r tsconfig-paths/register src/seed.ts",
     "seed:muhurat": "ts-node -r tsconfig-paths/register src/seed-muhurat.ts",
     "seed:muhurat:new": "ts-node -r tsconfig-paths/register src/seed-muhurat-new.ts",
-    "seed:user": "ts-node -r tsconfig-paths/register src/seed-user.ts"
+    "seed:user": "ts-node -r tsconfig-paths/register src/seed-user.ts",
+    "seed:admin": "ts-node -r tsconfig-paths/register src/seed-admin.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -45,15 +46,14 @@
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
     "jsonwebtoken": "^9.0.3",
-    "jyotish": "^1.0.1",
     "livekit-server-sdk": "^2.17.0",
     "pg": "^8.22.0",
     "razorpay": "^2.9.6",
+    "razorpayx": "^1.0.3",
     "reflect-metadata": "^0.2.2",
     "resend": "^6.17.2",
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.3",
-    "suncalc": "^2.0.1",
     "ws": "^8.21.1",
     "zod": "^4.4.3"
   },

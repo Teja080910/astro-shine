@@ -20,6 +20,8 @@ interface PaymentMetadata {
   entityType?: string;
   entityId?: string;
   bookingId?: string;
+  poojaId?: string;
+  bookingDate?: string;
   sessionId?: string;
   orderId?: string;
 }
@@ -235,6 +237,19 @@ export class PaymentsService {
             .update(schema.poojaBookings)
             .set({ status: 'confirmed', transactionId: transaction.id, updatedAt: new Date() })
             .where(eq(schema.poojaBookings.id, metadata.bookingId));
+        } else if (metadata.poojaId && metadata.bookingDate) {
+          const [booking] = await this.db
+            .insert(schema.poojaBookings)
+            .values({
+              userId: paymentOrder.userId,
+              poojaId: metadata.poojaId,
+              bookingDate: metadata.bookingDate,
+              amount: amount.toString(),
+              transactionId: transaction.id,
+              status: 'confirmed',
+            })
+            .returning();
+          result.booking = booking;
         }
         break;
       }

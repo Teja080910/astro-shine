@@ -27,6 +27,7 @@ interface ChatState {
   blogVersion: number;
   walletVersion: number;
   videoVersion: number;
+  giftVersion: number;
   loadConversations: () => Promise<void>;
   openConversation: (participantId: string, participantRole: string) => Promise<string>;
   setActiveConversation: (conv: Conversation | null) => void;
@@ -65,6 +66,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [blogVersion, setBlogVersion] = useState(0);
   const [walletVersion, setWalletVersion] = useState(0);
   const [videoVersion, setVideoVersion] = useState(0);
+  const [giftVersion, setGiftVersion] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [chatBlockedMessage, setChatBlockedMessage] = useState<string | null>(null);
@@ -241,6 +243,22 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setVideoVersion(v => v + 1);
     });
 
+    socket.on('gift:created', () => {
+      setGiftVersion(v => v + 1);
+    });
+
+    socket.on('gift:updated', () => {
+      setGiftVersion(v => v + 1);
+    });
+
+    socket.on('gift:deleted', () => {
+      setGiftVersion(v => v + 1);
+    });
+
+    socket.on('gift:sent', () => {
+      setGiftVersion(v => v + 1);
+    });
+
     socket.on('wallet:updated', (data: { balance?: string }) => {
       setWalletVersion(v => v + 1);
     });
@@ -405,6 +423,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         blogVersion,
         walletVersion,
         videoVersion,
+        giftVersion,
         loading,
         hasMore,
         chatBlockedMessage,

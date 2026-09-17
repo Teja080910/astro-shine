@@ -329,6 +329,7 @@ export interface Conversation {
   participantId: string;
   participantRole: UserRole;
   participantName: string;
+  participantAvatar?: string;
   unreadCount: number;
   createdAt: string;
   updatedAt: string;

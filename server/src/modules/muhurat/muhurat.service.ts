@@ -1,4 +1,10 @@
-import { Injectable, Inject, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
 import { eq, and, ne, gte, lte } from 'drizzle-orm';
@@ -53,7 +59,7 @@ export class MuhuratService {
 
   async findAll(categoryId?: string, startDate?: string, endDate?: string) {
     const conditions = [eq(schema.muhurat.isActive, true)];
-    
+
     if (categoryId) {
       conditions.push(eq(schema.muhurat.categoryId, categoryId));
     }
@@ -113,7 +119,9 @@ export class MuhuratService {
     if (existing) {
       const enriched = await this.enrichEntry(existing);
       const name = enriched?.createdByName || 'System';
-      throw new ConflictException(`This time slot is already registered by ${name}`);
+      throw new ConflictException(
+        `This time slot is already registered by ${name}`,
+      );
     }
   }
 
@@ -125,7 +133,12 @@ export class MuhuratService {
     return enriched;
   }
 
-  async update(id: string, data: Partial<typeof schema.muhurat.$inferInsert>, userId: string | null, role: string) {
+  async update(
+    id: string,
+    data: Partial<typeof schema.muhurat.$inferInsert>,
+    userId: string | null,
+    role: string,
+  ) {
     const existing = await this.db.query.muhurat.findFirst({
       where: eq(schema.muhurat.id, id),
     });
@@ -134,7 +147,9 @@ export class MuhuratService {
     }
 
     if (role !== 'admin' && existing.createdBy !== userId) {
-      throw new ForbiddenException('You do not have permission to modify this entry');
+      throw new ForbiddenException(
+        'You do not have permission to modify this entry',
+      );
     }
 
     if (data.date || data.time) {
@@ -163,7 +178,9 @@ export class MuhuratService {
     }
 
     if (role !== 'admin' && existing.createdBy !== userId) {
-      throw new ForbiddenException('You do not have permission to delete this entry');
+      throw new ForbiddenException(
+        'You do not have permission to delete this entry',
+      );
     }
 
     await this.db.delete(schema.muhurat).where(eq(schema.muhurat.id, id));

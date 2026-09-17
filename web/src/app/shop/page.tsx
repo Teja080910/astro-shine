@@ -11,6 +11,8 @@ export default function ShopPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<any>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
@@ -27,12 +29,18 @@ export default function ShopPage() {
 
   const openForm = (p: any) => {
     setSelected(p);
+    setShowForm(true);
     setName(p?.name || '');
     setDescription(p?.description || '');
     setPrice(p?.price || '');
     setComparePrice(p?.comparePrice || '');
     setCategory(p?.category || '');
     setStock(String(p?.stock ?? 0));
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    setSelected(null);
   };
 
   const handleSave = async () => {
@@ -46,15 +54,16 @@ export default function ShopPage() {
         const created = await api.post('/shop', payload);
         setData([...data, created]);
       }
-      setSelected(null);
+      closeForm();
     } catch (e: any) { alert(e.message || 'Failed to save'); }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Delete this product?')) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await api.del(`/shop/${id}`);
-      setData(data.filter(p => p.id !== id));
+      await api.del(`/shop/${deleteTarget.id}`);
+      setData(data.filter(p => p.id !== deleteTarget.id));
+      setDeleteTarget(null);
     } catch (e: any) { alert(e.message || 'Failed to delete'); }
   };
 
@@ -80,14 +89,14 @@ export default function ShopPage() {
               <td className="px-4 py-3">{p.isActive ? <Badge variant="success">Active</Badge> : <Badge variant="danger">Inactive</Badge>}</td>
               <td className="px-4 py-3 flex gap-2">
                 <button onClick={() => openForm(p)} className="text-primary-light hover:underline text-sm font-medium">Edit</button>
-                <button onClick={() => handleDelete(p.id)} className="text-red-400 hover:underline text-sm font-medium">Delete</button>
+                <button onClick={() => setDeleteTarget(p)} className="text-red-400 hover:underline text-sm font-medium">Delete</button>
               </td>
             </tr>
           ))}
         </Table>
       )}
 
-      <CustomModal open={!!selected || selected === null} onClose={() => setSelected(undefined)} title={selected?.id ? 'Edit Product' : 'Add Product'}>
+      <CustomModal open={showForm} onClose={closeForm} title={selected?.id ? 'Edit Product' : 'Add Product'}>
         <div className="space-y-4 text-text-secondary text-sm p-2">
           <div><label className="block text-text-primary font-medium mb-1">Name</label><input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input-field text-sm" /></div>
           <div><label className="block text-text-primary font-medium mb-1">Description</label><textarea value={description} onChange={(e) => setDescription(e.target.value)} className="input-field h-20 text-sm" /></div>
@@ -101,7 +110,17 @@ export default function ShopPage() {
           </div>
           <div className="flex gap-3 pt-3 border-t border-divider">
             <GradientButton onClick={handleSave}>Save</GradientButton>
-            <GradientButton onClick={() => setSelected(null)}>Cancel</GradientButton>
+            <GradientButton onClick={closeForm}>Cancel</GradientButton>
+          </div>
+        </div>
+      </CustomModal>
+
+      <CustomModal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete Product">
+        <div className="space-y-4">
+          <p className="text-text-secondary text-sm">Are you sure you want to delete <strong className="text-text-primary">{deleteTarget?.name}</strong>? This action cannot be undone.</p>
+          <div className="flex gap-2">
+            <button onClick={() => setDeleteTarget(null)} className="flex-1 px-4 py-2 rounded-lg border border-divider text-text-secondary text-sm font-semibold">Cancel</button>
+            <button onClick={handleDelete} className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold">Delete</button>
           </div>
         </div>
       </CustomModal>

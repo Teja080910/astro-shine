@@ -1,7 +1,7 @@
 import { Injectable, Inject, Logger, BadRequestException, NotFoundException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and, sql, aliasedTable } from 'drizzle-orm';
 import { RealtimeService } from '../../common/realtime.service';
 
 @Injectable()
@@ -15,13 +15,48 @@ export class GiftsService {
 
   async findAll() { return this.db.query.gifts.findMany(); }
   async findById(id: string) { return this.db.query.gifts.findFirst({ where: eq(schema.gifts.id, id) }); }
-  async create(data: typeof schema.gifts.$inferInsert) { const [r] = await this.db.insert(schema.gifts).values(data).returning(); return r; }
-  async update(id: string, data: Partial<typeof schema.gifts.$inferInsert>) { const [r] = await this.db.update(schema.gifts).set(data).where(eq(schema.gifts.id, id)).returning(); return r; }
-  async delete(id: string) { await this.db.delete(schema.gifts).where(eq(schema.gifts.id, id)); return { success: true }; }
+  async create(data: typeof schema.gifts.$inferInsert) {
+    const [r] = await this.db.insert(schema.gifts).values(data).returning();
+    this.realtime.broadcast('gift:created', r);
+    return r;
+  }
+  async update(id: string, data: Partial<typeof schema.gifts.$inferInsert>) {
+    const [r] = await this.db.update(schema.gifts).set(data).where(eq(schema.gifts.id, id)).returning();
+    this.realtime.broadcast('gift:updated', r);
+    return r;
+  }
+  async delete(id: string) {
+    await this.db.delete(schema.gifts).where(eq(schema.gifts.id, id));
+    this.realtime.broadcast('gift:deleted', { id });
+    return { success: true };
+  }
 
   async getGiftTransactions(userId?: string) {
-    if (userId) return this.db.query.giftTransactions.findMany({ where: eq(schema.giftTransactions.senderId, userId) });
-    return this.db.query.giftTransactions.findMany();
+    const senderUser = aliasedTable(schema.users, 'sender_user');
+    const receiverUser = aliasedTable(schema.users, 'receiver_user');
+
+    const base = this.db
+      .select({
+        id: schema.giftTransactions.id,
+        giftId: schema.giftTransactions.giftId,
+        senderId: schema.giftTransactions.senderId,
+        receiverId: schema.giftTransactions.receiverId,
+        transactionId: schema.giftTransactions.transactionId,
+        isRedeemed: schema.giftTransactions.isRedeemed,
+        redeemedAt: schema.giftTransactions.redeemedAt,
+        createdAt: schema.giftTransactions.createdAt,
+        senderName: senderUser.name,
+        receiverName: receiverUser.name,
+      })
+      .from(schema.giftTransactions)
+      .leftJoin(senderUser, eq(senderUser.id, schema.giftTransactions.senderId))
+      .leftJoin(schema.astrologers, eq(schema.astrologers.userId, schema.giftTransactions.receiverId))
+      .leftJoin(receiverUser, eq(receiverUser.id, schema.astrologers.userId));
+
+    if (userId) {
+      return base.where(eq(schema.giftTransactions.senderId, userId));
+    }
+    return base;
   }
 
   async sendGift(data: { giftId: string; senderId: string; receiverId: string }) {
@@ -132,6 +167,7 @@ export class GiftsService {
 
     this.realtime.emitToUser(data.senderId, 'wallet:updated', { balance: updatedSenderBalance });
     this.realtime.emitToUser(data.receiverId, 'wallet:updated', { balance: updatedAstroBalance });
+    this.realtime.emitToUser(data.receiverId, 'gift:sent', { giftId: data.giftId, senderId: data.senderId, receiverId: data.receiverId });
 
     this.logger.log(`Gift ${data.giftId} sent from ${data.senderId} to ${data.receiverId} (${amountStr})`);
     return { success: true, message: `Gift sent successfully`, amount: amountStr };

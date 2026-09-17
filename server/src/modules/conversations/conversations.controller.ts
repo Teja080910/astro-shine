@@ -21,12 +21,13 @@ export class ConversationsController {
       const otherId = c.participantOneId === req.userId ? c.participantTwoId : c.participantOneId;
       participantIds.add(otherId);
     }
-    const names = await this.batchGetParticipantNames([...participantIds]);
+    const details = await this.batchGetParticipantDetails([...participantIds]);
     const unreadMap = await this.service.getUnreadCounts(conversations.map(c => c.id), req.userId);
     const enriched = conversations.map((c) => {
       const otherId = c.participantOneId === req.userId ? c.participantTwoId : c.participantOneId;
       const otherRole = c.participantOneId === req.userId ? c.participantTwoRole : c.participantOneRole;
-      return { ...c, participantId: otherId, participantRole: otherRole, participantName: names.get(otherId) || (otherRole === 'astrologer' ? 'Astrologer' : 'User'), unreadCount: unreadMap[c.id] || 0 };
+      const d = details.get(otherId) || { name: otherRole === 'astrologer' ? 'Astrologer' : 'User', avatar: undefined };
+      return { ...c, participantId: otherId, participantRole: otherRole, participantName: d.name, participantAvatar: d.avatar, unreadCount: unreadMap[c.id] || 0 };
     });
     return { data: enriched };
   }
@@ -37,9 +38,9 @@ export class ConversationsController {
     const otherId = conversation.participantOneId === req.userId ? conversation.participantTwoId : conversation.participantOneId;
     const otherRole = conversation.participantOneId === req.userId ? conversation.participantTwoRole : conversation.participantOneRole;
     const unreadCount = await this.service.getUnreadCount(conversation.id, req.userId);
-    const names = await this.batchGetParticipantNames([otherId]);
-    const participantName = names.get(otherId) || (otherRole === 'astrologer' ? 'Astrologer' : 'User');
-    return { ...conversation, participantId: otherId, participantRole: otherRole, participantName, unreadCount };
+    const details = await this.batchGetParticipantDetails([otherId]);
+    const d = details.get(otherId) || { name: otherRole === 'astrologer' ? 'Astrologer' : 'User', avatar: undefined };
+    return { ...conversation, participantId: otherId, participantRole: otherRole, participantName: d.name, participantAvatar: d.avatar, unreadCount };
   }
 
   @Post()
@@ -78,21 +79,22 @@ export class ConversationsController {
     return { unreadCount };
   }
 
-  private async batchGetParticipantNames(userIds: string[]): Promise<Map<string, string>> {
-    const map = new Map<string, string>();
+  private async batchGetParticipantDetails(userIds: string[]): Promise<Map<string, { name: string; avatar?: string }>> {
+    const map = new Map<string, { name: string; avatar?: string }>();
     if (userIds.length === 0) return map;
     const users = await this.db.query.users.findMany({
       where: (users: any, { inArray }: any) => inArray(users.id, userIds),
     });
-    for (const u of users) map.set(u.id, u.name || 'User');
+    for (const u of users) map.set(u.id, { name: u.name || 'User', avatar: u.avatar || undefined });
     const astroRows = await this.db.select({
       id: schema.astrologers.userId,
       name: schema.users.name,
+      avatar: schema.users.avatar,
     })
     .from(schema.astrologers)
     .leftJoin(schema.users, eq(schema.astrologers.userId, schema.users.id))
     .where(inArray(schema.astrologers.userId, userIds));
-    for (const a of astroRows) map.set(a.id, a.name || 'Astrologer');
+    for (const a of astroRows) map.set(a.id, { name: a.name || 'Astrologer', avatar: a.avatar || undefined });
     return map;
   }
 }

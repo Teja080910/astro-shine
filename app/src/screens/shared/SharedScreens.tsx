@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl, KeyboardAvoidingView, Platform, Keyboard, Dimensions, Image, Linking } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl, KeyboardAvoidingView, Platform, Keyboard, Dimensions, Image } from 'react-native';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, CustomModal, colors, typography, radii, shadows, Navbar } from '../../shared';
 import { api } from '../../shared/api-client';
@@ -9,6 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
 import * as DocumentPicker from 'expo-document-picker';
 import { Video as ExpoVideo, ResizeMode } from 'expo-av';
+import YoutubeIframe from 'react-native-youtube-iframe';
 
 function SectionTitle({ title }: { title: string }) {
   return null;
@@ -213,7 +214,7 @@ function getYouTubeId(url: string): string | null {
   return match ? match[1] : null;
 }
 
-export function VideosScreen() {
+export function VideosScreen({ route }: any) {
   const isFocused = useIsFocused();
   const { videoVersion } = useChat();
   const [videos, setVideos] = useState<Video[]>([]);
@@ -221,6 +222,12 @@ export function VideosScreen() {
   const videoRef = useRef<ExpoVideo>(null);
   const { width } = Dimensions.get('window');
   useEffect(() => { if (isFocused) api.videos.list().then(setVideos).catch(() => {}); }, [isFocused, videoVersion]);
+  useEffect(() => {
+    if (route?.params?.videoId && videos.length > 0) {
+      const found = videos.find(v => v.id === route.params.videoId);
+      if (found) setPlayingVideo(found);
+    }
+  }, [route?.params?.videoId, videos]);
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Videos" />
@@ -230,11 +237,7 @@ export function VideosScreen() {
           const thumbUrl = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : v.thumbnail;
           return (
           <TouchableOpacity key={v.id} style={{ marginBottom: 12 }} onPress={() => {
-            if (ytId) {
-              Linking.openURL(v.url);
-            } else {
-              setPlayingVideo(v);
-            }
+            setPlayingVideo(v);
           }}>
             <GlassCard style={{ padding: 0, overflow: 'hidden' }}>
               <View style={{ height: 180, backgroundColor: colors.surfaceLight, alignItems: 'center', justifyContent: 'center' }}>
@@ -263,7 +266,17 @@ export function VideosScreen() {
             <Ionicons name="close" size={28} color="#FFF" />
           </TouchableOpacity>
           {playingVideo?.url ? (
-            <ExpoVideo ref={videoRef} source={{ uri: playingVideo.url }} style={{ width, height: width * 0.5625 }} resizeMode={ResizeMode.CONTAIN} shouldPlay useNativeControls />
+            getYouTubeId(playingVideo.url) ? (
+              <YoutubeIframe
+                height={width * 0.5625}
+                width={width}
+                videoId={getYouTubeId(playingVideo.url)!}
+                play
+                webViewStyle={{ backgroundColor: '#000' }}
+              />
+            ) : (
+              <ExpoVideo ref={videoRef} source={{ uri: playingVideo.url }} style={{ width, height: width * 0.5625 }} resizeMode={ResizeMode.CONTAIN} shouldPlay useNativeControls />
+            )
           ) : null}
         </View>
       </Modal>

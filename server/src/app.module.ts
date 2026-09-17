@@ -13,6 +13,7 @@ import { HoroscopeModule } from './modules/horoscope/horoscope.module';
 import { PanchangModule } from './modules/panchang/panchang.module';
 import { TransactionsModule } from './modules/transactions/transactions.module';
 import { WithdrawalModule } from './modules/withdrawal/withdrawal.module';
+import { PayoutModule } from './modules/payout/payout.module';
 import { CommissionModule } from './modules/commission/commission.module';
 import { CallsModule } from './modules/calls/calls.module';
 import { ChatModule } from './modules/chat/chat.module';
@@ -63,6 +64,7 @@ import { AppService } from './app.service';
     PanchangModule,
     TransactionsModule,
     WithdrawalModule,
+    PayoutModule,
     CommissionModule,
     CallsModule,
     ChatModule,

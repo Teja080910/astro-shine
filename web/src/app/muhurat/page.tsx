@@ -11,6 +11,7 @@ export default function MuhuratEntriesPage() {
   const [data, setData] = useState<MuhuratItem[]>([]);
   const [categories, setCategories] = useState<MuhuratCategory[]>([]);
   const [editing, setEditing] = useState<MuhuratItem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MuhuratItem | null>(null);
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [form, setForm] = useState({
     name: '',
@@ -96,13 +97,13 @@ export default function MuhuratEntriesPage() {
     }
   };
 
-  const deleteEntry = async (id: string) => {
-    if (confirm('Are you sure you want to delete this auspicious timing?')) {
-      try {
-        await api.del(`/muhurat/${id}`);
-      } catch (err: any) {
-        alert(err.message || 'Failed to delete');
-      }
+  const deleteEntry = async () => {
+    if (!deleteTarget) return;
+    try {
+      await api.del(`/muhurat/${deleteTarget.id}`);
+      setDeleteTarget(null);
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete');
     }
   };
 
@@ -151,7 +152,7 @@ export default function MuhuratEntriesPage() {
                   Edit
                 </button>
                 <button
-                  onClick={() => deleteEntry(entry.id)}
+                  onClick={() => setDeleteTarget(entry)}
                   className="text-red-500 hover:underline text-sm font-semibold"
                 >
                   Delete
@@ -234,6 +235,16 @@ export default function MuhuratEntriesPage() {
 
           <div className="pt-2">
             <GradientButton onClick={save}>Save Muhurat</GradientButton>
+          </div>
+        </div>
+      </CustomModal>
+
+      <CustomModal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete Muhurat">
+        <div className="space-y-4">
+          <p className="text-text-secondary text-sm">Are you sure you want to delete <strong className="text-text-primary">{deleteTarget?.name}</strong>? This action cannot be undone.</p>
+          <div className="flex gap-2">
+            <button onClick={() => setDeleteTarget(null)} className="flex-1 px-4 py-2 rounded-lg border border-divider text-text-secondary text-sm font-semibold">Cancel</button>
+            <button onClick={deleteEntry} className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold">Delete</button>
           </div>
         </div>
       </CustomModal>

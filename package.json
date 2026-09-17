@@ -1,6 +1,7 @@
 {
   "name": "astro-shine",
   "private": true,
+  "packageManager": "npm@11.16.0",
   "workspaces": [
     "web",
     "packages/*",
@@ -15,8 +16,5 @@
   },
   "devDependencies": {
     "turbo": "^2.0.0"
-  },
-  "dependencies": {
-    "sweph": "^2.10.3-7"
   }
 }

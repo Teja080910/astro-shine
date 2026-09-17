@@ -19,20 +19,25 @@ import {
 import { api } from '../../shared/api-client';
 
 export function KycGateScreen() {
-  const { astrologer, updateUser } = useAuth();
+  const { astrologer, updateUser, logout } = useAuth();
   const [docs, setDocs] = useState<string[]>(astrologer?.verificationDoc || []);
   const [status, setStatus] = useState(astrologer?.verificationStatus || 'pending');
   const [note, setNote] = useState(astrologer?.verificationNote || '');
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pendingUploadRef = useRef(false);
 
   const fetchStatus = useCallback(async () => {
     if (!astrologer?.userId) return;
     try {
       const fresh = await api.astrologers.get(astrologer.userId);
       if (fresh) {
-        setDocs(fresh.verificationDoc || []);
+        // Only sync server docs when there are no pending local uploads,
+        // otherwise the poll overwrites files the user just added but hasn't saved yet.
+        if (!pendingUploadRef.current) {
+          setDocs(fresh.verificationDoc || []);
+        }
         setStatus(fresh.verificationStatus || 'pending');
         setNote(fresh.verificationNote || '');
         updateUser({ ...astrologer, ...fresh });
@@ -65,6 +70,7 @@ export function KycGateScreen() {
         'supabase',
       );
       const newDocs = [...docs, uploaded.url];
+      pendingUploadRef.current = true;
       setDocs(newDocs);
     } catch (e: any) {
       Alert.alert('Error', e?.response?.data?.message || e?.message || 'Upload failed');
@@ -74,7 +80,9 @@ export function KycGateScreen() {
   };
 
   const removeDoc = (index: number) => {
-    setDocs(docs.filter((_, i) => i !== index));
+    const remaining = docs.filter((_, i) => i !== index);
+    pendingUploadRef.current = remaining.length > 0;
+    setDocs(remaining);
   };
 
   const submitDocuments = async () => {
@@ -88,6 +96,7 @@ export function KycGateScreen() {
         (astrologer!.userId || astrologer!.id) as string,
         { verificationDoc: docs, verificationStatus: 'pending' },
       );
+      pendingUploadRef.current = false;
       setStatus('pending');
       setNote('');
       updateUser({ ...astrologer!, ...updated });
@@ -125,6 +134,36 @@ export function KycGateScreen() {
   return (
     <ScreenWrapper scroll>
       <View style={{ alignItems: 'center', paddingTop: 40, paddingBottom: 100 }}>
+
+        {(status === 'pending' || status === 'rejected') && (
+          <TouchableOpacity
+            onPress={async () => {
+              try {
+                await logout();
+              } catch {}
+            }}
+            style={{
+              position: 'absolute',
+              top: 12,
+              right: 12,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 6,
+              backgroundColor: colors.surfaceLight,
+              borderColor: colors.cardBorder,
+              borderWidth: 1,
+              borderRadius: 20,
+              paddingHorizontal: 14,
+              paddingVertical: 8,
+              zIndex: 10,
+            }}
+          >
+            <Ionicons name="log-out-outline" size={16} color={colors.textSecondary} />
+            <Text style={{ fontSize: 13, fontWeight: '700', color: colors.textSecondary }}>
+              Sign In
+            </Text>
+          </TouchableOpacity>
+        )}
 
         <View style={{
           width: 80, height: 80, borderRadius: 40,

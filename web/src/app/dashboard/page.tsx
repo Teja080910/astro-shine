@@ -32,7 +32,7 @@ function StatCard({ label, value, iconName, color }: { label: string; value: str
 interface DashboardStats {
   totalUsers: number;
   totalAstrologers: number;
-  totalRevenue: number;
+  platformRevenue: number;
   activeCalls: number;
   recentTransactions: any[];
   pendingWithdrawals: any[];
@@ -54,7 +54,7 @@ export default function DashboardPage() {
   const cardData = [
     { label: 'Total Users', value: stats?.totalUsers ?? 0, iconName: 'Users', color: '#8B5CF6' },
     { label: 'Astrologers', value: stats?.totalAstrologers ?? 0, iconName: 'Star', color: '#F59E0B' },
-    { label: 'Revenue', value: `₹${stats?.totalRevenue ?? 0}`, iconName: 'DollarSign', color: '#10B981' },
+    { label: 'Revenue', value: `₹${stats?.platformRevenue ?? 0}`, iconName: 'DollarSign', color: '#10B981' },
     { label: 'Active Calls', value: stats?.activeCalls ?? 0, iconName: 'Phone', color: '#F97316' },
   ];
 

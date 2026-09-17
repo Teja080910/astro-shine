@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
 import { api } from '@/lib/api';
+import { config } from '@/config';
 import { FileText, ExternalLink, Search, Shield, CheckCircle, XCircle } from 'lucide-react';
 import type { Astrologer } from '@astro-shine/shared-types';
 
@@ -119,11 +120,11 @@ export default function AstrologersPage() {
         </div>
       </div>
 
-      <Table headers={['Astrologer', 'Specialization', 'Pricing', 'KYC Status', 'Actions']} emptyMessage="No astrologers found">
+      <Table headers={['Astrologer', 'Specialization', 'Pricing', 'Withdrawn', 'KYC Status', 'Actions']} emptyMessage="No astrologers found">
         {loading ? (
-          <tr><td colSpan={5} className="px-4 py-12 text-center text-text-secondary">Loading astrologers...</td></tr>
+          <tr><td colSpan={6} className="px-4 py-12 text-center text-text-secondary">Loading astrologers...</td></tr>
         ) : error ? (
-          <tr><td colSpan={5} className="px-4 py-3 text-center text-red-400">{error}</td></tr>
+          <tr><td colSpan={6} className="px-4 py-3 text-center text-red-400">{error}</td></tr>
         ) : (
           filtered.map(a => (
           <tr key={a.userId || a.id} className="border-b border-divider hover:bg-surface-light/50 transition-colors">
@@ -148,6 +149,9 @@ export default function AstrologersPage() {
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-surface-light/40 border border-card-border text-text-secondary">A ₹{(a as any).audioCallPricePerMin || a.pricePerMin}</span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-surface-light/40 border border-card-border text-text-secondary">V ₹{(a as any).videoCallPricePerMin || a.pricePerMin}</span>
               </div>
+            </td>
+            <td className="px-4 py-3">
+              <span className="text-xs font-bold text-text-primary">₹{Number((a as any).totalWithdrawn || 0).toFixed(2)}</span>
             </td>
             <td className="px-4 py-3">
               <div className="flex items-center gap-2">
@@ -302,10 +306,12 @@ export default function AstrologersPage() {
                   Uploaded Documents ({verify.verificationDoc.length})
                 </p>
                 <div className="space-y-2">
-                  {verify.verificationDoc.map((doc, idx) => (
+                  {verify.verificationDoc.map((doc, idx) => {
+                    const docUrl = doc.startsWith('http') ? doc : `${config.apiUrl}${doc}`;
+                    return (
                     <a
                       key={idx}
-                      href={doc}
+                      href={docUrl}
                       target="_blank"
                       rel="noreferrer"
                       className="flex items-center justify-between p-3 rounded-xl bg-surface-light/30 border border-card-border hover:bg-surface-light/60 transition-all group"
@@ -323,7 +329,8 @@ export default function AstrologersPage() {
                       </div>
                       <ExternalLink size={14} className="text-text-muted group-hover:text-primary-light transition-colors shrink-0" />
                     </a>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

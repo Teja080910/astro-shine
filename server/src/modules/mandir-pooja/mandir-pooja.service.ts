@@ -16,6 +16,11 @@ export class MandirPoojaService {
     const [r] = await this.db.update(schema.mandirPooja).set({ ...data, updatedAt: new Date() }).where(eq(schema.mandirPooja.id, id)).returning(); return r;
   }
 
+  async delete(id: string) {
+    await this.db.delete(schema.mandirPooja).where(eq(schema.mandirPooja.id, id));
+    return { success: true };
+  }
+
   async getBookings(userId?: string, poojaId?: string) {
     if (userId) return this.db.query.poojaBookings.findMany({ where: eq(schema.poojaBookings.userId, userId) });
     if (poojaId) return this.db.query.poojaBookings.findMany({ where: eq(schema.poojaBookings.poojaId, poojaId) });

@@ -20,13 +20,10 @@ const menuItems = [
   { href: '/donations', icon: Gift, label: 'Donations' },
   { href: '/commissions', icon: Percent, label: 'Commissions' },
   { href: '/calls', icon: Phone, label: 'Calls' },
-  { href: '/live-sessions', icon: Radio, label: 'Live Sessions' },
   { href: '/mandir-pooja', icon: Sparkles, label: 'Mandir Pooja' },
   { href: '/support', icon: Ticket, label: 'Support' },
   { href: '/shop', icon: ShoppingBag, label: 'Shop' },
   { href: '/videos', icon: Video, label: 'Videos' },
-  { href: '/releases', icon: Package, label: 'Releases' },
-  { href: '/settings', icon: Settings, label: 'Settings' },
   { href: '/horoscope', icon: Sparkles, label: 'Horoscopes' },
   { href: '/panchang', icon: Calendar, label: 'Panchang' },
   { href: '/muhurat', icon: Clock, label: 'Muhurat' },
@@ -35,10 +32,6 @@ const menuItems = [
   { href: '/reports', icon: AlertTriangle, label: 'Reports' },
   { href: '/notifications', icon: Bell, label: 'Notifications' },
   { href: '/blogs', icon: FileText, label: 'Blogs' },
-  { href: '/news', icon: Newspaper, label: 'News' },
-  { href: '/api-keys', icon: Key, label: 'API Keys' },
-  { href: '/dynamic-links', icon: Link2, label: 'Links' },
-  { href: '/website-content', icon: Globe, label: 'Website' },
 ];
 
 function Sidebar({ mobileOpen, onMobileClose }: { mobileOpen: boolean; onMobileClose: () => void }) {
@@ -71,8 +64,8 @@ function Sidebar({ mobileOpen, onMobileClose }: { mobileOpen: boolean; onMobileC
     document.documentElement.setAttribute('data-theme', next);
   };
 
-  return (
-    <aside className="fixed left-5 top-5 bottom-5 w-64 backdrop-blur-xl border border-card-border rounded-[28px] flex flex-col p-5 shadow-xl shadow-black/5 z-20 transition-all duration-300">
+  const sidebarContent = (
+    <>
       <div className="flex justify-between items-center px-2 py-3 mb-6">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 flex items-center justify-center bg-gradient-to-tr from-primary/10 to-accent-gold/10 rounded-xl border border-card-border p-1">

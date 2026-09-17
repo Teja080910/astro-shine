@@ -33,7 +33,7 @@ export class AdminsService {
   async getDashboardStats() {
     const [usersCountResult] = await this.db.select({ count: sql<number>`count(*)` })
       .from(schema.users)
-      .where(isNull(schema.users.deletedAt));
+      .where(and(eq(schema.users.role, 'user'), isNull(schema.users.deletedAt)));
 
     const [astrologersCountResult] = await this.db.select({ count: sql<number>`count(*)` })
       .from(schema.astrologers);

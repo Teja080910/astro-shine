@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 @Injectable()
 export class UsersService {
@@ -10,7 +10,9 @@ export class UsersService {
   ) {}
 
   async findAll() {
-    return this.db.query.users.findMany();
+    return this.db.query.users.findMany({
+      where: eq(schema.users.role, 'user'),
+    });
   }
 
   async findById(id: string) {
