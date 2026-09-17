@@ -22,7 +22,9 @@ export function IncomingCallScreen() {
     let isMounted = true;
     const startRingtone = async () => {
       try {
-        const player = createAudioPlayer(require('../../../assets/ringtone.mp3'), { loop: true, shouldPlay: true });
+        const player = createAudioPlayer(require('../../../assets/ringtone.mp3'));
+        player.loop = true;
+        player.play();
         if (isMounted) {
           playerRef.current = player;
         } else {

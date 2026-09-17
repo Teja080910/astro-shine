@@ -2,7 +2,7 @@
   "name": "@astro-shine/mobile",
   "version": "1.0.0",
   "private": true,
-  "main": "node_modules/expo/AppEntry.js",
+  "main": "index.js",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
@@ -15,8 +15,11 @@
     "aab": "cd android && ./gradlew bundleRelease"
   },
   "dependencies": {
+    "@config-plugins/react-native-webrtc": "^13.0.0",
     "@expo/vector-icons": "^15.0.3",
     "@livekit/react-native": "^2.12.0",
+    "@livekit/react-native-expo-plugin": "^1.0.2",
+    "@livekit/react-native-webrtc": "144.1.2",
     "@msg91comm/sendotp-react-native": "^2.1.0",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/bottom-tabs": "^7.0.0",

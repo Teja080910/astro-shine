@@ -47,7 +47,15 @@
         }
       ],
       "expo-audio",
-      "expo-video"
+      "expo-video",
+      "@livekit/react-native-expo-plugin",
+      [
+        "@config-plugins/react-native-webrtc",
+        {
+          "cameraPermission": "Allow Astro Shine to use your camera for video calls.",
+          "microphonePermission": "Allow Astro Shine to use your microphone for audio and video calls."
+        }
+      ]
     ],
     "extra": {
       "eas": {

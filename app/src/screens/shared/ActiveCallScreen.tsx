@@ -25,7 +25,7 @@ const LocalVideo = Platform.OS === 'web'
   ? ({ track, style }: any) => null
   : React.memo(({ track, style }: any) => {
       if (!track || !VideoTrackComponent) return null;
-      return <VideoTrackComponent trackRef={track} style={style} mirror={true} />;
+      return <VideoTrackComponent trackRef={track} style={style} mirror={true} zOrder={1} />;
     });
 
 export function ActiveCallScreen() {
@@ -134,7 +134,7 @@ export function ActiveCallScreen() {
             </View>
             <View style={[styles.localVideo, { opacity: isVideoEnabled ? 1 : 0.4 }]}>
               {isVideoEnabled && localVideoTrack && Platform.OS !== 'web' ? (
-                <LocalVideo track={localVideoTrack} style={{ flex: 1 }} />
+                <LocalVideo track={localVideoTrack} style={{ width: '100%', height: '100%' }} />
               ) : (
                 <View style={[StyleSheet.absoluteFill, { backgroundColor: '#2C2C2E', justifyContent: 'center', alignItems: 'center' }]}>
                   <Ionicons name="person" size={24} color={colors.white} />

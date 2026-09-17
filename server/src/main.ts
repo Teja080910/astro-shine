@@ -1,10 +1,22 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
 import * as express from 'express';
 import * as path from 'path';
+
+const logger = new Logger('Bootstrap');
+
+process.on('unhandledRejection', (reason: any) => {
+  logger.error(
+    `Unhandled promise rejection (kept alive): ${reason?.stack || reason}`,
+  );
+});
+
+process.on('uncaughtException', (err: any) => {
+  logger.error(`Uncaught exception (kept alive): ${err?.stack || err}`);
+});
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
