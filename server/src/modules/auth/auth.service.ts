@@ -467,7 +467,8 @@ export class AuthService {
   }
 
   private generateToken(userId: string, role: string): string {
-    return jwt.sign({ sub: userId, role }, this.jwtSecret, { expiresIn: 604800 });
+    const expiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '7d';
+    return jwt.sign({ sub: userId, role }, this.jwtSecret, { expiresIn } as any);
   }
 
   private async hashPassword(password: string): Promise<string> {

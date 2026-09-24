@@ -7,6 +7,7 @@ const BASE_URL = config.apiBaseUrl;
 class ApiClient {
   private client: AxiosInstance;
   private token: string | null = null;
+  onSessionExpired: (() => void) | null = null;
 
   constructor() {
     this.client = axios.create({ baseURL: BASE_URL, timeout: 15000 });
@@ -18,7 +19,8 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       async (error) => {
-        if (error.response?.status === 401 && !error.config._retry) {
+        const hadAuth = Boolean(error.config?.headers?.Authorization);
+        if (error.response?.status === 401 && hadAuth && !error.config._retry) {
           error.config._retry = true;
           try {
             const AsyncStorage = await import('@react-native-async-storage/async-storage');
@@ -36,6 +38,7 @@ class ApiClient {
           await import('@react-native-async-storage/async-storage')
             .then((AsyncStorage) => AsyncStorage.default.removeItem('auth'))
             .catch(() => {});
+          this.onSessionExpired?.();
         }
         return Promise.reject(error);
       },

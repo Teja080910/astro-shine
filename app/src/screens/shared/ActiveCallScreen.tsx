@@ -23,9 +23,9 @@ const RemoteVideo = Platform.OS === 'web'
 
 const LocalVideo = Platform.OS === 'web'
   ? ({ track, style }: any) => null
-  : React.memo(({ track, style }: any) => {
+  : React.memo(({ track, style, mirror }: any) => {
       if (!track || !VideoTrackComponent) return null;
-      return <VideoTrackComponent trackRef={track} style={style} mirror={true} zOrder={1} />;
+      return <VideoTrackComponent trackRef={track} style={style} mirror={mirror} zOrder={1} />;
     });
 
 export function ActiveCallScreen() {
@@ -134,7 +134,7 @@ export function ActiveCallScreen() {
             </View>
             <View style={[styles.localVideo, { opacity: isVideoEnabled ? 1 : 0.4 }]}>
               {isVideoEnabled && localVideoTrack && Platform.OS !== 'web' ? (
-                <LocalVideo track={localVideoTrack} style={{ width: '100%', height: '100%' }} />
+                <LocalVideo track={localVideoTrack} mirror={isCameraFront} style={{ width: '100%', height: '100%' }} />
               ) : (
                 <View style={[StyleSheet.absoluteFill, { backgroundColor: '#2C2C2E', justifyContent: 'center', alignItems: 'center' }]}>
                   <Ionicons name="person" size={24} color={colors.white} />
@@ -142,6 +142,14 @@ export function ActiveCallScreen() {
                 </View>
               )}
             </View>
+            {isMuted && (
+              <View pointerEvents="none" style={styles.selfMuteWrapper}>
+                <View style={styles.selfMutePill}>
+                  <Ionicons name="mic-off" size={14} color={colors.white} />
+                  <Text style={styles.selfMuteText}>You are muted</Text>
+                </View>
+              </View>
+            )}
           </View>
         )}
 
@@ -153,7 +161,7 @@ export function ActiveCallScreen() {
             <Text style={styles.name}>{otherName}</Text>
             <Text style={styles.status}>
               {callState === 'active'
-                ? (isRemoteMuted ? 'Muted' : formatTime(seconds))
+                ? (isMuted ? 'You are muted' : isRemoteMuted ? 'Muted' : formatTime(seconds))
                 : callState === 'ended'
                   ? 'Call Ended'
                   : 'Connecting...'}
@@ -239,6 +247,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   localVideo: { position: 'absolute', top: 50, right: 16, width: 100, height: 140, borderRadius: 12, backgroundColor: colors.surfaceLight, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  selfMuteWrapper: { position: 'absolute', top: 12, left: 0, right: 0, alignItems: 'center', zIndex: 20 },
+  selfMutePill: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.65)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
+  selfMuteText: { color: colors.white, fontSize: 13, fontWeight: '600', marginLeft: 6 },
   controls: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 20, paddingVertical: 40, paddingBottom: 60, flexWrap: 'wrap' },
   controlButton: { alignItems: 'center' },
   controlIcon: { width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center', marginBottom: 6 },

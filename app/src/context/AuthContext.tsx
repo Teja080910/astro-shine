@@ -174,6 +174,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     api.setToken(null);
   };
 
+  useEffect(() => {
+    api.onSessionExpired = () => {
+      setToken(null);
+      setUser(null);
+      setAstrologer(null);
+      setRole(null);
+    };
+    return () => {
+      api.onSessionExpired = null;
+    };
+  }, []);
+
   const switchRole = (r: AppRole) => setRole(r);
 
   const updateUser = async (u: User | Astrologer) => {

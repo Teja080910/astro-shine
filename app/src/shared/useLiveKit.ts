@@ -48,14 +48,38 @@ export function useLiveKit() {
     };
   }, []);
 
+  const applyAudioOutput = useCallback(async (speaker: boolean) => {
+    if (Platform.OS === 'web' || !AudioSessionClass?.selectAudioOutput) return;
+    const output = Platform.OS === 'ios'
+      ? (speaker ? 'force_speaker' : 'default')
+      : (speaker ? 'speaker' : 'earpiece');
+    await AudioSessionClass.selectAudioOutput(output);
+  }, []);
+
   const joinChannel = useCallback(async (channel: string, token: string, uid: number, type: 'audio' | 'video') => {
     try {
       await loadLiveKit();
       if (Platform.OS !== 'web') {
+        if (Platform.OS === 'ios') {
+          try {
+            await AudioSessionClass?.configureAudio?.({ ios: { defaultOutput: 'earpiece' } });
+          } catch (e: any) {
+            console.warn('[LiveKit] configureAudio error:', e?.message || e);
+          }
+        }
         try {
           await AudioSessionClass?.startAudioSession?.();
         } catch (e: any) {
           console.warn('[LiveKit] startAudioSession error:', e?.message || e);
+        }
+        const startOnSpeaker = type === 'video';
+        setIsSpeakerOn(startOnSpeaker);
+        try {
+          const outputs = await AudioSessionClass?.getAudioOutputs?.();
+          const hasExternal = Array.isArray(outputs) && (outputs.includes('bluetooth') || outputs.includes('headset'));
+          if (!hasExternal) await applyAudioOutput(startOnSpeaker);
+        } catch (e: any) {
+          console.warn('[LiveKit] initial audio output error:', e?.message || e);
         }
       }
       const room = new RoomClass({ adaptiveStream: true, dynacast: true });
@@ -76,15 +100,18 @@ export function useLiveKit() {
         if (track.kind === TrackEnum.Kind.Video) { setIsRemoteVideoMuted(true); setRemoteVideoTrack(null); }
       });
 
-      room.on(RoomEventEnum.TrackMuted, (pub: any) => {
+      room.on(RoomEventEnum.TrackMuted, (pub: any, participant: any) => {
+        if (participant === room.localParticipant) return;
         if (pub.kind === TrackEnum.Kind.Audio) setIsRemoteMuted(true);
         if (pub.kind === TrackEnum.Kind.Video) { setIsRemoteVideoMuted(true); setRemoteVideoTrack(null); }
       });
 
-      room.on(RoomEventEnum.TrackUnmuted, (pub: any) => {
+      room.on(RoomEventEnum.TrackUnmuted, (pub: any, participant: any) => {
+        if (participant === room.localParticipant) return;
         if (pub.kind === TrackEnum.Kind.Audio) setIsRemoteMuted(false);
         if (pub.kind === TrackEnum.Kind.Video) {
           setIsRemoteVideoMuted(false);
+          remoteParticipantRef.current = participant ?? remoteParticipantRef.current;
           setRemoteVideoTrack(toTrackRef(remoteParticipantRef.current, pub));
         }
       });
@@ -135,7 +162,7 @@ export function useLiveKit() {
     } catch (e: any) {
       console.error('[LiveKit] joinChannel error:', e.message || e);
     }
-  }, []);
+  }, [applyAudioOutput]);
 
   const leaveChannel = useCallback(() => {
     roomRef.current?.disconnect?.();
@@ -162,17 +189,13 @@ export function useLiveKit() {
   const toggleSpeaker = useCallback(async () => {
     const newVal = !isSpeakerOn;
     setIsSpeakerOn(newVal);
-    if (Platform.OS !== 'web') {
-      try {
-        const output = Platform.OS === 'ios'
-          ? (newVal ? 'force_speaker' : 'default')
-          : (newVal ? 'speaker' : 'earpiece');
-        await AudioSessionClass?.selectAudioOutput?.(output);
-      } catch (e: any) {
-        console.warn('[LiveKit] toggleSpeaker error:', e?.message || e);
-      }
+    try {
+      await applyAudioOutput(newVal);
+    } catch (e: any) {
+      console.warn('[LiveKit] toggleSpeaker error:', e?.message || e);
+      setIsSpeakerOn(!newVal);
     }
-  }, [isSpeakerOn]);
+  }, [isSpeakerOn, applyAudioOutput]);
 
   const toggleCamera = useCallback(async () => {
     const e = !isVideoEnabled;
@@ -181,10 +204,12 @@ export function useLiveKit() {
   }, [isVideoEnabled]);
 
   const switchCamera = useCallback(async () => {
+    const pub = roomRef.current?.localParticipant?.getTrackPublication?.(TrackEnum?.Source?.Camera);
+    const videoTrack = pub?.videoTrack;
+    if (!videoTrack?.restartTrack) return;
     const next = !isCameraFront;
     try {
-      const pub = roomRef.current?.localParticipant?.getTrackPublication?.(TrackEnum?.Source?.Camera);
-      pub?.videoTrack?.mediaStreamTrack?._switchCamera?.();
+      await videoTrack.restartTrack({ facingMode: next ? 'user' : 'environment' });
       setIsCameraFront(next);
     } catch (e: any) {
       console.error('[LiveKit] switchCamera error:', e?.message || e);
