@@ -308,6 +308,15 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   ) {
     const { userId, role } = client.data;
     this.logger.log(`[Call] Initiate - caller: ${userId} (${role}) -> astrologer: ${data.astrologerId}, type: ${data.type}`);
+
+    const MIN_BALANCE = 10;
+    const hasBalance = await this.walletService.checkSufficientBalance(userId, MIN_BALANCE);
+    if (!hasBalance) {
+      this.logger.warn(`[Call] Initiate blocked - insufficient balance for ${userId}`);
+      client.emit('call:error', { message: 'Insufficient wallet balance. Please recharge to make a call.' });
+      return;
+    }
+
     const roomName = `call_${userId}_${data.astrologerId}_${Date.now()}`;
     const callerIdentity = userId;
     const calleeIdentity = data.astrologerId;

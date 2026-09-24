@@ -137,6 +137,13 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
     socket.on('call:error', (data: any) => {
       console.log('[Call] call:error received:', data.message);
+      const message = data?.message || 'Call failed. Please try again.';
+      if (Platform.OS === 'web') {
+        window.alert(message);
+      } else {
+        Alert.alert('Call Failed', message);
+      }
+      setIncomingCall(null);
       setCallState('idle');
       setCallData(null);
     });
