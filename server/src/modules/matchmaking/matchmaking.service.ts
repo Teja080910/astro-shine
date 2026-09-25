@@ -49,7 +49,7 @@ export class MatchmakingService {
       .insert(schema.matchmakingRecords)
       .values({
         ...data,
-        matchScore: result.totalScore,
+        matchScore: Math.round(Number(result.totalScore) || 0),
         matchDetails: result as any,
       })
       .returning();

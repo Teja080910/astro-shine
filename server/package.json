@@ -23,12 +23,11 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "seed": "ts-node -r tsconfig-paths/register src/seed.ts",
-    "seed:muhurat": "ts-node -r tsconfig-paths/register src/seed-muhurat.ts",
-    "seed:muhurat:new": "ts-node -r tsconfig-paths/register src/seed-muhurat-new.ts",
     "seed:user": "ts-node -r tsconfig-paths/register src/seed-user.ts",
     "seed:admin": "ts-node -r tsconfig-paths/register src/seed-admin.ts"
   },
   "dependencies": {
+    "@ishubhamx/panchangam-js": "^3.0.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.1",

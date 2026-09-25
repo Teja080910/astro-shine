@@ -588,7 +588,7 @@ export function UserHomeScreen({ navigation }: any) {
               numberOfLines={1}
               adjustsFontSizeToFit
             >
-              {user?.name || "Aarav Sharma"}
+              {user?.name || "Guest User"}
             </Text>
             <TouchableOpacity
               onPress={() => navigation.navigate("Wallet")}

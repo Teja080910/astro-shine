@@ -140,65 +140,6 @@ async function seed() {
   await db.insert(schema.mandirPooja).values(poojaData);
   console.log(`✅ ${poojaData.length} pooja services created`);
 
-  // ── Horoscope ──
-  const zodiacSigns = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
-  const predictions = [
-    'Today brings new opportunities in your career. Stay open to unexpected changes.',
-    'Focus on your relationships today. A heartfelt conversation will bring clarity.',
-    'Financial gains are indicated. Review your investments for long-term growth.',
-    'Your creative energy is at its peak. Channel it into a passion project.',
-    'Take time for self-care today. A short break will recharge your spirits.',
-    'Communication flows smoothly. Perfect day for important discussions.',
-    'Trust your intuition today. It will guide you toward the right decision.',
-    'A pleasant surprise awaits you in the evening. Stay positive.',
-    'Health needs attention. Incorporate some physical activity into your routine.',
-    'Family matters come to the forefront. Your wisdom will resolve conflicts.',
-    'Travel plans may materialize sooner than expected. Be prepared.',
-    'Spiritual growth is highlighted. Meditation will bring inner peace.',
-  ];
-  const colors = ['Red', 'Yellow', 'Green', 'White', 'Orange', 'Blue', 'Pink', 'Black', 'Purple', 'Brown', 'Silver', 'Gold'];
-  const moods = ['Energetic', 'Calm', 'Focused', 'Reflective', 'Joyful', 'Determined', 'Peaceful', 'Curious', 'Ambitious', 'Grateful'];
-
-  const today = new Date();
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(today);
-    date.setDate(date.getDate() + i);
-    const dateStr = date.toISOString().split('T')[0];
-    for (let z = 0; z < zodiacSigns.length; z++) {
-      await db.insert(schema.horoscopeRecords).values({
-        zodiacSign: zodiacSigns[z],
-        date: dateStr,
-        prediction: predictions[z % predictions.length],
-        luckyNumber: Math.floor(Math.random() * 100) + 1,
-        luckyColor: colors[Math.floor(Math.random() * colors.length)],
-        mood: moods[Math.floor(Math.random() * moods.length)],
-      });
-    }
-  }
-  console.log(`✅ Horoscope records created for 7 days`);
-
-  // ── Panchang ──
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(today);
-    date.setDate(date.getDate() + i);
-    const dateStr = date.toISOString().split('T')[0];
-    const tithis = ['Pratipada', 'Dwitiya', 'Tritiya', 'Chaturthi', 'Panchami', 'Shashthi', 'Saptami'];
-    const nakshatras = ['Ashwini', 'Bharani', 'Krittika', 'Rohini', 'Mrigashira', 'Ardra', 'Punarvasu'];
-    await db.insert(schema.panchangRecords).values({
-      date: dateStr,
-      tithi: tithis[i % tithis.length],
-      nakshatra: nakshatras[i % nakshatras.length],
-      yoga: 'Vishkumbha',
-      karana: 'Bava',
-      sunrise: '06:00',
-      sunset: '18:30',
-      moonrise: '19:00',
-      moonset: '05:30',
-      rahuKaal: { start: '07:30', end: '09:00' },
-    });
-  }
-  console.log(`✅ Panchang records created for 7 days`);
-
   // ── Blogs ──
   const blogData = [
     { title: 'Understanding Your Birth Chart', slug: 'understanding-birth-chart', content: 'A birth chart is a snapshot of the sky at the moment of your birth. It reveals your strengths, challenges, and life path. In this comprehensive guide, we explore the 12 houses, planets, and zodiac signs that make up your unique cosmic blueprint.', excerpt: 'Learn how to read and interpret your birth chart for deeper self-awareness.', tags: ['kundli', 'birth-chart', 'astrology-basics'] },
