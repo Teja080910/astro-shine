@@ -3,7 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
+import { SearchInput } from '@/components/SearchInput';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
+import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 import { useSocket } from '@/hooks/useSocket';
 import { useAuthStore } from '@/store/auth';
@@ -18,18 +20,40 @@ function DonationsContent() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState('');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const refresh = useCallback(() => {
     setLoading(true);
     setFetchError('');
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (debouncedSearch) params.set('q', debouncedSearch);
     Promise.all([
       api.get<any>('/donations/stats'),
-      api.get<any[]>('/donations/logs'),
+      api.get<any>(`/donations/logs?${params.toString()}`),
     ])
-      .then(([s, l]) => { setStats(s); setLogs(l); })
+      .then(([s, l]) => {
+        setStats(s);
+        const { data, total, totalPages } = unwrapList<any>(l);
+        setLogs(data);
+        setTotal(total);
+        setTotalPages(totalPages);
+      })
       .catch((e) => setFetchError(e.message || 'Failed to load donation data'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [page, limit, debouncedSearch]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -55,7 +79,7 @@ function DonationsContent() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-extrabold text-text-primary">Donations</h1>
         <div className="flex items-center gap-3">
-          <span className="text-text-secondary">{logs.length} entries</span>
+          <span className="text-text-secondary">{logs.length} of {total} entries</span>
           {stats.pending > 0 && (
             <GradientButton onClick={() => setWithdrawModal(true)}>Withdraw</GradientButton>
           )}
@@ -84,6 +108,9 @@ function DonationsContent() {
           </div>
 
           <h2 className="text-xl font-bold text-text-primary mb-4">Donation Logs</h2>
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <SearchInput value={search} onChange={setSearch} placeholder="Search by type, note, amount..." />
+          </div>
           <Table headers={['Type', 'Amount', 'Note', 'Date']} emptyMessage="No donation logs found">
             {logs.map((l: any) => (
               <tr key={l.id} className="border-b border-divider hover:bg-surface-light/50">
@@ -96,6 +123,14 @@ function DonationsContent() {
               </tr>
             ))}
           </Table>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={(l) => { setLimit(l); setPage(1); }}
+          />
         </>
       )}
 

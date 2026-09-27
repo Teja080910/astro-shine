@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
+import { SearchInput } from '@/components/SearchInput';
+import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 
 export default function MandirPoojaPage() {
@@ -18,16 +20,53 @@ export default function MandirPoojaPage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const query = `page=${page}&limit=${limit}${
+    debouncedSearch ? `&q=${encodeURIComponent(debouncedSearch)}` : ''
+  }`;
+
+  const fetchPoojas = useCallback(async () => {
+    const res = await api.get<any>(`/mandir-pooja/admin?${query}`);
+    const { data, total, totalPages } = unwrapList<any>(res);
+    setPoojas(data);
+    setTotal(total);
+    setTotalPages(totalPages);
+  }, [query]);
+
+  const fetchBookings = useCallback(async () => {
+    const res = await api.get<any>(`/mandir-pooja/bookings/list?${query}`);
+    const { data, total, totalPages } = unwrapList<any>(res);
+    setBookings(data);
+    setTotal(total);
+    setTotalPages(totalPages);
+  }, [query]);
+
+  const reload = useCallback(
+    () => (tab === 'poojas' ? fetchPoojas() : fetchBookings()),
+    [tab, fetchPoojas, fetchBookings],
+  );
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([
-      api.get<any[]>('/mandir-pooja'),
-      api.get<any[]>('/mandir-pooja/bookings/list').catch(() => []),
-    ]).then(([p, b]) => { setPoojas(p); setBookings(b); })
+    setError('');
+    reload()
       .catch((e) => setError(e.message || 'Failed to load'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [reload]);
 
   const openForm = (p: any) => {
     setSelected(p);
@@ -47,20 +86,19 @@ export default function MandirPoojaPage() {
     const payload = { name, description, price };
     try {
       if (selected?.id) {
-        const updated = await api.put(`/mandir-pooja/${selected.id}`, payload);
-        setPoojas(poojas.map(p => p.id === selected.id ? updated : p));
+        await api.put(`/mandir-pooja/${selected.id}`, payload);
       } else {
-        const created = await api.post('/mandir-pooja', payload);
-        setPoojas([...poojas, created]);
+        await api.post('/mandir-pooja', payload);
       }
       closeForm();
+      await fetchPoojas();
     } catch (e: any) { alert(e.message || 'Failed to save'); }
   };
 
   const handleUpdateBookingStatus = async (id: string, status: string) => {
     try {
       await api.put(`/mandir-pooja/bookings/${id}/status`, { status });
-      setBookings(bookings.map(b => b.id === id ? { ...b, status } : b));
+      await fetchBookings();
     } catch (e: any) { alert(e.message || 'Failed to update'); }
   };
 
@@ -68,8 +106,8 @@ export default function MandirPoojaPage() {
     if (!deleteTarget) return;
     try {
       await api.del(`/mandir-pooja/${deleteTarget.id}`);
-      setPoojas(poojas.filter(p => p.id !== deleteTarget.id));
       setDeleteTarget(null);
+      await fetchPoojas();
     } catch (e: any) { alert(e.message || 'Failed to delete'); }
   };
 
@@ -80,12 +118,20 @@ export default function MandirPoojaPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-extrabold text-text-primary">Mandir Pooja</h1>
         <div className="flex gap-2">
-          <button onClick={() => setTab('poojas')} className={`px-4 py-2 rounded-xl text-xs font-bold ${tab === 'poojas' ? 'bg-primary text-white' : 'bg-surface-light text-text-secondary'}`}>Poojas</button>
-          <button onClick={() => setTab('bookings')} className={`px-4 py-2 rounded-xl text-xs font-bold ${tab === 'bookings' ? 'bg-primary text-white' : 'bg-surface-light text-text-secondary'}`}>Bookings</button>
+          <button onClick={() => { setTab('poojas'); setPage(1); }} className={`px-4 py-2 rounded-xl text-xs font-bold ${tab === 'poojas' ? 'bg-primary text-white' : 'bg-surface-light text-text-secondary'}`}>Poojas</button>
+          <button onClick={() => { setTab('bookings'); setPage(1); }} className={`px-4 py-2 rounded-xl text-xs font-bold ${tab === 'bookings' ? 'bg-primary text-white' : 'bg-surface-light text-text-secondary'}`}>Bookings</button>
         </div>
       </div>
 
       {error && <div className="bg-red-900/20 border border-red-800 text-red-400 rounded-lg px-4 py-3 text-sm mb-4">{error}</div>}
+
+      <div className="mb-6">
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder={tab === 'poojas' ? 'Search poojas by name or description...' : 'Search bookings by status...'}
+        />
+      </div>
 
       {tab === 'poojas' ? (
         <>
@@ -104,22 +150,40 @@ export default function MandirPoojaPage() {
               </tr>
             ))}
           </Table>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={(l) => { setLimit(l); setPage(1); }}
+          />
         </>
       ) : (
-        <Table headers={['User', 'Pooja', 'Date', 'Amount', 'Status', '']} emptyMessage="No bookings found">
-          {bookings.map((b: any) => (
-            <tr key={b.id} className="border-b border-divider hover:bg-surface-light/50">
-              <td className="px-4 py-3 text-text-secondary">{b.userName || b.userId?.slice(0, 8) || '-'}</td>
-              <td className="px-4 py-3 text-text-secondary">{b.poojaName || b.poojaId?.slice(0, 8) || '-'}</td>
-              <td className="px-4 py-3 text-text-muted text-sm">{b.bookingDate ? formatDate(b.bookingDate) : '-'}</td>
-              <td className="px-4 py-3 text-text-primary">₹{b.amount}</td>
-              <td className="px-4 py-3">{b.status === 'confirmed' ? <Badge variant="success">Confirmed</Badge> : b.status === 'cancelled' ? <Badge variant="danger">Cancelled</Badge> : <Badge variant="warning">Pending</Badge>}</td>
-              <td className="px-4 py-3 flex gap-2">
-                {b.status === 'pending' && <><button onClick={() => handleUpdateBookingStatus(b.id, 'confirmed')} className="text-success hover:underline text-sm font-medium">Confirm</button><button onClick={() => handleUpdateBookingStatus(b.id, 'cancelled')} className="text-red-400 hover:underline text-sm font-medium">Cancel</button></>}
-              </td>
-            </tr>
-          ))}
-        </Table>
+        <>
+          <Table headers={['User', 'Pooja', 'Date', 'Amount', 'Status', '']} emptyMessage="No bookings found">
+            {bookings.map((b: any) => (
+              <tr key={b.id} className="border-b border-divider hover:bg-surface-light/50">
+                <td className="px-4 py-3 text-text-secondary">{b.userName || b.userId?.slice(0, 8) || '-'}</td>
+                <td className="px-4 py-3 text-text-secondary">{b.poojaName || b.poojaId?.slice(0, 8) || '-'}</td>
+                <td className="px-4 py-3 text-text-muted text-sm">{b.bookingDate ? formatDate(b.bookingDate) : '-'}</td>
+                <td className="px-4 py-3 text-text-primary">₹{b.amount}</td>
+                <td className="px-4 py-3">{b.status === 'confirmed' ? <Badge variant="success">Confirmed</Badge> : b.status === 'cancelled' ? <Badge variant="danger">Cancelled</Badge> : <Badge variant="warning">Pending</Badge>}</td>
+                <td className="px-4 py-3 flex gap-2">
+                  {b.status === 'pending' && <><button onClick={() => handleUpdateBookingStatus(b.id, 'confirmed')} className="text-success hover:underline text-sm font-medium">Confirm</button><button onClick={() => handleUpdateBookingStatus(b.id, 'cancelled')} className="text-red-400 hover:underline text-sm font-medium">Cancel</button></>}
+                </td>
+              </tr>
+            ))}
+          </Table>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={(l) => { setLimit(l); setPage(1); }}
+          />
+        </>
       )}
 
       <CustomModal open={showForm} onClose={closeForm} title={selected?.id ? 'Edit Pooja' : 'Add Pooja'}>

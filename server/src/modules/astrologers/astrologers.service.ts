@@ -1,9 +1,10 @@
 import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
-import { eq, desc, sql, aliasedTable } from 'drizzle-orm';
+import { eq, desc, sql, aliasedTable, or, ilike } from 'drizzle-orm';
 import { RealtimeService } from '../../common/realtime.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { paginated, type Pagination } from '../../common/utils/pagination';
 
 @Injectable()
 export class AstrologersService {
@@ -13,49 +14,77 @@ export class AstrologersService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  async findAll() {
+  async findAll(pagination?: Pagination) {
     const wr = aliasedTable(schema.withdrawalRequests, 'wr');
-    return this.db
-      .select({
-        userId: schema.astrologers.userId,
-        bio: schema.astrologers.bio,
-        experience: schema.astrologers.experience,
-        specialization: schema.astrologers.specialization,
-        languages: schema.astrologers.languages,
-        skills: schema.astrologers.skills,
-        pricePerMin: schema.astrologers.pricePerMin,
-        rating: schema.astrologers.rating,
-        totalReviews: schema.astrologers.totalReviews,
-        chatPricePerMin: schema.astrologers.chatPricePerMin,
-        audioCallPricePerMin: schema.astrologers.audioCallPricePerMin,
-        videoCallPricePerMin: schema.astrologers.videoCallPricePerMin,
-        totalChats: schema.astrologers.totalChats,
-        totalAudioCalls: schema.astrologers.totalAudioCalls,
-        totalVideoCalls: schema.astrologers.totalVideoCalls,
-        totalCalls: schema.astrologers.totalCalls,
-        totalEarnings: schema.astrologers.totalEarnings,
-        totalWithdrawn: sql<string>`COALESCE(SUM(CASE WHEN ${wr.status} = 'approved' THEN ${wr.amount}::decimal ELSE 0 END), 0)`,
-        verificationStatus: schema.astrologers.verificationStatus,
-        verificationDoc: schema.astrologers.verificationDoc,
-        verificationNote: schema.astrologers.verificationNote,
-        onlineStatus: schema.astrologers.onlineStatus,
-        isChatEnabled: schema.astrologers.isChatEnabled,
-        isAudioCallEnabled: schema.astrologers.isAudioCallEnabled,
-        isVideoCallEnabled: schema.astrologers.isVideoCallEnabled,
-        createdAt: schema.astrologers.createdAt,
-        updatedAt: schema.astrologers.updatedAt,
-        name: schema.users.name,
-        email: schema.users.email,
-        phone: schema.users.phone,
-        isActive: schema.users.isActive,
-        gender: schema.users.gender,
-        dateOfBirth: schema.users.dateOfBirth,
-        avatar: schema.users.avatar,
-      })
-      .from(schema.astrologers)
-      .leftJoin(schema.users, eq(schema.astrologers.userId, schema.users.id))
-      .leftJoin(wr, eq(wr.astrologerId, schema.astrologers.userId))
-      .groupBy(schema.astrologers.userId, schema.users.id);
+    const pattern = pagination?.q ? `%${pagination.q}%` : null;
+    const where = pattern
+      ? or(
+          ilike(schema.users.name, pattern),
+          ilike(schema.users.email, pattern),
+          sql`array_to_string(${schema.astrologers.specialization}, ',') ILIKE ${pattern}`,
+        )
+      : undefined;
+
+    const build = () =>
+      this.db
+        .select({
+          userId: schema.astrologers.userId,
+          bio: schema.astrologers.bio,
+          experience: schema.astrologers.experience,
+          specialization: schema.astrologers.specialization,
+          languages: schema.astrologers.languages,
+          skills: schema.astrologers.skills,
+          pricePerMin: schema.astrologers.pricePerMin,
+          rating: schema.astrologers.rating,
+          totalReviews: schema.astrologers.totalReviews,
+          chatPricePerMin: schema.astrologers.chatPricePerMin,
+          audioCallPricePerMin: schema.astrologers.audioCallPricePerMin,
+          videoCallPricePerMin: schema.astrologers.videoCallPricePerMin,
+          totalChats: schema.astrologers.totalChats,
+          totalAudioCalls: schema.astrologers.totalAudioCalls,
+          totalVideoCalls: schema.astrologers.totalVideoCalls,
+          totalCalls: schema.astrologers.totalCalls,
+          totalEarnings: schema.astrologers.totalEarnings,
+          totalWithdrawn: sql<string>`COALESCE(SUM(CASE WHEN ${wr.status} IN ('approved', 'completed') THEN ${wr.amount}::decimal ELSE 0 END), 0)`,
+          verificationStatus: schema.astrologers.verificationStatus,
+          verificationDoc: schema.astrologers.verificationDoc,
+          verificationNote: schema.astrologers.verificationNote,
+          onlineStatus: schema.astrologers.onlineStatus,
+          isChatEnabled: schema.astrologers.isChatEnabled,
+          isAudioCallEnabled: schema.astrologers.isAudioCallEnabled,
+          isVideoCallEnabled: schema.astrologers.isVideoCallEnabled,
+          createdAt: schema.astrologers.createdAt,
+          updatedAt: schema.astrologers.updatedAt,
+          name: schema.users.name,
+          email: schema.users.email,
+          phone: schema.users.phone,
+          isActive: schema.users.isActive,
+          gender: schema.users.gender,
+          dateOfBirth: schema.users.dateOfBirth,
+          avatar: schema.users.avatar,
+        })
+        .from(schema.astrologers)
+        .leftJoin(schema.users, eq(schema.astrologers.userId, schema.users.id))
+        .leftJoin(wr, eq(wr.astrologerId, schema.astrologers.userId))
+        .where(where)
+        .groupBy(schema.astrologers.userId, schema.users.id);
+
+    if (!pagination?.enabled) {
+      return build();
+    }
+
+    const [data, countRows] = await Promise.all([
+      build()
+        .orderBy(desc(schema.astrologers.createdAt))
+        .limit(pagination.limit)
+        .offset(pagination.offset),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(schema.astrologers)
+        .leftJoin(schema.users, eq(schema.astrologers.userId, schema.users.id))
+        .where(where),
+    ]);
+    return paginated(data, Number(countRows[0]?.count || 0), pagination);
   }
 
   async findByUserId(userId: string) {
@@ -78,6 +107,12 @@ export class AstrologersService {
         totalVideoCalls: schema.astrologers.totalVideoCalls,
         totalCalls: schema.astrologers.totalCalls,
         totalEarnings: schema.astrologers.totalEarnings,
+        totalWithdrawn: sql<string>`COALESCE((
+          SELECT SUM(${schema.withdrawalRequests.amount}::decimal)
+          FROM ${schema.withdrawalRequests}
+          WHERE ${schema.withdrawalRequests.astrologerId} = ${schema.astrologers.userId}
+            AND ${schema.withdrawalRequests.status} IN ('approved', 'completed')
+        ), 0)`,
         verificationStatus: schema.astrologers.verificationStatus,
         verificationDoc: schema.astrologers.verificationDoc,
         verificationNote: schema.astrologers.verificationNote,
@@ -112,17 +147,33 @@ export class AstrologersService {
   }
 
   async create(data: typeof schema.astrologers.$inferInsert) {
-    const [result] = await this.db.insert(schema.astrologers).values(data).returning();
+    const [result] = await this.db
+      .insert(schema.astrologers)
+      .values(data)
+      .returning();
     return result;
   }
 
   async update(id: string, data: any) {
     const { name, phone, gender, dateOfBirth, ...astroFields } = data;
-    console.log('DEBUG Astrologer Update payload:', { id, name, phone, gender, dateOfBirth, astroFields });
+    console.log('DEBUG Astrologer Update payload:', {
+      id,
+      name,
+      phone,
+      gender,
+      dateOfBirth,
+      astroFields,
+    });
 
     // Clean up empty strings for numeric fields to avoid PostgreSQL syntax errors
     const cleanedAstroFields: any = { ...astroFields };
-    const numericFields = ['chatPricePerMin', 'audioCallPricePerMin', 'videoCallPricePerMin', 'pricePerMin', 'experience'];
+    const numericFields = [
+      'chatPricePerMin',
+      'audioCallPricePerMin',
+      'videoCallPricePerMin',
+      'pricePerMin',
+      'experience',
+    ];
     for (const field of numericFields) {
       if (cleanedAstroFields[field] === '') {
         cleanedAstroFields[field] = '0';
@@ -141,13 +192,15 @@ export class AstrologersService {
     }
 
     if (Object.keys(userUpdate).length > 0) {
-      await this.db.update(schema.users)
+      await this.db
+        .update(schema.users)
         .set({ ...userUpdate, updatedAt: new Date() })
         .where(eq(schema.users.id, id));
     }
 
     // Update astrologers table
-    const [result] = await this.db.update(schema.astrologers)
+    const [result] = await this.db
+      .update(schema.astrologers)
       .set({ ...cleanedAstroFields, updatedAt: new Date() })
       .where(eq(schema.astrologers.userId, id))
       .returning();
@@ -166,16 +219,26 @@ export class AstrologersService {
   }
 
   async verify(id: string, status: 'approved' | 'rejected', note?: string) {
-    const result = await this.update(id, { verificationStatus: status, verificationNote: note } as any);
+    const result = await this.update(id, {
+      verificationStatus: status,
+      verificationNote: note,
+    } as any);
 
     try {
       await this.notificationsService.create({
         astrologerId: id,
         type: 'transactional',
-        title: status === 'approved' ? 'KYC Verification Approved' : 'KYC Verification Rejected',
-        body: status === 'approved'
-          ? 'Your KYC documents have been approved. You now have full access to the platform.'
-          : (note ? `Your KYC was rejected: ${note}` : 'Your KYC documents were rejected. Please re-upload valid documents.'),
+        title:
+          status === 'approved'
+            ? 'KYC Verification Approved'
+            : 'KYC Verification Rejected',
+        body:
+          status === 'approved'
+            ? 'Your KYC documents have been approved. You now have full access to the platform.'
+            : note
+              ? `Your KYC was rejected: ${note}`
+              : 'Your KYC documents were rejected. Please re-upload valid documents.',
+        data: { screen: 'Documents' },
       });
     } catch {}
 
@@ -183,59 +246,83 @@ export class AstrologersService {
     return result;
   }
 
-  async updateOnlineStatus(id: string, onlineStatus: 'online' | 'offline' | 'busy') {
+  async updateOnlineStatus(
+    id: string,
+    onlineStatus: 'online' | 'offline' | 'busy',
+  ) {
     const result = await this.update(id, { onlineStatus } as any);
-    this.realtime.broadcast('astrologer:status-changed', { astrologerId: id, onlineStatus });
+    this.realtime.broadcast('astrologer:status-changed', {
+      astrologerId: id,
+      onlineStatus,
+    });
     return result;
   }
 
   async delete(id: string) {
-    const [result] = await this.db.update(schema.users)
-      .set({ isActive: false, updatedAt: new Date() }).where(eq(schema.users.id, id)).returning();
+    const [result] = await this.db
+      .update(schema.users)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(schema.users.id, id))
+      .returning();
     return result;
   }
 
-  async submitFeedback(astrologerId: string, userId: string, ratings: number, comments?: string) {
+  async submitFeedback(
+    astrologerId: string,
+    userId: string,
+    ratings: number,
+    comments?: string,
+  ) {
     if (!Number.isInteger(ratings) || ratings < 1 || ratings > 5) {
-      throw new BadRequestException('Ratings must be an integer between 1 and 5');
+      throw new BadRequestException(
+        'Ratings must be an integer between 1 and 5',
+      );
     }
-    const [feedback] = await this.db.insert(schema.feedback).values({
-      astrologerId,
-      userId,
-      ratings: ratings.toFixed(1),
-      comments,
-    }).returning();
+    const [feedback] = await this.db
+      .insert(schema.feedback)
+      .values({
+        astrologerId,
+        userId,
+        ratings: ratings.toFixed(1),
+        comments,
+      })
+      .returning();
 
     // Increment cached totalReviews count on astrologers table
-    await this.db.update(schema.astrologers)
+    await this.db
+      .update(schema.astrologers)
       .set({
-        totalReviews: sql`${schema.astrologers.totalReviews} + 1`
+        totalReviews: sql`${schema.astrologers.totalReviews} + 1`,
       })
       .where(eq(schema.astrologers.userId, astrologerId));
 
     // Mirror feedback to reviews table for Admin Dashboard / reviews module queries
-    await this.db.insert(schema.reviews).values({
-      astrologerId,
-      userId,
-      rating: ratings,
-      comment: comments || '',
-      isVisible: true,
-    }).catch(() => {});
+    await this.db
+      .insert(schema.reviews)
+      .values({
+        astrologerId,
+        userId,
+        rating: ratings,
+        comment: comments || '',
+        isVisible: true,
+      })
+      .catch(() => {});
 
     return feedback;
   }
 
   async getFeedback(astrologerId: string) {
-    return this.db.select({
-      id: schema.feedback.id,
-      astrologerId: schema.feedback.astrologerId,
-      userId: schema.feedback.userId,
-      ratings: schema.feedback.ratings,
-      comments: schema.feedback.comments,
-      createdAt: schema.feedback.createdAt,
-      updatedAt: schema.feedback.updatedAt,
-      userName: schema.users.name,
-    })
+    return this.db
+      .select({
+        id: schema.feedback.id,
+        astrologerId: schema.feedback.astrologerId,
+        userId: schema.feedback.userId,
+        ratings: schema.feedback.ratings,
+        comments: schema.feedback.comments,
+        createdAt: schema.feedback.createdAt,
+        updatedAt: schema.feedback.updatedAt,
+        userName: schema.users.name,
+      })
       .from(schema.feedback)
       .leftJoin(schema.users, eq(schema.feedback.userId, schema.users.id))
       .where(eq(schema.feedback.astrologerId, astrologerId))

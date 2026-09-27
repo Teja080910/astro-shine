@@ -19,6 +19,14 @@ export interface KundliResult {
   planetaryPositions: Record<string, PlanetaryPosition>;
   lagna: PlanetaryPosition;
   houses: number[];
+  planetHouses?: Record<string, number>;
+}
+
+export interface PersonSummary {
+  rashi: string;
+  nakshatra: string;
+  pada: number;
+  lagna: string;
 }
 
 export interface MatchmakingResult {
@@ -29,6 +37,8 @@ export interface MatchmakingResult {
     { score: number; maxScore: number; description: string }
   >;
   compatibility: string;
+  person1?: PersonSummary;
+  person2?: PersonSummary;
 }
 
 export interface PanchangResult {

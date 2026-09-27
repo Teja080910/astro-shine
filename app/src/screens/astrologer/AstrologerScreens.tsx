@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useIsFocused } from "@react-navigation/native";
+import { useIsFocused, useNavigation } from "@react-navigation/native";
 import React, { useCallback, useEffect, useState, useMemo } from "react";
 import {
   Alert,
@@ -34,6 +34,7 @@ import {
   Navbar,
 } from "../../shared";
 import { api } from "../../shared/api-client";
+import { resolveNotificationTarget } from "../../shared/notification-router";
 import type {
   Blog,
   CallLog,
@@ -1646,6 +1647,7 @@ export function AstrologerReviewsScreen() {
 }
 
 export function AstrologerNotificationsScreen() {
+  const navigation = useNavigation<any>();
   const { astrologer } = useAuth();
   const { notificationVersion } = useChat();
   const [notifs, setNotifs] = useState<Notification[]>([]);
@@ -1679,6 +1681,12 @@ export function AstrologerNotificationsScreen() {
     } catch {}
   };
 
+  const handlePress = (n: Notification) => {
+    if (!n.isRead) markRead(n.id);
+    const target = resolveNotificationTarget(n, 'astrologer');
+    if (target) navigation.navigate(target.screen, target.params);
+  };
+
   return (
     <ScreenWrapper>
       <ScrollView
@@ -1703,7 +1711,7 @@ export function AstrologerNotificationsScreen() {
           notifs.map((n) => (
             <TouchableOpacity
               key={n.id}
-              onPress={() => !n.isRead && markRead(n.id)}
+              onPress={() => handlePress(n)}
             >
               <GlassCard
                 style={{
@@ -2149,6 +2157,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
     { icon: "cash-outline", label: "Withdrawals", route: "Withdrawals" },
     { icon: "gift-outline", label: "Gifts Received", route: "Gifts" },
     { icon: "newspaper-outline", label: "Blogs & Articles", route: "Blogs" },
+    { icon: "newspaper", label: "News", route: "News" },
     {
       icon: "notifications-outline",
       label: "Notifications",
@@ -2412,6 +2421,50 @@ export function AstrologerProfileScreen({ navigation }: any) {
               <Ionicons name="ribbon-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
               <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>Specialization</Text>
               <Text style={[typography.body, { fontWeight: "600", color: colors.textPrimary, flexShrink: 1, textAlign: "right" }]}>{profile?.specialization?.join(", ") || "Not set"}</Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.divider }}>
+              <Ionicons name="mail-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
+              <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>Email</Text>
+              <Text style={[typography.body, { fontWeight: "600", color: colors.textPrimary, flexShrink: 1, textAlign: "right" }]}>{(profile as any)?.email || "Not set"}</Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.divider }}>
+              <Ionicons name="briefcase-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
+              <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>Experience</Text>
+              <Text style={[typography.body, { fontWeight: "600", color: colors.textPrimary }]}>{profile?.experience ? `${profile.experience} years` : "Not set"}</Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.divider }}>
+              <Ionicons name="language-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
+              <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>Languages</Text>
+              <Text style={[typography.body, { fontWeight: "600", color: colors.textPrimary, flexShrink: 1, textAlign: "right" }]}>{profile?.languages?.length ? profile.languages.join(", ") : "Not set"}</Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.divider }}>
+              <Ionicons name="sparkles-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
+              <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>Skills</Text>
+              <Text style={[typography.body, { fontWeight: "600", color: colors.textPrimary, flexShrink: 1, textAlign: "right" }]}>{profile?.skills?.length ? profile.skills.join(", ") : "Not set"}</Text>
+            </View>
+            {!!(profile as any)?.bio && (
+              <View style={{ paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.divider }}>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <Ionicons name="document-text-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
+                  <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>Bio</Text>
+                </View>
+                <Text style={[typography.body, { marginTop: 6, color: colors.textPrimary }]}>{(profile as any).bio}</Text>
+              </View>
+            )}
+            <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.divider }}>
+              <Ionicons name="chatbubble-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
+              <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>Chat Price</Text>
+              <Text style={[typography.body, { fontWeight: "600", color: colors.textPrimary }]}>{profile?.chatPricePerMin ? `₹${profile.chatPricePerMin}/min` : "Not set"}</Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.divider }}>
+              <Ionicons name="call-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
+              <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>Audio Call Price</Text>
+              <Text style={[typography.body, { fontWeight: "600", color: colors.textPrimary }]}>{profile?.audioCallPricePerMin ? `₹${profile.audioCallPricePerMin}/min` : "Not set"}</Text>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.divider }}>
+              <Ionicons name="videocam-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
+              <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>Video Call Price</Text>
+              <Text style={[typography.body, { fontWeight: "600", color: colors.textPrimary }]}>{profile?.videoCallPricePerMin ? `₹${profile.videoCallPricePerMin}/min` : "Not set"}</Text>
             </View>
           </View>
 

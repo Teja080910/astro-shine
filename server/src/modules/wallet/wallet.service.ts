@@ -3,6 +3,7 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
 import { eq, and, sql } from 'drizzle-orm';
 import { RealtimeService } from '../../common/realtime.service';
+import { paginated, type Pagination } from '../../common/utils/pagination';
 
 @Injectable()
 export class WalletService {
@@ -27,11 +28,25 @@ export class WalletService {
     }
   }
 
-  async findAll() {
-    return this.db
-      .select()
-      .from(schema.wallets)
-      .orderBy(sql`${schema.wallets.createdAt} DESC`);
+  async findAll(pagination?: Pagination) {
+    const order = sql`${schema.wallets.createdAt} DESC`;
+    if (!pagination?.enabled) {
+      return this.db
+        .select()
+        .from(schema.wallets)
+        .orderBy(order);
+    }
+
+    const [data, countRows] = await Promise.all([
+      this.db
+        .select()
+        .from(schema.wallets)
+        .orderBy(order)
+        .limit(pagination.limit)
+        .offset(pagination.offset),
+      this.db.select({ count: sql<number>`count(*)::int` }).from(schema.wallets),
+    ]);
+    return paginated(data, Number(countRows[0]?.count || 0), pagination);
   }
 
   async getWalletByUserId(userId: string) {
@@ -61,6 +76,28 @@ export class WalletService {
     return wallet;
   }
 
+  async getOrCreateAdminWalletFor(adminId: string): Promise<any> {
+    const byAdmin = await this.getWalletByAdminId(adminId);
+    if (byAdmin) return byAdmin;
+
+    const byUser = await this.getWalletByUserId(adminId);
+    if (byUser) {
+      if (byUser.adminId) return byUser;
+      const [updated] = await this.db
+        .update(schema.wallets)
+        .set({ adminId, updatedAt: new Date() })
+        .where(eq(schema.wallets.id, byUser.id))
+        .returning();
+      return updated;
+    }
+
+    const [created] = await this.db
+      .insert(schema.wallets)
+      .values({ userId: adminId, adminId })
+      .returning();
+    return created;
+  }
+
   async getOrCreateAdminWallet(): Promise<{ id: string; balance: string }> {
     const [admin] = await this.db
       .select({ id: schema.admins.userId })
@@ -69,22 +106,16 @@ export class WalletService {
       .where(eq(schema.users.isActive, true))
       .limit(1);
     if (!admin) throw new NotFoundException('No active admin found');
-    let wallet = await this.getWalletByAdminId(admin.id);
-    if (!wallet) {
-      const [created] = await this.db.insert(schema.wallets).values({
-        adminId: admin.id,
-      }).returning();
-      wallet = created;
-    }
-    return wallet;
+    return this.getOrCreateAdminWalletFor(admin.id);
   }
 
-  async createWallet(data: { userId?: string; astrologerId?: string }) {
+  async createWallet(data: { userId?: string; astrologerId?: string; adminId?: string }) {
     const [wallet] = await this.db
       .insert(schema.wallets)
       .values({
         userId: data.userId,
         astrologerId: data.astrologerId,
+        adminId: data.adminId,
         balance: '0',
         totalAdded: '0',
         totalDeducted: '0',

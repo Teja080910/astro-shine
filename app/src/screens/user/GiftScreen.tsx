@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Image, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
-import { Avatar, Chip, ConfirmDialog, CustomModal, EmptyState, GlassCard, GradientButton, ScreenWrapper, colors, radii, typography } from '../../shared';
+import { Avatar, Chip, ConfirmDialog, CustomModal, EmptyState, GlassCard, GradientButton, ScreenWrapper, colors, radii, typography, resolveMediaUrl } from '../../shared';
 import { api } from '../../shared/api-client';
 import type { Astrologer, Gift, GiftTransaction } from '../../shared/types';
 
@@ -74,7 +74,6 @@ export function GiftScreen({ route, navigation }: any) {
     try {
       await api.gifts.send({
         giftId: selectedGift.id,
-        senderId: user?.id,
         receiverId: selectedAstrologer.userId,
       });
       setShowSendModal(false);
@@ -94,9 +93,8 @@ export function GiftScreen({ route, navigation }: any) {
     }
     setSending(true);
     try {
-      const result = await api.gifts.send({
+      await api.gifts.send({
         giftId: selectedGift.id,
-        senderId: user?.id,
         receiverId: selectedAstrologer.userId,
       });
       setSelectedGift(null);
@@ -173,7 +171,7 @@ export function GiftScreen({ route, navigation }: any) {
                       overflow: 'hidden',
                     }]}>
                       {item.image ? (
-                        <Image source={{ uri: item.image }} style={{ width: 48, height: 48 }} resizeMode="cover" />
+                        <Image source={{ uri: resolveMediaUrl(item.image) }} style={{ width: 48, height: 48 }} resizeMode="cover" />
                       ) : (
                         <Ionicons name="gift" size={24} color={colors.accentGold} />
                       )}
@@ -259,7 +257,7 @@ export function GiftScreen({ route, navigation }: any) {
             <GlassCard style={{ alignItems: 'center', padding: 20, marginBottom: 12 }}>
               <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.accentGold + '20', alignItems: 'center', justifyContent: 'center', marginBottom: 10, overflow: 'hidden' }}>
                 {item.image ? (
-                  <Image source={{ uri: item.image }} style={{ width: 64, height: 64 }} resizeMode="cover" />
+                  <Image source={{ uri: resolveMediaUrl(item.image) }} style={{ width: 64, height: 64 }} resizeMode="cover" />
                 ) : (
                   <Ionicons name="gift" size={32} color={colors.accentGold} />
                 )}

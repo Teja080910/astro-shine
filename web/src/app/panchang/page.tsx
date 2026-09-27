@@ -1,242 +1,113 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { formatDate } from '@/lib/utils';
+import { useCallback, useEffect, useState } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
-import { Table, Badge, CustomModal, GradientButton, DatePicker, TimePicker } from '@/components/UIComponents';
+import { GradientButton, DatePicker } from '@/components/UIComponents';
 import { api } from '@/lib/api';
-import type { PanchangRecord } from '@astro-shine/shared-types';
+
+function to12h(value?: string | null): string {
+  if (!value) return '-';
+  const parts = String(value).split(':');
+  const hour = parseInt(parts[0], 10);
+  if (isNaN(hour)) return String(value);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const display = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  return `${display}:${parts[1] || '00'} ${ampm}`;
+}
+
+function Row({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div className="flex items-center justify-between py-2 border-b border-divider last:border-0">
+      <span className="text-text-secondary text-sm">{label}</span>
+      <span className="text-text-primary text-sm font-semibold">{value || '-'}</span>
+    </div>
+  );
+}
 
 export default function PanchangPage() {
-  const [data, setData] = useState<PanchangRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<PanchangRecord | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<PanchangRecord | null>(null);
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [record, setRecord] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  // Form states
-  const [date, setDate] = useState('');
-  const [tithi, setTithi] = useState('');
-  const [nakshatra, setNakshatra] = useState('');
-  const [yoga, setYoga] = useState('');
-  const [karana, setKarana] = useState('');
-  const [sunrise, setSunrise] = useState('');
-  const [sunset, setSunset] = useState('');
-  const [moonrise, setMoonrise] = useState('');
-  const [moonset, setMoonset] = useState('');
-  const [rahuStart, setRahuStart] = useState('');
-  const [rahuEnd, setRahuEnd] = useState('');
+  const fetchPanchang = useCallback(async () => {
+    if (!date) return;
+    setLoading(true);
+    setError('');
+    try {
+      const data = await api.get<any>(`/panchang?date=${date}`);
+      setRecord(data);
+    } catch (e: any) {
+      setRecord(null);
+      setError(e.message || 'Failed to fetch panchang');
+    } finally {
+      setLoading(false);
+    }
+  }, [date]);
 
   useEffect(() => {
-    fetchPanchangs();
-  }, []);
+    fetchPanchang();
+  }, [fetchPanchang]);
 
-  const fetchPanchangs = () => {
-    setLoading(true);
-    api.get<PanchangRecord[]>('/panchang')
-      .then(setData)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  };
-
-  const openForm = (p: PanchangRecord) => {
-    setSelected(p);
-    const formattedDate = p.date ? new Date(p.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
-    setDate(formattedDate);
-    setTithi(p.tithi || '');
-    setNakshatra(p.nakshatra || '');
-    setYoga(p.yoga || '');
-    setKarana(p.karana || '');
-    setSunrise(p.sunrise || '');
-    setSunset(p.sunset || '');
-    setMoonrise(p.moonrise || '');
-    setMoonset(p.moonset || '');
-    setRahuStart(p.rahuKaal?.start || '');
-    setRahuEnd(p.rahuKaal?.end || '');
-  };
-
-  const handleSave = async () => {
-    if (!date) { alert('Date is required'); return; }
-    const payload = {
-      date,
-      tithi: tithi || null,
-      nakshatra: nakshatra || null,
-      yoga: yoga || null,
-      karana: karana || null,
-      sunrise: sunrise || null,
-      sunset: sunset || null,
-      moonrise: moonrise || null,
-      moonset: moonset || null,
-      rahuKaal: (rahuStart || rahuEnd) ? { start: rahuStart, end: rahuEnd } : null,
-      data: selected?.data || {},
-    };
-
-    try {
-      if (selected?.id) {
-        const updated = await api.put<PanchangRecord>(`/panchang/${selected.id}`, payload);
-        setData(data.map(p => p.id === selected.id ? updated : p));
-      } else {
-        const created = await api.post<PanchangRecord>('/panchang', payload);
-        setData([...data, created]);
-      }
-      setSelected(null);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    try {
-      await api.del(`/panchang/${deleteTarget.id}`);
-      setData(data.filter(p => p.id !== deleteTarget.id));
-      setDeleteTarget(null);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const abhijit = record?.data?.abhijitMuhurta;
 
   return (
     <AdminLayout>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-2">
         <h1 className="text-3xl font-extrabold text-text-primary">Panchang</h1>
-        <button onClick={() => openForm({} as PanchangRecord)} className="gradient-btn">Add Panchang</button>
+        <GradientButton onClick={fetchPanchang}>Refresh</GradientButton>
+      </div>
+      <p className="text-text-muted text-sm mb-6">
+        Panchang is calculated automatically from the configured astrology API for the selected
+        date and cached. No manual entry is required.
+      </p>
+
+      <div className="glass-card-solid p-6 mb-6">
+        <div className="max-w-[240px]">
+          <label className="text-text-secondary text-sm block mb-1">Date</label>
+          <DatePicker value={date} onChange={setDate} />
+        </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-64 text-text-secondary">Loading Panchang records...</div>
-      ) : (
-        <Table headers={['Date', 'Tithi', 'Nakshatra', 'Yoga', 'Karana', 'Sunrise', 'Sunset', '']} emptyMessage="No Panchang records found">
-          {data.map(p => (
-            <tr key={p.id} className="border-b border-divider hover:bg-surface-light/50">
-              <td className="px-4 py-3 text-text-primary font-bold">{formatDate(p.date)}</td>
-              <td className="px-4 py-3 text-text-secondary">{p.tithi || '-'}</td>
-              <td className="px-4 py-3 text-text-secondary">{p.nakshatra || '-'}</td>
-              <td className="px-4 py-3 text-text-secondary">{p.yoga || '-'}</td>
-              <td className="px-4 py-3 text-text-secondary">{p.karana || '-'}</td>
-              <td className="px-4 py-3 text-text-secondary text-sm">{p.sunrise || '-'}</td>
-              <td className="px-4 py-3 text-text-secondary text-sm">{p.sunset || '-'}</td>
-              <td className="px-4 py-3 flex gap-2">
-                <button
-                  onClick={() => openForm(p)}
-                  className="text-primary-light hover:underline text-sm font-medium"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => setDeleteTarget(p)}
-                  className="text-red-400 hover:underline text-sm font-medium"
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </Table>
-      )}
+        <div className="flex items-center justify-center h-48 text-text-secondary">Fetching from API...</div>
+      ) : error ? (
+        <div className="bg-red-900/20 border border-red-800 text-red-400 rounded-lg px-4 py-3 text-sm">{error}</div>
+      ) : record ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="glass-card-solid p-6">
+            <h2 className="text-lg font-bold text-text-primary mb-3">Panchang Elements</h2>
+            <Row label="Tithi" value={record.tithi} />
+            <Row label="Nakshatra" value={record.nakshatra} />
+            <Row label="Yoga" value={record.yoga} />
+            <Row label="Karana" value={record.karana} />
+          </div>
 
-      {/* Add/Edit Panchang Modal */}
-      <CustomModal open={!!selected} onClose={() => setSelected(null)} title={selected?.id ? 'Edit Panchang' : 'Add Panchang'}>
-        <div className="space-y-4 text-text-secondary text-sm">
-          <div>
-            <label className="block text-text-primary font-medium mb-1">Date</label>
-            <DatePicker
-              value={date}
-              onChange={setDate}
+          <div className="glass-card-solid p-6">
+            <h2 className="text-lg font-bold text-text-primary mb-3">Sun & Moon</h2>
+            <Row label="Sunrise" value={to12h(record.sunrise)} />
+            <Row label="Sunset" value={to12h(record.sunset)} />
+            <Row label="Moonrise" value={to12h(record.moonrise)} />
+            <Row label="Moonset" value={to12h(record.moonset)} />
+          </div>
+
+          <div className="glass-card-solid p-6 md:col-span-2">
+            <h2 className="text-lg font-bold text-text-primary mb-3">Auspicious / Inauspicious Timings</h2>
+            <Row
+              label="Rahu Kaal"
+              value={record.rahuKaal ? `${to12h(record.rahuKaal.start)} - ${to12h(record.rahuKaal.end)}` : '-'}
+            />
+            <Row
+              label="Abhijit Muhurat"
+              value={abhijit ? `${to12h(abhijit.start)} - ${to12h(abhijit.end)}` : '-'}
             />
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-text-primary font-medium mb-1">Tithi</label>
-              <input
-                type="text"
-                value={tithi}
-                onChange={(e) => setTithi(e.target.value)}
-                className="input-field text-sm"
-                placeholder="e.g. Pratipada"
-              />
-            </div>
-            <div>
-              <label className="block text-text-primary font-medium mb-1">Nakshatra</label>
-              <input
-                type="text"
-                value={nakshatra}
-                onChange={(e) => setNakshatra(e.target.value)}
-                className="input-field text-sm"
-                placeholder="e.g. Ashwini"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-text-primary font-medium mb-1">Yoga</label>
-              <input
-                type="text"
-                value={yoga}
-                onChange={(e) => setYoga(e.target.value)}
-                className="input-field text-sm"
-                placeholder="e.g. Vishkumbha"
-              />
-            </div>
-            <div>
-              <label className="block text-text-primary font-medium mb-1">Karana</label>
-              <input
-                type="text"
-                value={karana}
-                onChange={(e) => setKarana(e.target.value)}
-                className="input-field text-sm"
-                placeholder="e.g. Bava"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-4 gap-2">
-            <div>
-              <label className="block text-text-primary font-medium text-[11px] mb-1">Sunrise</label>
-              <TimePicker value={sunrise} onChange={setSunrise} />
-            </div>
-            <div>
-              <label className="block text-text-primary font-medium text-[11px] mb-1">Sunset</label>
-              <TimePicker value={sunset} onChange={setSunset} />
-            </div>
-            <div>
-              <label className="block text-text-primary font-medium text-[11px] mb-1">Moonrise</label>
-              <TimePicker value={moonrise} onChange={setMoonrise} />
-            </div>
-            <div>
-              <label className="block text-text-primary font-medium text-[11px] mb-1">Moonset</label>
-              <TimePicker value={moonset} onChange={setMoonset} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-text-primary font-medium mb-1">Rahu Kaal Start</label>
-              <TimePicker value={rahuStart} onChange={setRahuStart} />
-            </div>
-            <div>
-              <label className="block text-text-primary font-medium mb-1">Rahu Kaal End</label>
-              <TimePicker value={rahuEnd} onChange={setRahuEnd} />
-            </div>
-          </div>
-
-          <div className="flex gap-3 pt-3 border-t border-divider">
-            <GradientButton onClick={handleSave}>Save</GradientButton>
-            <GradientButton onClick={() => setSelected(null)}>Cancel</GradientButton>
-          </div>
         </div>
-      </CustomModal>
-
-      <CustomModal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete Panchang">
-        <div className="space-y-4">
-          <p className="text-text-secondary text-sm">Are you sure you want to delete the panchang record for <strong className="text-text-primary">{deleteTarget?.date ? formatDate(deleteTarget.date) : 'this date'}</strong>? This action cannot be undone.</p>
-          <div className="flex gap-2">
-            <button onClick={() => setDeleteTarget(null)} className="flex-1 px-4 py-2 rounded-lg border border-divider text-text-secondary text-sm font-semibold">Cancel</button>
-            <button onClick={handleDelete} className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-semibold">Delete</button>
-          </div>
+      ) : (
+        <div className="glass-card-solid p-8 text-center text-text-secondary text-sm">
+          No panchang data available.
         </div>
-      </CustomModal>
+      )}
     </AdminLayout>
   );
 }

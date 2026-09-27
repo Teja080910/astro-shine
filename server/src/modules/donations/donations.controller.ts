@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Query, UseGuards, Req, ForbiddenException 
 import { DonationsService } from './donations.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { parsePagination } from '../../common/utils/pagination';
 
 @Controller('donations')
 @UseGuards(AuthGuard)
@@ -9,9 +10,9 @@ export class DonationsController {
   constructor(private readonly service: DonationsService) {}
 
   @Get()
-  async findAll(@Query('userId') userId?: string) {
+  async findAll(@Query() query?: any, @Query('userId') userId?: string) {
     if (userId) return this.service.findByUserId(userId);
-    return this.service.findAll();
+    return this.service.findAll(parsePagination(query));
   }
 
   @Post()
@@ -26,9 +27,9 @@ export class DonationsController {
   }
 
   @Get('logs')
-  async getLogs(@Req() req: any) {
+  async getLogs(@Req() req: any, @Query() query?: any) {
     if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can view donation logs');
-    return this.service.getLogs();
+    return this.service.getLogs(parsePagination(query));
   }
 
   @Post('received')

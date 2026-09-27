@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
+import { SearchInput } from '@/components/SearchInput';
+import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 import { useSocket } from '@/hooks/useSocket';
@@ -26,6 +28,12 @@ export default function SupportPage() {
   const [sending, setSending] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
   const [userMap, setUserMap] = useState<Record<string, string>>({});
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     api.get<any[]>('/users').catch(() => []).then((users) => {
@@ -35,13 +43,24 @@ export default function SupportPage() {
     });
   }, []);
 
+  useEffect(() => {
+    const t = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
   const loadTickets = useCallback(async (status?: string) => {
     try {
-      const data = await api.get<any[]>(`/support/admin/tickets${status ? `?status=${status}` : ''}`);
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (status) params.set('status', status);
+      if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim());
+      const res = await api.get<any>(`/support/admin/tickets?${params.toString()}`);
+      const { data, total, totalPages } = unwrapList<any>(res);
       setTickets(data);
+      setTotal(total);
+      setTotalPages(totalPages);
     } catch (e: any) { setError(e.message || 'Failed to load tickets'); }
     finally { setLoading(false); }
-  }, []);
+  }, [page, limit, debouncedSearch]);
 
   useEffect(() => { loadTickets(statusFilter); }, [statusFilter, loadTickets]);
 
@@ -101,12 +120,13 @@ export default function SupportPage() {
     <AdminLayout>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-extrabold text-text-primary">Support Tickets</h1>
-        <span className="text-text-secondary">{tickets.length} total</span>
+        <span className="text-text-secondary">{total} total</span>
       </div>
 
       <div className="flex gap-2 mb-4">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by subject, status, or priority..." />
         {filters.map(f => (
-          <button key={f.value} onClick={() => setStatusFilter(f.value)}
+          <button key={f.value} onClick={() => { setStatusFilter(f.value); setPage(1); }}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${statusFilter === f.value ? 'bg-accent-gold text-white' : 'bg-surface-light text-text-secondary hover:bg-surface-light/80'}`}>
             {f.label}
           </button>
@@ -129,6 +149,10 @@ export default function SupportPage() {
             </tr>
           ))}
         </Table>
+      )}
+
+      {!loading && !error && total > 0 && (
+        <Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPageChange={setPage} onLimitChange={(l) => { setLimit(l); setPage(1); }} />
       )}
 
       <CustomModal open={!!selected} onClose={() => setSelected(null)} title={selected?.subject}>

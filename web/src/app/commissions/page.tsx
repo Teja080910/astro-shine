@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
+import { SearchInput } from '@/components/SearchInput';
 import { Table, Badge, CustomModal, GradientButton } from '@/components/UIComponents';
+import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 import type { Commission } from '@astro-shine/shared-types';
 
@@ -20,13 +22,38 @@ export default function CommissionsPage() {
   const [maxCap, setMaxCap] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [formError, setFormError] = useState('');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    api.get<Commission[]>('/commissions')
-      .then(setData)
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const refresh = useCallback(() => {
+    setLoading(true);
+    setError('');
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (debouncedSearch) params.set('q', debouncedSearch);
+    return api.get<any>(`/commissions?${params.toString()}`)
+      .then((res) => {
+        const { data, total, totalPages } = unwrapList<Commission>(res);
+        setData(data);
+        setTotal(total);
+        setTotalPages(totalPages);
+      })
       .catch((e) => setError(e.message || 'Failed to load commissions'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [page, limit, debouncedSearch]);
+
+  useEffect(() => { refresh(); }, [refresh]);
 
   const openEdit = (c: Commission) => {
     setSelected(c);
@@ -58,13 +85,12 @@ export default function CommissionsPage() {
 
     try {
       if (selected?.id) {
-        const updated = await api.put<Commission>(`/commissions/${selected.id}`, payload);
-        setData(data.map(c => c.id === selected.id ? updated : c));
+        await api.put<Commission>(`/commissions/${selected.id}`, payload);
       } else {
-        const created = await api.post<Commission>('/commissions', payload);
-        setData([...data, created]);
+        await api.post<Commission>('/commissions', payload);
       }
       setSelected(null);
+      refresh();
     } catch (e: any) {
       setFormError(e.message || 'Failed to save commission');
     }
@@ -75,6 +101,9 @@ export default function CommissionsPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-extrabold text-text-primary">Commissions</h1>
         <button onClick={() => openEdit({} as Commission)} className="gradient-btn">Add Commission</button>
+      </div>
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by astrologer, type, status..." />
       </div>
       <Table headers={['Astrologer', 'Type', 'Value', 'Min Amount', 'Max Cap', 'Status', '']} emptyMessage="No commissions found">
         {loading ? (
@@ -95,6 +124,14 @@ export default function CommissionsPage() {
           ))
         )}
       </Table>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        limit={limit}
+        onPageChange={setPage}
+        onLimitChange={(l) => { setLimit(l); setPage(1); }}
+      />
 
       <CustomModal open={!!selected} onClose={() => setSelected(null)} title={selected?.id ? 'Edit Commission' : 'Add Commission'}>
         <div className="space-y-4 text-text-secondary text-sm">
@@ -171,4 +208,3 @@ export default function CommissionsPage() {
     </AdminLayout>
   );
 }
-

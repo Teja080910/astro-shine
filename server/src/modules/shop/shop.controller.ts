@@ -1,15 +1,17 @@
 import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Req, ForbiddenException, HttpCode, HttpStatus } from '@nestjs/common';
 import { ShopService } from './shop.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { parsePagination } from '../../common/utils/pagination';
 
 @Controller('shop')
 export class ShopController {
   constructor(private readonly service: ShopService) {}
 
   @Get()
-  async findAll(@Query('category') category?: string) {
-    if (category) return this.service.findByCategory(category);
-    return this.service.findAll();
+  async findAll(@Query('category') category?: string, @Query() query?: any) {
+    const p = parsePagination(query);
+    if (category) return this.service.findByCategory(category, p);
+    return this.service.findAll(p);
   }
 
   @Get(':id')

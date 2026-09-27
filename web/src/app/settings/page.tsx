@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
+import { SearchInput, matchesSearch } from '@/components/SearchInput';
 import { api } from '@/lib/api';
 
 export default function SettingsPage() {
@@ -13,6 +14,7 @@ export default function SettingsPage() {
   const [key, setKey] = useState('');
   const [value, setValue] = useState('');
   const [description, setDescription] = useState('');
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     api.get<any[]>('/settings')
@@ -20,6 +22,8 @@ export default function SettingsPage() {
       .catch((e) => setError(e.message || 'Failed to load settings'))
       .finally(() => setLoading(false));
   }, []);
+
+  const filtered = data.filter((s: any) => matchesSearch(search, s.key, s.description, typeof s.value === 'object' ? JSON.stringify(s.value) : String(s.value)));
 
   const openForm = (s: any) => {
     setSelected(s);
@@ -50,13 +54,18 @@ export default function SettingsPage() {
         <h1 className="text-3xl font-extrabold text-text-primary">App Settings</h1>
         <button onClick={() => openForm(null)} className="gradient-btn">Add Setting</button>
       </div>
+
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search settings by key, value, or description..." />
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center h-64 text-text-secondary">Loading settings...</div>
       ) : error ? (
         <div className="bg-red-900/20 border border-red-800 text-red-400 rounded-lg px-4 py-3 text-sm">{error}</div>
       ) : (
         <Table headers={['Key', 'Value', 'Description', '']} emptyMessage="No settings found">
-          {data.map((s: any) => (
+          {filtered.map((s: any) => (
             <tr key={s.id} className="border-b border-divider hover:bg-surface-light/50">
               <td className="px-4 py-3 text-text-primary font-mono font-bold text-sm">{s.key}</td>
               <td className="px-4 py-3 text-text-secondary text-sm max-w-xs truncate font-mono">{typeof s.value === 'object' ? JSON.stringify(s.value) : String(s.value)}</td>

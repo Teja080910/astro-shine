@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Param, Body, Query, UseGuards, Req } from '
 import { CommissionService } from './commission.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { parsePagination } from '../../common/utils/pagination';
 
 @Controller('commissions')
 @UseGuards(AuthGuard)
@@ -9,7 +10,7 @@ export class CommissionController {
   constructor(private readonly service: CommissionService) {}
 
   @Get()
-  async findAll() { return this.service.findAll(); }
+  async findAll(@Query() query?: any) { return this.service.findAll(parsePagination(query)); }
 
   @Get('logs')
   async getLogs(

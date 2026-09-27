@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
+import { SearchInput } from '@/components/SearchInput';
 import { Table, Badge, CustomModal, GradientButton } from '@/components/UIComponents';
+import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 import type { Order, OrderItem } from '@astro-shine/shared-types';
 
@@ -14,13 +16,37 @@ export default function OrdersPage() {
   const [items, setItems] = useState<OrderItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
   const [statusSelect, setStatusSelect] = useState('');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    api.get<Order[]>('/orders')
-      .then(setOrders)
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const fetchOrders = useCallback(() => {
+    setLoading(true);
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (debouncedSearch) params.set('q', debouncedSearch);
+    return api.get<any>(`/orders?${params.toString()}`)
+      .then((res) => {
+        const { data, total, totalPages } = unwrapList<Order>(res);
+        setOrders(data);
+        setTotal(total);
+        setTotalPages(totalPages);
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+  }, [page, limit, debouncedSearch]);
+
+  useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
   const handleOpenDetails = async (order: Order) => {
     setSelected(order);
@@ -40,9 +66,10 @@ export default function OrdersPage() {
   const handleUpdateStatus = async () => {
     if (!selected) return;
     try {
-      const updated = await api.put<Order>(`/orders/${selected.id}/status`, { status: statusSelect });
+      await api.put<Order>(`/orders/${selected.id}/status`, { status: statusSelect });
       setOrders(orders.map(o => o.id === selected.id ? { ...o, status: statusSelect } : o));
       setSelected({ ...selected, status: statusSelect });
+      fetchOrders();
     } catch (err) {
       console.error(err);
     }
@@ -67,12 +94,16 @@ export default function OrdersPage() {
     <AdminLayout>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-extrabold text-text-primary">Orders</h1>
-        <span className="text-text-secondary">{orders.length} total</span>
+        <span className="text-text-secondary">{orders.length} of {total} total</span>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center h-64 text-text-secondary">Loading orders...</div>
       ) : (
+        <>
+        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+          <SearchInput value={search} onChange={setSearch} placeholder="Search by order ID or status..." />
+        </div>
         <Table headers={['Order ID', 'User', 'Total Amount', 'Status', 'Date', '']} emptyMessage="No orders found">
           {orders.map(o => (
             <tr key={o.id} className="border-b border-divider hover:bg-surface-light/50">
@@ -92,6 +123,15 @@ export default function OrdersPage() {
             </tr>
           ))}
         </Table>
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          limit={limit}
+          onPageChange={setPage}
+          onLimitChange={(l) => { setLimit(l); setPage(1); }}
+        />
+        </>
       )}
 
       {/* Order Details Modal */}

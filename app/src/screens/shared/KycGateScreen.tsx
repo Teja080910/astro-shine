@@ -67,7 +67,7 @@ export function KycGateScreen() {
       setUploading(true);
       const uploaded = await api.uploadFile(
         { uri: file.uri, name: file.name, mimeType: file.mimeType },
-        'supabase',
+        'minio',
       );
       const newDocs = [...docs, uploaded.url];
       pendingUploadRef.current = true;

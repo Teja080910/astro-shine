@@ -6,6 +6,7 @@ import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
 import type { Blog, MandirPooja, Notification, PoojaBooking, SupportTicket, TicketReply, NewsItem, Video, PanchangRecord, CommissionLog, HoroscopeRecord } from '../../shared/types';
 import { useAuth } from '../../context/AuthContext';
+import { resolveNotificationTarget } from '../../shared/notification-router';
 import { useChat } from '../../context/ChatContext';
 import * as DocumentPicker from 'expo-document-picker';
 import { Video as ExpoVideo, ResizeMode } from 'expo-av';
@@ -316,10 +317,96 @@ export function BlogsScreen({ navigation }: any) {
   );
 }
 
+function NewsCard({ item, onPress }: { item: NewsItem; onPress: () => void }) {
+  return (
+    <TouchableOpacity onPress={onPress} style={{ marginBottom: 12 }}>
+      <GlassCard>
+        {!!item.image && (
+          <Image source={{ uri: item.image }} style={{ width: '100%', height: 160, borderRadius: 12, marginBottom: 10 }} resizeMode="cover" />
+        )}
+        <Text style={typography.cardTitle}>{item.title}</Text>
+        <Text style={[typography.body, { marginTop: 4 }]} numberOfLines={3}>{item.content}</Text>
+        <Text style={[typography.caption, { marginTop: 6 }]}>{new Date(item.createdAt).toLocaleDateString()}</Text>
+      </GlassCard>
+    </TouchableOpacity>
+  );
+}
+
+export function NewsScreen({ navigation }: any) {
+  const isFocused = useIsFocused();
+  const { newsVersion } = useChat();
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = useCallback(async () => {
+    try { setNews(await api.news.list()); } catch {}
+  }, []);
+
+  useEffect(() => {
+    if (isFocused) load();
+  }, [isFocused, newsVersion, load]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  };
+
+  return (
+    <ScreenWrapper noPadding>
+      <ScrollView
+        contentContainerStyle={{ padding: 16 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        showsVerticalScrollIndicator={false}
+      >
+        {news.length === 0 ? (
+          <EmptyState icon={<Ionicons name="newspaper-outline" size={48} color={colors.textMuted} />} title="No news yet" subtitle="Check back soon for updates" />
+        ) : (
+          news.map((n) => (
+            <NewsCard key={n.id} item={n} onPress={() => navigation.navigate('NewsDetail', { newsId: n.id })} />
+          ))
+        )}
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </ScreenWrapper>
+  );
+}
+
+export function NewsDetailScreen({ route }: any) {
+  const { newsId } = route.params;
+  const { newsVersion } = useChat();
+  const [item, setItem] = useState<NewsItem | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    api.news.get(newsId).then(setItem).catch(() => setItem(null)).finally(() => setLoading(false));
+  }, [newsId, newsVersion]);
+
+  if (loading) return <ScreenWrapper scroll><GlassCard><Text style={typography.body}>Loading...</Text></GlassCard></ScreenWrapper>;
+  if (!item) return <ScreenWrapper scroll><GlassCard><Text style={typography.body}>News not found</Text></GlassCard></ScreenWrapper>;
+
+  return (
+    <ScreenWrapper scroll>
+      <View style={{ padding: 16 }}>
+        <GlassCard style={{ padding: 20 }}>
+          {!!item.image && (
+            <Image source={{ uri: item.image }} style={{ width: '100%', height: 200, borderRadius: 12, marginBottom: 12 }} resizeMode="cover" />
+          )}
+          <Text style={[typography.pageTitle, { color: colors.textPrimary, marginBottom: 6 }]}>{item.title}</Text>
+          <Text style={[typography.caption, { marginBottom: 12 }]}>{new Date(item.createdAt).toLocaleDateString()}</Text>
+          <Text style={[typography.body, { color: colors.textSecondary, lineHeight: 22 }]}>{item.content}</Text>
+        </GlassCard>
+      </View>
+    </ScreenWrapper>
+  );
+}
+
 // Notifications with data
 export function NotificationsScreen({ route }: any) {
+  const navigation = useNavigation<any>();
   const isFocused = useIsFocused();
-  const { user, astrologer } = useAuth();
+  const { user, astrologer, role } = useAuth();
   const { notificationVersion } = useChat();
   const [notifs, setNotifs] = useState<Notification[]>([]);
 
@@ -333,6 +420,12 @@ export function NotificationsScreen({ route }: any) {
     try { await api.notifications.markRead(id); setNotifs(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n)); } catch {}
   };
 
+  const handlePress = (n: Notification) => {
+    if (!n.isRead) markRead(n.id);
+    const target = resolveNotificationTarget(n, role || 'user');
+    if (target) navigation.navigate(target.screen, target.params);
+  };
+
   return (
     <ScreenWrapper>
       <ScrollView contentContainerStyle={{ padding: 16 }}>
@@ -340,7 +433,7 @@ export function NotificationsScreen({ route }: any) {
           <EmptyState icon={<Ionicons name="notifications-outline" size={48} color={colors.textMuted} />} title="No notifications" subtitle="You're all caught up!" />
         ) : (
           notifs.map(n => (
-            <TouchableOpacity key={n.id} onPress={() => !n.isRead && markRead(n.id)}>
+            <TouchableOpacity key={n.id} onPress={() => handlePress(n)}>
               <GlassCard style={{ marginBottom: 8, padding: 14, opacity: n.isRead ? 0.85 : 1 }}>
                 <View style={{ flexDirection: 'row', gap: 12 }}>
                   <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: n.isRead ? colors.surfaceLight : colors.primary + '20', alignItems: 'center', justifyContent: 'center' }}>
@@ -451,9 +544,13 @@ export function EditProfileScreen() {
         updated = await api.users.update(profile!.id || (profile as any).userId, { name, phone, gender, dateOfBirth });
       }
       await updateUser(updated as any);
-      navigation.goBack();
-    } catch (e) {
-      console.log(e);
+      Alert.alert('Profile Updated', 'Your changes have been saved successfully.', [
+        { text: 'OK', onPress: () => navigation.goBack() },
+      ]);
+    } catch (e: any) {
+      const serverMsg = e?.response?.data?.message;
+      const msg = Array.isArray(serverMsg) ? serverMsg.join(', ') : serverMsg;
+      Alert.alert('Update Failed', msg || e?.message || 'Could not save your profile. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -844,40 +941,211 @@ export function MandirPoojaScreen({ navigation }: any) {
 // Mandir Pooja Detail (moved to MandirPoojaDetailScreen.tsx)
 
 // Order History
+const ORDER_STATUS_META: Record<string, { label: string; color: string; icon: string }> = {
+  pending: { label: 'Pending', color: colors.warning, icon: 'time-outline' },
+  confirmed: { label: 'Confirmed', color: colors.accentGold, icon: 'checkmark-circle-outline' },
+  processing: { label: 'Processing', color: colors.accentGold, icon: 'sync-outline' },
+  shipped: { label: 'Shipped', color: '#0EA5E9', icon: 'cube-outline' },
+  delivered: { label: 'Delivered', color: colors.success, icon: 'checkmark-done-outline' },
+  cancelled: { label: 'Cancelled', color: colors.danger, icon: 'close-circle-outline' },
+};
+
+function orderStatusMeta(status: string) {
+  return (
+    ORDER_STATUS_META[status] || {
+      label: status || 'Unknown',
+      color: colors.textMuted,
+      icon: 'ellipse-outline',
+    }
+  );
+}
+
 export function OrderHistoryScreen() {
   const isFocused = useIsFocused();
+  const { orderVersion } = useChat();
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const loadOrders = useCallback(async () => {
+    try {
+      const data = await api.orders.my();
+      setOrders(data);
+    } catch {}
+  }, []);
 
   useEffect(() => {
     if (isFocused) {
-      api.orders.list()
-        .then(setOrders)
-        .catch(() => {})
-        .finally(() => setLoading(false));
+      loadOrders().finally(() => setLoading(false));
     }
-  }, [isFocused]);
+  }, [isFocused, loadOrders, orderVersion]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadOrders().finally(() => setRefreshing(false));
+  };
 
   return (
     <ScreenWrapper scroll>
-      <SectionTitle title="Order History" />
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <Text style={typography.pageTitle}>Order History</Text>
+        <TouchableOpacity onPress={onRefresh} style={{ padding: 8 }}>
+          <Ionicons
+            name={refreshing ? 'hourglass-outline' : 'refresh-outline'}
+            size={22}
+            color={colors.accentGold}
+          />
+        </TouchableOpacity>
+      </View>
+
       {loading ? (
         <Text style={[typography.body, { textAlign: 'center', marginTop: 20 }]}>Loading orders...</Text>
       ) : orders.length === 0 ? (
-        <EmptyState icon={<Ionicons name="receipt-outline" size={48} color={colors.textMuted} />} title="No orders yet" subtitle="Items you purchase will appear here" />
+        <EmptyState
+          icon={<Ionicons name="receipt-outline" size={48} color={colors.textMuted} />}
+          title="No orders yet"
+          subtitle="Items you purchase will appear here"
+        />
       ) : (
-        orders.map(order => (
-          <GlassCard key={order.id} style={{ marginBottom: 12, padding: 16 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <View>
-                <Text style={typography.cardTitle}>Order #{order.id.slice(0, 8).toUpperCase()}</Text>
-                <Text style={typography.caption}>Status: {order.status.toUpperCase()}</Text>
-                <Text style={typography.caption}>Total: ₹{order.totalAmount}</Text>
-              </View>
-              <Text style={typography.body}>{new Date(order.createdAt).toLocaleDateString()}</Text>
-            </View>
-          </GlassCard>
-        ))
+        orders.map((order) => {
+          const meta = orderStatusMeta(order.status);
+          const isOpen = expandedId === order.id;
+          const items: any[] = order.items || [];
+          const itemCount = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+
+          return (
+            <GlassCard key={order.id} style={{ marginBottom: 12, padding: 16 }}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setExpandedId(isOpen ? null : order.id)}
+              >
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={typography.cardTitle}>
+                      Order #{order.id.slice(0, 8).toUpperCase()}
+                    </Text>
+                    <Text style={[typography.caption, { marginTop: 2 }]}>
+                      {new Date(order.createdAt).toLocaleString()}
+                    </Text>
+                    <Text style={[typography.caption, { marginTop: 2 }]}>
+                      {itemCount} item{itemCount === 1 ? '' : 's'}
+                    </Text>
+                  </View>
+                  <View style={{ alignItems: 'flex-end', gap: 6 }}>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 4,
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
+                        borderRadius: 10,
+                        backgroundColor: meta.color + '22',
+                      }}
+                    >
+                      <Ionicons name={meta.icon as any} size={12} color={meta.color} />
+                      <Text style={{ color: meta.color, fontSize: 11, fontWeight: '700' }}>
+                        {meta.label.toUpperCase()}
+                      </Text>
+                    </View>
+                    <Text style={typography.price}>₹{order.totalAmount}</Text>
+                    <Ionicons
+                      name={isOpen ? 'chevron-up' : 'chevron-down'}
+                      size={16}
+                      color={colors.textMuted}
+                    />
+                  </View>
+                </View>
+              </TouchableOpacity>
+
+              {isOpen && (
+                <View
+                  style={{
+                    marginTop: 12,
+                    borderTopWidth: 1,
+                    borderTopColor: colors.cardBorder,
+                    paddingTop: 12,
+                  }}
+                >
+                  <Text style={[typography.cardTitle, { marginBottom: 8 }]}>Order Details</Text>
+                  {items.length === 0 ? (
+                    <Text style={typography.caption}>No items recorded for this order</Text>
+                  ) : (
+                    items.map((item) => (
+                      <View
+                        key={item.id}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          gap: 10,
+                          paddingVertical: 8,
+                          borderBottomWidth: 1,
+                          borderBottomColor: colors.cardBorder,
+                        }}
+                      >
+                        {item.productImage ? (
+                          <Image
+                            source={{ uri: item.productImage }}
+                            style={{ width: 40, height: 40, borderRadius: 8 }}
+                          />
+                        ) : (
+                          <View
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 8,
+                              backgroundColor: colors.surfaceLight,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Ionicons name="cube-outline" size={20} color={colors.accentGold} />
+                          </View>
+                        )}
+                        <View style={{ flex: 1 }}>
+                          <Text style={[typography.body, { color: colors.textPrimary, fontWeight: '600' }]}>
+                            {item.productName || 'Product'}
+                          </Text>
+                          <Text style={typography.caption}>
+                            Qty {item.quantity} x ₹{item.unitPrice}
+                          </Text>
+                        </View>
+                        <Text style={[typography.body, { color: colors.textPrimary, fontWeight: '700' }]}>
+                          ₹{item.totalPrice}
+                        </Text>
+                      </View>
+                    ))
+                  )}
+
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
+                    <Text style={[typography.body, { color: colors.textSecondary, fontWeight: '700' }]}>
+                      Order Total
+                    </Text>
+                    <Text style={typography.price}>₹{order.totalAmount}</Text>
+                  </View>
+
+                  {order.shippingAddress && (
+                    <View style={{ marginTop: 10 }}>
+                      <Text style={[typography.caption, { color: colors.textMuted, marginBottom: 2 }]}>
+                        Shipping Address
+                      </Text>
+                      <Text style={typography.body}>
+                        {typeof order.shippingAddress === 'string'
+                          ? order.shippingAddress
+                          : JSON.stringify(order.shippingAddress)}
+                      </Text>
+                    </View>
+                  )}
+
+                  <Text style={[typography.caption, { marginTop: 10, color: colors.textMuted }]}>
+                    Order ID: {order.id}
+                  </Text>
+                </View>
+              )}
+            </GlassCard>
+          );
+        })
       )}
     </ScreenWrapper>
   );
@@ -1037,7 +1305,7 @@ export function AstrologerDocumentsScreen() {
       if (result.canceled || !result.assets?.[0]) return;
       const file = result.assets[0];
       setUploading(true);
-      const uploaded = await api.uploadFile({ uri: file.uri, name: file.name, mimeType: file.mimeType }, 'supabase');
+      const uploaded = await api.uploadFile({ uri: file.uri, name: file.name, mimeType: file.mimeType }, 'minio');
       const newDocs = [...docs, uploaded.url];
       setDocs(newDocs);
       const updatePayload: any = { verificationDoc: newDocs };

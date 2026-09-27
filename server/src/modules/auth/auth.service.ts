@@ -444,11 +444,23 @@ export class AuthService {
         verificationDoc: schema.astrologers.verificationDoc,
         verificationNote: schema.astrologers.verificationNote,
         onlineStatus: schema.astrologers.onlineStatus,
+        isChatEnabled: schema.astrologers.isChatEnabled,
+        isAudioCallEnabled: schema.astrologers.isAudioCallEnabled,
+        isVideoCallEnabled: schema.astrologers.isVideoCallEnabled,
         bio: schema.astrologers.bio,
         createdAt: schema.astrologers.createdAt,
         updatedAt: schema.astrologers.updatedAt,
+        id: schema.users.id,
+        name: schema.users.name,
+        email: schema.users.email,
+        phone: schema.users.phone,
+        gender: schema.users.gender,
+        dateOfBirth: schema.users.dateOfBirth,
+        avatar: schema.users.avatar,
+        isActive: schema.users.isActive,
       })
       .from(schema.astrologers)
+      .leftJoin(schema.users, eq(schema.astrologers.userId, schema.users.id))
       .where(eq(schema.astrologers.userId, userId));
     return astro || null;
   }

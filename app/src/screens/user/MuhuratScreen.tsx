@@ -52,6 +52,22 @@ export function MuhuratScreen() {
     return `${h12}:${m} ${period}`;
   };
 
+  const handleStartDateSelect = (dateStr: string) => {
+    const next = parseDateString(dateStr);
+    setStartDate(next);
+    if (next.getTime() > endDate.getTime()) {
+      setEndDate(next);
+    }
+  };
+
+  const handleEndDateSelect = (dateStr: string) => {
+    const next = parseDateString(dateStr);
+    setEndDate(next);
+    if (next.getTime() < startDate.getTime()) {
+      setStartDate(next);
+    }
+  };
+
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
@@ -136,15 +152,17 @@ export function MuhuratScreen() {
       <DatePicker
         visible={showStartPicker}
         value={formatDateString(startDate)}
+        title="Select From Date"
         onClose={() => setShowStartPicker(false)}
-        onSelect={(dateStr) => setStartDate(parseDateString(dateStr))}
+        onSelect={handleStartDateSelect}
       />
 
       <DatePicker
         visible={showEndPicker}
         value={formatDateString(endDate)}
+        title="Select To Date"
         onClose={() => setShowEndPicker(false)}
-        onSelect={(dateStr) => setEndDate(parseDateString(dateStr))}
+        onSelect={handleEndDateSelect}
       />
 
       {/* Categories Horizontal Scroll */}

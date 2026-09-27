@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
+import { SearchInput } from '@/components/SearchInput';
+import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 
 export default function VideosPage() {
@@ -17,13 +19,37 @@ export default function VideosPage() {
   const [url, setUrl] = useState('');
   const [category, setCategory] = useState('');
   const [duration, setDuration] = useState('');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    api.get<any[]>('/videos')
-      .then(setData)
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const fetchData = useCallback(() => {
+    setLoading(true);
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (debouncedSearch) params.set('q', debouncedSearch);
+    api.get<any>(`/videos/admin?${params.toString()}`)
+      .then((res) => {
+        const list = unwrapList<any>(res);
+        setData(list.data);
+        setTotal(list.total);
+        setTotalPages(list.totalPages);
+      })
       .catch((e) => setError(e.message || 'Failed to load videos'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [page, limit, debouncedSearch]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const openForm = (v: any) => {
     setSelected(v);
@@ -45,13 +71,15 @@ export default function VideosPage() {
     const payload = { title, description, url, category, duration: duration ? parseInt(duration) : null };
     try {
       if (selected?.id) {
-        const updated = await api.put(`/videos/${selected.id}`, payload);
-        setData(data.map(v => v.id === selected.id ? updated : v));
+        await api.put(`/videos/${selected.id}`, payload);
+        closeForm();
+        fetchData();
       } else {
-        const created = await api.post('/videos', payload);
-        setData([...data, created]);
+        await api.post('/videos', payload);
+        closeForm();
+        if (page !== 1) setPage(1);
+        else fetchData();
       }
-      closeForm();
     } catch (e: any) { alert(e.message || 'Failed to save'); }
   };
 
@@ -66,18 +94,31 @@ export default function VideosPage() {
       ) : error ? (
         <div className="bg-red-900/20 border border-red-800 text-red-400 rounded-lg px-4 py-3 text-sm">{error}</div>
       ) : (
-        <Table headers={['Title', 'Category', 'Duration', 'Status', 'Date', '']} emptyMessage="No videos found">
-          {data.map((v: any) => (
-            <tr key={v.id} className="border-b border-divider hover:bg-surface-light/50">
-              <td className="px-4 py-3 text-text-primary font-medium max-w-xs truncate">{v.title}</td>
-              <td className="px-4 py-3 text-text-secondary">{v.category || '-'}</td>
-              <td className="px-4 py-3 text-text-secondary">{v.duration ? `${Math.floor(v.duration / 60)}:${String(v.duration % 60).padStart(2, '0')}` : '-'}</td>
-              <td className="px-4 py-3">{v.isActive ? <Badge variant="success">Active</Badge> : <Badge variant="danger">Inactive</Badge>}</td>
-              <td className="px-4 py-3 text-text-muted text-sm">{formatDate(v.createdAt)}</td>
-              <td className="px-4 py-3"><button onClick={() => openForm(v)} className="text-primary-light hover:underline text-sm font-medium">Edit</button></td>
-            </tr>
-          ))}
-        </Table>
+        <>
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <SearchInput value={search} onChange={setSearch} placeholder="Search by title or category..." />
+          </div>
+          <Table headers={['Title', 'Category', 'Duration', 'Status', 'Date', '']} emptyMessage="No videos found">
+            {data.map((v: any) => (
+              <tr key={v.id} className="border-b border-divider hover:bg-surface-light/50">
+                <td className="px-4 py-3 text-text-primary font-medium max-w-xs truncate">{v.title}</td>
+                <td className="px-4 py-3 text-text-secondary">{v.category || '-'}</td>
+                <td className="px-4 py-3 text-text-secondary">{v.duration ? `${Math.floor(v.duration / 60)}:${String(v.duration % 60).padStart(2, '0')}` : '-'}</td>
+                <td className="px-4 py-3">{v.isActive ? <Badge variant="success">Active</Badge> : <Badge variant="danger">Inactive</Badge>}</td>
+                <td className="px-4 py-3 text-text-muted text-sm">{formatDate(v.createdAt)}</td>
+                <td className="px-4 py-3"><button onClick={() => openForm(v)} className="text-primary-light hover:underline text-sm font-medium">Edit</button></td>
+              </tr>
+            ))}
+          </Table>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={(l) => { setLimit(l); setPage(1); }}
+          />
+        </>
       )}
 
       <CustomModal open={showForm} onClose={closeForm} title={selected?.id ? 'Edit Video' : 'Add Video'}>

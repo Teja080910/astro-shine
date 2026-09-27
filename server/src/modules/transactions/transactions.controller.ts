@@ -2,6 +2,7 @@ import { Controller, Get, Post, Param, Body, Query, Put, UseGuards, Req, Forbidd
 import { TransactionsService } from './transactions.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { parsePagination } from '../../common/utils/pagination';
 
 @Controller('transactions')
 @UseGuards(AuthGuard)
@@ -15,10 +16,10 @@ export class TransactionsController {
   }
 
   @Get()
-  async findAll(@Query('walletId') walletId?: string, @Req() req?: any) {
+  async findAll(@Req() req?: any, @Query() query?: any, @Query('walletId') walletId?: string) {
     if (req?.userRole !== 'admin') throw new ForbiddenException('Only admins can view all transactions');
     if (walletId) return this.service.findByWalletId(walletId);
-    return this.service.findAll();
+    return this.service.findAll(parsePagination(query));
   }
 
   @Get(':id')

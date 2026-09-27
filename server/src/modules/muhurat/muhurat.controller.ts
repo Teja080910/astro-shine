@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { MuhuratService } from './muhurat.service';
 import { AuthService } from '../auth/auth.service';
+import { parsePagination } from '../../common/utils/pagination';
 
 @Controller('muhurat')
 export class MuhuratController {
@@ -22,18 +23,19 @@ export class MuhuratController {
   ) {}
 
   @Get()
-  async findAll(
-    @Query('categoryId') categoryId?: string,
-    @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string,
-  ) {
-    return this.service.findAll(categoryId, startDate, endDate);
+  async findAll(@Query() query: any) {
+    return this.service.findAll(
+      query.categoryId,
+      query.startDate,
+      query.endDate,
+      parsePagination(query),
+    );
   }
 
   @Get('admin')
-  async findAllAdmin(@Req() req: any) {
+  async findAllAdmin(@Req() req: any, @Query() query: any) {
     await this.checkAdmin(req);
-    return this.service.findAllAdmin();
+    return this.service.findAllAdmin(parsePagination(query));
   }
 
   @Get('my')

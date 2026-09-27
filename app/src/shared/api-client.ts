@@ -52,7 +52,7 @@ class ApiClient {
   private async put<T>(path: string, data?: any): Promise<T> { const r = await this.client.put(path, data); return r.data; }
   private async del(path: string): Promise<void> { await this.client.delete(path); }
 
-  async uploadFile(file: { uri: string; name: string; mimeType?: string }, destination: 'local' | 'supabase' | 'cloudinary' = 'supabase'): Promise<{ filename: string; url: string }> {
+  async uploadFile(file: { uri: string; name: string; mimeType?: string }, destination: 'local' | 'supabase' | 'cloudinary' | 'minio' = 'minio'): Promise<{ filename: string; url: string }> {
     const formData = new FormData();
     formData.append('file', { uri: file.uri, name: file.name, type: file.mimeType || 'application/octet-stream' } as any);
     const r = await this.client.post(`/upload?destination=${destination}`, formData, {
@@ -230,6 +230,7 @@ class ApiClient {
 
   // Orders
   orders = {
+    my: () => this.get<Order[]>('/orders/my'),
     list: (userId?: string) => this.get<Order[]>('/orders', { userId }),
     get: (id: string) => this.get<Order>(`/orders/${id}`),
     create: (d: any) => this.post<Order>('/orders', d),
@@ -280,6 +281,8 @@ class ApiClient {
     create: (d: any) => this.post<Notification>('/notifications', d),
     markRead: (id: string) => this.put<Notification>(`/notifications/${id}/read`),
     markAllRead: (d: { userId?: string; astrologerId?: string }) => this.post<void>('/notifications/read-all', d),
+    registerPushToken: (token: string) => this.post<{ success: boolean }>('/notifications/push-token', { token }),
+    clearPushToken: () => this.post<{ success: boolean }>('/notifications/push-token/clear'),
   };
 
   // Settings

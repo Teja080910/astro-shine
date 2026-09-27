@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
+import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 import { Search } from 'lucide-react';
 import type { User } from '@astro-shine/shared-types';
@@ -14,15 +15,39 @@ export default function UsersPage() {
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<User | null>(null);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => { api.get<User[]>('/users').then(setUsers).catch((e) => setError(e.message || 'Failed to load users')).finally(() => setLoading(false)); }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    setLoading(true);
+    setError('');
+    const params = `?page=${page}&limit=${limit}${debouncedSearch ? `&q=${encodeURIComponent(debouncedSearch)}` : ''}`;
+    api.get<any>(`/users${params}`)
+      .then((res) => {
+        const result = unwrapList<User>(res);
+        setUsers(result.data);
+        setTotal(result.total);
+        setTotalPages(result.totalPages);
+      })
+      .catch((e) => setError(e.message || 'Failed to load users'))
+      .finally(() => setLoading(false));
+  }, [page, limit, debouncedSearch]);
 
   const filtered = users.filter(u => {
     if (statusFilter !== 'all' && u.isActive !== (statusFilter === 'active')) return false;
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q) || u.phone?.toLowerCase().includes(q);
+    return true;
   });
 
   const handleToggleActive = async (user: User) => {
@@ -35,7 +60,7 @@ export default function UsersPage() {
     <AdminLayout>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-extrabold text-text-primary">Users</h1>
-        <span className="text-text-secondary">{filtered.length} of {users.length} total</span>
+        <span className="text-text-secondary">{filtered.length} of {total} total</span>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
@@ -83,6 +108,15 @@ export default function UsersPage() {
           </tr>
           )))}
       </Table>
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        limit={limit}
+        onPageChange={setPage}
+        onLimitChange={(l) => { setLimit(l); setPage(1); }}
+      />
 
       <CustomModal open={!!selected} onClose={() => setSelected(null)} title="User Details">
         {selected && (

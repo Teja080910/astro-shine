@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Param, Body, Query, UseGuards, Req, Forbidd
 import { ReviewsService } from './reviews.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { parsePagination } from '../../common/utils/pagination';
 
 @Controller('reviews')
 @UseGuards(AuthGuard)
@@ -9,10 +10,11 @@ export class ReviewsController {
   constructor(private readonly service: ReviewsService) {}
 
   @Get()
-  async findAll(@Query('astrologerId') astrologerId?: string, @Query('userId') userId?: string) {
-    if (astrologerId) return this.service.findByAstrologerId(astrologerId);
-    if (userId) return this.service.findByUserId(userId);
-    return this.service.findAllReviews();
+  async findAll(@Query('astrologerId') astrologerId?: string, @Query('userId') userId?: string, @Query() query?: any) {
+    const p = parsePagination(query);
+    if (astrologerId) return this.service.findByAstrologerId(astrologerId, p);
+    if (userId) return this.service.findByUserId(userId, p);
+    return this.service.findAllReviews(p);
   }
 
   @Get(':id')

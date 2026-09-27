@@ -1,7 +1,19 @@
-import { Controller, Get, Post, Param, Body, Put, UseGuards, Req, ForbiddenException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Param,
+  Body,
+  Put,
+  Query,
+  UseGuards,
+  Req,
+  ForbiddenException,
+} from '@nestjs/common';
 import { WithdrawalService } from './withdrawal.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { parsePagination } from '../../common/utils/pagination';
 
 @Controller('withdrawals')
 @UseGuards(AuthGuard)
@@ -9,8 +21,31 @@ export class WithdrawalController {
   constructor(private readonly service: WithdrawalService) {}
 
   @Get()
-  async findAll(@Req() req: any) {
-    return this.service.findAll();
+  async findAll(@Req() req: any, @Query() query?: any) {
+    return this.service.findAll(parsePagination(query));
+  }
+
+  @Get('astrologers')
+  async findAstrologerSummaries(@Req() req: any) {
+    if (req.userRole !== 'admin') {
+      throw new ForbiddenException(
+        'Only admins can view astrologer withdrawal details',
+      );
+    }
+    return this.service.findAstrologerSummaries();
+  }
+
+  @Get('astrologers/:astrologerId')
+  async findAstrologerDetail(
+    @Param('astrologerId') astrologerId: string,
+    @Req() req: any,
+  ) {
+    if (req.userRole !== 'admin') {
+      throw new ForbiddenException(
+        'Only admins can view astrologer withdrawal details',
+      );
+    }
+    return this.service.findAstrologerDetail(astrologerId);
   }
 
   @Post()
@@ -21,19 +56,26 @@ export class WithdrawalController {
 
   @Post('admin')
   async adminWithdrawal(@Body() body: { amount: number }, @Req() req: any) {
-    if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can make admin withdrawals');
+    if (req.userRole !== 'admin')
+      throw new ForbiddenException('Only admins can make admin withdrawals');
     return this.service.createAdminWithdrawal(req.userId, body.amount);
   }
 
   @Put(':id/approve')
   async approve(@Param('id') id: string, @Req() req: any) {
-    if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can approve withdrawals');
+    if (req.userRole !== 'admin')
+      throw new ForbiddenException('Only admins can approve withdrawals');
     return this.service.approve(id, req.userId);
   }
 
   @Put(':id/reject')
-  async reject(@Param('id') id: string, @Body() body: { note?: string }, @Req() req: any) {
-    if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can reject withdrawals');
+  async reject(
+    @Param('id') id: string,
+    @Body() body: { note?: string },
+    @Req() req: any,
+  ) {
+    if (req.userRole !== 'admin')
+      throw new ForbiddenException('Only admins can reject withdrawals');
     return this.service.reject(id, req.userId, body.note);
   }
 }

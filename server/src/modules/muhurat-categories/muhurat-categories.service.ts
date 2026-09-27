@@ -1,8 +1,12 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
-import { eq } from 'drizzle-orm';
+import { eq, or, ilike, sql, desc } from 'drizzle-orm';
 import { RealtimeService } from '../../common/realtime.service';
+import {
+  paginated,
+  Pagination,
+} from '../../common/utils/pagination';
 
 @Injectable()
 export class MuhuratCategoriesService {
@@ -11,8 +15,30 @@ export class MuhuratCategoriesService {
     private readonly realtime: RealtimeService,
   ) {}
 
-  async findAll() {
-    return this.db.query.muhuratCategories.findMany();
+  async findAll(pagination?: Pagination) {
+    if (!pagination?.enabled) {
+      return this.db.query.muhuratCategories.findMany();
+    }
+
+    const search = pagination.q
+      ? or(
+          ilike(schema.muhuratCategories.name, `%${pagination.q}%`),
+          ilike(schema.muhuratCategories.description, `%${pagination.q}%`),
+        )
+      : undefined;
+    const [rows, countRows] = await Promise.all([
+      this.db.query.muhuratCategories.findMany({
+        where: search,
+        orderBy: [desc(schema.muhuratCategories.createdAt)],
+        limit: pagination.limit,
+        offset: pagination.offset,
+      }),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(schema.muhuratCategories)
+        .where(search),
+    ]);
+    return paginated(rows, countRows[0]?.count ?? 0, pagination);
   }
 
   async findAllActive() {

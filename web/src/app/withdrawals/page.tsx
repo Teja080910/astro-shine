@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
+import { SearchInput } from '@/components/SearchInput';
+import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 import { useSocket } from '@/hooks/useSocket';
 import { useAuthStore } from '@/store/auth';
@@ -12,10 +14,31 @@ function WithdrawalsContent() {
   const { admin } = useAuthStore();
   const [data, setData] = useState<any[]>([]);
   const [selected, setSelected] = useState<any | null>(null);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const refresh = useCallback(() => {
-    api.get<any[]>('/withdrawals').then(setData);
-  }, []);
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (debouncedSearch) params.set('q', debouncedSearch);
+    api.get<any>(`/withdrawals?${params.toString()}`).then((res) => {
+      const { data, total, totalPages } = unwrapList<any>(res);
+      setData(data);
+      setTotal(total);
+      setTotalPages(totalPages);
+    });
+  }, [page, limit, debouncedSearch]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -34,6 +57,9 @@ function WithdrawalsContent() {
   return (
     <>
       <h1 className="text-3xl font-extrabold text-text-primary mb-6">Withdrawals</h1>
+      <div className="mb-6">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by requester, status, payout or amount..." />
+      </div>
       <Table headers={['Requester', 'Type', 'Amount', 'Status', 'Payout', 'Date', '']} emptyMessage="No withdrawals found">
         {data.map((w: any) => (
           <tr key={w.id} className="border-b border-divider hover:bg-surface-light/50">
@@ -65,6 +91,14 @@ function WithdrawalsContent() {
           </tr>
         ))}
       </Table>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        limit={limit}
+        onPageChange={setPage}
+        onLimitChange={(l) => { setLimit(l); setPage(1); }}
+      />
 
       <CustomModal open={!!selected} onClose={() => setSelected(null)} title="Process Withdrawal">
         {selected && (

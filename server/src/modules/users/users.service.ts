@@ -1,7 +1,8 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or, ilike, desc, sql } from 'drizzle-orm';
+import { paginated, type Pagination } from '../../common/utils/pagination';
 
 @Injectable()
 export class UsersService {
@@ -9,10 +10,36 @@ export class UsersService {
     @Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>,
   ) {}
 
-  async findAll() {
-    return this.db.query.users.findMany({
-      where: eq(schema.users.role, 'user'),
-    });
+  async findAll(pagination?: Pagination) {
+    const roleWhere = eq(schema.users.role, 'user');
+    const where = pagination?.q
+      ? and(
+          roleWhere,
+          or(
+            ilike(schema.users.name, `%${pagination.q}%`),
+            ilike(schema.users.email, `%${pagination.q}%`),
+            ilike(schema.users.phone, `%${pagination.q}%`),
+          ),
+        )
+      : roleWhere;
+
+    if (!pagination?.enabled) {
+      return this.db.query.users.findMany({ where });
+    }
+
+    const [data, countRows] = await Promise.all([
+      this.db.query.users.findMany({
+        where,
+        orderBy: desc(schema.users.createdAt),
+        limit: pagination.limit,
+        offset: pagination.offset,
+      }),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(schema.users)
+        .where(where),
+    ]);
+    return paginated(data, Number(countRows[0]?.count || 0), pagination);
   }
 
   async findById(id: string) {

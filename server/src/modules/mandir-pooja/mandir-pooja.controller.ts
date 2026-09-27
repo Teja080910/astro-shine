@@ -1,16 +1,21 @@
 import { Controller, Get, Post, Put, Delete, Param, Body, Query, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { MandirPoojaService } from './mandir-pooja.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { parsePagination } from '../../common/utils/pagination';
 
 @Controller('mandir-pooja')
 export class MandirPoojaController {
   constructor(private readonly service: MandirPoojaService) {}
 
   @Get()
-  async findAll() { return this.service.findAll(); }
+  async findAll(@Query() query: any) {
+    return this.service.findAll(parsePagination(query));
+  }
 
   @Get('admin')
-  async findAllAdmin() { return this.service.findAllAdmin(); }
+  async findAllAdmin(@Query() query: any) {
+    return this.service.findAllAdmin(parsePagination(query));
+  }
 
   @Get(':id')
   async findOne(@Param('id') id: string) { return this.service.findById(id); }
@@ -38,9 +43,13 @@ export class MandirPoojaController {
 
   @Get('bookings/list')
   @UseGuards(AuthGuard)
-  async getBookings(@Req() req: any, @Query('userId') userId?: string, @Query('poojaId') poojaId?: string) {
-    const targetUserId = userId || req.userId;
-    return this.service.getBookings(targetUserId, poojaId);
+  async getBookings(@Req() req: any, @Query() query: any) {
+    const targetUserId = query.userId || req.userId;
+    return this.service.getBookings(
+      targetUserId,
+      query.poojaId,
+      parsePagination(query),
+    );
   }
 
   @Post('bookings')

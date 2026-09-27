@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Put, Param, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Put, Param, Body, Query, UseGuards, Req } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { parsePagination } from '../../common/utils/pagination';
 
 @Controller('reports')
 @UseGuards(AuthGuard)
@@ -9,7 +10,10 @@ export class ReportsController {
   constructor(private readonly service: ReportsService) {}
 
   @Get()
-  async findAll() { return this.service.findAll(); }
+  async findAll(@Query() query?: any) {
+    const p = parsePagination(query);
+    return this.service.findAll(p);
+  }
 
   @Get(':id')
   async findOne(@Param('id') id: string) { return this.service.findById(id); }

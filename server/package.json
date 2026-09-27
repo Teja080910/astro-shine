@@ -24,7 +24,8 @@
     "db:studio": "drizzle-kit studio",
     "seed": "ts-node -r tsconfig-paths/register src/seed.ts",
     "seed:user": "ts-node -r tsconfig-paths/register src/seed-user.ts",
-    "seed:admin": "ts-node -r tsconfig-paths/register src/seed-admin.ts"
+    "seed:admin": "ts-node -r tsconfig-paths/register src/seed-admin.ts",
+    "seed:reports": "ts-node -r tsconfig-paths/register src/seed-reports.ts"
   },
   "dependencies": {
     "@ishubhamx/panchangam-js": "^3.0.0",
@@ -46,6 +47,7 @@
     "drizzle-orm": "^0.45.2",
     "jsonwebtoken": "^9.0.3",
     "livekit-server-sdk": "^2.17.0",
+    "minio": "^8.0.7",
     "pg": "^8.22.0",
     "razorpay": "^2.9.6",
     "razorpayx": "^1.0.3",

@@ -8,19 +8,36 @@ interface Props {
   value: string;
   onClose: () => void;
   onSelect: (date: string) => void;
+  title?: string;
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const DAY_NAMES = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
-export function DatePicker({ visible, value, onClose, onSelect }: Props) {
+const parseLocalDate = (value: string): Date | null => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec((value || '').trim());
+  if (!match) return null;
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  return isNaN(date.getTime()) ? null : date;
+};
+
+export function DatePicker({ visible, value, onClose, onSelect, title = 'Select Date of Birth' }: Props) {
   const today = new Date();
-  const initial = value ? new Date(value) : today;
-  const [year, setYear] = useState(isNaN(initial.getTime()) ? today.getFullYear() : initial.getFullYear());
-  const [month, setMonth] = useState(isNaN(initial.getTime()) ? today.getMonth() : initial.getMonth());
-  const [day, setDay] = useState(isNaN(initial.getTime()) ? today.getDate() : initial.getDate());
+  const initial = parseLocalDate(value) || today;
+  const [year, setYear] = useState(initial.getFullYear());
+  const [month, setMonth] = useState(initial.getMonth());
+  const [day, setDay] = useState(initial.getDate());
   const [view, setView] = useState<'calendar' | 'years'>('calendar');
   const dayScrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    if (!visible) return;
+    const parsed = parseLocalDate(value) || new Date();
+    setYear(parsed.getFullYear());
+    setMonth(parsed.getMonth());
+    setDay(parsed.getDate());
+    setView('calendar');
+  }, [visible, value]);
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayOfWeek = new Date(year, month, 1).getDay();
@@ -58,7 +75,7 @@ export function DatePicker({ visible, value, onClose, onSelect }: Props) {
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <TouchableOpacity activeOpacity={1} onPress={onClose} style={styles.overlay}>
         <TouchableOpacity activeOpacity={1} style={[styles.dialog, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
-          <Text style={[typography.sectionTitle, { textAlign: 'center', marginBottom: 12, color: colors.accentGold }]}>Select Date of Birth</Text>
+          <Text style={[typography.sectionTitle, { textAlign: 'center', marginBottom: 12, color: colors.accentGold }]}>{title}</Text>
 
           {view === 'years' ? (
             <>

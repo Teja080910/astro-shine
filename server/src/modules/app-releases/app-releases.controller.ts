@@ -1,15 +1,17 @@
 import { Controller, Get, Post, Put, Param, Body, Query, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { AppReleasesService } from './app-releases.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { parsePagination } from '../../common/utils/pagination';
 
 @Controller('releases')
 export class AppReleasesController {
   constructor(private readonly service: AppReleasesService) {}
 
   @Get()
-  async findAll(@Query('appName') appName?: string, @Query('platform') platform?: string) {
-    if (appName) return this.service.findByApp(appName, platform);
-    return this.service.findAll();
+  async findAll(@Query('appName') appName?: string, @Query('platform') platform?: string, @Query() query?: any) {
+    const p = parsePagination(query);
+    if (appName) return this.service.findByApp(appName, platform, p);
+    return this.service.findAll(p);
   }
 
   @Get(':id')

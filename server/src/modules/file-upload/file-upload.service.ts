@@ -1,18 +1,22 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { CloudinaryStorageService } from './cloudinary-storage.service';
 import { SupabaseStorageService } from './supabase-storage.service';
+import { MinioStorageService } from './minio-storage.service';
 
 @Injectable()
 export class FileUploadService {
   constructor(
     private cloudinaryStorage: CloudinaryStorageService,
     private supabaseStorage: SupabaseStorageService,
+    private minioStorage: MinioStorageService,
   ) {}
 
   async saveFile(file: Express.Multer.File, destination: string = 'local') {
     if (!file) throw new BadRequestException('No file provided');
 
     switch (destination) {
+      case 'minio':
+        return this.minioStorage.saveFile(file);
       case 'cloudinary':
         return this.cloudinaryStorage.saveFile(file);
       case 'supabase':
@@ -24,6 +28,8 @@ export class FileUploadService {
 
   async deleteFile(filename: string, destination: string = 'local') {
     switch (destination) {
+      case 'minio':
+        return this.minioStorage.deleteFile(filename);
       case 'cloudinary':
         return this.cloudinaryStorage.deleteFile(filename);
       case 'supabase':

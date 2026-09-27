@@ -3,6 +3,7 @@ import { useColorScheme } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { api } from "../shared/api-client";
 import { setThemeState } from "../shared/theme";
+import { registerForPushNotificationsAsync } from "../shared/push-notifications";
 import type { User, Astrologer } from "../shared/types";
 
 export type AppRole = "user" | "astrologer" | "admin" | null;
@@ -166,6 +167,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
+    try {
+      await api.notifications.clearPushToken();
+    } catch {}
     await AsyncStorage.removeItem("auth");
     setToken(null);
     setUser(null);
@@ -173,6 +177,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setRole(null);
     api.setToken(null);
   };
+
+  useEffect(() => {
+    if (loading || !token) return;
+    const uid = user?.id || astrologer?.userId;
+    if (!uid) return;
+    registerForPushNotificationsAsync().then((pushToken) => {
+      if (!pushToken) return;
+      api.notifications.registerPushToken(pushToken).catch(() => {});
+    });
+  }, [loading, token, user?.id, astrologer?.userId]);
 
   useEffect(() => {
     api.onSessionExpired = () => {

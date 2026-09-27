@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Req, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Req, Query, ForbiddenException } from '@nestjs/common';
 import { AstrologersService } from './astrologers.service';
 import { AuthService } from '../auth/auth.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { KycVerificationGuard, SkipKyc } from '../../common/guards/kyc-verification.guard';
+import { parsePagination } from '../../common/utils/pagination';
 
 function stripPassword(u: any) { if (!u) return u; const { password, ...r } = u; return r; }
 
@@ -16,15 +17,18 @@ export class AstrologersController {
 
   @Get()
   @SkipKyc()
-  async findAll(@Req() req: any) {
-    const items = await this.service.findAll();
-    return items.map((a: any) => {
+  async findAll(@Req() req: any, @Query() query: any) {
+    const p = parsePagination(query);
+    const items = await this.service.findAll(p);
+    const mapItem = (a: any) => {
       if (req.userRole !== 'admin') {
         const { email, phone, password, bankDetails, ...publicFields } = a;
         return publicFields;
       }
       return stripPassword(a);
-    });
+    };
+    if (Array.isArray(items)) return items.map(mapItem);
+    return { ...items, data: items.data.map(mapItem) };
   }
 
   @Get(':id')

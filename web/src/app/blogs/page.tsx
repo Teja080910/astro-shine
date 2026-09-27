@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { GradientButton, CustomModal, Badge } from '@/components/UIComponents';
+import { SearchInput } from '@/components/SearchInput';
+import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
 import { useSocket } from '@/hooks/useSocket';
@@ -18,14 +20,35 @@ export default function BlogsPage() {
   const [formError, setFormError] = useState('');
   const [showMine, setShowMine] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Blog | null>(null);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   const fetchBlogs = useCallback(() => {
     const endpoint = showMine ? '/blogs/my' : '/blogs';
-    api.get<Blog[]>(endpoint)
-      .then(setData)
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (debouncedSearch) params.set('q', debouncedSearch);
+    api.get<any>(`${endpoint}?${params.toString()}`)
+      .then((res) => {
+        const list = unwrapList<Blog>(res);
+        setData(list.data);
+        setTotal(list.total);
+        setTotalPages(list.totalPages);
+      })
       .catch((e) => setError(e.message || 'Failed to load blogs'))
       .finally(() => setLoading(false));
-  }, [showMine]);
+  }, [showMine, page, limit, debouncedSearch]);
 
   useEffect(() => { fetchBlogs(); }, [fetchBlogs]);
 
@@ -71,11 +94,15 @@ export default function BlogsPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-extrabold text-text-primary">Blogs</h1>
         <div className="flex gap-2">
-          <button onClick={() => setShowMine(!showMine)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${showMine ? 'bg-accent-gold text-white' : 'bg-surface-light text-text-secondary'}`}>
+          <button onClick={() => { setShowMine(!showMine); setPage(1); }} className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${showMine ? 'bg-accent-gold text-white' : 'bg-surface-light text-text-secondary'}`}>
             {showMine ? 'All Blogs' : 'My Blogs'}
           </button>
           <button onClick={() => { setEditing({} as Blog); setFormError(''); setForm({ title: '', slug: '', content: '', status: 'draft', tags: '' }); }} className="gradient-btn">New Blog</button>
         </div>
+      </div>
+
+      <div className="mb-6">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by title, slug, status or tag..." />
       </div>
 
       {loading ? (
@@ -98,6 +125,14 @@ export default function BlogsPage() {
           ))}
         </div>
       )}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        limit={limit}
+        onPageChange={setPage}
+        onLimitChange={(l) => { setLimit(l); setPage(1); }}
+      />
 
       <CustomModal open={!!editing} onClose={() => setEditing(null)} title={editing?.id ? 'Edit Blog' : 'New Blog'}>
         <div className="space-y-4">

@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Put, Param, Body, Query, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { VideosService } from './videos.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { parsePagination } from '../../common/utils/pagination';
 
 @Controller('videos')
 export class VideosController {
@@ -13,7 +14,7 @@ export class VideosController {
   }
 
   @Get('admin')
-  async findAllAdmin() { return this.service.findAllAdmin(); }
+  async findAllAdmin(@Query() query: any) { return this.service.findAllAdmin(parsePagination(query)); }
 
   @Get(':id')
   async findOne(@Param('id') id: string) { return this.service.findById(id); }

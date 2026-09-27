@@ -1,4 +1,8 @@
-import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import axios from 'axios';
 import {
   Observer,
@@ -15,6 +19,7 @@ import type {
   KundliResult,
   MatchmakingResult,
   PanchangResult,
+  PersonSummary,
   PlanetaryPosition,
 } from './astrology.types';
 import { formatTimeInZone, localNoonUtc, toUtcDate } from './astro-utils';
@@ -146,6 +151,7 @@ export class LocalAstrologyService {
   kundli(details: BirthDetails): KundliResult {
     const k: any = this.rawKundli(details);
     const planetaryPositions: Record<string, PlanetaryPosition> = {};
+    const planetHouses: Record<string, number> = {};
 
     for (const [name, pos] of Object.entries(k.planets || {})) {
       const key = PLANET_KEYS[name];
@@ -159,6 +165,8 @@ export class LocalAstrologyService {
         nakshatra: { name: p.nakshatra || '', pada: Number(p.pada) || 1 },
         rashi: p.rashiName || '',
       };
+      const house = Number(p.house);
+      if (house >= 1 && house <= 12) planetHouses[key] = house;
     }
 
     const asc: any = k.ascendant || {};
@@ -175,12 +183,27 @@ export class LocalAstrologyService {
     const houses: number[] = [];
     for (const bhava of k.houses || []) {
       for (const planetName of bhava.planets || []) {
-        if (PLANET_KEYS[planetName]) houses.push(Number(bhava.number));
+        const key = PLANET_KEYS[planetName];
+        if (key) {
+          houses.push(Number(bhava.number));
+          if (!planetHouses[key]) planetHouses[key] = Number(bhava.number);
+        }
       }
     }
     houses.sort((a, b) => a - b);
 
-    return { planetaryPositions, lagna, houses };
+    return { planetaryPositions, lagna, houses, planetHouses };
+  }
+
+  summary(details: BirthDetails): PersonSummary {
+    const k = this.kundli(details);
+    const moon = k.planetaryPositions['Mo'];
+    return {
+      rashi: moon?.rashi || '',
+      nakshatra: moon?.nakshatra?.name || '',
+      pada: moon?.nakshatra?.pada || 0,
+      lagna: k.lagna?.rashi || '',
+    };
   }
 
   matchmaking(
@@ -204,7 +227,12 @@ export class LocalAstrologyService {
     }
 
     for (const k of m?.ashtakoot?.kootas || []) {
-      const key = KOOTA_NAME_TO_KEY[String(k.name || '').toLowerCase().trim()];
+      const key =
+        KOOTA_NAME_TO_KEY[
+          String(k.name || '')
+            .toLowerCase()
+            .trim()
+        ];
       if (!key) continue;
       kootas[key] = {
         score: Number(k.score) || 0,
@@ -225,7 +253,14 @@ export class LocalAstrologyService {
     else if (pct >= 0.5) compatibility = 'Good';
     else if (pct >= 0.3) compatibility = 'Average';
 
-    return { totalScore, maxScore, kootas, compatibility };
+    return {
+      totalScore,
+      maxScore,
+      kootas,
+      compatibility,
+      person1: this.summary(details1),
+      person2: this.summary(details2),
+    };
   }
 
   private async fetchFreeHoroscope(sign: string): Promise<string | null> {
@@ -243,9 +278,7 @@ export class LocalAstrologyService {
       const text = res.data?.data?.horoscope;
       return typeof text === 'string' && text.trim() ? text.trim() : null;
     } catch (e: any) {
-      this.logger.warn(
-        `Free horoscope API unavailable: ${e?.message || e}`,
-      );
+      this.logger.warn(`Free horoscope API unavailable: ${e?.message || e}`);
       return null;
     }
   }

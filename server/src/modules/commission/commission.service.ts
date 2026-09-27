@@ -1,8 +1,9 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
-import { eq, and, sql, desc } from 'drizzle-orm';
+import { eq, and, sql, desc, or, ilike } from 'drizzle-orm';
 import { WalletService } from '../wallet/wallet.service';
+import { paginated, Pagination } from '../../common/utils/pagination';
 
 @Injectable()
 export class CommissionService {
@@ -13,23 +14,48 @@ export class CommissionService {
     private readonly walletService: WalletService,
   ) {}
 
-  async findAll() {
-    return this.db
-      .select({
-        id: schema.commissions.id,
-        astrologerId: schema.commissions.astrologerId,
-        astrologerName: schema.users.name,
-        type: schema.commissions.type,
-        value: schema.commissions.value,
-        minAmount: schema.commissions.minAmount,
-        maxCap: schema.commissions.maxCap,
-        isActive: schema.commissions.isActive,
-        createdAt: schema.commissions.createdAt,
-        updatedAt: schema.commissions.updatedAt,
-      })
-      .from(schema.commissions)
-      .leftJoin(schema.astrologers, eq(schema.commissions.astrologerId, schema.astrologers.userId))
-      .leftJoin(schema.users, eq(schema.astrologers.userId, schema.users.id));
+  async findAll(pagination?: Pagination) {
+    const pattern = pagination?.q ? `%${pagination.q}%` : undefined;
+    const where = pattern
+      ? or(
+          ilike(schema.users.name, pattern),
+          sql`${schema.commissions.type}::text ILIKE ${pattern}`,
+        )
+      : undefined;
+
+    const build = () =>
+      this.db
+        .select({
+          id: schema.commissions.id,
+          astrologerId: schema.commissions.astrologerId,
+          astrologerName: schema.users.name,
+          type: schema.commissions.type,
+          value: schema.commissions.value,
+          minAmount: schema.commissions.minAmount,
+          maxCap: schema.commissions.maxCap,
+          isActive: schema.commissions.isActive,
+          createdAt: schema.commissions.createdAt,
+          updatedAt: schema.commissions.updatedAt,
+        })
+        .from(schema.commissions)
+        .leftJoin(schema.astrologers, eq(schema.commissions.astrologerId, schema.astrologers.userId))
+        .leftJoin(schema.users, eq(schema.astrologers.userId, schema.users.id))
+        .where(where)
+        .orderBy(desc(schema.commissions.createdAt));
+
+    if (!pagination?.enabled) return build();
+
+    const [rows, countRows] = await Promise.all([
+      build().limit(pagination.limit).offset(pagination.offset),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(schema.commissions)
+        .leftJoin(schema.astrologers, eq(schema.commissions.astrologerId, schema.astrologers.userId))
+        .leftJoin(schema.users, eq(schema.astrologers.userId, schema.users.id))
+        .where(where),
+    ]);
+
+    return paginated(rows, Number(countRows[0].count), pagination);
   }
   async findByAstrologerId(astrologerId: string) { return this.db.query.commissions.findFirst({ where: eq(schema.commissions.astrologerId, astrologerId) }); }
 

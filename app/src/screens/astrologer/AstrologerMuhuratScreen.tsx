@@ -41,6 +41,12 @@ export function AstrologerMuhuratScreen() {
     return `${hh}:${mm}:00`;
   };
 
+  const parseDateString = (dateStr: string): Date => {
+    const [y, m, d] = (dateStr || '').split('-').map(Number);
+    const parsed = new Date(y, (m || 1) - 1, d || 1);
+    return isNaN(parsed.getTime()) ? new Date() : parsed;
+  };
+
   const formatTimeString12 = (timeStr: string) => {
     if (!timeStr) return '';
     const parts = timeStr.split(':');
@@ -101,13 +107,7 @@ export function AstrologerMuhuratScreen() {
     setFormName(item.name);
     setSelectedCatId(item.categoryId);
     
-    // Parse date
-    const dParts = item.date.split('-');
-    const newD = new Date();
-    if (dParts.length === 3) {
-      newD.setFullYear(parseInt(dParts[0]), parseInt(dParts[1]) - 1, parseInt(dParts[2]));
-    }
-    setFormDate(newD);
+    setFormDate(parseDateString(item.date));
 
     // Parse time
     const tParts = item.time.split(':');
@@ -307,8 +307,9 @@ export function AstrologerMuhuratScreen() {
           <DatePicker
             visible={showDatePicker}
             value={formatDateString(formDate)}
+            title="Select Muhurat Date"
             onClose={() => setShowDatePicker(false)}
-            onSelect={(dateStr) => setFormDate(new Date(dateStr))}
+            onSelect={(dateStr) => setFormDate(parseDateString(dateStr))}
           />
 
           <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Description</Text>

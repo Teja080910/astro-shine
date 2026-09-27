@@ -1,10 +1,11 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
-import { eq, sql, inArray } from 'drizzle-orm';
+import { eq, and, sql, inArray, desc } from 'drizzle-orm';
 import { RealtimeService } from '../../common/realtime.service';
 import { WalletService } from '../wallet/wallet.service';
 import { CommissionService } from '../commission/commission.service';
+import { paginated, Pagination } from '../../common/utils/pagination';
 
 @Injectable()
 export class CallsService {
@@ -16,12 +17,72 @@ export class CallsService {
     private readonly commissionService: CommissionService,
   ) {}
 
-  async findAll() { return this.db.query.callLogs.findMany(); }
-  async findById(id: string) { return this.db.query.callLogs.findFirst({ where: eq(schema.callLogs.id, id) }); }
-  async findByUserId(userId: string) { return this.db.query.callLogs.findMany({ where: eq(schema.callLogs.userId, userId) }); }
+  private searchWhere(q?: string) {
+    if (!q) return undefined;
+    const pattern = `%${q}%`;
+    return and(
+      sql`${schema.callLogs.type}::text ILIKE ${pattern}`,
+      sql`${schema.callLogs.status}::text ILIKE ${pattern}`,
+    );
+  }
 
-  async findByAstrologerId(astrologerId: string) {
-    const calls = await this.db.query.callLogs.findMany({ where: eq(schema.callLogs.astrologerId, astrologerId) });
+  async findAll(pagination?: Pagination) {
+    if (!pagination?.enabled) return this.db.query.callLogs.findMany();
+    const conditions: any[] = [];
+    if (pagination.q) {
+      const pattern = `%${pagination.q}%`;
+      conditions.push(sql`${schema.callLogs.type}::text ILIKE ${pattern}`);
+      conditions.push(sql`${schema.callLogs.status}::text ILIKE ${pattern}`);
+      conditions.push(sql`${schema.callLogs.userId}::text ILIKE ${pattern}`);
+      conditions.push(sql`${schema.callLogs.astrologerId}::text ILIKE ${pattern}`);
+    }
+    const where = conditions.length ? and(...conditions) : undefined;
+    const build = () => this.db.select().from(schema.callLogs).where(where);
+    const [data, countRows] = await Promise.all([
+      build().orderBy(desc(schema.callLogs.createdAt)).limit(pagination.limit).offset(pagination.offset),
+      this.db.select({ count: sql<number>`count(*)::int` }).from(schema.callLogs).where(where),
+    ]);
+    return paginated(data, countRows[0]?.count ?? 0, pagination);
+  }
+
+  async findById(id: string) { return this.db.query.callLogs.findFirst({ where: eq(schema.callLogs.id, id) }); }
+
+  async findByUserId(userId: string, pagination?: Pagination) {
+    if (!pagination?.enabled) return this.db.query.callLogs.findMany({ where: eq(schema.callLogs.userId, userId) });
+    const conditions: any[] = [eq(schema.callLogs.userId, userId)];
+    if (pagination.q) {
+      const pattern = `%${pagination.q}%`;
+      conditions.push(sql`${schema.callLogs.type}::text ILIKE ${pattern}`);
+      conditions.push(sql`${schema.callLogs.status}::text ILIKE ${pattern}`);
+      conditions.push(sql`${schema.callLogs.astrologerId}::text ILIKE ${pattern}`);
+    }
+    const where = and(...conditions);
+    const build = () => this.db.select().from(schema.callLogs).where(where);
+    const [data, countRows] = await Promise.all([
+      build().orderBy(desc(schema.callLogs.createdAt)).limit(pagination.limit).offset(pagination.offset),
+      this.db.select({ count: sql<number>`count(*)::int` }).from(schema.callLogs).where(where),
+    ]);
+    return paginated(data, countRows[0]?.count ?? 0, pagination);
+  }
+
+  async findByAstrologerId(astrologerId: string, pagination?: Pagination) {
+    if (!pagination?.enabled) {
+      const calls = await this.db.query.callLogs.findMany({ where: eq(schema.callLogs.astrologerId, astrologerId) });
+      return this.withUserNames(calls);
+    }
+    const conditions: any[] = [eq(schema.callLogs.astrologerId, astrologerId)];
+    const search = this.searchWhere(pagination.q);
+    if (search) conditions.push(search);
+    const where = and(...conditions);
+    const build = () => this.db.select().from(schema.callLogs).where(where);
+    const [calls, countRows] = await Promise.all([
+      build().orderBy(desc(schema.callLogs.createdAt)).limit(pagination.limit).offset(pagination.offset),
+      this.db.select({ count: sql<number>`count(*)::int` }).from(schema.callLogs).where(where),
+    ]);
+    return paginated(await this.withUserNames(calls), countRows[0]?.count ?? 0, pagination);
+  }
+
+  private async withUserNames(calls: any[]) {
     const userIds = [...new Set(calls.map(c => c.userId).filter(Boolean))];
     if (userIds.length === 0) return calls.map(c => ({ ...c, userName: 'Unknown User' }));
     const users = await this.db.query.users.findMany({ where: inArray(schema.users.id, userIds as string[]) });

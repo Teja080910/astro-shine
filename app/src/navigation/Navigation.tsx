@@ -1,12 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { useAuth } from '../context/AuthContext';
-import { FloatingBottomBar, colors } from '../shared';
+import { FloatingBottomBar, colors, BrandSplash } from '../shared';
 import { api } from '../shared/api-client';
+import { resolveNotificationTarget } from '../shared/notification-router';
 
 import { AstrologerConsultationScreen, AstrologerGiftScreen, AstrologerHomeScreen, AstrologerNotificationsScreen, AstrologerProfileScreen, AstrologerReviewsScreen, AstrologerWalletScreen, AstrologerWithdrawalScreen, AstrologerMuhuratScreen } from '../screens/astrologer/AstrologerScreens';
 import { LoginScreen, OtpLoginScreen, RegisterScreen, ForgotPasswordScreen } from '../screens/auth/AuthScreens';
@@ -25,6 +27,8 @@ import {
   EditProfileScreen,
   MandirPoojaScreen,
   MandirPoojaDetailScreen,
+  NewsScreen,
+  NewsDetailScreen,
   NotificationsScreen,
   OrderHistoryScreen,
   HoroscopeScreen,
@@ -157,20 +161,46 @@ function AstrologerMainGate() {
 }
 
 export function Navigation() {
-  const { role, loading, theme } = useAuth();
-  if (loading) {
-    const bg = theme === 'dark' ? '#09090B' : '#FFFFFF';
-    return (
-      <View style={{ flex: 1, backgroundColor: bg, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="small" color={theme === 'dark' ? '#D97706' : '#F59E0B'} />
-      </View>
-    );
+  const { role, loading } = useAuth();
+  const [splashDone, setSplashDone] = useState(false);
+  const navigationRef = useNavigationContainerRef();
+
+  useEffect(() => {
+    const t = setTimeout(() => setSplashDone(true), 1400);
+    return () => clearTimeout(t);
+  }, []);
+
+  const handleNotificationResponse = useCallback(
+    (response: Notifications.NotificationResponse | null) => {
+      const data = response?.notification?.request?.content?.data;
+      if (!data) return;
+      const target = resolveNotificationTarget({ data } as any, (role as any) || 'user');
+      if (!target || !navigationRef.isReady()) return;
+      try {
+        (navigationRef as any).navigate(target.screen, target.params);
+      } catch (e) {
+        console.warn('[push] navigation failed:', (e as Error)?.message);
+      }
+    },
+    [role, navigationRef],
+  );
+
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener(handleNotificationResponse);
+    Notifications.getLastNotificationResponseAsync()
+      .then(handleNotificationResponse)
+      .catch(() => {});
+    return () => sub.remove();
+  }, [handleNotificationResponse]);
+
+  if (loading || !splashDone) {
+    return <BrandSplash />;
   }
 
   const screenOptions = { headerShown: false, contentStyle: { backgroundColor: colors.background } };
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator screenOptions={screenOptions}>
         {!role ? (
           <>
@@ -194,6 +224,8 @@ export function Navigation() {
             <Stack.Screen name="Notifications" component={NotificationsScreen} options={headerOpts('Notifications')} />
             <Stack.Screen name="Blogs" component={BlogsScreen} options={headerOpts('Blogs')} />
             <Stack.Screen name="BlogDetail" component={BlogDetailScreen} options={headerOpts('Blog')} />
+            <Stack.Screen name="News" component={NewsScreen} options={headerOpts('News')} />
+            <Stack.Screen name="NewsDetail" component={NewsDetailScreen} options={headerOpts('News')} />
             <Stack.Screen name="Support" component={SupportScreen} options={headerOpts('Support')} />
             <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={headerOpts('Ticket')} />
             <Stack.Screen name="EditProfile" component={EditProfileScreen} options={headerOpts('Edit Profile')} />
@@ -222,6 +254,8 @@ export function Navigation() {
             <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={headerOpts('Ticket')} />
             <Stack.Screen name="Blogs" component={BlogsScreen} options={headerOpts('Blogs')} />
             <Stack.Screen name="BlogDetail" component={BlogDetailScreen} options={headerOpts('Blog')} />
+            <Stack.Screen name="News" component={NewsScreen} options={headerOpts('News')} />
+            <Stack.Screen name="NewsDetail" component={NewsDetailScreen} options={headerOpts('News')} />
             <Stack.Screen name="CreateBlog" component={CreateBlogScreen} options={headerOpts('Create Blog')} />
             <Stack.Screen name="Notifications" component={AstrologerNotificationsScreen} options={headerOpts('Notifications')} />
             <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={headerOpts('Privacy Policy')} />

@@ -3,6 +3,7 @@ import { SupportTicketsService } from './support-tickets.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { RoleGuard, Roles } from '../../common/guards/role.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { parsePagination } from '../../common/utils/pagination';
 
 @Controller('support')
 export class SupportTicketsController {
@@ -49,8 +50,9 @@ export class SupportTicketsController {
   @Get('admin/tickets')
   @UseGuards(AuthGuard, RoleGuard)
   @Roles('admin')
-  async adminFindAll(@Query('status') status?: string) {
-    return this.service.findAll(status);
+  async adminFindAll(@Query('status') status?: string, @Query() query?: any) {
+    const p = parsePagination(query);
+    return this.service.findAll(status, p);
   }
 
   @Put('tickets/:id/status')

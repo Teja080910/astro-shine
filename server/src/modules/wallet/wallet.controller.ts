@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, UseGuards, Req, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Req, Query, ForbiddenException } from '@nestjs/common';
 import { WalletService } from './wallet.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { parsePagination } from '../../common/utils/pagination';
 
 @Controller('wallet')
 @UseGuards(AuthGuard)
@@ -11,14 +12,12 @@ export class WalletController {
   @Get()
   async getWallet(@CurrentUser() userId: string, @Req() req: any) {
     const role = req.userRole;
-    let wallet;
     if (role === 'admin') {
-      wallet = await this.walletService.getWalletByAdminId(userId);
-    } else {
-      wallet = await this.walletService.getWalletByUserId(userId);
-      if (!wallet) {
-        wallet = await this.walletService.getWalletByAstrologerId(userId);
-      }
+      return this.walletService.getOrCreateAdminWalletFor(userId);
+    }
+    let wallet = await this.walletService.getWalletByUserId(userId);
+    if (!wallet) {
+      wallet = await this.walletService.getWalletByAstrologerId(userId);
     }
     if (!wallet) {
       wallet = await this.walletService.createWallet(
@@ -35,8 +34,9 @@ export class WalletController {
 
   @Get('all')
   @UseGuards(AuthGuard)
-  async getAllWallets(@Req() req: any) {
+  async getAllWallets(@Req() req: any, @Query() query: any) {
     if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can view all wallets');
-    return this.walletService.findAll();
+    const p = parsePagination(query);
+    return this.walletService.findAll(p);
   }
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
+import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 import { config } from '@/config';
 import { FileText, ExternalLink, Search, Shield, CheckCircle, XCircle } from 'lucide-react';
@@ -19,9 +20,35 @@ export default function AstrologersPage() {
   const [videoPrice, setVideoPrice] = useState('');
   const [rejectionNote, setRejectionNote] = useState('');
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => { api.get<Astrologer[]>('/astrologers').then(setData).catch((e) => setError(e.message || 'Failed to load astrologers')).finally(() => setLoading(false)); }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    setLoading(true);
+    setError('');
+    const params = `?page=${page}&limit=${limit}${debouncedSearch ? `&q=${encodeURIComponent(debouncedSearch)}` : ''}`;
+    api.get<any>(`/astrologers${params}`)
+      .then((res) => {
+        const result = unwrapList<Astrologer>(res);
+        setData(result.data);
+        setTotal(result.total);
+        setTotalPages(result.totalPages);
+      })
+      .catch((e) => setError(e.message || 'Failed to load astrologers'))
+      .finally(() => setLoading(false));
+  }, [page, limit, debouncedSearch]);
 
   const handleVerify = async (id: string, status: 'approved' | 'rejected') => {
     await api.post<any>(`/astrologers/${id}/verify`, { status, note: rejectionNote });
@@ -64,9 +91,7 @@ export default function AstrologersPage() {
 
   const filtered = data.filter(a => {
     if (statusFilter !== 'all' && a.verificationStatus !== statusFilter) return false;
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return a.name?.toLowerCase().includes(q) || a.email?.toLowerCase().includes(q) || a.specialization?.some(s => s.toLowerCase().includes(q));
+    return true;
   });
 
   return (
@@ -193,6 +218,15 @@ export default function AstrologersPage() {
           ))
         )}
       </Table>
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        limit={limit}
+        onPageChange={setPage}
+        onLimitChange={(l) => { setLimit(l); setPage(1); }}
+      />
 
       {/* Details & Pricing Management Modal */}
       <CustomModal open={!!selected} onClose={() => setSelected(null)} title="Astrologer Details">

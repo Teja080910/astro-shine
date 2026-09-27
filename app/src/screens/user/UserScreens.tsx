@@ -40,6 +40,7 @@ import {
   typography,
   OmIcon,
   Navbar,
+  resolveMediaUrl,
 } from "../../shared";
 import { api } from "../../shared/api-client";
 import { config } from "../../config";
@@ -1529,6 +1530,30 @@ export function UserHomeScreen({ navigation }: any) {
               </View>
               <Text style={[styles.gridActionText, { color: bodyTextColor }]}>
                 Blogs
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => navigation.navigate("News")}
+              style={styles.gridActionItem}
+            >
+              <View
+                style={[
+                  styles.gridActionIconBg,
+                  {
+                    backgroundColor: isDark
+                      ? "rgba(8, 145, 178, 0.15)"
+                      : "#CFFAFE",
+                    borderColor: isDark ? "rgba(8, 145, 178, 0.3)" : "#A5F3FC",
+                    borderRadius: 16,
+                    overflow: "hidden",
+                  },
+                ]}
+              >
+                <Ionicons name="newspaper" size={22} color="#0891B2" />
+              </View>
+              <Text style={[styles.gridActionText, { color: bodyTextColor }]}>
+                News
               </Text>
             </TouchableOpacity>
 
@@ -3528,7 +3553,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
               if (!selectedGift) { Alert.alert('Select a Gift', 'Please choose a gift first.'); return; }
               setGiftSending(true);
               try {
-                await api.gifts.send({ giftId: selectedGift.id, senderId: user?.id, receiverId: id });
+                await api.gifts.send({ giftId: selectedGift.id, receiverId: id });
                 setGiftModalVisible(false);
                 setSelectedGift(null);
                 Alert.alert('Gift Sent', `You sent ${selectedGift.name} to ${astro?.name}!`);
@@ -3901,6 +3926,387 @@ export function ChatScreen() {
 }
 
 // Kundli
+const RASHI_SANSKRIT: Record<string, string> = {
+  Aries: "Mesha",
+  Taurus: "Vrishabha",
+  Gemini: "Mithuna",
+  Cancer: "Karka",
+  Leo: "Simha",
+  Virgo: "Kanya",
+  Libra: "Tula",
+  Scorpio: "Vrischika",
+  Sagittarius: "Dhanu",
+  Capricorn: "Makara",
+  Aquarius: "Kumbha",
+  Pisces: "Meena",
+};
+
+const PLANET_ROWS: { key: string; label: string; hindi: string; icon: string }[] = [
+  { key: "Su", label: "Sun", hindi: "Surya", icon: "sunny-outline" },
+  { key: "Mo", label: "Moon", hindi: "Chandra", icon: "moon-outline" },
+  { key: "Ma", label: "Mars", hindi: "Mangal", icon: "flame-outline" },
+  { key: "Me", label: "Mercury", hindi: "Budh", icon: "chatbubble-ellipses-outline" },
+  { key: "Ju", label: "Jupiter", hindi: "Guru", icon: "ribbon-outline" },
+  { key: "Ve", label: "Venus", hindi: "Shukra", icon: "sparkles-outline" },
+  { key: "Sa", label: "Saturn", hindi: "Shani", icon: "hourglass-outline" },
+  { key: "Ra", label: "Rahu", hindi: "Rahu", icon: "eye-outline" },
+  { key: "Ke", label: "Ketu", hindi: "Ketu", icon: "flash-outline" },
+];
+
+const KOOTA_ROWS: { key: string; label: string; desc: string }[] = [
+  { key: "varna", label: "Varna", desc: "Spiritual compatibility" },
+  { key: "vashya", label: "Vashya", desc: "Mutual attraction" },
+  { key: "tara", label: "Tara", desc: "Birth star compatibility" },
+  { key: "yoni", label: "Yoni", desc: "Physical compatibility" },
+  { key: "grahaMaitri", label: "Graha Maitri", desc: "Mental compatibility" },
+  { key: "gana", label: "Gana", desc: "Temperament compatibility" },
+  { key: "rashi", label: "Bhakoot", desc: "Zodiac compatibility" },
+  { key: "nadi", label: "Nadi", desc: "Health & progeny compatibility" },
+];
+
+const normalizeDegree = (lon: number) => ((Number(lon) % 360) + 360) % 360;
+
+const formatDms = (lon: number) => {
+  const value = normalizeDegree(lon);
+  let deg = Math.floor(value);
+  const minFloat = (value - deg) * 60;
+  let min = Math.floor(minFloat);
+  let sec = Math.round((minFloat - min) * 60);
+  if (sec === 60) {
+    sec = 0;
+    min += 1;
+  }
+  return `${deg}\u00B0 ${String(min).padStart(2, "0")}\u2032 ${String(sec).padStart(2, "0")}\u2033`;
+};
+
+const signIndexOf = (lon: number) => Math.floor(normalizeDegree(lon) / 30);
+
+const rashiLabel = (rashi?: string) => {
+  if (!rashi) return "\u2014";
+  const sanskrit = RASHI_SANSKRIT[rashi];
+  return sanskrit ? `${rashi} (${sanskrit})` : rashi;
+};
+
+const resolveHouse = (
+  key: string,
+  planet: any,
+  lagna: any,
+  planetHouses?: Record<string, number>,
+) => {
+  const mapped = planetHouses?.[key];
+  if (mapped) return mapped;
+  if (!lagna || typeof planet?.longitude !== "number") return undefined;
+  return ((signIndexOf(planet.longitude) - signIndexOf(lagna.longitude) + 12) % 12) + 1;
+};
+
+const scoreColor = (ratio: number) =>
+  ratio >= 0.75 ? colors.success : ratio >= 0.4 ? colors.accentGold : colors.danger;
+
+function KundliReport({ result }: { result: any }) {
+  const chart = result?.chartData || {};
+  const planets: Record<string, any> = chart.planetaryPositions || {};
+  const lagna = chart.lagna;
+  const planetHouses: Record<string, number> | undefined = chart.planetHouses;
+  const moon = planets["Mo"];
+  const sun = planets["Su"];
+
+  const houseOccupants: Record<number, string[]> = {};
+  PLANET_ROWS.forEach(({ key, label }) => {
+    const planet = planets[key];
+    if (!planet) return;
+    const house = resolveHouse(key, planet, lagna, planetHouses);
+    if (!house) return;
+    houseOccupants[house] = houseOccupants[house] || [];
+    houseOccupants[house].push(label);
+  });
+
+  const keyDetails = [
+    {
+      label: "Lagna (Ascendant)",
+      value: lagna
+        ? `${rashiLabel(lagna.rashi)}${lagna.nakshatra?.name ? ` \u00B7 ${lagna.nakshatra.name} pada ${lagna.nakshatra.pada}` : ""}`
+        : "\u2014",
+    },
+    { label: "Chandra Rashi (Moon sign)", value: moon ? rashiLabel(moon.rashi) : "\u2014" },
+    {
+      label: "Janma Nakshatra",
+      value: moon
+        ? `${moon.nakshatra?.name || "\u2014"} (pada ${moon.nakshatra?.pada || "-"})`
+        : "\u2014",
+    },
+    { label: "Surya Rashi (Sun sign)", value: sun ? rashiLabel(sun.rashi) : "\u2014" },
+  ];
+
+  const birthDetails = [
+    { label: "Name", value: result?.name || "\u2014" },
+    {
+      label: "Date of Birth",
+      value: result?.dateOfBirth ? String(result.dateOfBirth).split("T")[0] : "\u2014",
+    },
+    { label: "Time of Birth", value: result?.timeOfBirth || "\u2014" },
+    { label: "Place of Birth", value: result?.placeOfBirth || "\u2014" },
+  ];
+
+  return (
+    <View style={{ gap: 16, marginTop: 20 }}>
+      <GlassCard style={{ padding: 16 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <Ionicons name="person-circle-outline" size={20} color={colors.accentGold} />
+          <Text style={[typography.cardTitle]}>Birth Details</Text>
+        </View>
+        {birthDetails.map((row) => (
+          <View key={row.label} style={styles.detailRow}>
+            <Text style={[typography.body, { color: colors.textMuted }]}>{row.label}</Text>
+            <Text style={[typography.body, { color: colors.textPrimary, fontWeight: "600", flex: 1, textAlign: "right" }]}>
+              {row.value}
+            </Text>
+          </View>
+        ))}
+      </GlassCard>
+
+      <GlassCard style={{ padding: 16 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <Ionicons name="star-outline" size={20} color={colors.accentGold} />
+          <Text style={[typography.cardTitle]}>Key Details</Text>
+        </View>
+        {keyDetails.map((row) => (
+          <View key={row.label} style={styles.detailRow}>
+            <Text style={[typography.body, { color: colors.textMuted }]}>{row.label}</Text>
+            <Text style={[typography.body, { color: colors.textPrimary, fontWeight: "600", flex: 1, textAlign: "right" }]}>
+              {row.value}
+            </Text>
+          </View>
+        ))}
+      </GlassCard>
+
+      <GlassCard style={{ padding: 16 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <Ionicons name="planet-outline" size={20} color={colors.accentGold} />
+          <Text style={[typography.cardTitle]}>Planetary Positions</Text>
+        </View>
+        {PLANET_ROWS.map(({ key, label, hindi, icon }) => {
+          const planet = planets[key];
+          if (!planet) return null;
+          const house = resolveHouse(key, planet, lagna, planetHouses);
+          return (
+            <View key={key} style={[styles.planetRow, { borderBottomColor: colors.cardBorder }]}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+                <Ionicons name={icon as any} size={18} color={colors.accentGold} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.body, { color: colors.textPrimary, fontWeight: "700" }]}>
+                    {label} ({hindi}){planet.isRetrograde ? " \u211E" : ""}
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.textMuted }]}>
+                    {planet.nakshatra?.name
+                      ? `${planet.nakshatra.name} \u00B7 Pada ${planet.nakshatra.pada}`
+                      : "\u2014"}
+                  </Text>
+                </View>
+              </View>
+              <View style={{ alignItems: "flex-end" }}>
+                <Text style={[typography.body, { color: colors.textPrimary, fontWeight: "600" }]}>
+                  {rashiLabel(planet.rashi)}
+                </Text>
+                <Text style={[typography.caption, { color: colors.textMuted }]}>
+                  {typeof planet.longitude === "number"
+                    ? `${formatDms(normalizeDegree(planet.longitude) % 30)}${house ? ` \u00B7 House ${house}` : ""}`
+                    : house
+                      ? `House ${house}`
+                      : "\u2014"}
+                </Text>
+              </View>
+            </View>
+          );
+        })}
+      </GlassCard>
+
+      <GlassCard style={{ padding: 16 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <Ionicons name="grid-outline" size={20} color={colors.accentGold} />
+          <Text style={[typography.cardTitle]}>Bhava (Houses)</Text>
+        </View>
+        {Array.from({ length: 12 }, (_, i) => i + 1).map((house) => (
+          <View key={house} style={styles.detailRow}>
+            <Text
+              style={[
+                typography.body,
+                {
+                  color: house === 1 ? colors.accentGold : colors.textMuted,
+                  fontWeight: house === 1 ? "700" : "400",
+                },
+              ]}
+            >
+              House {house}
+              {house === 1 ? " (Lagna)" : ""}
+            </Text>
+            <Text style={[typography.body, { color: colors.textPrimary, fontWeight: "600", flex: 1, textAlign: "right" }]}>
+              {houseOccupants[house]?.join(", ") || "\u2014"}
+            </Text>
+          </View>
+        ))}
+      </GlassCard>
+    </View>
+  );
+}
+
+function MatchmakingReport({ result }: { result: any }) {
+  const details = result?.matchDetails || {};
+  const kootas: Record<string, any> = details.kootas || {};
+  const maxScore = Number(details.maxScore) || 36;
+  const score = Number(result?.matchScore ?? details.totalScore ?? 0);
+  const percent = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+  const verdict =
+    details.compatibility ||
+    (percent >= 70 ? "Excellent" : percent >= 50 ? "Good" : percent >= 30 ? "Average" : "Poor");
+  const verdictColor =
+    verdict === "Excellent"
+      ? colors.success
+      : verdict === "Good"
+        ? colors.accentGold
+        : verdict === "Average"
+          ? colors.warning
+          : colors.danger;
+
+  const persons = [
+    { name: result?.person1Name || "Person 1", summary: details.person1 },
+    { name: result?.person2Name || "Person 2", summary: details.person2 },
+  ];
+
+  return (
+    <View style={{ gap: 16, marginTop: 20 }}>
+      <GlassCard style={{ padding: 20, alignItems: "center" }}>
+        <Text style={[typography.sectionTitle]}>Guna Milan Score</Text>
+        <Text style={{ fontSize: 40, fontWeight: "800", color: colors.accentGold, marginTop: 8 }}>
+          {score}
+          <Text style={{ fontSize: 20, color: colors.textMuted }}> / {maxScore}</Text>
+        </Text>
+        <View
+          style={{
+            width: "100%",
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: colors.surfaceLight,
+            overflow: "hidden",
+            marginTop: 12,
+          }}
+        >
+          <View
+            style={{
+              width: `${Math.max(0, Math.min(100, percent))}%`,
+              height: "100%",
+              backgroundColor: verdictColor,
+              borderRadius: 4,
+            }}
+          />
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 }}>
+          <View style={{ paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, backgroundColor: verdictColor + "22" }}>
+            <Text style={{ color: verdictColor, fontWeight: "700", fontSize: 13 }}>{verdict}</Text>
+          </View>
+          <Text style={[typography.caption]}>{percent}% overall compatibility</Text>
+        </View>
+      </GlassCard>
+
+      {(details.person1 || details.person2) && (
+        <GlassCard style={{ padding: 16 }}>
+          <Text style={[typography.cardTitle, { marginBottom: 12 }]}>Birth Chart Details</Text>
+          <View style={{ flexDirection: "row", gap: 12 }}>
+            {persons.map((person, index) => (
+              <View
+                key={index}
+                style={{
+                  flex: 1,
+                  backgroundColor: colors.surfaceLight,
+                  borderRadius: radii.md,
+                  padding: 12,
+                  borderWidth: 1,
+                  borderColor: colors.cardBorder,
+                }}
+              >
+                <Text
+                  style={[typography.body, { color: colors.textPrimary, fontWeight: "700", marginBottom: 8 }]}
+                  numberOfLines={1}
+                >
+                  {person.name}
+                </Text>
+                {person.summary ? (
+                  <>
+                    <Text style={[typography.caption, { color: colors.textMuted }]}>Chandra Rashi</Text>
+                    <Text style={[typography.body, { color: colors.textPrimary, fontWeight: "600", marginBottom: 6 }]}>
+                      {rashiLabel(person.summary.rashi)}
+                    </Text>
+                    <Text style={[typography.caption, { color: colors.textMuted }]}>Janma Nakshatra</Text>
+                    <Text style={[typography.body, { color: colors.textPrimary, fontWeight: "600", marginBottom: 6 }]}>
+                      {person.summary.nakshatra || "\u2014"}
+                      {person.summary.pada ? ` (Pada ${person.summary.pada})` : ""}
+                    </Text>
+                    <Text style={[typography.caption, { color: colors.textMuted }]}>Lagna</Text>
+                    <Text style={[typography.body, { color: colors.textPrimary, fontWeight: "600" }]}>
+                      {rashiLabel(person.summary.lagna)}
+                    </Text>
+                  </>
+                ) : (
+                  <Text style={[typography.caption]}>Details unavailable for older records</Text>
+                )}
+              </View>
+            ))}
+          </View>
+        </GlassCard>
+      )}
+
+      <GlassCard style={{ padding: 16 }}>
+        <Text style={[typography.cardTitle, { marginBottom: 4 }]}>Ashtakoota Breakdown</Text>
+        <Text style={[typography.caption, { marginBottom: 12 }]}>
+          Eight factors of Vedic compatibility, each scored individually
+        </Text>
+        {KOOTA_ROWS.map(({ key, label, desc }) => {
+          const koota = kootas[key];
+          if (!koota) return null;
+          const ratio = koota.maxScore > 0 ? koota.score / koota.maxScore : 0;
+          return (
+            <View
+              key={key}
+              style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.cardBorder }}
+            >
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <Text style={[typography.body, { color: colors.textPrimary, fontWeight: "700" }]}>{label}</Text>
+                <Text style={[typography.body, { color: colors.textPrimary, fontWeight: "700" }]}>
+                  {koota.score}/{koota.maxScore}
+                </Text>
+              </View>
+              <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
+                {koota.description || desc}
+              </Text>
+              <View
+                style={{
+                  width: "100%",
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: colors.surfaceLight,
+                  overflow: "hidden",
+                  marginTop: 8,
+                }}
+              >
+                <View
+                  style={{
+                    width: `${Math.round(Math.max(0, Math.min(1, ratio)) * 100)}%`,
+                    height: "100%",
+                    backgroundColor: scoreColor(ratio),
+                    borderRadius: 3,
+                  }}
+                />
+              </View>
+            </View>
+          );
+        })}
+        <Text style={[typography.caption, { marginTop: 12, fontStyle: "italic" }]}>
+          Total {score}/{maxScore} points. A score of 18 or above is generally considered compatible.
+        </Text>
+      </GlassCard>
+    </View>
+  );
+}
+
 export function KundliScreen() {
   const { user } = useAuth();
   const [form, setForm] = useState({ name: "", dob: "", tob: "", place: "" });
@@ -4019,45 +4425,7 @@ export function KundliScreen() {
         onPress={handleGenerate}
         disabled={loading}
       />
-      {result && (
-        <GlassCard style={{ marginTop: 20, padding: 16 }}>
-          <Text style={[typography.cardTitle, { marginBottom: 8 }]}>
-            Kundli Generated
-          </Text>
-          <Text style={typography.body}>Name: {result.name}</Text>
-          <Text style={typography.body}>
-            Date: {result.dateOfBirth?.split("T")[0]}
-          </Text>
-          <Text style={typography.body}>Time: {result.timeOfBirth}</Text>
-          <Text style={typography.body}>Place: {result.placeOfBirth}</Text>
-          {result.chartData?.planetaryPositions && (
-            <View style={{ marginTop: 12 }}>
-              <Text style={[typography.cardTitle, { marginBottom: 8 }]}>Planetary Positions</Text>
-              {Object.entries(result.chartData.planetaryPositions).map(([name, p]: any) => (
-                <View key={name} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4, borderBottomWidth: 1, borderBottomColor: colors.cardBorder }}>
-                  <Text style={[typography.body, { fontWeight: '600' }]}>{name}</Text>
-                  <Text style={typography.body}>
-                    {p.rashi} | {p.nakshatra?.name || ''} | {p.longitude?.toFixed(2)}°
-                    {p.isRetrograde ? ' ℞' : ''}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          )}
-          {result.chartData?.houses && result.chartData.houses.length > 0 && (
-            <View style={{ marginTop: 12 }}>
-              <Text style={[typography.cardTitle, { marginBottom: 8 }]}>Houses</Text>
-              <Text style={typography.body}>{result.chartData.houses.join(', ')}</Text>
-            </View>
-          )}
-          {result.chartData?.lagna && (
-            <View style={{ marginTop: 12 }}>
-              <Text style={[typography.cardTitle, { marginBottom: 4 }]}>Lagna (Ascendant)</Text>
-              <Text style={typography.body}>Rashi: {result.chartData.lagna.rashi} | Longitude: {result.chartData.lagna.longitude?.toFixed(2)}°</Text>
-            </View>
-          )}
-        </GlassCard>
-      )}
+      {result && <KundliReport result={result} />}
     </ScreenWrapper>
   );
 }
@@ -4282,47 +4650,7 @@ export function MatchmakingScreen() {
         disabled={loading}
       />
       <View style={{ height: 40 }} />
-      {result && (
-        <GlassCard style={{ marginTop: 20, padding: 16 }}>
-          <Text style={[typography.cardTitle, { marginBottom: 8 }]}>
-            Compatibility Result
-          </Text>
-          {result.matchScore != null && (
-            <>
-              <Text
-                style={{
-                  fontSize: 36,
-                  fontWeight: "800",
-                  color: colors.accentGold,
-                  textAlign: "center",
-                }}
-              >
-                {result.matchScore}%
-              </Text>
-              <Text style={[typography.body, { textAlign: 'center', marginBottom: 12, color: colors.textSecondary }]}>
-                {result.matchDetails?.compatibility || ''}
-              </Text>
-            </>
-          )}
-          {result.matchDetails?.kootas && (
-            <View style={{ gap: 8 }}>
-              {Object.entries(result.matchDetails.kootas).map(([key, k]: any) => (
-                <View key={key} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.cardBorder }}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[typography.body, { fontWeight: '600' }]}>{k.description || key}</Text>
-                  </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <View style={{ width: 60, height: 6, borderRadius: 3, backgroundColor: colors.surfaceLight, overflow: 'hidden' }}>
-                      <View style={{ width: `${(k.score / k.maxScore) * 100}%`, height: '100%', backgroundColor: k.score >= k.maxScore ? '#16A34A' : k.score > 0 ? '#F59E0B' : '#EF4444', borderRadius: 3 }} />
-                    </View>
-                    <Text style={[typography.body, { fontWeight: '700', minWidth: 30, textAlign: 'right' }]}>{k.score}/{k.maxScore}</Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          )}
-        </GlassCard>
-      )}
+      {result && <MatchmakingReport result={result} />}
     </ScreenWrapper>
   );
 }
@@ -4387,7 +4715,11 @@ export function ShopScreen({ navigation }: any) {
       setShowCart(false);
       Alert.alert(
         "Order Placed",
-        `Order #${order.id.slice(0, 8).toUpperCase()} created successfully!`,
+        `Order #${order.id.slice(0, 8).toUpperCase()} created successfully! You can track it in Order History.`,
+        [
+          { text: "View Order History", onPress: () => navigation?.navigate("OrderHistory") },
+          { text: "OK", style: "cancel" },
+        ],
       );
     } catch (e: any) {
       Alert.alert(
@@ -4459,13 +4791,22 @@ export function ShopScreen({ navigation }: any) {
                   alignItems: "center",
                   justifyContent: "center",
                   marginBottom: 8,
+                  overflow: "hidden",
                 }}
               >
-                <Ionicons
-                  name="diamond-outline"
-                  size={40}
-                  color={colors.primaryLight}
-                />
+                {item.images?.[0] ? (
+                  <Image
+                    source={{ uri: resolveMediaUrl(item.images[0]) }}
+                    style={{ width: "100%", height: "100%" }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Ionicons
+                    name="diamond-outline"
+                    size={40}
+                    color={colors.primaryLight}
+                  />
+                )}
               </View>
               <Text style={typography.cardTitle} numberOfLines={1}>
                 {item.name}
@@ -4514,6 +4855,13 @@ export function ShopScreen({ navigation }: any) {
                 key={c.product.id}
                 style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
               >
+                {c.product.images?.[0] ? (
+                  <Image
+                    source={{ uri: resolveMediaUrl(c.product.images[0]) }}
+                    style={{ width: 36, height: 36, borderRadius: 8, backgroundColor: colors.surfaceLight }}
+                    resizeMode="cover"
+                  />
+                ) : null}
                 <View style={{ flex: 1 }}>
                   <Text style={[typography.body, { fontWeight: "600" }]}>
                     {c.product.name} x{c.qty}
@@ -4684,6 +5032,12 @@ export function ProfileScreen({ navigation }: any) {
       icon: "newspaper-outline",
       label: "Blogs & Articles",
       route: "Blogs",
+      category: "Preferences",
+    },
+    {
+      icon: "newspaper",
+      label: "News",
+      route: "News",
       category: "Preferences",
     },
     {
@@ -5202,6 +5556,21 @@ function Input({
 }
 
 const styles = StyleSheet.create({
+  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 8,
+  },
+  planetRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
   astroCard: { width: 140, marginRight: 12 },
   astroInner: { alignItems: "center", paddingVertical: 16, gap: 6 },
   quickActions: {

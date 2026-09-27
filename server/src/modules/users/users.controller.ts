@@ -1,8 +1,9 @@
-import { Controller, Get, Param, Body, Post, Put, Delete, HttpCode, HttpStatus, UseGuards, BadRequestException, UnauthorizedException, ForbiddenException, Req } from '@nestjs/common';
+import { Controller, Get, Param, Body, Post, Put, Delete, HttpCode, HttpStatus, UseGuards, BadRequestException, UnauthorizedException, ForbiddenException, Req, Query } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { AuthService } from '../auth/auth.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { parsePagination } from '../../common/utils/pagination';
 
 function stripPassword(user: any) {
   if (!user) return user;
@@ -66,10 +67,12 @@ export class UsersController {
 
   @Get()
   @UseGuards(AuthGuard)
-  async findAll(@Req() req: any) {
+  async findAll(@Req() req: any, @Query() query: any) {
     if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can view all users');
-    const users = await this.usersService.findAll();
-    return users.map(stripPassword);
+    const p = parsePagination(query);
+    const users = await this.usersService.findAll(p);
+    if (Array.isArray(users)) return users.map(stripPassword);
+    return { ...users, data: users.data.map(stripPassword) };
   }
 
   @Get(':id')

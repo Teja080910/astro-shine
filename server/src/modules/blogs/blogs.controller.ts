@@ -2,21 +2,22 @@ import { Controller, Get, Post, Put, Delete, Param, Body, HttpCode, HttpStatus, 
 import { BlogsService } from './blogs.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { RoleGuard, Roles } from '../../common/guards/role.guard';
+import { parsePagination } from '../../common/utils/pagination';
 
 @Controller('blogs')
 export class BlogsController {
   constructor(private readonly service: BlogsService) {}
 
   @Get()
-  async findAll(@Query('published') published?: string) {
+  async findAll(@Query('published') published?: string, @Query() query?: any) {
     if (published === 'true') return this.service.findPublished();
-    return this.service.findAll();
+    return this.service.findAll(parsePagination(query));
   }
 
   @Get('my')
   @UseGuards(AuthGuard)
-  async findMy(@Req() req: any) {
-    return this.service.findByAuthorId(req.userId);
+  async findMy(@Req() req: any, @Query() query?: any) {
+    return this.service.findByAuthorId(req.userId, parsePagination(query));
   }
 
   @Get('slug/:slug')

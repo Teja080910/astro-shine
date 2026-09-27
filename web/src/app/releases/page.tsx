@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
+import { SearchInput, matchesSearch } from '@/components/SearchInput';
 import { api } from '@/lib/api';
 
 export default function ReleasesPage() {
@@ -18,6 +19,7 @@ export default function ReleasesPage() {
   const [releaseNotes, setReleaseNotes] = useState('');
   const [downloadUrl, setDownloadUrl] = useState('');
   const [isMandatory, setIsMandatory] = useState(false);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     api.get<any[]>('/releases')
@@ -46,11 +48,15 @@ export default function ReleasesPage() {
         setData(data.map(r => r.id === selected.id ? updated : r));
       } else {
         const created = await api.post('/releases', payload);
-        setData([...data, created]);
+        setData([created, ...data]);
       }
       setSelected(null);
     } catch (e: any) { alert(e.message || 'Failed to save'); }
   };
+
+  const filtered = data.filter((r: any) =>
+    matchesSearch(search, r.appName, r.platform, r.version, r.releaseNotes, r.isActive ? 'Active' : 'Inactive')
+  );
 
   return (
     <AdminLayout>
@@ -63,20 +69,25 @@ export default function ReleasesPage() {
       ) : error ? (
         <div className="bg-red-900/20 border border-red-800 text-red-400 rounded-lg px-4 py-3 text-sm">{error}</div>
       ) : (
-        <Table headers={['App', 'Platform', 'Version', 'Build', 'Mandatory', 'Status', 'Date', '']} emptyMessage="No releases found">
-          {data.map((r: any) => (
-            <tr key={r.id} className="border-b border-divider hover:bg-surface-light/50">
-              <td className="px-4 py-3 text-text-primary font-bold">{r.appName}</td>
-              <td className="px-4 py-3"><Badge variant="info">{r.platform}</Badge></td>
-              <td className="px-4 py-3 text-text-secondary">{r.version}</td>
-              <td className="px-4 py-3 text-text-secondary">{r.buildNumber}</td>
-              <td className="px-4 py-3">{r.isMandatory ? <Badge variant="danger">Yes</Badge> : <Badge variant="info">No</Badge>}</td>
-              <td className="px-4 py-3">{r.isActive ? <Badge variant="success">Active</Badge> : <Badge variant="danger">Inactive</Badge>}</td>
-              <td className="px-4 py-3 text-text-muted text-sm">{r.releasedAt ? formatDate(r.releasedAt) : formatDate(r.createdAt)}</td>
-              <td className="px-4 py-3"><button onClick={() => openForm(r)} className="text-primary-light hover:underline text-sm font-medium">Edit</button></td>
-            </tr>
-          ))}
-        </Table>
+        <>
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <SearchInput value={search} onChange={setSearch} placeholder="Search by app, platform, version, status or notes..." />
+          </div>
+          <Table headers={['App', 'Platform', 'Version', 'Build', 'Mandatory', 'Status', 'Date', '']} emptyMessage="No releases found">
+            {filtered.map((r: any) => (
+              <tr key={r.id} className="border-b border-divider hover:bg-surface-light/50">
+                <td className="px-4 py-3 text-text-primary font-bold">{r.appName}</td>
+                <td className="px-4 py-3"><Badge variant="info">{r.platform}</Badge></td>
+                <td className="px-4 py-3 text-text-secondary">{r.version}</td>
+                <td className="px-4 py-3 text-text-secondary">{r.buildNumber}</td>
+                <td className="px-4 py-3">{r.isMandatory ? <Badge variant="danger">Yes</Badge> : <Badge variant="info">No</Badge>}</td>
+                <td className="px-4 py-3">{r.isActive ? <Badge variant="success">Active</Badge> : <Badge variant="danger">Inactive</Badge>}</td>
+                <td className="px-4 py-3 text-text-muted text-sm">{r.releasedAt ? formatDate(r.releasedAt) : formatDate(r.createdAt)}</td>
+                <td className="px-4 py-3"><button onClick={() => openForm(r)} className="text-primary-light hover:underline text-sm font-medium">Edit</button></td>
+              </tr>
+            ))}
+          </Table>
+        </>
       )}
 
       <CustomModal open={!!selected || selected === null} onClose={() => setSelected(undefined)} title={selected?.id ? 'Edit Release' : 'Add Release'}>

@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { GradientButton, CustomModal, Table, Badge } from '@/components/UIComponents';
+import { SearchInput } from '@/components/SearchInput';
+import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 import { useSocket } from '@/hooks/useSocket';
 import type { MuhuratCategory } from '@astro-shine/shared-types';
@@ -12,12 +14,37 @@ export default function MuhuratCategoriesPage() {
   const [editing, setEditing] = useState<MuhuratCategory | null>(null);
   const [form, setForm] = useState({ name: '', description: '', isActive: true });
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchData = useCallback(() => {
-    api.get<MuhuratCategory[]>('/muhurat-categories/admin')
-      .then(setData)
-      .catch(console.error);
-  }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const fetchData = useCallback(async () => {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+    });
+    if (debouncedSearch) params.set('q', debouncedSearch);
+    try {
+      const res = await api.get<any>(`/muhurat-categories/admin?${params.toString()}`);
+      const { data, total, totalPages } = unwrapList<MuhuratCategory>(res);
+      setData(data);
+      setTotal(total);
+      setTotalPages(totalPages);
+    } catch (err) {
+      console.error(err);
+    }
+  }, [page, limit, debouncedSearch]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -62,6 +89,7 @@ export default function MuhuratCategoriesPage() {
         await api.post('/muhurat-categories', form);
       }
       setEditing(null);
+      await fetchData();
     } catch (err: any) {
       setError(err.message || 'An error occurred while saving');
     }
@@ -72,6 +100,10 @@ export default function MuhuratCategoriesPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-extrabold text-text-primary">Muhurat Categories</h1>
         <button onClick={startNew} className="gradient-btn">New Category</button>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by name or description..." />
       </div>
 
       <div className="glass-card-solid p-6">
@@ -96,6 +128,14 @@ export default function MuhuratCategoriesPage() {
             </tr>
           ))}
         </Table>
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          limit={limit}
+          onPageChange={setPage}
+          onLimitChange={(l) => { setLimit(l); setPage(1); }}
+        />
       </div>
 
       <CustomModal open={!!editing} onClose={() => setEditing(null)} title={editing?.id ? 'Edit Category' : 'New Category'}>

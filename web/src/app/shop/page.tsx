@@ -1,10 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
+import { SearchInput } from '@/components/SearchInput';
+import { Pagination, unwrapList } from '@/components/Pagination';
+import { ImageUpload } from '@/components/ImageUpload';
 import { api } from '@/lib/api';
+import { imageSrc } from '@/lib/media';
 
 export default function ShopPage() {
   const [data, setData] = useState<any[]>([]);
@@ -19,13 +23,38 @@ export default function ShopPage() {
   const [comparePrice, setComparePrice] = useState('');
   const [category, setCategory] = useState('');
   const [stock, setStock] = useState('0');
+  const [images, setImages] = useState<string[]>([]);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    api.get<any[]>('/shop')
-      .then(setData)
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const fetchData = useCallback(() => {
+    setLoading(true);
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (debouncedSearch) params.set('q', debouncedSearch);
+    api.get<any>(`/shop?${params.toString()}`)
+      .then((res) => {
+        const list = unwrapList<any>(res);
+        setData(list.data);
+        setTotal(list.total);
+        setTotalPages(list.totalPages);
+      })
       .catch((e) => setError(e.message || 'Failed to load products'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [page, limit, debouncedSearch]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const openForm = (p: any) => {
     setSelected(p);
@@ -36,25 +65,29 @@ export default function ShopPage() {
     setComparePrice(p?.comparePrice || '');
     setCategory(p?.category || '');
     setStock(String(p?.stock ?? 0));
+    setImages(Array.isArray(p?.images) ? p.images : []);
   };
 
   const closeForm = () => {
     setShowForm(false);
     setSelected(null);
+    setImages([]);
   };
 
   const handleSave = async () => {
     if (!name.trim() || !price) return;
-    const payload = { name, description, price, comparePrice: comparePrice || null, category, stock: parseInt(stock) || 0 };
+    const payload = { name, description, price, comparePrice: comparePrice || null, category, stock: parseInt(stock) || 0, images };
     try {
       if (selected?.id) {
-        const updated = await api.put(`/shop/${selected.id}`, payload);
-        setData(data.map(p => p.id === selected.id ? updated : p));
+        await api.put(`/shop/${selected.id}`, payload);
+        closeForm();
+        fetchData();
       } else {
-        const created = await api.post('/shop', payload);
-        setData([...data, created]);
+        await api.post('/shop', payload);
+        closeForm();
+        if (page !== 1) setPage(1);
+        else fetchData();
       }
-      closeForm();
     } catch (e: any) { alert(e.message || 'Failed to save'); }
   };
 
@@ -62,8 +95,8 @@ export default function ShopPage() {
     if (!deleteTarget) return;
     try {
       await api.del(`/shop/${deleteTarget.id}`);
-      setData(data.filter(p => p.id !== deleteTarget.id));
       setDeleteTarget(null);
+      fetchData();
     } catch (e: any) { alert(e.message || 'Failed to delete'); }
   };
 
@@ -78,22 +111,44 @@ export default function ShopPage() {
       ) : error ? (
         <div className="bg-red-900/20 border border-red-800 text-red-400 rounded-lg px-4 py-3 text-sm">{error}</div>
       ) : (
-        <Table headers={['Name', 'Category', 'Price', 'Compare', 'Stock', 'Status', '']} emptyMessage="No products found">
-          {data.map((p: any) => (
-            <tr key={p.id} className="border-b border-divider hover:bg-surface-light/50">
-              <td className="px-4 py-3 text-text-primary font-bold">{p.name}</td>
-              <td className="px-4 py-3 text-text-secondary">{p.category || '-'}</td>
-              <td className="px-4 py-3 text-text-primary">₹{p.price}</td>
-              <td className="px-4 py-3 text-text-muted">{p.comparePrice ? `₹${p.comparePrice}` : '-'}</td>
-              <td className="px-4 py-3 text-text-secondary">{p.stock}</td>
-              <td className="px-4 py-3">{p.isActive ? <Badge variant="success">Active</Badge> : <Badge variant="danger">Inactive</Badge>}</td>
-              <td className="px-4 py-3 flex gap-2">
-                <button onClick={() => openForm(p)} className="text-primary-light hover:underline text-sm font-medium">Edit</button>
-                <button onClick={() => setDeleteTarget(p)} className="text-red-400 hover:underline text-sm font-medium">Delete</button>
-              </td>
-            </tr>
-          ))}
-        </Table>
+        <>
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <SearchInput value={search} onChange={setSearch} placeholder="Search by name, category or description..." />
+          </div>
+          <Table headers={['Name', 'Category', 'Price', 'Compare', 'Stock', 'Status', '']} emptyMessage="No products found">
+            {data.map((p: any) => (
+              <tr key={p.id} className="border-b border-divider hover:bg-surface-light/50">
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    {p.images?.[0] ? (
+                      <img src={imageSrc(p.images[0])} alt={p.name} className="w-9 h-9 object-cover rounded-lg border border-divider" />
+                    ) : (
+                      <div className="w-9 h-9 rounded-lg bg-surface-light border border-divider" />
+                    )}
+                    <span className="text-text-primary font-bold">{p.name}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-3 text-text-secondary">{p.category || '-'}</td>
+                <td className="px-4 py-3 text-text-primary">₹{p.price}</td>
+                <td className="px-4 py-3 text-text-muted">{p.comparePrice ? `₹${p.comparePrice}` : '-'}</td>
+                <td className="px-4 py-3 text-text-secondary">{p.stock}</td>
+                <td className="px-4 py-3">{p.isActive ? <Badge variant="success">Active</Badge> : <Badge variant="danger">Inactive</Badge>}</td>
+                <td className="px-4 py-3 flex gap-2">
+                  <button onClick={() => openForm(p)} className="text-primary-light hover:underline text-sm font-medium">Edit</button>
+                  <button onClick={() => setDeleteTarget(p)} className="text-red-400 hover:underline text-sm font-medium">Delete</button>
+                </td>
+              </tr>
+            ))}
+          </Table>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={(l) => { setLimit(l); setPage(1); }}
+          />
+        </>
       )}
 
       <CustomModal open={showForm} onClose={closeForm} title={selected?.id ? 'Edit Product' : 'Add Product'}>
@@ -107,6 +162,15 @@ export default function ShopPage() {
           <div className="grid grid-cols-2 gap-3">
             <div><label className="block text-text-primary font-medium mb-1">Category</label><input type="text" value={category} onChange={(e) => setCategory(e.target.value)} className="input-field text-sm" /></div>
             <div><label className="block text-text-primary font-medium mb-1">Stock</label><input type="number" value={stock} onChange={(e) => setStock(e.target.value)} className="input-field text-sm" /></div>
+          </div>
+          <div>
+            <label className="block text-text-primary font-medium mb-1">Product Images</label>
+            <ImageUpload
+              multiple
+              value={images}
+              onChange={setImages}
+              hint="First image is used as the product thumbnail."
+            />
           </div>
           <div className="flex gap-3 pt-3 border-t border-divider">
             <GradientButton onClick={handleSave}>Save</GradientButton>

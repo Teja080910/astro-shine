@@ -25,9 +25,11 @@ interface ChatState {
   supportVersion: number;
   notificationVersion: number;
   blogVersion: number;
+  newsVersion: number;
   walletVersion: number;
   videoVersion: number;
   giftVersion: number;
+  orderVersion: number;
   loadConversations: () => Promise<void>;
   openConversation: (participantId: string, participantRole: string) => Promise<string>;
   setActiveConversation: (conv: Conversation | null) => void;
@@ -64,9 +66,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [supportVersion, setSupportVersion] = useState(0);
   const [notificationVersion, setNotificationVersion] = useState(0);
   const [blogVersion, setBlogVersion] = useState(0);
+  const [newsVersion, setNewsVersion] = useState(0);
   const [walletVersion, setWalletVersion] = useState(0);
   const [videoVersion, setVideoVersion] = useState(0);
   const [giftVersion, setGiftVersion] = useState(0);
+  const [orderVersion, setOrderVersion] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [chatBlockedMessage, setChatBlockedMessage] = useState<string | null>(null);
@@ -239,6 +243,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setBlogVersion(v => v + 1);
     });
 
+    socket.on('news:updated', () => {
+      setNewsVersion(v => v + 1);
+    });
+
+    socket.on('news:deleted', () => {
+      setNewsVersion(v => v + 1);
+    });
+
     socket.on('videos:updated', () => {
       setVideoVersion(v => v + 1);
     });
@@ -261,6 +273,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
     socket.on('wallet:updated', (data: { balance?: string }) => {
       setWalletVersion(v => v + 1);
+    });
+
+    socket.on('order:updated', () => {
+      setOrderVersion(v => v + 1);
     });
 
     socketRef.current = socket;
@@ -421,9 +437,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         supportVersion,
         notificationVersion,
         blogVersion,
+        newsVersion,
         walletVersion,
         videoVersion,
         giftVersion,
+        orderVersion,
         loading,
         hasMore,
         chatBlockedMessage,

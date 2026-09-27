@@ -19,11 +19,14 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     headers,
   });
   if (res.status === 401) {
-    if (typeof window !== 'undefined' && !path.startsWith('/auth/login')) {
+    const errorDetails = await res.json().catch(() => ({}));
+    const message = errorDetails.message || 'Unauthorized';
+    const isAuthEndpoint = path.startsWith('/auth/');
+    if (typeof window !== 'undefined' && !isAuthEndpoint) {
       document.cookie = 'admin-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
       window.location.href = '/login';
     }
-    throw new Error('Unauthorized');
+    throw new Error(message);
   }
   if (res.status === 204) return undefined as T;
   if (!res.ok) {
@@ -39,4 +42,35 @@ export const api = {
   post: <T>(path: string, body: any) => apiFetch<T>(path, { method: 'POST', body: JSON.stringify(body) }),
   put: <T>(path: string, body: any) => apiFetch<T>(path, { method: 'PUT', body: JSON.stringify(body) }),
   del: (path: string) => apiFetch<void>(path, { method: 'DELETE' }),
+  upload: uploadFile,
 };
+
+export async function uploadFile(
+  file: File,
+  destination: 'cloudinary' | 'local' | 'supabase' | 'minio' = 'minio',
+): Promise<{ filename: string; url: string; size?: number }> {
+  const form = new FormData();
+  form.append('file', file);
+  const headers: Record<string, string> = {};
+  if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+
+  const res = await fetch(`${config.apiBaseUrl}/upload?destination=${destination}`, {
+    method: 'POST',
+    headers,
+    body: form,
+  });
+  if (res.status === 401) {
+    const errorDetails = await res.json().catch(() => ({}));
+    const message = errorDetails.message || 'Unauthorized';
+    if (typeof window !== 'undefined') {
+      document.cookie = 'admin-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
+      window.location.href = '/login';
+    }
+    throw new Error(message);
+  }
+  if (!res.ok) {
+    const errorDetails = await res.json().catch(() => ({}));
+    throw new Error(errorDetails.message || `Upload failed: ${res.status}`);
+  }
+  return res.json();
+}

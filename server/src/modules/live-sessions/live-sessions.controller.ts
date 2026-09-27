@@ -1,13 +1,17 @@
 import { Controller, Get, Post, Put, Param, Body, Query, UseGuards, Req, ForbiddenException } from '@nestjs/common';
 import { LiveSessionsService } from './live-sessions.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
+import { parsePagination } from '../../common/utils/pagination';
 
 @Controller('live-sessions')
 export class LiveSessionsController {
   constructor(private readonly service: LiveSessionsService) {}
 
   @Get()
-  async findAll() { return this.service.findAll(); }
+  async findAll(@Query() query?: any) {
+    const p = parsePagination(query);
+    return this.service.findAll(p);
+  }
 
   @Get('live')
   async findLive() { return this.service.findLive(); }

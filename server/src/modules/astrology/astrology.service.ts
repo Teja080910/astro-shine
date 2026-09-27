@@ -60,6 +60,8 @@ export class AstrologyService {
   private readonly logger = new Logger(AstrologyService.name);
   private readonly userId = process.env.ASTRO_API_USER_ID || '';
   private readonly apiKey = process.env.ASTRO_API_KEY || '';
+  private static readonly REMOTE_COOLDOWN_MS = 5 * 60_000;
+  private remoteCooldownUntil = 0;
 
   constructor(private readonly local: LocalAstrologyService) {}
 
@@ -77,11 +79,34 @@ export class AstrologyService {
     }
   }
 
+  getProviderStatus() {
+    const configured = Boolean(this.userId && this.apiKey);
+    const coolingDown = Date.now() < this.remoteCooldownUntil;
+    return {
+      provider: 'AstrologyAPI (json.astrologyapi.com)',
+      configured,
+      status: !configured
+        ? 'not_configured'
+        : coolingDown
+          ? 'fallback_local'
+          : 'active',
+      cooldownUntil: coolingDown
+        ? new Date(this.remoteCooldownUntil).toISOString()
+        : null,
+      fallbackEngine: 'Local panchangam engine',
+    };
+  }
+
   private async call<T>(
     endpoint: string,
     body: AstroBodyParams = {},
   ): Promise<T> {
     this.assertConfigured();
+    if (Date.now() < this.remoteCooldownUntil) {
+      throw new ServiceUnavailableException(
+        'Astrology API temporarily unavailable; using local engine',
+      );
+    }
     try {
       const res = await axios.post<T>(`${API_BASE}/${endpoint}`, body, {
         headers: {
@@ -91,10 +116,18 @@ export class AstrologyService {
         },
         timeout: 15000,
       });
+      const data = res.data as { status?: boolean; msg?: string };
+      if (data && typeof data === 'object' && data.status === false) {
+        throw new Error(data.msg || 'Astrology API returned an error');
+      }
       return res.data;
     } catch (e: any) {
-      this.logger.error(
-        `AstrologyAPI ${endpoint} failed: ${e.response?.data?.message || e.message}`,
+      this.remoteCooldownUntil =
+        Date.now() + AstrologyService.REMOTE_COOLDOWN_MS;
+      this.logger.warn(
+        `AstrologyAPI ${endpoint} failed, using local engine for 5 min: ${
+          e.response?.data?.msg || e.response?.data?.message || e.message
+        }`,
       );
       throw new ServiceUnavailableException(
         `Astrology API request failed: ${e.response?.data?.message || e.message}`,
@@ -123,6 +156,7 @@ export class AstrologyService {
       const planets = await this.call<any[]>('planets', { ...params });
 
       const planetaryPositions: Record<string, PlanetaryPosition> = {};
+      const planetHouses: Record<string, number> = {};
       for (const p of planets) {
         if (p.name === 'Ascendant') continue;
         const key = PLANET_NAMES[p.name] || p.name;
@@ -137,6 +171,8 @@ export class AstrologyService {
           },
           rashi: p.sign || '',
         };
+        const house = Number(p.house);
+        if (house >= 1 && house <= 12) planetHouses[key] = house;
       }
 
       const asc = planets.find((p) => p.name === 'Ascendant');
@@ -162,7 +198,7 @@ export class AstrologyService {
       }
       houses.sort((a, b) => a - b);
 
-      return { planetaryPositions, lagna, houses };
+      return { planetaryPositions, lagna, houses, planetHouses };
     } catch (e: any) {
       this.logger.warn(`Kundli falling back to local engine: ${e.message}`);
       return this.local.kundli(details);
@@ -220,11 +256,16 @@ export class AstrologyService {
         Number(kootaRes?.total?.total_points) ||
         Object.values(KOOTA_DETAILS).reduce((s, k) => s + k.maxScore, 0);
 
+      const person1 = this.local.summary(details1);
+      const person2 = this.local.summary(details2);
+
       return {
         totalScore,
         maxScore,
         kootas,
         compatibility: this.compatibilityFromScore(totalScore, maxScore),
+        person1,
+        person2,
       };
     } catch (e: any) {
       this.logger.warn(
@@ -263,7 +304,8 @@ export class AstrologyService {
 
       const res = await this.call<any>('advanced_panchang', params);
       const tithi = res?.tithi?.details?.tithi_name || res?.tithi || '';
-      const nakshatra = res?.nakshatra?.details?.nak_name || res?.nakshatra || '';
+      const nakshatra =
+        res?.nakshatra?.details?.nak_name || res?.nakshatra || '';
       const yoga = res?.yog?.details?.yog_name || res?.yog || '';
       const karana = res?.karan?.details?.karan_name || res?.karan || '';
 
@@ -314,9 +356,7 @@ export class AstrologyService {
         mood: lucky.mood,
       };
     } catch (e: any) {
-      this.logger.warn(
-        `Horoscope falling back to local engine: ${e.message}`,
-      );
+      this.logger.warn(`Horoscope falling back to local engine: ${e.message}`);
       return this.local.horoscope(sign, dateStr);
     }
   }

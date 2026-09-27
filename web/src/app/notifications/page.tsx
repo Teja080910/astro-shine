@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { GradientButton, CustomModal } from '@/components/UIComponents';
+import { SearchInput } from '@/components/SearchInput';
+import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 import type { Notification } from '@astro-shine/shared-types';
 
@@ -12,6 +14,32 @@ const audienceOptions = [
   { value: 'all_astrologers', label: 'All Astrologers' },
   { value: 'both', label: 'Both Users & Astrologers' },
 ];
+
+const screenOptions = [
+  { value: '', label: '— None —' },
+  { value: 'Home', label: 'Home' },
+  { value: 'Wallet', label: 'Wallet' },
+  { value: 'Astrologers', label: 'Astrologers' },
+  { value: 'Muhurat', label: 'Muhurat' },
+  { value: 'Chat', label: 'Chat' },
+  { value: 'Blogs', label: 'Blogs' },
+  { value: 'BlogDetail', label: 'Blog Detail (needs Item ID)' },
+  { value: 'News', label: 'News' },
+  { value: 'NewsDetail', label: 'News Detail (needs Item ID)' },
+  { value: 'Support', label: 'Support' },
+  { value: 'TicketDetail', label: 'Support Ticket (needs Item ID)' },
+  { value: 'Shop', label: 'Shop' },
+  { value: 'Videos', label: 'Videos' },
+  { value: 'Panchang', label: 'Panchang' },
+  { value: 'OrderHistory', label: 'Order History' },
+  { value: 'Donation', label: 'Donation' },
+  { value: 'MandirPooja', label: 'Mandir Pooja' },
+  { value: 'MandirPoojaDetail', label: 'Pooja Detail (needs Item ID)' },
+  { value: 'Gifts', label: 'Gifts' },
+  { value: 'AstrologerDetail', label: 'Astrologer Detail (needs Item ID)' },
+];
+
+const needsItemId = ['BlogDetail', 'NewsDetail', 'TicketDetail', 'MandirPoojaDetail', 'AstrologerDetail'];
 
 const typeStyles: Record<string, { bg: string; text: string }> = {
   system: { bg: 'rgba(59, 130, 246, 0.15)', text: '#3B82F6' },
@@ -25,26 +53,56 @@ export default function NotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [composing, setComposing] = useState(false);
-  const [form, setForm] = useState({ title: '', body: '', type: 'system', targetAudience: 'all_users' });
+  const [form, setForm] = useState({ title: '', body: '', type: 'system', targetAudience: 'all_users', screen: '', itemId: '' });
   const [formError, setFormError] = useState('');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchAll = () => {
-    api.get<Notification[]>('/notifications')
-      .then(setData)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const fetchAll = useCallback(() => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (debouncedSearch) params.set('q', debouncedSearch);
+    api.get<any>(`/notifications?${params.toString()}`)
+      .then((res) => {
+        const list = unwrapList<Notification>(res);
+        setData(list.data);
+        setTotal(list.total);
+        setTotalPages(list.totalPages);
+      })
       .catch((e) => setError(e.message || 'Failed to load notifications'))
       .finally(() => setLoading(false));
-  };
+  }, [page, limit, debouncedSearch]);
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const sendNotification = async () => {
     if (!form.title.trim()) { setFormError('Title is required'); return; }
     if (!form.body.trim()) { setFormError('Body is required'); return; }
     setFormError('');
     try {
-      await api.post<any>('/notifications', form);
+      const payload: any = {
+        title: form.title,
+        body: form.body,
+        type: form.type,
+        targetAudience: form.targetAudience,
+      };
+      if (form.screen) {
+        payload.data = { screen: form.screen, ...(form.itemId.trim() ? { itemId: form.itemId.trim() } : {}) };
+      }
+      await api.post<any>('/notifications', payload);
       setComposing(false);
-      setForm({ title: '', body: '', type: 'system', targetAudience: 'all_users' });
+      setForm({ title: '', body: '', type: 'system', targetAudience: 'all_users', screen: '', itemId: '' });
       fetchAll();
     } catch (e: any) {
       setFormError(e.message || 'Failed to send notification');
@@ -58,14 +116,18 @@ export default function NotificationsPage() {
         <button onClick={() => { setComposing(true); setFormError(''); }} className="gradient-btn">Compose</button>
       </div>
 
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search notifications by title, body, type, or target..." />
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center h-64" style={{ color: 'var(--text-secondary)' }}>Loading notifications...</div>
       ) : error ? (
         <div className="rounded-lg px-4 py-3 text-sm" style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#EF4444' }}>{error}</div>
       ) : (
         <div className="glass-card p-6">
-          {data.length === 0 ? <p style={{ color: 'var(--text-secondary)' }}>No notifications sent yet.</p> :
-            data.slice(0, 50).map(n => {
+          {filtered.length === 0 ? <p style={{ color: 'var(--text-secondary)' }}>{data.length === 0 ? 'No notifications sent yet.' : 'No notifications match your search.'}</p> :
+            filtered.slice(0, 50).map(n => {
               const ts = typeStyles[n.type] || typeStyles.system;
               return (
                 <div key={n.id} className="border-b py-3 last:border-0" style={{ borderColor: 'var(--divider)' }}>
@@ -92,6 +154,10 @@ export default function NotificationsPage() {
           <div><label className="text-sm block mb-1" style={{ color: 'var(--text-secondary)' }}>Title *</label><input className="input-field" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
           <div><label className="text-sm block mb-1" style={{ color: 'var(--text-secondary)' }}>Body *</label><textarea className="input-field h-24" value={form.body} onChange={e => setForm({ ...form, body: e.target.value })} /></div>
           <div><label className="text-sm block mb-1" style={{ color: 'var(--text-secondary)' }}>Type</label><select className="input-field" value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}><option value="system">System</option><option value="promotional">Promotional</option><option value="transactional">Transactional</option><option value="reminder">Reminder</option></select></div>
+          <div><label className="text-sm block mb-1" style={{ color: 'var(--text-secondary)' }}>Opens screen (optional)</label><select className="input-field" value={form.screen} onChange={e => setForm({ ...form, screen: e.target.value, itemId: '' })}>{screenOptions.map(o => (<option key={o.value} value={o.value}>{o.label}</option>))}</select></div>
+          {needsItemId.includes(form.screen) && (
+            <div><label className="text-sm block mb-1" style={{ color: 'var(--text-secondary)' }}>Item ID (blog / ticket / pooja / astrologer ID)</label><input className="input-field" value={form.itemId} onChange={e => setForm({ ...form, itemId: e.target.value })} /></div>
+          )}
           <div>
             <label className="text-sm block mb-1" style={{ color: 'var(--text-secondary)' }}>Send To</label>
             <div className="flex flex-col gap-2">

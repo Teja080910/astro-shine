@@ -1,8 +1,9 @@
 import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
-import { eq, sql, desc } from 'drizzle-orm';
+import { eq, sql, desc, or, ilike } from 'drizzle-orm';
 import { WalletService } from '../wallet/wallet.service';
+import { paginated, Pagination } from '../../common/utils/pagination';
 
 @Injectable()
 export class DonationsService {
@@ -29,18 +30,50 @@ export class DonationsService {
     };
   }
 
-  async getLogs() {
-    return this.db
-      .select()
-      .from(schema.donationLogs)
-      .orderBy(desc(schema.donationLogs.createdAt));
+  async getLogs(pagination?: Pagination) {
+    const pattern = pagination?.q ? `%${pagination.q}%` : undefined;
+    const where = pattern
+      ? or(
+          ilike(schema.donationLogs.type, pattern),
+          ilike(schema.donationLogs.note, pattern),
+        )
+      : undefined;
+
+    const build = () =>
+      this.db
+        .select()
+        .from(schema.donationLogs)
+        .where(where)
+        .orderBy(desc(schema.donationLogs.createdAt));
+
+    if (!pagination?.enabled) return build();
+
+    const [rows, countRows] = await Promise.all([
+      build().limit(pagination.limit).offset(pagination.offset),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(schema.donationLogs)
+        .where(where),
+    ]);
+
+    return paginated(rows, Number(countRows[0].count), pagination);
   }
 
-  async findAll() {
-    return this.db
-      .select()
-      .from(schema.donations)
-      .orderBy(desc(schema.donations.createdAt));
+  async findAll(pagination?: Pagination) {
+    const build = () =>
+      this.db
+        .select()
+        .from(schema.donations)
+        .orderBy(desc(schema.donations.createdAt));
+
+    if (!pagination?.enabled) return build();
+
+    const [rows, countRows] = await Promise.all([
+      build().limit(pagination.limit).offset(pagination.offset),
+      this.db.select({ count: sql<number>`count(*)::int` }).from(schema.donations),
+    ]);
+
+    return paginated(rows, Number(countRows[0].count), pagination);
   }
 
   async findByUserId(userId: string) {
@@ -78,11 +111,17 @@ export class DonationsService {
   }
 
   async createWithdrawn(data: { adminId: string; amount: number; note?: string }) {
-    const amountStr = data.amount.toFixed(2);
+    const amount = Number(data.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new BadRequestException('Invalid withdrawal amount');
+    }
+    const amountStr = amount.toFixed(2);
+
+    const adminWallet = await this.walletService.getOrCreateAdminWalletFor(data.adminId);
 
     await this.db.transaction(async (tx) => {
       const wResult = await tx.execute<{ id: string; balance: string }>(
-        sql`SELECT id, balance FROM wallets WHERE admin_id = ${data.adminId} LIMIT 1 FOR UPDATE`,
+        sql`SELECT id, balance FROM wallets WHERE id = ${adminWallet.id} LIMIT 1 FOR UPDATE`,
       );
       const w = wResult.rows?.[0];
       if (!w) throw new BadRequestException('Admin wallet not found');
@@ -95,7 +134,7 @@ export class DonationsService {
       );
       const pending = Number(receivedResult.rows[0].sum) - Number(withdrawnResult.rows[0].sum);
 
-      if (data.amount > pending) {
+      if (amount > pending) {
         throw new BadRequestException('Insufficient donation balance');
       }
 

@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Put, Param, Body, Req, ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Param, Body, Req, Query, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { MuhuratCategoriesService } from './muhurat-categories.service';
 import { AuthService } from '../auth/auth.service';
+import { parsePagination } from '../../common/utils/pagination';
 
 @Controller('muhurat-categories')
 export class MuhuratCategoriesController {
@@ -15,9 +16,9 @@ export class MuhuratCategoriesController {
   }
 
   @Get('admin')
-  async findAll(@Req() req: any) {
+  async findAll(@Req() req: any, @Query() query: any) {
     await this.checkAdmin(req);
-    return this.service.findAll();
+    return this.service.findAll(parsePagination(query));
   }
 
   @Get(':id')
