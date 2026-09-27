@@ -138,10 +138,8 @@ export default function AstrologersPage() {
         </div>
       </div>
 
-      <Table headers={['Astrologer', 'Specialization', 'Pricing', 'Withdrawn', 'KYC Status', 'Actions']} emptyMessage="No astrologers found">
-        {loading ? (
-          <tr><td colSpan={6} className="px-4 py-12 text-center text-text-secondary">Loading astrologers...</td></tr>
-        ) : error ? (
+      <Table loading={loading} headers={['Astrologer', 'Specialization', 'Pricing', 'Withdrawn', 'KYC Status', 'Actions']} emptyMessage="No astrologers found">
+        {error ? (
           <tr><td colSpan={6} className="px-4 py-3 text-center text-red-400">{error}</td></tr>
         ) : (
           filtered.map(a => (

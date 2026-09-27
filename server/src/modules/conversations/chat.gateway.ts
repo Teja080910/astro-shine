@@ -1,25 +1,32 @@
+import { Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
-  WebSocketGateway,
-  WebSocketServer,
-  SubscribeMessage,
+  ConnectedSocket,
+  MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
   OnGatewayInit,
-  ConnectedSocket,
-  MessageBody,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
-import { Server, Socket } from 'socket.io';
-import { AuthService } from '../auth/auth.service';
-import { ConversationsService } from './conversations.service';
-import { CallsService } from '../calls/calls.service';
-import { UsersService } from '../users/users.service';
-import { ConfigService } from '@nestjs/config';
 import { AccessToken } from 'livekit-server-sdk';
+import { Server, Socket } from 'socket.io';
 import { RealtimeService } from '../../common/realtime.service';
 import { AstrologersService } from '../astrologers/astrologers.service';
-import { WalletService } from '../wallet/wallet.service';
+import { AuthService } from '../auth/auth.service';
+import { CallsService } from '../calls/calls.service';
 import { CommissionService } from '../commission/commission.service';
+import { UsersService } from '../users/users.service';
+import { WalletService } from '../wallet/wallet.service';
+import { ConversationsService } from './conversations.service';
+
+interface OnlineUserEntry {
+  userId: string;
+  role: string;
+  socketIds: Set<string>;
+  disconnectTimeout?: ReturnType<typeof setTimeout>;
+}
 
 @WebSocketGateway({
   cors: {
@@ -29,10 +36,10 @@ import { CommissionService } from '../commission/commission.service';
   path: '/ws',
 })
 export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
-  @WebSocketServer() server: Server;
+  @WebSocketServer() server!: Server;
 
   private readonly logger = new Logger(ChatGateway.name);
-  private onlineUsers = new Map<string, { userId: string; role: string; socketId: string }>();
+  private onlineUsers = new Map<string, OnlineUserEntry>();
   private lastChatCharge = new Map<string, number>();
 
   constructor(
@@ -67,21 +74,36 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
       this.logger.debug(`[WS] Authenticated - userId: ${payload.userId}, socketId: ${client.id}`);
 
-      this.onlineUsers.set(payload.userId, {
-        userId: payload.userId,
-        role: payload.role || 'user',
-        socketId: client.id,
-      });
+      const existing = this.onlineUsers.get(payload.userId);
+      const isFirstConnection = !existing || existing.socketIds.size === 0;
 
-      this.logger.debug(`[WS] Online users map:`, Object.fromEntries(this.onlineUsers));
+      if (existing) {
+        if (existing.disconnectTimeout) {
+          clearTimeout(existing.disconnectTimeout);
+          delete existing.disconnectTimeout;
+          this.logger.debug(`[WS] Cleared pending disconnect timeout for userId: ${payload.userId}`);
+        }
+        existing.socketIds.add(client.id);
+        existing.role = payload.role || 'user';
+      } else {
+        this.onlineUsers.set(payload.userId, {
+          userId: payload.userId,
+          role: payload.role || 'user',
+          socketIds: new Set([client.id]),
+        });
+      }
 
-      client.broadcast.emit('user:online', { userId: payload.userId, role: payload.role || 'user' });
+      this.logger.debug(`[WS] User ${payload.userId} active sockets count: ${this.onlineUsers.get(payload.userId)?.socketIds.size}`);
 
-      if (payload.role === 'astrologer') {
-        try {
-          await this.astrologersService.updateOnlineStatus(payload.userId, 'online');
-        } catch (e: any) {
-          this.logger.error('[WS] Failed to update astrologer online status on connect:', e.message);
+      if (isFirstConnection) {
+        client.broadcast.emit('user:online', { userId: payload.userId, role: payload.role || 'user' });
+
+        if (payload.role === 'astrologer') {
+          try {
+            await this.astrologersService.updateOnlineStatus(payload.userId, 'online');
+          } catch (e: any) {
+            this.logger.error('[WS] Failed to update astrologer online status on connect:', e.message);
+          }
         }
       }
 
@@ -92,20 +114,12 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         this.logger.debug(`[WS] Joined room: conversation:${c.id}`);
       });
 
-      const onlineParticipantIds = new Set<string>();
-      for (const conv of convs) {
-        const otherId = conv.participantOneId === payload.userId ? conv.participantTwoId : conv.participantOneId;
-        if (this.onlineUsers.has(otherId)) {
-          onlineParticipantIds.add(otherId);
+      // Send online status of ALL currently active users to this newly connected client
+      for (const [id, u] of this.onlineUsers.entries()) {
+        if (id !== payload.userId && u.socketIds.size > 0) {
+          client.emit('user:online', { userId: id, role: u.role });
         }
       }
-      onlineParticipantIds.forEach((id) => {
-        const u = this.onlineUsers.get(id);
-        if (u) {
-          client.emit('user:online', { userId: id, role: u.role });
-          this.logger.debug(`[WS] Sent online status to ${client.id} for userId: ${id}`);
-        }
-      });
     } catch {
       client.emit('error', { message: 'Invalid or expired token' });
       client.disconnect();
@@ -116,19 +130,72 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     const userId = client.data.userId;
     const role = client.data.role;
     this.logger.debug(`[WS] Disconnect - socketId: ${client.id}, userId: ${userId}, role: ${role}`);
-    if (userId) {
-      this.onlineUsers.delete(userId);
-      this.logger.debug(`[WS] Online users map after disconnect:`, Object.fromEntries(this.onlineUsers));
-      client.broadcast.emit('user:offline', { userId, role });
+    if (!userId) return;
 
-      if (role === 'astrologer') {
-        try {
-          await this.astrologersService.updateOnlineStatus(userId, 'offline');
-        } catch (e: any) {
-          this.logger.error('[WS] Failed to update astrologer offline status on disconnect:', e.message);
+    const entry = this.onlineUsers.get(userId);
+    if (!entry) return;
+
+    entry.socketIds.delete(client.id);
+    this.logger.debug(`[WS] User ${userId} remaining active sockets: ${entry.socketIds.size}`);
+
+    // If user has other active sockets (e.g. ChatContext + CallContext, or reconnecting socket), do NOT mark offline!
+    if (entry.socketIds.size > 0) {
+      return;
+    }
+
+    // No active sockets remaining. Set a 5-second grace period before declaring offline.
+    // This absorbs fast reconnects, screen toggles, and network handoffs without flickering offline.
+    if (entry.disconnectTimeout) {
+      clearTimeout(entry.disconnectTimeout);
+    }
+
+    entry.disconnectTimeout = setTimeout(async () => {
+      const currentEntry = this.onlineUsers.get(userId);
+      if (currentEntry && currentEntry.socketIds.size === 0) {
+        this.onlineUsers.delete(userId);
+        this.logger.debug(`[WS] Grace period expired. User ${userId} (${role}) marked offline`);
+        this.server.emit('user:offline', { userId, role });
+
+        if (role === 'astrologer') {
+          try {
+            await this.astrologersService.updateOnlineStatus(userId, 'offline');
+          } catch (e: any) {
+            this.logger.error('[WS] Failed to update astrologer offline status on disconnect:', e.message);
+          }
         }
       }
+    }, 5000);
+  }
+
+  @SubscribeMessage('users:get-online')
+  handleGetOnlineUsers(@ConnectedSocket() client: Socket) {
+    const list: { userId: string; role: string }[] = [];
+    for (const [id, entry] of this.onlineUsers.entries()) {
+      if (entry.socketIds.size > 0) {
+        list.push({ userId: id, role: entry.role });
+      }
     }
+    client.emit('users:online-list', list);
+  }
+
+  @SubscribeMessage('user:check-online')
+  handleCheckOnline(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { userId: string },
+  ) {
+    if (!data?.userId) return;
+    const isOnline = this.isUserOnline(data.userId);
+    const entry = this.onlineUsers.get(data.userId);
+    client.emit('user:status', {
+      userId: data.userId,
+      isOnline,
+      role: entry?.role,
+    });
+  }
+
+  private isUserOnline(userId: string): boolean {
+    const entry = this.onlineUsers.get(userId);
+    return !!entry && entry.socketIds.size > 0;
   }
 
   @SubscribeMessage('join:conversation')
@@ -138,8 +205,30 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   ) {
     this.logger.debug(`[WS] join:conversation - socketId: ${client.id}, userId: ${client.data.userId}, conversationId: ${data.conversationId}`);
     client.join(`conversation:${data.conversationId}`);
-    const room = this.server.sockets.adapter.rooms.get(`conversation:${data.conversationId}`);
-    this.logger.debug(`[WS] Room members after join:`, room ? [...room] : 'room not found');
+
+    try {
+      const conv = await this.conversationsService.findById(data.conversationId);
+      const myId = client.data.userId;
+      const otherId = conv.participantOneId === myId ? conv.participantTwoId : conv.participantOneId;
+      const otherRole = conv.participantOneId === myId ? conv.participantTwoRole : conv.participantOneRole;
+
+      if (otherId) {
+        const otherOnline = this.isUserOnline(otherId);
+        client.emit(otherOnline ? 'user:online' : 'user:offline', {
+          userId: otherId,
+          role: otherRole,
+        });
+
+        if (myId) {
+          this.emitToUser(otherId, 'user:online', {
+            userId: myId,
+            role: client.data.role,
+          });
+        }
+      }
+    } catch (e: any) {
+      this.logger.error(`[WS] Error in handleJoinConversation: ${e.message}`);
+    }
   }
 
   @SubscribeMessage('leave:conversation')

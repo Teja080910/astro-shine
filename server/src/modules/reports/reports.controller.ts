@@ -21,6 +21,7 @@ export class ReportsController {
   @Post()
   async create(@Body() body: any, @Req() req: any) {
     body.reporterId = req.userId;
+    body.reporterRole = req.userRole || 'user';
     return this.service.create(body);
   }
 

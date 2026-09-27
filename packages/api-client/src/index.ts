@@ -160,6 +160,7 @@ class ApiClient {
 
   // Orders
   orders = {
+    my: () => this.get<Order[]>('/orders/my'),
     list: (userId?: string) => this.get<Order[]>('/orders', { userId }),
     get: (id: string) => this.get<Order>(`/orders/${id}`),
     create: (d: any) => this.post<Order>('/orders', d),

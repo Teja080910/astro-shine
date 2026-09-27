@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused, useNavigation } from "@react-navigation/native";
 import React, { useCallback, useEffect, useState, useMemo } from "react";
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   Image,
@@ -12,6 +13,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   View,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -108,7 +110,9 @@ function to12h(t: string): string {
 function getAstrologerOnlineStatus(
   astro: Astrologer,
   astrologerStatuses: Record<string, "online" | "offline" | "busy">,
+  onlineUsers?: Record<string, boolean>,
 ) {
+  if (onlineUsers && onlineUsers[astro.userId]) return true;
   const wsStatus = astrologerStatuses[astro.userId];
   if (wsStatus) return wsStatus === "online";
   return astro.onlineStatus === "online";
@@ -117,7 +121,7 @@ function getAstrologerOnlineStatus(
 // User Home Dashboard
 export function UserHomeScreen({ navigation }: any) {
   const { user, theme, setTheme } = useAuth();
-  const { conversations, openConversation, astrologerStatuses, horoscopeVersion, blogVersion, notificationVersion, walletVersion, panchangVersion } = useChat();
+  const { conversations, openConversation, astrologerStatuses, onlineUsers, horoscopeVersion, blogVersion, notificationVersion, walletVersion, panchangVersion } = useChat();
   const { initiateCall } = useCall();
   const isFocused = useIsFocused();
   const isDark = theme === "dark";
@@ -331,7 +335,7 @@ export function UserHomeScreen({ navigation }: any) {
   }, [astrologers, videoCallAstroIds]);
 
   const handleAstroAction = async (item: Astrologer, type: "chat" | "audio" | "video") => {
-    const isOnline = getAstrologerOnlineStatus(item, astrologerStatuses);
+    const isOnline = getAstrologerOnlineStatus(item, astrologerStatuses, onlineUsers);
     const isVerified = item.verificationStatus === "approved";
 
     if (!isVerified) {
@@ -379,7 +383,7 @@ export function UserHomeScreen({ navigation }: any) {
   };
 
   const renderAstroRowCard = (item: Astrologer, type: "chat" | "audio" | "video") => {
-    const isOnline = getAstrologerOnlineStatus(item, astrologerStatuses);
+    const isOnline = getAstrologerOnlineStatus(item, astrologerStatuses, onlineUsers);
     const isVerified = item.verificationStatus === "approved";
     
     let rate = "0";
@@ -1647,7 +1651,11 @@ export function UserHomeScreen({ navigation }: any) {
           title="Chat With Astrologer"
           onSeeAll={() => navigation.navigate("AstrologerList", { onlyChat: true })}
         />
-        {chatAstrologers.length > 0 ? (
+        {loading ? (
+          <View style={{ paddingVertical: 20, alignItems: "center", justifyContent: "center" }}>
+            <ActivityIndicator size="small" color={colors.primary} />
+          </View>
+        ) : chatAstrologers.length > 0 ? (
           <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -1671,7 +1679,11 @@ export function UserHomeScreen({ navigation }: any) {
           title="Audio Call With Astrologer"
           onSeeAll={() => navigation.navigate("AstrologerList", { onlyAudio: true })}
         />
-        {audioCallAstrologers.length > 0 ? (
+        {loading ? (
+          <View style={{ paddingVertical: 20, alignItems: "center", justifyContent: "center" }}>
+            <ActivityIndicator size="small" color={colors.primary} />
+          </View>
+        ) : audioCallAstrologers.length > 0 ? (
           <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -1695,7 +1707,11 @@ export function UserHomeScreen({ navigation }: any) {
           title="Video Call With Astrologer"
           onSeeAll={() => navigation.navigate("AstrologerList", { onlyVideo: true })}
         />
-        {videoCallAstrologers.length > 0 ? (
+        {loading ? (
+          <View style={{ paddingVertical: 20, alignItems: "center", justifyContent: "center" }}>
+            <ActivityIndicator size="small" color={colors.primary} />
+          </View>
+        ) : videoCallAstrologers.length > 0 ? (
           <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -1726,7 +1742,7 @@ export function UserHomeScreen({ navigation }: any) {
               data={favoriteAstrologers}
               keyExtractor={(a) => `fav-${a.userId}`}
               renderItem={({ item }) => {
-                const isOnline = getAstrologerOnlineStatus(item, astrologerStatuses);
+                const isOnline = getAstrologerOnlineStatus(item, astrologerStatuses, onlineUsers);
                 return (
                   <TouchableOpacity
                     onPress={() =>
@@ -1774,12 +1790,16 @@ export function UserHomeScreen({ navigation }: any) {
             navigation.navigate("AstrologerList", { onlyLive: true })
           }
         />
-        {astrologers.length > 0 ? (
+        {loading ? (
+          <View style={{ paddingVertical: 20, alignItems: "center", justifyContent: "center" }}>
+            <ActivityIndicator size="small" color={colors.primary} />
+          </View>
+        ) : astrologers.length > 0 ? (
           <FlatList
             horizontal
             showsHorizontalScrollIndicator={false}
             data={astrologers
-              .filter((a) => getAstrologerOnlineStatus(a, astrologerStatuses))
+              .filter((a) => getAstrologerOnlineStatus(a, astrologerStatuses, onlineUsers))
               .slice(0, 6)}
             keyExtractor={(a) => a.userId}
             renderItem={({ item }) => (
@@ -1792,7 +1812,7 @@ export function UserHomeScreen({ navigation }: any) {
                 <GlassCard style={styles.astroInner}>
                   <Avatar
                     size={56}
-                    online={getAstrologerOnlineStatus(item, astrologerStatuses)}
+                    online={getAstrologerOnlineStatus(item, astrologerStatuses, onlineUsers)}
                     uri={item.avatar}
                     name={item.name}
                   />
@@ -1863,7 +1883,7 @@ export function UserHomeScreen({ navigation }: any) {
                 <GlassCard style={styles.astroInner}>
                   <Avatar
                     size={56}
-                    online={getAstrologerOnlineStatus(item, astrologerStatuses)}
+                    online={getAstrologerOnlineStatus(item, astrologerStatuses, onlineUsers)}
                     uri={item.avatar}
                     name={item.name}
                   />
@@ -2252,7 +2272,7 @@ export function UserHomeScreen({ navigation }: any) {
 
 // Astrologers List
 export function AstrologerListScreen({ route, navigation }: any) {
-  const { openConversation, astrologerStatuses } = useChat();
+  const { openConversation, astrologerStatuses, onlineUsers } = useChat();
   const { initiateCall } = useCall();
   const isFocused = useIsFocused();
   const [data, setData] = useState<Astrologer[]>([]);
@@ -2274,11 +2294,11 @@ export function AstrologerListScreen({ route, navigation }: any) {
   const fetchData = useCallback(() => api.astrologers.list().then(setData), []);
   useEffect(() => {
     if (isFocused) {
-      setLoading(true);
+      if (data.length === 0) setLoading(true);
       fetchData().finally(() => setLoading(false));
       api.wallet.get().then((w) => setWalletBalance(Number(w.balance))).catch(() => {});
     }
-  }, [isFocused, fetchData]);
+  }, [isFocused, fetchData, data.length]);
 
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   useEffect(() => {
@@ -2305,7 +2325,7 @@ export function AstrologerListScreen({ route, navigation }: any) {
         (s) => s.toLowerCase() === selectedCat.toLowerCase(),
       );
     const matchesLive =
-      !onlyLive || getAstrologerOnlineStatus(a, astrologerStatuses);
+      !onlyLive || getAstrologerOnlineStatus(a, astrologerStatuses, onlineUsers);
     const matchesFav =
       !onlyFavorites || favoriteIds.includes(a.userId);
     const matchesChat =
@@ -2359,19 +2379,25 @@ export function AstrologerListScreen({ route, navigation }: any) {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         ListEmptyComponent={
-          <EmptyState
-            icon={
-              <Ionicons
-                name="people-outline"
-                size={48}
-                color={colors.textMuted}
-              />
-            }
-            title="No astrologers"
-          />
+          loading ? (
+            <View style={{ paddingVertical: 60, alignItems: "center", justifyContent: "center" }}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          ) : (
+            <EmptyState
+              icon={
+                <Ionicons
+                  name="people-outline"
+                  size={48}
+                  color={colors.textMuted}
+                />
+              }
+              title="No astrologers"
+            />
+          )
         }
         renderItem={({ item }) => {
-          const isOnline = getAstrologerOnlineStatus(item, astrologerStatuses);
+          const isOnline = getAstrologerOnlineStatus(item, astrologerStatuses, onlineUsers);
           const isVerified = item.verificationStatus === "approved";
           return (
             <TouchableOpacity
@@ -2575,7 +2601,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
   const isFocused = useIsFocused();
   const [astro, setAstro] = useState<Astrologer | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
-  const { openConversation, astrologerStatuses, astrologerServices, giftVersion } = useChat();
+  const { openConversation, astrologerStatuses, onlineUsers, astrologerServices, giftVersion } = useChat();
   const { initiateCall } = useCall();
   const [offlineDialogVisible, setOfflineDialogVisible] = useState(false);
   const [balanceDialogVisible, setBalanceDialogVisible] = useState(false);
@@ -2590,6 +2616,10 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
   const [selectedGift, setSelectedGift] = useState<any>(null);
   const [giftSending, setGiftSending] = useState(false);
   const [reviews, setReviews] = useState<any[]>([]);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDesc, setReportDesc] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
   const { user, theme } = useAuth();
   const isDark = theme === "dark";
 
@@ -2631,15 +2661,31 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
       api.gifts.list().then((g) => setGifts(g.filter((x: any) => x.isActive))).catch(() => {});
     }
   }, [giftModalVisible, giftVersion]);
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Pressable
+          onPress={() => setReportModalVisible(true)}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+          style={({ pressed }) => [{ paddingHorizontal: 12, paddingVertical: 6, opacity: pressed ? 0.5 : 1 }]}
+        >
+          <Ionicons name="flag-outline" size={20} color={isDark ? '#9CA3AF' : '#64748B'} />
+        </Pressable>
+      ),
+    });
+  }, [navigation, isDark]);
   if (!astro)
     return (
       <ScreenWrapper>
-        <Text style={typography.body}>Loading...</Text>
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 100 }}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
       </ScreenWrapper>
     );
 
   const isVerified = astro.verificationStatus === "approved";
-  const isOnline = getAstrologerOnlineStatus(astro, astrologerStatuses);
+  const isOnline = getAstrologerOnlineStatus(astro, astrologerStatuses, onlineUsers);
 
   const handleSubmitFeedback = async () => {
     if (feedbackRating < 1) {
@@ -3417,7 +3463,91 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
             ⭐ Write a Review / Feedback
           </Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => setReportModalVisible(true)}
+          style={{
+            marginTop: 12,
+            paddingVertical: 10,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="flag-outline" size={15} color={mutedTextColor} />
+          <Text style={{ fontSize: 12, fontWeight: "600", color: mutedTextColor }}>
+            Report Astrologer
+          </Text>
+        </TouchableOpacity>
       </View>
+
+      <CustomModal
+        visible={reportModalVisible}
+        onClose={() => setReportModalVisible(false)}
+        title={`Report ${astro.name}`}
+      >
+        <View style={{ padding: 16, gap: 14, paddingBottom: 36 }}>
+          <Text style={{ fontSize: 13, color: mutedTextColor, lineHeight: 18 }}>
+            Please select the reason for reporting this astrologer. Our moderation team reviews every report.
+          </Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {["spam", "harassment", "fake_profile", "inappropriate", "other"].map((r) => (
+              <Chip
+                key={r}
+                label={r.replace(/_/g, " ")}
+                selected={reportReason === r}
+                onPress={() => setReportReason(r)}
+              />
+            ))}
+          </View>
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: isDark ? "rgba(255,255,255,0.06)" : colors.surfaceLight,
+                borderColor: cardBorderColor,
+                color: titleColor,
+                minHeight: 80,
+                textAlignVertical: "top",
+              },
+            ]}
+            value={reportDesc}
+            onChangeText={setReportDesc}
+            placeholder="Additional details (optional)..."
+            placeholderTextColor={mutedTextColor}
+            multiline
+          />
+          <GradientButton
+            title={reportSubmitting ? "Submitting..." : "Submit Report"}
+            variant="danger"
+            disabled={reportSubmitting || !reportReason}
+            onPress={async () => {
+              if (!reportReason) {
+                Alert.alert("Required", "Please select a reason");
+                return;
+              }
+              setReportSubmitting(true);
+              try {
+                await api.reports.create({
+                  reason: reportReason,
+                  description: reportDesc,
+                  reportedAstrologerId: id,
+                });
+                setReportModalVisible(false);
+                setReportReason("");
+                setReportDesc("");
+                Alert.alert("Report Submitted", "Thank you for reporting. Our moderation team will investigate.");
+              } catch (e: any) {
+                Alert.alert("Error", e?.response?.data?.message || e?.message || "Failed to submit report");
+              } finally {
+                setReportSubmitting(false);
+              }
+            }}
+          />
+        </View>
+      </CustomModal>
 
       <CustomModal
         visible={feedbackVisible}

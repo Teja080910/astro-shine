@@ -5,6 +5,8 @@ import { AdminLayout } from '@/components/AdminLayout';
 import { GradientButton, CustomModal } from '@/components/UIComponents';
 import { SearchInput } from '@/components/SearchInput';
 import { Pagination, unwrapList } from '@/components/Pagination';
+import { ImageUpload } from '@/components/ImageUpload';
+import { imageSrc } from '@/lib/media';
 import { api } from '@/lib/api';
 import type { NewsItem } from '@astro-shine/shared-types';
 
@@ -41,7 +43,6 @@ export default function NewsPage() {
   const save = async () => {
     if (!form.title.trim()) { setFormError('Title is required'); return; }
     if (!form.content.trim()) { setFormError('Content is required'); return; }
-    if (form.image && !form.image.match(/^https?:\/\/.+/)) { setFormError('Image must be a valid URL'); return; }
     setFormError('');
     try {
       if (editing?.id) { await api.put<any>(`/news/${editing.id}`, form); }
@@ -73,13 +74,24 @@ export default function NewsPage() {
         <div className="grid gap-4">
           {data.map(n => (
             <div key={n.id} className="glass-card-solid p-4 flex justify-between items-center">
-              <div><p className="text-text-primary font-medium">{n.title}</p><p className="text-text-muted text-sm">{n.isActive ? 'Active' : 'Inactive'}</p></div>
+              <div className="flex items-center gap-4">
+                {n.image ? (
+                  <img src={imageSrc(n.image)} alt={n.title} className="w-14 h-14 rounded-xl object-cover border border-card-border shrink-0" />
+                ) : null}
+                <div>
+                  <p className="text-text-primary font-medium text-base">{n.title}</p>
+                  <p className="text-text-muted text-sm">{n.isActive ? 'Active' : 'Inactive'}</p>
+                </div>
+              </div>
               <div className="flex items-center gap-3">
-                <button onClick={() => { setEditing(n); setFormError(''); setForm({ title: n.title, content: n.content, image: n.image || '', isActive: n.isActive }); }} className="text-primary-light hover:underline text-sm">Edit</button>
-                <button onClick={async () => { if (confirm('Delete this news item?')) { try { await api.del(`/news/${n.id}`); fetchNews(); } catch (e: any) { setError(e.message || 'Failed to delete news'); } } }} className="text-red-400 hover:underline text-sm">Delete</button>
+                <button onClick={() => { setEditing(n); setFormError(''); setForm({ title: n.title, content: n.content, image: n.image || '', isActive: n.isActive }); }} className="text-primary-light hover:underline text-sm font-medium">Edit</button>
+                <button onClick={async () => { if (confirm('Delete this news item?')) { try { await api.del(`/news/${n.id}`); fetchNews(); } catch (e: any) { setError(e.message || 'Failed to delete news'); } } }} className="text-red-400 hover:underline text-sm font-medium">Delete</button>
               </div>
             </div>
           ))}
+          {data.length === 0 && (
+            <div className="glass-card-solid p-8 text-center text-text-muted">No news articles found.</div>
+          )}
         </div>
       )}
       <Pagination
@@ -94,9 +106,16 @@ export default function NewsPage() {
       <CustomModal open={!!editing} onClose={() => setEditing(null)} title={editing?.id ? 'Edit News' : 'Add News'}>
         <div className="space-y-4">
           {formError && <div className="text-sm text-red-400 font-medium">{formError}</div>}
-          <div><label className="text-text-secondary text-sm block mb-1">Title *</label><input className="input-field" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} /></div>
-          <div><label className="text-text-secondary text-sm block mb-1">Content *</label><textarea className="input-field h-32" value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} /></div>
-          <div><label className="text-text-secondary text-sm block mb-1">Image URL</label><input className="input-field" value={form.image} onChange={e => setForm({ ...form, image: e.target.value })} placeholder="https://..." /></div>
+          <div><label className="text-text-secondary text-sm block mb-1">Title *</label><input className="input-field" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="News headline" /></div>
+          <div><label className="text-text-secondary text-sm block mb-1">Content *</label><textarea className="input-field h-32" value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="News content..." /></div>
+          <div>
+            <label className="text-text-secondary text-sm block mb-1">Image</label>
+            <ImageUpload
+              value={form.image ? [form.image] : []}
+              onChange={(urls) => setForm({ ...form, image: urls[0] || '' })}
+              hint="Upload a cover image for the news article"
+            />
+          </div>
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={form.isActive} onChange={e => setForm({ ...form, isActive: e.target.checked })} className="accent-amber-500" />
             <span className="text-sm text-text-primary">Visible in app (active)</span>

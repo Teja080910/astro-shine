@@ -55,15 +55,24 @@ export default function OrdersPage() {
     }
   };
 
+  const [updating, setUpdating] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
   const handleUpdateStatus = async () => {
     if (!selected) return;
+    setUpdating(true);
+    setStatusMessage(null);
     try {
       await api.put<Order>(`/orders/${selected.id}/status`, { status: statusSelect });
       setOrders(orders.map(o => o.id === selected.id ? { ...o, status: statusSelect } : o));
       setSelected({ ...selected, status: statusSelect });
+      setStatusMessage('Order status updated successfully');
       fetchOrders();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert(err.message || 'Failed to update order status');
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -202,12 +211,16 @@ export default function OrdersPage() {
                 </select>
                 <button
                   onClick={handleUpdateStatus}
-                  className="gradient-btn py-2 px-4 text-sm font-bold shrink-0"
+                  disabled={updating}
+                  className="gradient-btn py-2 px-4 text-sm font-bold shrink-0 disabled:opacity-50"
                   style={{ borderRadius: '16px' }}
                 >
-                  Update
+                  {updating ? 'Updating...' : 'Update'}
                 </button>
               </div>
+              {statusMessage && (
+                <p className="text-xs text-green-500 font-medium mt-2">{statusMessage}</p>
+              )}
             </div>
 
             <div className="flex gap-3 border-t border-divider pt-4">

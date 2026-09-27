@@ -834,7 +834,8 @@ export function ReportScreen({ route, navigation }: any) {
   const [desc, setDesc] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const reasons = ['spam', 'harassment', 'fake_profile', 'inappropriate', 'other'];
-  const { reportedUserId, reportedAstrologerId } = route.params || {};
+  const { reportedUserId, reportedAstrologerId, astrologerName, userName, reportedUserName } = route.params || {};
+  const targetName = astrologerName || userName || reportedUserName;
 
   const handleSubmitReport = async () => {
     try {
@@ -850,16 +851,39 @@ export function ReportScreen({ route, navigation }: any) {
   };
 
   return (
-    <ScreenWrapper scroll>
-      <SectionTitle title="Report" />
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 14 }}>
-        {reasons.map(r => <Chip key={r} label={r.replace(/_/g, ' ')} selected={reason === r} onPress={() => setReason(r)} />)}
+    <ScreenWrapper scroll style={{ padding: 16 }}>
+      <SectionTitle title={targetName ? `Report ${targetName}` : 'Report Profile'} />
+      <Text style={[typography.body, { color: colors.textSecondary, marginBottom: 14 }]}>
+        Please select the reason for reporting this profile. Our team reviews all reports carefully.
+      </Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+        {reasons.map(r => (
+          <Chip key={r} label={r.replace(/_/g, ' ')} selected={reason === r} onPress={() => setReason(r)} />
+        ))}
       </View>
-      <View style={{ marginBottom: 14 }}><TextInput style={[styles.input, { height: 80, backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]} value={desc} onChangeText={setDesc} placeholder="Additional details..." placeholderTextColor={colors.textMuted} multiline textAlignVertical="top" /></View>
-      <GradientButton title={submitting ? 'Submitting...' : 'Submit Report'} variant="danger" disabled={submitting} onPress={() => {
-        if (!reason) { Alert.alert('Required', 'Please select a reason'); return; }
-        handleSubmitReport();
-      }} />
+      <View style={{ marginBottom: 16 }}>
+        <Text style={[typography.caption, { color: colors.textSecondary, marginBottom: 6 }]}>
+          Additional Details (Optional)
+        </Text>
+        <TextInput
+          style={[styles.input, { height: 100, backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
+          value={desc}
+          onChangeText={setDesc}
+          placeholder="Please describe the issue..."
+          placeholderTextColor={colors.textMuted}
+          multiline
+          textAlignVertical="top"
+        />
+      </View>
+      <GradientButton
+        title={submitting ? 'Submitting...' : 'Submit Report'}
+        variant="danger"
+        disabled={submitting}
+        onPress={() => {
+          if (!reason) { Alert.alert('Required', 'Please select a reason'); return; }
+          handleSubmitReport();
+        }}
+      />
     </ScreenWrapper>
   );
 }
@@ -951,8 +975,9 @@ const ORDER_STATUS_META: Record<string, { label: string; color: string; icon: st
 };
 
 function orderStatusMeta(status: string) {
+  const key = (status || '').toLowerCase().trim();
   return (
-    ORDER_STATUS_META[status] || {
+    ORDER_STATUS_META[key] || {
       label: status || 'Unknown',
       color: colors.textMuted,
       icon: 'ellipse-outline',

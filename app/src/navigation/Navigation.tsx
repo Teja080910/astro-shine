@@ -233,7 +233,6 @@ export function Navigation() {
             <Stack.Screen name="MandirPoojaDetail" component={MandirPoojaDetailScreen} options={headerOpts('Pooja Details')} />
             <Stack.Screen name="Donation" component={DonationScreen} options={headerOpts('Donation')} />
             <Stack.Screen name="Gifts" component={GiftScreen} options={headerOpts('Gifts')} />
-            <Stack.Screen name="Report" component={ReportScreen} options={headerOpts('Report')} />
             <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={headerOpts('Privacy Policy')} />
             <Stack.Screen name="TermsConditions" component={TermsConditionsScreen} options={headerOpts('Terms & Conditions')} />
             <Stack.Screen name="AboutApp" component={AboutAppScreen} options={headerOpts('About App')} />
@@ -271,7 +270,8 @@ export function Navigation() {
             <Stack.Screen name="PaymentFailure" component={PaymentFailureScreen} options={{ headerShown: false }} />
           </>
         )}
-        {/* Admin-only screens accessible from any role */}
+        {/* Common screens accessible from any role */}
+        <Stack.Screen name="Report" component={ReportScreen} options={headerOpts('Report')} />
         <Stack.Screen name="AdminSupport" component={AdminSupportScreen} options={headerOpts('Support Tickets')} />
         <Stack.Screen name="AdminTicketDetail" component={AdminTicketDetailScreen} options={headerOpts('Ticket')} />
       </Stack.Navigator>

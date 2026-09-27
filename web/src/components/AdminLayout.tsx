@@ -32,6 +32,7 @@ const menuItems = [
   { href: '/reports', icon: AlertTriangle, label: 'Reports' },
   { href: '/notifications', icon: Bell, label: 'Notifications' },
   { href: '/blogs', icon: FileText, label: 'Blogs' },
+  { href: '/news', icon: Newspaper, label: 'News' },
   // Hidden from the sidebar for now — pages still exist at their routes:
   // { href: '/api-keys', icon: Key, label: 'API Keys' },
   // { href: '/dynamic-links', icon: Link2, label: 'Dynamic Links' },

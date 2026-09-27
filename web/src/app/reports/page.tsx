@@ -65,15 +65,35 @@ export default function ReportsPage() {
       ) : error ? (
         <div className="bg-red-900/20 border border-red-800 text-red-400 rounded-lg px-4 py-3 text-sm">{error}</div>
       ) : (
-        <Table headers={['Reporter', 'Reported', 'Reason', 'Status', 'Date', '']} emptyMessage="No reports found">
+        <Table headers={['Reporter', 'Reported Target', 'Reason', 'Description', 'Status', 'Date', '']} emptyMessage="No reports found">
           {data.map(r => (
             <tr key={r.id} className="border-b border-divider hover:bg-surface-light/50">
-              <td className="px-4 py-3 text-text-primary">{r.reporterRole} ({r.reporterId?.slice(0, 6)}...)</td>
-              <td className="px-4 py-3 text-text-primary">{r.reportedUserId ? `User: ${r.reportedUserId.slice(0, 6)}` : `Astro: ${r.reportedAstrologerId?.slice(0, 6)}`}...</td>
-              <td className="px-4 py-3 text-text-secondary">{r.reason}</td>
+              <td className="px-4 py-3 text-text-primary">
+                <div className="font-medium">{r.reporterName || 'Unknown'}</div>
+                <div className="text-xs text-text-muted capitalize">{r.reporterRole} ({r.reporterId?.slice(0, 8)}...)</div>
+              </td>
+              <td className="px-4 py-3 text-text-primary">
+                {r.reportedAstrologerName ? (
+                  <div>
+                    <span className="font-medium text-amber-400">Astro: </span>
+                    <span className="font-medium">{r.reportedAstrologerName}</span>
+                  </div>
+                ) : r.reportedUserName ? (
+                  <div>
+                    <span className="font-medium text-blue-400">User: </span>
+                    <span>{r.reportedUserName}</span>
+                  </div>
+                ) : r.reportedAstrologerId ? (
+                  <div>Astro: {r.reportedAstrologerId?.slice(0, 8)}...</div>
+                ) : (
+                  <div>User: {r.reportedUserId?.slice(0, 8) || 'N/A'}...</div>
+                )}
+              </td>
+              <td className="px-4 py-3 text-text-secondary capitalize">{r.reason?.replace(/_/g, ' ')}</td>
+              <td className="px-4 py-3 text-text-muted text-sm max-w-xs truncate">{r.description || '—'}</td>
               <td className="px-4 py-3">{r.status === 'reviewed' ? <Badge variant="success">Reviewed</Badge> : <Badge variant="warning">Pending</Badge>}</td>
               <td className="px-4 py-3 text-text-muted text-sm">{formatDate(r.createdAt)}</td>
-              <td className="px-4 py-3">{r.status !== 'reviewed' && <button onClick={() => resolve(r.id)} className="text-primary-light hover:underline text-sm">Resolve</button>}</td>
+              <td className="px-4 py-3">{r.status !== 'reviewed' && <button onClick={() => resolve(r.id)} className="text-primary-light hover:underline text-sm font-medium">Resolve</button>}</td>
             </tr>
           ))}
         </Table>

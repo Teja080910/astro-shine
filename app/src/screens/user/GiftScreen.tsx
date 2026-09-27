@@ -1,10 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useIsFocused, useNavigation } from '@react-navigation/native';
-import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, Image, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useIsFocused } from '@react-navigation/native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Image, Keyboard, Platform, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
-import { Avatar, Chip, ConfirmDialog, CustomModal, EmptyState, GlassCard, GradientButton, ScreenWrapper, colors, radii, typography, resolveMediaUrl } from '../../shared';
+import { Avatar, CustomModal, EmptyState, GlassCard, GradientButton, ScreenWrapper, colors, radii, resolveMediaUrl, typography } from '../../shared';
 import { api } from '../../shared/api-client';
 import type { Astrologer, Gift, GiftTransaction } from '../../shared/types';
 
@@ -27,9 +27,32 @@ export function GiftScreen({ route, navigation }: any) {
   const [showSendModal, setShowSendModal] = useState(false);
   const [sending, setSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, () => setIsKeyboardOpen(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setIsKeyboardOpen(false));
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const preSelectedAstrologerId = route?.params?.astrologerId;
   const preSelectedAstrologerName = route?.params?.astrologerName;
+
+  const filteredAstrologers = useMemo(() => {
+    if (!searchQuery.trim()) return astrologers;
+    const q = searchQuery.toLowerCase().trim();
+    return astrologers.filter((a) =>
+      a.name?.toLowerCase().includes(q) ||
+      a.specialization?.some((s: string) => s.toLowerCase().includes(q))
+    );
+  }, [astrologers, searchQuery]);
 
   const loadData = useCallback(async () => {
     try {
@@ -64,6 +87,7 @@ export function GiftScreen({ route, navigation }: any) {
 
   const openSendGift = (gift: Gift) => {
     setSelectedGift(gift);
+    setSearchQuery("");
     if (!preSelectedAstrologerId) setSelectedAstrologer(null);
     setShowSendModal(true);
   };
@@ -251,7 +275,15 @@ export function GiftScreen({ route, navigation }: any) {
             <Text style={[typography.sectionTitle, { marginBottom: 12 }]}>Available Gifts</Text>
           </>
         }
-        ListEmptyComponent={<EmptyState icon={<Ionicons name="gift-outline" size={48} color={colors.textMuted} />} title="No gifts available" />}
+        ListEmptyComponent={
+          loading ? (
+            <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          ) : (
+            <EmptyState icon={<Ionicons name="gift-outline" size={48} color={colors.textMuted} />} title="No gifts available" />
+          )
+        }
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => openSendGift(item)} style={{ flex: 0.5 }}>
             <GlassCard style={{ alignItems: 'center', padding: 20, marginBottom: 12 }}>
@@ -270,7 +302,12 @@ export function GiftScreen({ route, navigation }: any) {
         )}
       />
 
-      <CustomModal visible={showSendModal} onClose={() => setShowSendModal(false)} title={`Send ${selectedGift?.name || 'Gift'}`}>
+      <CustomModal
+        visible={showSendModal}
+        onClose={() => { Keyboard.dismiss(); setShowSendModal(false); }}
+        title={`Send ${selectedGift?.name || 'Gift'}`}
+        scrollable={false}
+      >
         <View style={{ padding: 16, gap: 12 }}>
           <Text style={[typography.body, { color: colors.textSecondary }]}>Select an astrologer to send this gift to:</Text>
           {selectedAstrologer && (
@@ -292,7 +329,7 @@ export function GiftScreen({ route, navigation }: any) {
                   backgroundColor: isDark ? '#111827' : '#F1F5F9',
                   borderRadius: 12,
                   paddingHorizontal: 12,
-                  height: 40,
+                  height: 42,
                   borderWidth: 1,
                   borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0',
                 }}
@@ -303,6 +340,8 @@ export function GiftScreen({ route, navigation }: any) {
                   placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
+                  returnKeyType="done"
+                  onSubmitEditing={() => Keyboard.dismiss()}
                   style={{
                     flex: 1,
                     color: isDark ? '#FFFFFF' : '#0F172A',
@@ -311,34 +350,47 @@ export function GiftScreen({ route, navigation }: any) {
                   }}
                 />
                 {searchQuery.length > 0 && (
-                  <TouchableOpacity onPress={() => setSearchQuery("")}>
+                  <TouchableOpacity onPress={() => setSearchQuery("")} style={{ padding: 4 }}>
                     <Ionicons name="close-circle" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
+                  </TouchableOpacity>
+                )}
+                {isKeyboardOpen && (
+                  <TouchableOpacity
+                    onPress={() => Keyboard.dismiss()}
+                    style={{
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+                      borderRadius: 8,
+                      marginLeft: 6,
+                    }}
+                  >
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>Done</Text>
                   </TouchableOpacity>
                 )}
               </View>
 
-              <View style={{ maxHeight: 240 }}>
-                <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
-                  {astrologers
-                    .filter(a => a.name?.toLowerCase().includes(searchQuery.toLowerCase()))
-                    .map((item) => (
-                      <TouchableOpacity
-                        key={item.userId}
-                        onPress={() => {
-                          setSelectedAstrologer(item);
-                          setSearchQuery("");
-                        }}
-                        style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.divider }}
-                      >
-                        <Avatar size={36} uri={item.avatar} />
-                        <View style={{ flex: 1 }}>
-                          <Text style={[typography.body, { fontWeight: '600', color: isDark ? '#FFFFFF' : '#0F172A' }]}>{item.name}</Text>
-                          <Text style={[typography.caption, { color: isDark ? '#9CA3AF' : '#64748B' }]}>{item.specialization?.[0] || 'Astrologer'}</Text>
-                        </View>
-                        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-                      </TouchableOpacity>
-                    ))}
-                  {astrologers.filter(a => a.name?.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 && (
+              <View style={{ maxHeight: isKeyboardOpen ? 160 : 250 }}>
+                <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={true}>
+                  {filteredAstrologers.map((item) => (
+                    <TouchableOpacity
+                      key={item.userId}
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        setSelectedAstrologer(item);
+                        setSearchQuery("");
+                      }}
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.divider }}
+                    >
+                      <Avatar size={36} uri={item.avatar} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={[typography.body, { fontWeight: '600', color: isDark ? '#FFFFFF' : '#0F172A' }]}>{item.name}</Text>
+                        <Text style={[typography.caption, { color: isDark ? '#9CA3AF' : '#64748B' }]}>{item.specialization?.[0] || 'Astrologer'}</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                    </TouchableOpacity>
+                  ))}
+                  {filteredAstrologers.length === 0 && (
                     <Text style={{ textAlign: 'center', color: colors.textMuted, marginVertical: 20 }}>No astrologers found</Text>
                   )}
                 </ScrollView>
@@ -346,11 +398,11 @@ export function GiftScreen({ route, navigation }: any) {
             </View>
           )}
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
-            <TouchableOpacity onPress={() => setShowSendModal(false)} style={{ flex: 1, height: 48, borderRadius: radii.button, borderWidth: 1, borderColor: colors.cardBorder, justifyContent: 'center', alignItems: 'center' }}>
+            <TouchableOpacity onPress={() => { Keyboard.dismiss(); setShowSendModal(false); }} style={{ flex: 1, height: 48, borderRadius: radii.button, borderWidth: 1, borderColor: colors.cardBorder, justifyContent: 'center', alignItems: 'center' }}>
               <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
             </TouchableOpacity>
             <View style={{ flex: 1 }}>
-              <GradientButton title={sending ? 'Sending...' : `Send ₹${selectedGift?.price || '0'}`} onPress={handleSendGift} disabled={sending || !selectedAstrologer} />
+              <GradientButton title={sending ? 'Sending...' : `Send ₹${selectedGift?.price || '0'}`} onPress={() => { Keyboard.dismiss(); handleSendGift(); }} disabled={sending || !selectedAstrologer} />
             </View>
           </View>
         </View>

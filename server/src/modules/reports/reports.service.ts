@@ -1,7 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
-import { eq, or, desc, sql } from 'drizzle-orm';
+import { eq, or, desc, sql, aliasedTable } from 'drizzle-orm';
 import { paginated, Pagination } from '../../common/utils/pagination';
 
 @Injectable()
@@ -10,6 +10,10 @@ export class ReportsService {
 
   async findAll(pagination?: Pagination) {
     if (!pagination?.enabled) return this.db.query.reports.findMany();
+    const reporterUser = aliasedTable(schema.users, 'reporter_user');
+    const reportedUser = aliasedTable(schema.users, 'reported_user');
+    const reportedAstrologerUser = aliasedTable(schema.users, 'reported_astrologer_user');
+
     let where: any;
     if (pagination.q) {
       const pattern = `%${pagination.q}%`;
@@ -19,9 +23,32 @@ export class ReportsService {
       );
     }
     const [data, countRows] = await Promise.all([
-      this.db.select().from(schema.reports).where(where)
+      this.db
+        .select({
+          id: schema.reports.id,
+          reporterId: schema.reports.reporterId,
+          reporterRole: schema.reports.reporterRole,
+          reporterName: reporterUser.name,
+          reportedUserId: schema.reports.reportedUserId,
+          reportedUserName: reportedUser.name,
+          reportedAstrologerId: schema.reports.reportedAstrologerId,
+          reportedAstrologerName: reportedAstrologerUser.name,
+          reason: schema.reports.reason,
+          description: schema.reports.description,
+          status: schema.reports.status,
+          resolvedBy: schema.reports.resolvedBy,
+          resolvedAt: schema.reports.resolvedAt,
+          createdAt: schema.reports.createdAt,
+          updatedAt: schema.reports.updatedAt,
+        })
+        .from(schema.reports)
+        .leftJoin(reporterUser, eq(schema.reports.reporterId, reporterUser.id))
+        .leftJoin(reportedUser, eq(schema.reports.reportedUserId, reportedUser.id))
+        .leftJoin(reportedAstrologerUser, eq(schema.reports.reportedAstrologerId, reportedAstrologerUser.id))
+        .where(where)
         .orderBy(desc(schema.reports.createdAt))
-        .limit(pagination.limit).offset(pagination.offset),
+        .limit(pagination.limit)
+        .offset(pagination.offset),
       this.db.select({ count: sql<number>`count(*)::int` }).from(schema.reports).where(where),
     ]);
     return paginated(data, countRows[0]?.count ?? 0, pagination);

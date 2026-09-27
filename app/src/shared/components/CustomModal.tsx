@@ -1,8 +1,17 @@
-import React from 'react';
-import { Modal, View, Text, StyleSheet, Pressable, Animated, Dimensions, ScrollView } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Modal,
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  Animated,
+  useWindowDimensions,
+  ScrollView,
+  Platform,
+  Keyboard,
+} from 'react-native';
 import { colors, radii, shadows, typography } from '../theme';
-
-const { height } = Dimensions.get('window');
 
 interface Props {
   visible: boolean;
@@ -10,13 +19,40 @@ interface Props {
   children: React.ReactNode;
   title?: string;
   dismissable?: boolean;
+  scrollable?: boolean;
 }
 
-export function CustomModal({ visible, onClose, children, title, dismissable = true }: Props) {
-  const fadeAnim = React.useRef(new Animated.Value(0)).current;
-  const slideAnim = React.useRef(new Animated.Value(50)).current;
+export function CustomModal({
+  visible,
+  onClose,
+  children,
+  title,
+  dismissable = true,
+  scrollable = true,
+}: Props) {
+  const { height } = useWindowDimensions();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-  React.useEffect(() => {
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardHeight(e?.endCoordinates?.height || 0);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  useEffect(() => {
     if (visible) {
       Animated.parallel([
         Animated.timing(fadeAnim, { toValue: 1, duration: 250, useNativeDriver: true }),
@@ -25,20 +61,85 @@ export function CustomModal({ visible, onClose, children, title, dismissable = t
     } else {
       fadeAnim.setValue(0);
       slideAnim.setValue(50);
+      setKeyboardHeight(0);
     }
   }, [visible]);
 
+  const isKeyboardOpen = keyboardHeight > 0;
+  const maxSheetHeight = isKeyboardOpen
+    ? Math.max(220, height - keyboardHeight - 40)
+    : height * 0.85;
+
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={dismissable ? onClose : undefined}>
-      <Pressable style={styles.overlay} onPress={dismissable ? onClose : undefined}>
-        <Animated.View style={[styles.sheet, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }, { backgroundColor: colors.surface }]}>
-          <ScrollView bounces={true} showsVerticalScrollIndicator={true} keyboardShouldPersistTaps="always" style={{ flexShrink: 1, flexGrow: 1 }}>
-            <Pressable onPress={(e) => e.stopPropagation()}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      onRequestClose={dismissable ? () => { Keyboard.dismiss(); onClose(); } : undefined}
+    >
+      <Pressable
+        style={[
+          styles.overlay,
+          {
+            paddingBottom: keyboardHeight,
+          },
+        ]}
+        onPress={() => {
+          Keyboard.dismiss();
+          if (dismissable) onClose();
+        }}
+      >
+        <Animated.View
+          style={[
+            styles.sheet,
+            {
+              maxHeight: maxSheetHeight,
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+              backgroundColor: colors.surface,
+              paddingBottom: isKeyboardOpen ? 12 : 34,
+            },
+          ]}
+        >
+          {scrollable ? (
+            <ScrollView
+              bounces={true}
+              showsVerticalScrollIndicator={true}
+              keyboardShouldPersistTaps="handled"
+              style={{ flexShrink: 1, flexGrow: 0 }}
+              contentContainerStyle={{ flexGrow: 0 }}
+            >
+              <Pressable onPress={(e) => e?.stopPropagation?.()}>
+                <View style={styles.handle} />
+                {title ? (
+                  <Text
+                    style={[
+                      typography.sectionTitle,
+                      { paddingHorizontal: 24, marginBottom: 16, color: colors.textPrimary },
+                    ]}
+                  >
+                    {title}
+                  </Text>
+                ) : null}
+                {children}
+              </Pressable>
+            </ScrollView>
+          ) : (
+            <Pressable onPress={(e) => e?.stopPropagation?.()} style={{ flexShrink: 1 }}>
               <View style={styles.handle} />
-              {title ? <Text style={[typography.sectionTitle, { paddingHorizontal: 24, marginBottom: 16, color: colors.textPrimary }]}>{title}</Text> : null}
+              {title ? (
+                <Text
+                  style={[
+                    typography.sectionTitle,
+                    { paddingHorizontal: 24, marginBottom: 16, color: colors.textPrimary },
+                  ]}
+                >
+                  {title}
+                </Text>
+              ) : null}
               {children}
             </Pressable>
-          </ScrollView>
+          )}
         </Animated.View>
       </Pressable>
     </Modal>
@@ -55,8 +156,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopLeftRadius: radii.bottomSheet,
     borderTopRightRadius: radii.bottomSheet,
-    maxHeight: height * 0.85,
     paddingBottom: 34,
+    overflow: 'hidden',
   },
   handle: {
     width: 36,

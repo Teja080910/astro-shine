@@ -36,7 +36,7 @@ export function StatCard({ label, value, iconName, color }: { label: string; val
   );
 }
 
-export function Table({ headers, children, emptyMessage, sortIndex, sortDir, onSort }: { headers: string[]; children: React.ReactNode; emptyMessage?: string; sortIndex?: number; sortDir?: 'asc' | 'desc'; onSort?: (index: number) => void }) {
+export function Table({ headers, children, emptyMessage, sortIndex, sortDir, onSort, loading }: { headers: string[]; children: React.ReactNode; emptyMessage?: string; sortIndex?: number; sortDir?: 'asc' | 'desc'; onSort?: (index: number) => void; loading?: boolean }) {
   const hasRows = React.Children.toArray(children).filter(Boolean).length > 0;
   return (
     <div className="overflow-x-auto glass-card-solid p-0">
@@ -56,7 +56,16 @@ export function Table({ headers, children, emptyMessage, sortIndex, sortDir, onS
           </tr>
         </thead>
         <tbody>
-          {hasRows ? children : (
+          {loading ? (
+            <tr>
+              <td colSpan={headers.length} className="px-4 py-12 text-center text-text-secondary text-sm font-medium">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                  <span>Loading...</span>
+                </div>
+              </td>
+            </tr>
+          ) : hasRows ? children : (
             <tr>
               <td colSpan={headers.length} className="px-4 py-8 text-center text-text-muted text-sm font-medium">
                 {emptyMessage || 'No records found'}

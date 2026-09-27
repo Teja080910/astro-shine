@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { AppState } from 'react-native';
 import { io, Socket } from 'socket.io-client';
 import { api } from '../shared/api-client';
 import type { Conversation, ConversationMessage } from '../shared/types';
@@ -106,6 +107,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       if (__DEV__) console.log(`[WS] Connected`);
       setConnected(true);
       loadConversationsRef.current();
+      socket.emit('users:get-online');
     });
     socket.on('disconnect', (reason) => {
       if (__DEV__) console.log(`[WS] Disconnected: ${reason}`);
@@ -188,8 +190,39 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
+    socket.on('users:online-list', (list: { userId: string; role?: string }[]) => {
+      setOnlineUsers((prev) => {
+        const next = { ...prev };
+        list.forEach((u) => {
+          next[u.userId] = true;
+        });
+        return next;
+      });
+      setAstrologerStatuses((prev) => {
+        const next = { ...prev };
+        list.forEach((u) => {
+          if (u.role === 'astrologer') {
+            next[u.userId] = 'online';
+          }
+        });
+        return next;
+      });
+    });
+
+    socket.on('user:status', (data: { userId: string; isOnline: boolean; role?: string }) => {
+      setOnlineUsers((prev) => ({ ...prev, [data.userId]: data.isOnline }));
+      if (data.role === 'astrologer') {
+        setAstrologerStatuses((prev) => ({ ...prev, [data.userId]: data.isOnline ? 'online' : 'offline' }));
+      }
+    });
+
     socket.on('astrologer:status-changed', (data: { astrologerId: string; onlineStatus: 'online' | 'offline' | 'busy' }) => {
       setAstrologerStatuses((prev) => ({ ...prev, [data.astrologerId]: data.onlineStatus }));
+      if (data.onlineStatus === 'online') {
+        setOnlineUsers((prev) => ({ ...prev, [data.astrologerId]: true }));
+      } else if (data.onlineStatus === 'offline') {
+        setOnlineUsers((prev) => ({ ...prev, [data.astrologerId]: false }));
+      }
     });
 
     socket.on('astrologer:services-changed', (data: { astrologerId: string; isChatEnabled: boolean; isAudioCallEnabled: boolean; isVideoCallEnabled: boolean }) => {
@@ -287,6 +320,16 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       socket.disconnect();
     };
   }, [token]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active' && socketRef.current?.connected) {
+        socketRef.current.emit('users:get-online');
+        loadConversationsRef.current();
+      }
+    });
+    return () => subscription.remove();
+  }, []);
 
   const loadConversations = useCallback(async () => {
     try {

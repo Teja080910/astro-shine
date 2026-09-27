@@ -201,6 +201,7 @@ export interface Review {
 // ============ Reports ============
 export interface Report {
   id: string; reporterId: string; reporterRole: UserRole;
+  reporterName?: string; reportedUserName?: string; reportedAstrologerName?: string;
   reportedUserId?: string; reportedAstrologerId?: string;
   reason: ReportReason; description?: string;
   status: string; resolvedBy?: string; resolvedAt?: string;

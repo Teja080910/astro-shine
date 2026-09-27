@@ -48,7 +48,7 @@ import * as Location from "expo-location";
 
 export function AstrologerHomeScreen({ navigation }: any) {
   const { astrologer, theme, setTheme, updateUser } = useAuth();
-  const { astrologerStatuses, statsVersion, blogVersion, notificationVersion } = useChat();
+  const { astrologerStatuses, onlineUsers, statsVersion, blogVersion, notificationVersion } = useChat();
   const isFocused = useIsFocused();
   const isDark = theme === "dark";
   const [isOnline, setIsOnline] = useState(
@@ -206,10 +206,14 @@ export function AstrologerHomeScreen({ navigation }: any) {
   }, [astrologer]);
 
   useEffect(() => {
-    if (astrologer?.userId && astrologerStatuses[astrologer.userId]) {
-      setIsOnline(astrologerStatuses[astrologer.userId] === "online");
+    if (astrologer?.userId) {
+      if (astrologerStatuses[astrologer.userId]) {
+        setIsOnline(astrologerStatuses[astrologer.userId] === "online");
+      } else if (onlineUsers[astrologer.userId]) {
+        setIsOnline(true);
+      }
     }
-  }, [astrologerStatuses, astrologer?.userId]);
+  }, [astrologerStatuses, onlineUsers, astrologer?.userId]);
 
   useEffect(() => {
     (async () => {
@@ -1841,6 +1845,7 @@ export function AstrologerConsultationScreen({ route, navigation }: any) {
       duration: undefined,
       status: "completed",
       cost: undefined,
+      userId: (cv as any).participantId,
       userName: cv.participantName || "User",
       avatar: cv.participantAvatar,
       lastMessage: cv.lastMessagePreview,
@@ -1909,6 +1914,8 @@ export function AstrologerConsultationScreen({ route, navigation }: any) {
                   onPress={() =>
                     navigation.navigate("ChatRoom", {
                       conversationId: item.id,
+                      participantId: item.userId,
+                      participantRole: 'user',
                       participantName: item.userName,
                       participantAvatar: item.avatar,
                     })

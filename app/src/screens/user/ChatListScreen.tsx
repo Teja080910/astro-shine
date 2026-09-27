@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { ScreenWrapper, colors, radii, typography } from '../../shared';
 import { Avatar } from '../../shared/components/Avatar';
@@ -8,7 +8,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
 export function ChatListScreen({ navigation }: any) {
-  const { conversations, loadConversations, onlineUsers, unreadCounts, astrologerStatuses } = useChat();
+  const { conversations, loadConversations, onlineUsers, unreadCounts, astrologerStatuses, loading } = useChat();
   const { user } = useAuth();
   const isFocused = useIsFocused();
 
@@ -27,9 +27,7 @@ export function ChatListScreen({ navigation }: any) {
   };
 
   const renderItem = useCallback(({ item }: any) => {
-    const isOnline = item.participantRole === 'astrologer'
-      ? astrologerStatuses[item.participantId] === 'online'
-      : onlineUsers[item.participantId] ?? false;
+    const isOnline = !!onlineUsers[item.participantId] || (item.participantRole === 'astrologer' && astrologerStatuses[item.participantId] === 'online');
     const unread = unreadCounts[item.id] ?? 0;
 
     return (
@@ -69,11 +67,17 @@ export function ChatListScreen({ navigation }: any) {
         renderItem={renderItem}
         refreshControl={<RefreshControl refreshing={false} onRefresh={loadConversations} tintColor={colors.primary} />}
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Ionicons name="chatbubbles-outline" size={48} color={colors.textMuted} />
-            <Text style={[typography.body, { marginTop: 12 }]}>No conversations yet</Text>
-            <Text style={[typography.caption, { marginTop: 4 }]}>Start chatting with an astrologer</Text>
-          </View>
+          loading ? (
+            <View style={{ flex: 1, paddingVertical: 60, alignItems: 'center', justifyContent: 'center' }}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          ) : (
+            <View style={styles.empty}>
+              <Ionicons name="chatbubbles-outline" size={48} color={colors.textMuted} />
+              <Text style={[typography.body, { marginTop: 12 }]}>No conversations yet</Text>
+              <Text style={[typography.caption, { marginTop: 4 }]}>Start chatting with an astrologer</Text>
+            </View>
+          )
         }
         contentContainerStyle={conversations.length === 0 ? { flex: 1 } : undefined}
       />

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, StyleSheet, Keyboard, Alert } from 'react-native';
-import { ScreenWrapper, colors, radii, typography, GradientButton, ConfirmDialog, InsufficientBalanceDialog } from '../../shared';
+import { View, Text, FlatList, TextInput, TouchableOpacity, Pressable, KeyboardAvoidingView, Platform, StyleSheet, Keyboard, Alert } from 'react-native';
+import { ScreenWrapper, colors, radii, typography, GradientButton, ConfirmDialog, InsufficientBalanceDialog, CustomModal, Chip } from '../../shared';
 import { ChatBubble } from '../../shared/components/ChatBubble';
 import { TypingIndicator } from '../../shared/components/TypingIndicator';
 import { Avatar } from '../../shared/components/Avatar';
@@ -49,9 +49,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
   const [input, setInput] = useState('');
   const flatListRef = useRef<FlatList>(null);
   const typing = typingUsers[conversationId];
-  const isOnline = participantRole === 'astrologer'
-    ? astrologerStatuses[participantId] === 'online'
-    : onlineUsers[participantId] ?? false;
+  const isOnline = !!onlineUsers[participantId] || (participantRole === 'astrologer' && astrologerStatuses[participantId] === 'online');
   const joinedRef = useRef(false);
   const userScrolledUp = useRef(false);
   const prevMsgCount = useRef(0);
@@ -64,6 +62,10 @@ export function ChatRoomScreen({ route, navigation }: any) {
   const [walletBalance, setWalletBalance] = useState<number | null>(null);
   const [walletLoading, setWalletLoading] = useState(true);
   const [balanceDialogVisible, setBalanceDialogVisible] = useState(false);
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDesc, setReportDesc] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
 
   useEffect(() => {
     if (isUser && participantId) {
@@ -132,7 +134,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
         >
           <Avatar size={36} online={isOnline} uri={participantAvatar} name={participantName} />
           <View style={headerStyles.textContainer}>
-            <Text style={[headerStyles.name, { color: colors.textPrimary }]}>{participantName || (participantId === currentUserId ? 'You' : 'Astrologer')}</Text>
+            <Text style={[headerStyles.name, { color: colors.textPrimary }]} numberOfLines={1}>{participantName || (participantId === currentUserId ? 'You' : 'Astrologer')}</Text>
             {typing ? (
               <Text style={[headerStyles.typing, { color: colors.primaryLight }]}>Typing...</Text>
             ) : (
@@ -144,44 +146,59 @@ export function ChatRoomScreen({ route, navigation }: any) {
           </View>
         </TouchableOpacity>
       ),
-      headerRight: () => isUser && participantRole === 'astrologer' ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginRight: 8 }}>
-          <TouchableOpacity
-            onPress={() => {
-              if (!isOnline) {
-                Alert.alert('Astrologer Offline', `${participantName || 'Astrologer'} is currently offline.`);
-                return;
-              }
-              if (walletBalance !== null && walletBalance < audioCallPrice) {
-                setBalanceDialogVisible(true);
-                return;
-              }
-              initiateCall(participantId, participantName || 'Astrologer', 'audio');
-            }}
-            style={{ padding: 6 }}
-          >
-            <Ionicons name="call" size={20} color={colors.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              if (!isOnline) {
-                Alert.alert('Astrologer Offline', `${participantName || 'Astrologer'} is currently offline.`);
-                return;
-              }
-              if (walletBalance !== null && walletBalance < videoCallPrice) {
-                setBalanceDialogVisible(true);
-                return;
-              }
-              initiateCall(participantId, participantName || 'Astrologer', 'video');
-            }}
-            style={{ padding: 6 }}
-          >
-            <Ionicons name="videocam" size={22} color="#7C3AED" />
-          </TouchableOpacity>
+      headerRight: () => (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginRight: 4 }}>
+          {isUser && participantRole === 'astrologer' && (
+            <>
+              <Pressable
+                onPress={() => {
+                  if (!isOnline) {
+                    Alert.alert('Astrologer Offline', `${participantName || 'Astrologer'} is currently offline.`);
+                    return;
+                  }
+                  if (walletBalance !== null && walletBalance < audioCallPrice) {
+                    setBalanceDialogVisible(true);
+                    return;
+                  }
+                  initiateCall(participantId, participantName || 'Astrologer', 'audio');
+                }}
+                hitSlop={{ top: 15, bottom: 15, left: 8, right: 8 }}
+                style={({ pressed }) => [{ padding: 6, opacity: pressed ? 0.5 : 1 }]}
+              >
+                <Ionicons name="call" size={20} color={colors.primary} />
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  if (!isOnline) {
+                    Alert.alert('Astrologer Offline', `${participantName || 'Astrologer'} is currently offline.`);
+                    return;
+                  }
+                  if (walletBalance !== null && walletBalance < videoCallPrice) {
+                    setBalanceDialogVisible(true);
+                    return;
+                  }
+                  initiateCall(participantId, participantName || 'Astrologer', 'video');
+                }}
+                hitSlop={{ top: 15, bottom: 15, left: 8, right: 8 }}
+                style={({ pressed }) => [{ padding: 6, opacity: pressed ? 0.5 : 1 }]}
+              >
+                <Ionicons name="videocam" size={22} color="#7C3AED" />
+              </Pressable>
+            </>
+          )}
+          {participantId ? (
+            <Pressable
+              onPress={() => setReportModalVisible(true)}
+              hitSlop={{ top: 15, bottom: 15, left: 10, right: 10 }}
+              style={({ pressed }) => [{ padding: 6, opacity: pressed ? 0.5 : 1 }]}
+            >
+              <Ionicons name="flag-outline" size={20} color={colors.textMuted} />
+            </Pressable>
+          ) : null}
         </View>
-      ) : null,
+      ),
     });
-  }, [navigation, isOnline, typing, participantId, currentUserId, participantName, participantRole, chatPrice, isUser, initiateCall]);
+  }, [navigation, isOnline, typing, participantId, currentUserId, participantName, participantRole, chatPrice, isUser, initiateCall, walletBalance, audioCallPrice, videoCallPrice]);
 
   useEffect(() => {
     loadMessages(conversationId);
@@ -343,13 +360,82 @@ export function ChatRoomScreen({ route, navigation }: any) {
           navigation.navigate('Main', { screen: 'Wallet' });
         }}
       />
+      <CustomModal
+        visible={reportModalVisible}
+        onClose={() => setReportModalVisible(false)}
+        title={`Report ${participantName || (participantRole === 'astrologer' ? 'Astrologer' : 'User')}`}
+      >
+        <View style={{ padding: 16, gap: 14, paddingBottom: 36 }}>
+          <Text style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 18 }}>
+            Please select the reason for reporting this {participantRole === 'astrologer' ? 'astrologer' : 'user'}. Our moderation team reviews every report.
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {['spam', 'harassment', 'fake_profile', 'inappropriate', 'other'].map((r) => (
+              <Chip
+                key={r}
+                label={r.replace(/_/g, ' ')}
+                selected={reportReason === r}
+                onPress={() => setReportReason(r)}
+              />
+            ))}
+          </View>
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.surfaceLight,
+                borderColor: colors.cardBorder,
+                borderWidth: 1,
+                color: colors.textPrimary,
+                minHeight: 80,
+                textAlignVertical: 'top',
+                marginRight: 0,
+              },
+            ]}
+            value={reportDesc}
+            onChangeText={setReportDesc}
+            placeholder="Additional details (optional)..."
+            placeholderTextColor={colors.textMuted}
+            multiline
+          />
+          <GradientButton
+            title={reportSubmitting ? 'Submitting...' : 'Submit Report'}
+            variant="danger"
+            disabled={reportSubmitting || !reportReason}
+            onPress={async () => {
+              if (!reportReason) {
+                Alert.alert('Required', 'Please select a reason');
+                return;
+              }
+              setReportSubmitting(true);
+              try {
+                await api.reports.create({
+                  reason: reportReason,
+                  description: reportDesc,
+                  ...(participantRole === 'astrologer'
+                    ? { reportedAstrologerId: participantId }
+                    : { reportedUserId: participantId }),
+                });
+                setReportModalVisible(false);
+                setReportReason('');
+                setReportDesc('');
+                Alert.alert('Report Submitted', 'Thank you for reporting. Our moderation team will investigate.');
+              } catch (e: any) {
+                Alert.alert('Error', e?.response?.data?.message || e?.message || 'Failed to submit report');
+              } finally {
+                setReportSubmitting(false);
+              }
+            }}
+          />
+        </View>
+      </CustomModal>
     </ScreenWrapper>
   );
 }
 
 const headerStyles = StyleSheet.create({
-  container: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  textContainer: { justifyContent: 'center' },
+  container: { flexDirection: 'row', alignItems: 'center', gap: 10, maxWidth: 160, flexShrink: 1 },
+  textContainer: { justifyContent: 'center', flexShrink: 1 },
   name: { fontSize: 16, fontWeight: '600' },
   status: { fontSize: 12 },
   typing: { fontSize: 12, fontStyle: 'italic' },

@@ -135,14 +135,15 @@ export class OrdersService {
   }
 
   async updateStatus(id: string, status: string) {
-    if (!ORDER_STATUSES.includes(status)) {
+    const normalizedStatus = (status || '').toLowerCase().trim();
+    if (!ORDER_STATUSES.includes(normalizedStatus)) {
       throw new BadRequestException(
         `Invalid status. Allowed: ${ORDER_STATUSES.join(', ')}`,
       );
     }
     const [r] = await this.db
       .update(schema.orders)
-      .set({ status, updatedAt: new Date() })
+      .set({ status: normalizedStatus, updatedAt: new Date() })
       .where(eq(schema.orders.id, id))
       .returning();
     if (!r) return r;
@@ -152,7 +153,7 @@ export class OrdersService {
       status: r.status,
     });
 
-    if (status === 'delivered') {
+    if (normalizedStatus === 'delivered') {
       const shortId = r.id.slice(0, 8).toUpperCase();
       try {
         await this.notifications.create({
