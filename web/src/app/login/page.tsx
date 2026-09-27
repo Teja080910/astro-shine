@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, FormEvent, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
 import { Sun, Moon, Eye, EyeOff, Lock, Mail, Sparkles } from 'lucide-react';
 import Image from 'next/image';
@@ -14,7 +13,6 @@ function LoginForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login, token, hydrated } = useAuthStore();
-  const router = useRouter();
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   useEffect(() => {
@@ -33,8 +31,10 @@ function LoginForm() {
   };
 
   useEffect(() => {
-    if (hydrated && token) router.replace('/dashboard');
-  }, [hydrated, token, router]);
+    if (hydrated && token) {
+      window.location.replace('/dashboard');
+    }
+  }, [hydrated, token]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -43,7 +43,7 @@ function LoginForm() {
     setError('');
     try {
       await login(email, password);
-      router.push('/dashboard');
+      window.location.replace('/dashboard');
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {

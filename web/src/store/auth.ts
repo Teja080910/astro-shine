@@ -19,7 +19,7 @@ interface AuthStore {
 const setCookie = (token: string | null) => {
   if (typeof document === 'undefined') return;
   if (token) {
-    document.cookie = `admin-token=${token}; path=/; SameSite=Lax`;
+    document.cookie = `admin-token=${token}; path=/; max-age=604800; SameSite=Lax`;
   } else {
     document.cookie = 'admin-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
   }
@@ -44,6 +44,9 @@ export const useAuthStore = create<AuthStore>()(
         api.setToken(null);
         setCookie(null);
         set({ token: null, admin: null, loading: false });
+        if (typeof window !== 'undefined') {
+          window.location.replace('/login');
+        }
       },
 
       setHydrated: () => set({ hydrated: true, loading: false }),
