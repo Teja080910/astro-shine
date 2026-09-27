@@ -16,6 +16,7 @@ export const transactionCategory = pgEnum('transaction_category', [
   'donation',
   'commission',
   'order_payment',
+  'pooja_booking',
   'refund',
 ]);
 export const withdrawalStatus = pgEnum('withdrawal_status', ['pending', 'approved', 'rejected', 'completed']);

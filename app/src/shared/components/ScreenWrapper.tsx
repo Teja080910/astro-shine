@@ -21,9 +21,10 @@ interface Props {
   noPadding?: boolean;
   edges?: ('top' | 'bottom' | 'left' | 'right')[];
   backgroundColor?: string;
+  refreshControl?: React.ReactElement<any>;
 }
 
-export function ScreenWrapper({ children, scroll, style, noPadding, edges = ['top', 'bottom'], backgroundColor }: Props) {
+export function ScreenWrapper({ children, scroll, style, noPadding, edges = ['top', 'bottom'], backgroundColor, refreshControl }: Props) {
   const { theme } = useAuth();
   const isDark = theme === 'dark';
   const bg = backgroundColor || (isDark ? '#09090B' : '#FFFFFF');
@@ -75,6 +76,7 @@ export function ScreenWrapper({ children, scroll, style, noPadding, edges = ['to
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
       automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+      refreshControl={refreshControl}
       onScroll={(e) => {
         scrollOffsetRef.current = e.nativeEvent.contentOffset.y;
       }}

@@ -13,6 +13,7 @@ export function PaymentSuccessScreen() {
     switch (purpose) {
       case 'wallet_recharge': return 'Wallet Recharged!';
       case 'donation': return 'Donation Successful!';
+      case 'pooja_booking': return 'Puja Booked Successfully! 🙏';
       default: return 'Payment Successful!';
     }
   };
@@ -21,6 +22,7 @@ export function PaymentSuccessScreen() {
     switch (purpose) {
       case 'wallet_recharge': return 'Funds have been added to your wallet.';
       case 'donation': return 'Thank you for your generous contribution.';
+      case 'pooja_booking': return 'Your sacred puja has been scheduled. Our temple priests will perform the rituals on the scheduled date.';
       default: return 'Your payment has been processed successfully.';
     }
   };
@@ -43,8 +45,14 @@ export function PaymentSuccessScreen() {
           )}
         </GlassCard>
         <GradientButton
-          title={purpose === 'wallet_recharge' ? 'Back to Wallet' : 'Back to Home'}
-          onPress={() => navigation.navigate('Main', { screen: purpose === 'wallet_recharge' ? 'Wallet' : 'Home' })}
+          title={purpose === 'pooja_booking' ? 'View My Bookings' : purpose === 'wallet_recharge' ? 'Back to Wallet' : 'Back to Home'}
+          onPress={() => {
+            if (purpose === 'pooja_booking') {
+              navigation.navigate('MandirPooja', { initialTab: 'bookings' });
+            } else {
+              navigation.navigate('Main', { screen: purpose === 'wallet_recharge' ? 'Wallet' : 'Home' });
+            }
+          }}
           style={{ marginTop: 24 }}
         />
       </View>

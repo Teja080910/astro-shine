@@ -1,7 +1,7 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
-import { eq, desc, sql } from 'drizzle-orm';
+import { eq, desc, sql, or, isNull } from 'drizzle-orm';
 import { RealtimeService } from '../../common/realtime.service';
 import { PushService } from './push.service';
 import {
@@ -21,13 +21,19 @@ export class NotificationsService {
 
   async findByUserId(userId: string) {
     return this.db.query.notifications.findMany({
-      where: eq(schema.notifications.userId, userId),
+      where: or(
+        eq(schema.notifications.userId, userId),
+        isNull(schema.notifications.userId),
+      ),
       orderBy: desc(schema.notifications.createdAt),
     });
   }
   async findByAstrologerId(astrologerId: string) {
     return this.db.query.notifications.findMany({
-      where: eq(schema.notifications.astrologerId, astrologerId),
+      where: or(
+        eq(schema.notifications.astrologerId, astrologerId),
+        isNull(schema.notifications.astrologerId),
+      ),
       orderBy: desc(schema.notifications.createdAt),
     });
   }

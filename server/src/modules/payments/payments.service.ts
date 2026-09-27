@@ -13,6 +13,8 @@ import crypto from 'crypto';
 const FINAL_STATES = ['paid', 'failed', 'refunded', 'processing'] as const;
 type PaymentStatus = (typeof FINAL_STATES)[number];
 
+import { NotificationsService } from '../notifications/notifications.service';
+
 interface PaymentMetadata {
   userId: string;
   recipientId?: string;
@@ -21,6 +23,7 @@ interface PaymentMetadata {
   entityId?: string;
   bookingId?: string;
   poojaId?: string;
+  poojaName?: string;
   bookingDate?: string;
   sessionId?: string;
   orderId?: string;
@@ -38,6 +41,7 @@ export class PaymentsService {
     private transactionsService: TransactionsService,
     private donationsService: DonationsService,
     private ordersService: OrdersService,
+    private notificationsService: NotificationsService,
   ) {
     this.razorpay = new Razorpay({
       key_id: this.configService.get<string>('RAZORPAY_KEY_ID')!,
@@ -180,11 +184,33 @@ export class PaymentsService {
     const wallet = await this.resolveUserWallet(paymentOrder.userId);
 
     let category: string;
+    let type: 'credit' | 'debit' = 'credit';
+    let description = `${paymentOrder.purpose} payment`;
+
     switch (paymentOrder.purpose) {
-      case 'wallet_recharge': category = 'add_funds'; break;
-      case 'donation': category = 'donation'; break;
-      case 'order_payment': category = 'order_payment'; break;
-      default: category = 'refund';
+      case 'wallet_recharge':
+        category = 'add_funds';
+        type = 'credit';
+        description = 'Wallet Recharge';
+        break;
+      case 'donation':
+        category = 'donation';
+        type = 'debit';
+        description = 'Temple Donation';
+        break;
+      case 'order_payment':
+        category = 'order_payment';
+        type = 'debit';
+        description = 'Store Order Payment';
+        break;
+      case 'pooja_booking':
+        category = 'pooja_booking';
+        type = 'debit';
+        description = metadata.poojaName ? `Puja Booking: ${metadata.poojaName}` : 'Puja Booking';
+        break;
+      default:
+        category = 'refund';
+        type = 'credit';
     }
 
     const [transaction] = await this.db
@@ -192,7 +218,7 @@ export class PaymentsService {
       .values({
         walletId: wallet.id,
         userId: paymentOrder.userId,
-        type: 'credit',
+        type,
         category: category as any,
         amount: amount.toString(),
         fee: '0',
@@ -200,8 +226,8 @@ export class PaymentsService {
         status: 'pending',
         referenceId: razorpayPaymentId,
         gatewayResponse: { razorpayPaymentId, razorpaySignature },
-        description: `${paymentOrder.purpose} payment`,
-        metadata: metadata as any,
+        description,
+        metadata: { ...metadata, paymentType: paymentOrder.purpose } as any,
       })
       .returning();
 
@@ -232,13 +258,17 @@ export class PaymentsService {
       }
 
       case 'pooja_booking': {
+        let booking: any = null;
         if (metadata.bookingId) {
-          await this.db
+          const [updated] = await this.db
             .update(schema.poojaBookings)
             .set({ status: 'confirmed', transactionId: transaction.id, updatedAt: new Date() })
-            .where(eq(schema.poojaBookings.id, metadata.bookingId));
+            .where(eq(schema.poojaBookings.id, metadata.bookingId))
+            .returning();
+          booking = updated;
+          result.booking = updated;
         } else if (metadata.poojaId && metadata.bookingDate) {
-          const [booking] = await this.db
+          const [created] = await this.db
             .insert(schema.poojaBookings)
             .values({
               userId: paymentOrder.userId,
@@ -249,7 +279,45 @@ export class PaymentsService {
               status: 'confirmed',
             })
             .returning();
-          result.booking = booking;
+          booking = created;
+          result.booking = created;
+        }
+
+        // Get pooja name for notification and transaction description
+        let poojaName = metadata.poojaName;
+        if (!poojaName && metadata.poojaId) {
+          const p = await this.db.query.mandirPooja.findFirst({
+            where: eq(schema.mandirPooja.id, metadata.poojaId),
+          });
+          if (p?.name) poojaName = p.name;
+        }
+        const resolvedPoojaName = poojaName || 'Mandir Puja';
+
+        // Update transaction description with exact pooja name
+        await this.db
+          .update(schema.transactions)
+          .set({
+            description: `Puja Booking: ${resolvedPoojaName}`,
+            metadata: sql`${schema.transactions.metadata} || ${JSON.stringify({ poojaName: resolvedPoojaName, bookingId: booking?.id })}::jsonb`,
+          })
+          .where(eq(schema.transactions.id, transaction.id));
+
+        // Send booking confirmation notification to the user
+        try {
+          await this.notificationsService.create({
+            userId: paymentOrder.userId,
+            type: 'transactional',
+            title: 'Puja Booking Confirmed! 🙏',
+            body: `Your booking for ${resolvedPoojaName} on ${metadata.bookingDate || 'scheduled date'} has been confirmed successfully.`,
+            data: {
+              type: 'pooja_booking',
+              bookingId: booking?.id,
+              poojaId: metadata.poojaId,
+              bookingDate: metadata.bookingDate,
+            },
+          });
+        } catch (notifErr) {
+          this.logger.error('Failed to send pooja booking confirmation notification', notifErr);
         }
         break;
       }

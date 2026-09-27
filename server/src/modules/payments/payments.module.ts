@@ -7,6 +7,7 @@ import { TransactionsModule } from '../transactions/transactions.module';
 import { DonationsModule } from '../donations/donations.module';
 import { OrdersModule } from '../orders/orders.module';
 import { AuthModule } from '../auth/auth.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { AuthModule } from '../auth/auth.module';
     TransactionsModule,
     DonationsModule,
     OrdersModule,
+    NotificationsModule,
   ],
   controllers: [PaymentsController],
   providers: [PaymentsService, PaymentsRescueService],

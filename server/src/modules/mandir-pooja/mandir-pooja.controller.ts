@@ -58,6 +58,12 @@ export class MandirPoojaController {
     return this.service.createBooking({ ...body, userId: req.userId });
   }
 
+  @Get('bookings/:id')
+  @UseGuards(AuthGuard)
+  async getBookingById(@Param('id') id: string) {
+    return this.service.getBookingById(id);
+  }
+
   @Put('bookings/:id/status')
   @UseGuards(AuthGuard)
   async updateBookingStatus(@Param('id') id: string, @Body() body: { status: string }) {

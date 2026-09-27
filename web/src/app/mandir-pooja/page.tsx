@@ -161,9 +161,30 @@ export default function MandirPoojaPage() {
                 <td className="px-4 py-3 text-text-secondary">{b.poojaName || b.poojaId?.slice(0, 8) || '-'}</td>
                 <td className="px-4 py-3 text-text-muted text-sm">{b.bookingDate ? formatDate(b.bookingDate) : '-'}</td>
                 <td className="px-4 py-3 text-text-primary">₹{b.amount}</td>
-                <td className="px-4 py-3">{b.status === 'confirmed' ? <Badge variant="success">Confirmed</Badge> : b.status === 'cancelled' ? <Badge variant="danger">Cancelled</Badge> : <Badge variant="warning">Pending</Badge>}</td>
+                <td className="px-4 py-3">
+                  {b.status === 'completed' ? (
+                    <Badge variant="success">Completed</Badge>
+                  ) : b.status === 'confirmed' ? (
+                    <Badge variant="info">Confirmed</Badge>
+                  ) : b.status === 'cancelled' ? (
+                    <Badge variant="danger">Cancelled</Badge>
+                  ) : (
+                    <Badge variant="warning">Pending</Badge>
+                  )}
+                </td>
                 <td className="px-4 py-3 flex gap-2">
-                  {b.status === 'pending' && <><button onClick={() => handleUpdateBookingStatus(b.id, 'confirmed')} className="text-success hover:underline text-sm font-medium">Confirm</button><button onClick={() => handleUpdateBookingStatus(b.id, 'cancelled')} className="text-red-400 hover:underline text-sm font-medium">Cancel</button></>}
+                  {b.status === 'pending' && (
+                    <>
+                      <button onClick={() => handleUpdateBookingStatus(b.id, 'confirmed')} className="text-success hover:underline text-sm font-medium">Confirm</button>
+                      <button onClick={() => handleUpdateBookingStatus(b.id, 'cancelled')} className="text-red-400 hover:underline text-sm font-medium">Cancel</button>
+                    </>
+                  )}
+                  {b.status === 'confirmed' && (
+                    <>
+                      <button onClick={() => handleUpdateBookingStatus(b.id, 'completed')} className="text-emerald-400 hover:underline text-sm font-medium">Mark Completed</button>
+                      <button onClick={() => handleUpdateBookingStatus(b.id, 'cancelled')} className="text-red-400 hover:underline text-sm font-medium">Cancel</button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}

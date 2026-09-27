@@ -3718,7 +3718,7 @@ const matchesWalletTxnType = (t: Transaction, filter: WalletTxnFilter): boolean 
     case "donation":
       return t.category === "donation" || desc.includes("donation payment") || metaType === "donation";
     case "pooja_booking":
-      return desc.includes("pooja_booking") || metaType === "pooja_booking";
+      return t.category === "pooja_booking" || desc.includes("pooja") || desc.includes("puja") || metaType === "pooja_booking";
     default:
       return false;
   }
@@ -3963,32 +3963,46 @@ export function WalletScreen() {
           </Text>
         </View>
       ) : (
-        filteredTxns.map((t) => (
-        <GlassCard key={t.id} style={{ marginTop: 8, padding: 12 }}>
-          <View
-            style={{ flexDirection: "row", justifyContent: "space-between" }}
-          >
-            <View>
-              <Text style={typography.cardTitle}>
-                {t.category
-                  ?.replace(/_/g, " ")
-                  .replace(/\b\w/g, (c) => c.toUpperCase())}
-              </Text>
-              <Text style={typography.caption}>
-                {new Date(t.createdAt).toLocaleDateString()}
-              </Text>
-            </View>
-            <Text
-              style={{
-                fontWeight: "700",
-                color: t.type === "credit" ? colors.success : colors.danger,
-              }}
-            >
-              {t.type === "credit" ? "+" : "-"}₹{t.amount}
-            </Text>
-          </View>
-        </GlassCard>
-        ))
+        filteredTxns.map((t) => {
+          const isPooja = t.category === "pooja_booking" || t.description?.toLowerCase().includes("pooja") || t.description?.toLowerCase().includes("puja");
+          const title = isPooja
+            ? (t.metadata?.poojaName ? `Puja: ${t.metadata.poojaName}` : (t.description || 'Puja Booking'))
+            : t.category === "donation"
+            ? "Temple Donation"
+            : t.category === "add_funds"
+            ? "Wallet Recharge"
+            : t.category
+                ?.replace(/_/g, " ")
+                .replace(/\b\w/g, (c) => c.toUpperCase());
+
+          const isCredit = t.type === "credit" && !isPooja;
+
+          return (
+            <GlassCard key={t.id} style={{ marginTop: 8, padding: 12 }}>
+              <View
+                style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
+              >
+                <View style={{ flex: 1, marginRight: 12 }}>
+                  <Text style={typography.cardTitle} numberOfLines={1}>
+                    {title}
+                  </Text>
+                  <Text style={typography.caption}>
+                    {new Date(t.createdAt).toLocaleDateString()} · {new Date(t.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </Text>
+                </View>
+                <Text
+                  style={{
+                    fontWeight: "700",
+                    fontSize: 15,
+                    color: isCredit ? colors.success : colors.danger,
+                  }}
+                >
+                  {isCredit ? "+" : "-"}₹{t.amount}
+                </Text>
+              </View>
+            </GlassCard>
+          );
+        })
       )}
       </View>
     </ScreenWrapper>
@@ -5092,6 +5106,26 @@ function PasswordInput({
   );
 }
 
+function formatDisplayDate(dateStr?: string | null): string {
+  if (!dateStr) return "Not set";
+  try {
+    const clean = String(dateStr).split("T")[0];
+    const parts = clean.split("-");
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const monthIndex = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      if (monthIndex >= 0 && monthIndex < 12 && !isNaN(day) && !isNaN(year)) {
+        return `${months[monthIndex]} ${day}, ${year}`;
+      }
+    }
+    return clean;
+  } catch {
+    return String(dateStr);
+  }
+}
+
 // Profile
 export function ProfileScreen({ navigation }: any) {
   const { user, role, logout, updateUser, theme, setTheme } = useAuth();
@@ -5118,21 +5152,42 @@ export function ProfileScreen({ navigation }: any) {
   const [pwSuccess, setPwSuccess] = useState("");
   const [pwLoading, setPwLoading] = useState(false);
 
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadProfile = async () => {
+    if (user?.id) {
+      try {
+        const freshUser = await api.users.get(user.id);
+        if (freshUser) {
+          await updateUser(freshUser);
+        }
+      } catch {}
+    }
+    try {
+      const w = await api.wallet.get();
+      if (w) setWallet(w);
+    } catch {}
+  };
+
   useEffect(() => {
     if (isFocused) {
-      api.wallet
-        .get()
-        .then((w) => setWallet(w))
-        .catch(() => {});
+      loadProfile();
     }
-  }, [isFocused]);
+  }, [isFocused, user?.id]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadProfile();
+    setRefreshing(false);
+  };
 
   const items = [
     {
-      icon: "person-outline",
-      label: "Edit Profile",
-      route: "EditProfile",
+      icon: "flame-outline",
+      label: "My Puja Bookings",
+      route: "MandirPooja",
       category: "Account",
+      params: { initialTab: "bookings" },
     },
     {
       icon: "gift-outline",
@@ -5233,7 +5288,17 @@ export function ProfileScreen({ navigation }: any) {
   };
 
   return (
-    <ScreenWrapper scroll>
+    <ScreenWrapper
+      scroll
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={goldTextColor}
+          colors={[goldTextColor]}
+        />
+      }
+    >
       <View style={{ paddingBottom: 120 }}>
         {/* Hero Header Card */}
         <View
@@ -5317,23 +5382,51 @@ export function ProfileScreen({ navigation }: any) {
               { backgroundColor: cardBg, borderColor: cardBorderColor },
             ]}
           >
-            <Text style={[styles.groupHeaderTitle, { color: goldTextColor }]}>
-              PROFILE DETAILS
-            </Text>
-            <View style={[styles.menuRowItem, { borderBottomColor: rowBorderColor }]}>
-              <Ionicons name="call-outline" size={18} color={goldTextColor} />
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: 8,
+              }}
+            >
+              <Text style={[styles.groupHeaderTitle, { color: goldTextColor, marginBottom: 0 }]}>
+                PROFILE DETAILS
+              </Text>
+              <TouchableOpacity
+                onPress={() => navigation.navigate("EditProfile")}
+                style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="create-outline" size={15} color={goldTextColor} />
+                <Text style={{ color: goldTextColor, fontSize: 13, fontWeight: "600" }}>Edit</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={[styles.menuRowItem, styles.menuRowBorder, { borderBottomColor: rowBorderColor }]}>
+              <Ionicons name="person-outline" size={18} color={goldTextColor} style={{ marginRight: 10 }} />
+              <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Name</Text>
+              <Text style={{ color: user?.name ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: user?.name ? "600" : "400" }}>{user?.name || "Not set"}</Text>
+            </View>
+            <View style={[styles.menuRowItem, styles.menuRowBorder, { borderBottomColor: rowBorderColor }]}>
+              <Ionicons name="mail-outline" size={18} color={goldTextColor} style={{ marginRight: 10 }} />
+              <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Email</Text>
+              <Text style={{ color: user?.email ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: user?.email ? "600" : "400" }}>{user?.email || "Not set"}</Text>
+            </View>
+            <View style={[styles.menuRowItem, styles.menuRowBorder, { borderBottomColor: rowBorderColor }]}>
+              <Ionicons name="call-outline" size={18} color={goldTextColor} style={{ marginRight: 10 }} />
               <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Phone</Text>
-              <Text style={{ color: mutedTextColor, fontSize: 13 }}>{user?.phone || "Not set"}</Text>
+              <Text style={{ color: user?.phone ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: user?.phone ? "600" : "400" }}>{user?.phone || "Not set"}</Text>
             </View>
-            <View style={[styles.menuRowItem, { borderBottomColor: rowBorderColor }]}>
-              <Ionicons name="male-female-outline" size={18} color={goldTextColor} />
+            <View style={[styles.menuRowItem, styles.menuRowBorder, { borderBottomColor: rowBorderColor }]}>
+              <Ionicons name="male-female-outline" size={18} color={goldTextColor} style={{ marginRight: 10 }} />
               <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Gender</Text>
-              <Text style={{ color: mutedTextColor, fontSize: 13 }}>{(user as any)?.gender ? String((user as any).gender).charAt(0).toUpperCase() + String((user as any).gender).slice(1) : "Not set"}</Text>
+              <Text style={{ color: (user as any)?.gender ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: (user as any)?.gender ? "600" : "400" }}>{(user as any)?.gender ? String((user as any).gender).charAt(0).toUpperCase() + String((user as any).gender).slice(1) : "Not set"}</Text>
             </View>
-            <View style={[styles.menuRowItem, { borderBottomColor: rowBorderColor }]}>
-              <Ionicons name="calendar-outline" size={18} color={goldTextColor} />
+            <View style={styles.menuRowItem}>
+              <Ionicons name="calendar-outline" size={18} color={goldTextColor} style={{ marginRight: 10 }} />
               <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Date of Birth</Text>
-              <Text style={{ color: mutedTextColor, fontSize: 13 }}>{(user as any)?.dateOfBirth ? String((user as any).dateOfBirth).split("T")[0] : "Not set"}</Text>
+              <Text style={{ color: (user as any)?.dateOfBirth ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: (user as any)?.dateOfBirth ? "600" : "400" }}>{formatDisplayDate((user as any)?.dateOfBirth)}</Text>
             </View>
           </View>
 
@@ -5347,36 +5440,38 @@ export function ProfileScreen({ navigation }: any) {
             <Text style={[styles.groupHeaderTitle, { color: goldTextColor }]}>
               MY ACCOUNT
             </Text>
-            {items.slice(0, 4).map((item, i) => (
-              <TouchableOpacity
-                key={item.label}
-                onPress={() => navigation.navigate(item.route)}
-                style={[
-                  styles.menuRowItem,
-                  { borderBottomColor: rowBorderColor },
-                  i < 3 && styles.menuRowBorder,
-                ]}
-              >
-                <View
+            {items
+              .filter((it) => it.category === "Account")
+              .map((item, i, arr) => (
+                <TouchableOpacity
+                  key={item.label}
+                  onPress={() => navigation.navigate(item.route, (item as any).params)}
                   style={[
-                    styles.menuItemIconBg,
-                    { backgroundColor: iconBgColor },
+                    styles.menuRowItem,
+                    { borderBottomColor: rowBorderColor },
+                    i < arr.length - 1 && styles.menuRowBorder,
                   ]}
                 >
-                  <Ionicons
-                    name={item.icon as any}
-                    size={20}
-                    color={goldTextColor}
-                  />
-                </View>
-                <Text
-                  style={[styles.menuRowLabel, { color: textSecondaryColor }]}
-                >
-                  {item.label}
-                </Text>
-                <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
-              </TouchableOpacity>
-            ))}
+                  <View
+                    style={[
+                      styles.menuItemIconBg,
+                      { backgroundColor: iconBgColor },
+                    ]}
+                  >
+                    <Ionicons
+                      name={item.icon as any}
+                      size={20}
+                      color={goldTextColor}
+                    />
+                  </View>
+                  <Text
+                    style={[styles.menuRowLabel, { color: textSecondaryColor }]}
+                  >
+                    {item.label}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+                </TouchableOpacity>
+              ))}
           </View>
 
           {/* Preferences & Security Group */}
@@ -5443,36 +5538,38 @@ export function ProfileScreen({ navigation }: any) {
               <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
             </TouchableOpacity>
 
-            {items.slice(4).map((item, i) => (
-              <TouchableOpacity
-                key={item.label}
-                onPress={() => navigation.navigate(item.route)}
-                style={[
-                  styles.menuRowItem,
-                  { borderBottomColor: rowBorderColor },
-                  i < 1 && styles.menuRowBorder,
-                ]}
-              >
-                <View
+            {items
+              .filter((it) => it.category === "Preferences")
+              .map((item, i, arr) => (
+                <TouchableOpacity
+                  key={item.label}
+                  onPress={() => navigation.navigate(item.route, (item as any).params)}
                   style={[
-                    styles.menuItemIconBg,
-                    { backgroundColor: iconBgColor },
+                    styles.menuRowItem,
+                    { borderBottomColor: rowBorderColor },
+                    i < arr.length - 1 && styles.menuRowBorder,
                   ]}
                 >
-                  <Ionicons
-                    name={item.icon as any}
-                    size={20}
-                    color={goldTextColor}
-                  />
-                </View>
-                <Text
-                  style={[styles.menuRowLabel, { color: textSecondaryColor }]}
-                >
-                  {item.label}
-                </Text>
-                <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
-              </TouchableOpacity>
-            ))}
+                  <View
+                    style={[
+                      styles.menuItemIconBg,
+                      { backgroundColor: iconBgColor },
+                    ]}
+                  >
+                    <Ionicons
+                      name={item.icon as any}
+                      size={20}
+                      color={goldTextColor}
+                    />
+                  </View>
+                  <Text
+                    style={[styles.menuRowLabel, { color: textSecondaryColor }]}
+                  >
+                    {item.label}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+                </TouchableOpacity>
+              ))}
           </View>
 
           {/* Danger Zone Group */}

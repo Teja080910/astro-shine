@@ -13,11 +13,13 @@ import {
   paginated,
   Pagination,
 } from '../../common/utils/pagination';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class MandirPoojaService {
   constructor(
     @Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>,
+    private readonly notificationsService: NotificationsService,
   ) {}
   private buildSearch(q: string) {
     return or(
@@ -144,27 +146,96 @@ export class MandirPoojaService {
     if (userId) conditions.push(eq(schema.poojaBookings.userId, userId));
     else if (poojaId) conditions.push(eq(schema.poojaBookings.poojaId, poojaId));
     if (pagination?.q)
-      conditions.push(ilike(schema.poojaBookings.status, `%${pagination.q}%`));
+      conditions.push(
+        or(
+          ilike(schema.poojaBookings.status, `%${pagination.q}%`),
+          ilike(schema.mandirPooja.name, `%${pagination.q}%`),
+          ilike(schema.users.name, `%${pagination.q}%`),
+        )!,
+      );
     const where = conditions.length ? and(...conditions) : undefined;
 
+    const selectFields = {
+      id: schema.poojaBookings.id,
+      userId: schema.poojaBookings.userId,
+      userName: schema.users.name,
+      userEmail: schema.users.email,
+      userPhone: schema.users.phone,
+      poojaId: schema.poojaBookings.poojaId,
+      poojaName: schema.mandirPooja.name,
+      poojaDescription: schema.mandirPooja.description,
+      poojaImage: schema.mandirPooja.image,
+      poojaPrice: schema.mandirPooja.price,
+      bookingDate: schema.poojaBookings.bookingDate,
+      amount: schema.poojaBookings.amount,
+      transactionId: schema.poojaBookings.transactionId,
+      transactionReference: schema.transactions.referenceId,
+      status: schema.poojaBookings.status,
+      notes: schema.poojaBookings.notes,
+      createdAt: schema.poojaBookings.createdAt,
+      updatedAt: schema.poojaBookings.updatedAt,
+    };
+
     if (!pagination?.enabled) {
-      return this.db.query.poojaBookings.findMany({ where });
+      return this.db
+        .select(selectFields)
+        .from(schema.poojaBookings)
+        .leftJoin(schema.mandirPooja, eq(schema.poojaBookings.poojaId, schema.mandirPooja.id))
+        .leftJoin(schema.users, eq(schema.poojaBookings.userId, schema.users.id))
+        .leftJoin(schema.transactions, eq(schema.poojaBookings.transactionId, schema.transactions.id))
+        .where(where)
+        .orderBy(desc(schema.poojaBookings.createdAt));
     }
 
-    const orderBy = [desc(schema.poojaBookings.createdAt)];
     const [rows, countRows] = await Promise.all([
-      this.db.query.poojaBookings.findMany({
-        where,
-        orderBy,
-        limit: pagination.limit,
-        offset: pagination.offset,
-      }),
+      this.db
+        .select(selectFields)
+        .from(schema.poojaBookings)
+        .leftJoin(schema.mandirPooja, eq(schema.poojaBookings.poojaId, schema.mandirPooja.id))
+        .leftJoin(schema.users, eq(schema.poojaBookings.userId, schema.users.id))
+        .leftJoin(schema.transactions, eq(schema.poojaBookings.transactionId, schema.transactions.id))
+        .where(where)
+        .orderBy(desc(schema.poojaBookings.createdAt))
+        .limit(pagination.limit)
+        .offset(pagination.offset),
       this.db
         .select({ count: sql<number>`count(*)::int` })
         .from(schema.poojaBookings)
+        .leftJoin(schema.mandirPooja, eq(schema.poojaBookings.poojaId, schema.mandirPooja.id))
+        .leftJoin(schema.users, eq(schema.poojaBookings.userId, schema.users.id))
         .where(where),
     ]);
     return paginated(rows, countRows[0]?.count ?? 0, pagination);
+  }
+
+  async getBookingById(id: string) {
+    const [booking] = await this.db
+      .select({
+        id: schema.poojaBookings.id,
+        userId: schema.poojaBookings.userId,
+        userName: schema.users.name,
+        userEmail: schema.users.email,
+        userPhone: schema.users.phone,
+        poojaId: schema.poojaBookings.poojaId,
+        poojaName: schema.mandirPooja.name,
+        poojaDescription: schema.mandirPooja.description,
+        poojaImage: schema.mandirPooja.image,
+        poojaPrice: schema.mandirPooja.price,
+        bookingDate: schema.poojaBookings.bookingDate,
+        amount: schema.poojaBookings.amount,
+        transactionId: schema.poojaBookings.transactionId,
+        transactionReference: schema.transactions.referenceId,
+        status: schema.poojaBookings.status,
+        notes: schema.poojaBookings.notes,
+        createdAt: schema.poojaBookings.createdAt,
+        updatedAt: schema.poojaBookings.updatedAt,
+      })
+      .from(schema.poojaBookings)
+      .leftJoin(schema.mandirPooja, eq(schema.poojaBookings.poojaId, schema.mandirPooja.id))
+      .leftJoin(schema.users, eq(schema.poojaBookings.userId, schema.users.id))
+      .leftJoin(schema.transactions, eq(schema.poojaBookings.transactionId, schema.transactions.id))
+      .where(eq(schema.poojaBookings.id, id));
+    return booking || null;
   }
 
   async createBooking(data: typeof schema.poojaBookings.$inferInsert) {
@@ -181,6 +252,44 @@ export class MandirPoojaService {
       .set({ status, updatedAt: new Date() })
       .where(eq(schema.poojaBookings.id, id))
       .returning();
+
+    if (r) {
+      try {
+        const pooja = await this.db.query.mandirPooja.findFirst({
+          where: eq(schema.mandirPooja.id, r.poojaId),
+        });
+        const poojaName = pooja?.name || 'Mandir Puja';
+
+        let title = `Puja Status Updated: ${status.toUpperCase()}`;
+        let body = `Your booking for ${poojaName} has been marked as ${status}.`;
+
+        if (status === 'completed') {
+          title = `Puja Completed! 🙏✨`;
+          body = `The sacred rituals for ${poojaName} have been completed by the temple priests. May you be blessed with peace, health, and prosperity!`;
+        } else if (status === 'confirmed') {
+          title = `Puja Confirmed! 🕉️`;
+          body = `Your booking for ${poojaName} on ${r.bookingDate} is confirmed. Our temple priests will perform the rituals.`;
+        } else if (status === 'cancelled') {
+          title = `Puja Booking Cancelled`;
+          body = `Your booking for ${poojaName} has been cancelled.`;
+        }
+
+        await this.notificationsService.create({
+          userId: r.userId,
+          type: 'transactional',
+          title,
+          body,
+          data: {
+            type: 'pooja_booking',
+            bookingId: r.id,
+            poojaId: r.poojaId,
+            status,
+          },
+        });
+      } catch (err) {
+        console.error('Failed to send status update notification:', err);
+      }
+    }
     return r;
   }
 }

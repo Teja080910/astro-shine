@@ -8,7 +8,7 @@ export type VerificationStatus = 'pending' | 'approved' | 'rejected';
 export type OnlineStatus = 'online' | 'offline' | 'busy';
 export type TransactionType = 'credit' | 'debit';
 export type TransactionStatus = 'pending' | 'success' | 'failed' | 'refunded';
-export type TransactionCategory = 'add_funds' | 'withdrawal' | 'call_charge' | 'chat_charge' | 'gift' | 'donation' | 'commission' | 'order_payment' | 'refund';
+export type TransactionCategory = 'add_funds' | 'withdrawal' | 'call_charge' | 'chat_charge' | 'gift' | 'donation' | 'commission' | 'order_payment' | 'pooja_booking' | 'refund';
 export type WithdrawalStatus = 'pending' | 'approved' | 'rejected' | 'completed';
 export type CommissionType = 'percentage' | 'fixed';
 export type CallStatus = 'initiated' | 'ongoing' | 'completed' | 'missed' | 'cancelled';
@@ -238,9 +238,24 @@ export interface MandirPooja {
   price: string; isActive: boolean; createdAt: string; updatedAt: string;
 }
 export interface PoojaBooking {
-  id: string; userId: string; poojaId: string; bookingDate: string;
-  amount: string; transactionId?: string; status: string;
-  notes?: string; createdAt: string; updatedAt: string;
+  id: string;
+  userId: string;
+  userName?: string;
+  userEmail?: string;
+  userPhone?: string;
+  poojaId: string;
+  poojaName?: string;
+  poojaDescription?: string;
+  poojaImage?: string;
+  poojaPrice?: string;
+  bookingDate: string;
+  amount: string;
+  transactionId?: string;
+  transactionReference?: string;
+  status: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ============ Support ============

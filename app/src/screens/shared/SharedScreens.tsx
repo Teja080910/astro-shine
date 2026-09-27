@@ -409,12 +409,29 @@ export function NotificationsScreen({ route }: any) {
   const { user, astrologer, role } = useAuth();
   const { notificationVersion } = useChat();
   const [notifs, setNotifs] = useState<Notification[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadNotifs = useCallback(async () => {
+    const uid = route?.params?.userId || user?.id || astrologer?.userId;
+    if (uid) {
+      try {
+        const data = await api.notifications.list({ userId: uid });
+        setNotifs(data);
+      } catch {}
+    }
+  }, [route?.params?.userId, user?.id, astrologer?.userId]);
 
   useEffect(() => {
-    if (!isFocused) return;
-    const uid = route?.params?.userId || user?.id || astrologer?.userId;
-    if (uid) api.notifications.list({ userId: uid }).then(setNotifs).catch(() => {});
-  }, [isFocused, route?.params?.userId, user?.id, astrologer?.userId, notificationVersion]);
+    if (isFocused) {
+      loadNotifs();
+    }
+  }, [isFocused, loadNotifs, notificationVersion]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadNotifs();
+    setRefreshing(false);
+  };
 
   const markRead = async (id: string) => {
     try { await api.notifications.markRead(id); setNotifs(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n)); } catch {}
@@ -428,32 +445,45 @@ export function NotificationsScreen({ route }: any) {
 
   return (
     <ScreenWrapper>
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
+      <ScrollView
+        contentContainerStyle={{ padding: 16 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accentGold} />}
+      >
         {notifs.length === 0 ? (
           <EmptyState icon={<Ionicons name="notifications-outline" size={48} color={colors.textMuted} />} title="No notifications" subtitle="You're all caught up!" />
         ) : (
-          notifs.map(n => (
-            <TouchableOpacity key={n.id} onPress={() => handlePress(n)}>
-              <GlassCard style={{ marginBottom: 8, padding: 14, opacity: n.isRead ? 0.85 : 1 }}>
-                <View style={{ flexDirection: 'row', gap: 12 }}>
-                  <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: n.isRead ? colors.surfaceLight : colors.primary + '20', alignItems: 'center', justifyContent: 'center' }}>
-                    <Ionicons name={n.type === 'system' ? 'settings-outline' : n.type === 'promotional' ? 'megaphone-outline' : 'cash-outline'} size={20} color={n.isRead ? colors.textMuted : colors.primaryLight} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                      <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: n.type === 'system' ? colors.primary + '20' : n.type === 'promotional' ? '#9333EA30' : n.type === 'transactional' ? '#10B98130' : '#F59E0B30' }}>
-                        <Text style={{ fontSize: 9, fontWeight: '700', color: n.type === 'system' ? colors.primaryLight : n.type === 'promotional' ? '#A855F7' : n.type === 'transactional' ? '#10B981' : '#F59E0B', textTransform: 'uppercase' }}>{n.type}</Text>
-                      </View>
-                      <Text style={[typography.cardTitle, { fontSize: 14, flex: 1 }]}>{n.title}</Text>
+          notifs.map(n => {
+            const isOrder = (n.data as any)?.screen === 'OrderHistory';
+            const iconName = isOrder
+              ? 'cube-outline'
+              : n.type === 'system'
+              ? 'settings-outline'
+              : n.type === 'promotional'
+              ? 'megaphone-outline'
+              : 'cash-outline';
+            return (
+              <TouchableOpacity key={n.id} onPress={() => handlePress(n)}>
+                <GlassCard style={{ marginBottom: 8, padding: 14, opacity: n.isRead ? 0.85 : 1 }}>
+                  <View style={{ flexDirection: 'row', gap: 12 }}>
+                    <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: n.isRead ? colors.surfaceLight : colors.primary + '20', alignItems: 'center', justifyContent: 'center' }}>
+                      <Ionicons name={iconName} size={20} color={n.isRead ? colors.textMuted : colors.primaryLight} />
                     </View>
-                    <Text style={[typography.body, { fontSize: 13, marginTop: 2 }]}>{n.body}</Text>
-                    <Text style={[typography.caption, { marginTop: 4 }]}>{new Date(n.createdAt).toLocaleDateString()}</Text>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                        <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: n.type === 'system' ? colors.primary + '20' : n.type === 'promotional' ? '#9333EA30' : n.type === 'transactional' ? '#10B98130' : '#F59E0B30' }}>
+                          <Text style={{ fontSize: 9, fontWeight: '700', color: n.type === 'system' ? colors.primaryLight : n.type === 'promotional' ? '#A855F7' : n.type === 'transactional' ? '#10B981' : '#F59E0B', textTransform: 'uppercase' }}>{n.type}</Text>
+                        </View>
+                        <Text style={[typography.cardTitle, { fontSize: 14, flex: 1 }]}>{n.title}</Text>
+                      </View>
+                      <Text style={[typography.body, { fontSize: 13, marginTop: 2 }]}>{n.body}</Text>
+                      <Text style={[typography.caption, { marginTop: 4 }]}>{new Date(n.createdAt).toLocaleDateString()}</Text>
+                    </View>
+                    {!n.isRead && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primaryLight, marginTop: 4 }} />}
                   </View>
-                  {!n.isRead && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primaryLight, marginTop: 4 }} />}
-                </View>
-              </GlassCard>
-            </TouchableOpacity>
-          ))
+                </GlassCard>
+              </TouchableOpacity>
+            );
+          })
         )}
       </ScrollView>
     </ScreenWrapper>
@@ -503,6 +533,23 @@ export function EditProfileScreen() {
   const [videoCallPricePerMin, setVideoCallPricePerMin] = useState((profile as any)?.videoCallPricePerMin || (profile as any)?.pricePerMin || '');
 
   useEffect(() => {
+    const fetchLatest = async () => {
+      const id = (profile as any)?.userId || profile?.id;
+      if (!id) return;
+      try {
+        if (role === 'astrologer') {
+          const fresh = await api.astrologers.get(id);
+          if (fresh) await updateUser(fresh as any);
+        } else if (role === 'user') {
+          const fresh = await api.users.get(id);
+          if (fresh) await updateUser(fresh as any);
+        }
+      } catch (err) {}
+    };
+    fetchLatest();
+  }, []);
+
+  useEffect(() => {
     if (profile) {
       setName(profile.name || '');
       setPhone(profile.phone || '');
@@ -522,13 +569,24 @@ export function EditProfileScreen() {
   }, [profile]);
 
   const handleSave = async () => {
-    if (!name.trim()) return;
+    if (!name.trim()) {
+      Alert.alert('Required', 'Please enter your name.');
+      return;
+    }
+    const targetId = (profile as any)?.userId || profile?.id;
+    if (!targetId) {
+      Alert.alert('Error', 'User ID not found.');
+      return;
+    }
     setLoading(true);
     try {
       let updated;
       if (role === 'astrologer') {
-        updated = await api.astrologers.update(profile!.id || (profile as any).userId, {
-          name, phone, gender, dateOfBirth,
+        updated = await api.astrologers.update(targetId, {
+          name: name.trim(),
+          phone: phone.trim(),
+          gender,
+          dateOfBirth: dateOfBirth || null,
           bio,
           experience: parseInt(experience) || 0,
           specialization: specialization.split(',').map((s: string) => s.trim()).filter(Boolean),
@@ -539,11 +597,18 @@ export function EditProfileScreen() {
           videoCallPricePerMin,
         });
       } else if (role === 'admin') {
-        updated = await api.admins.update(profile!.id || (profile as any).userId, { name });
+        updated = await api.admins.update(targetId, { name: name.trim() });
       } else {
-        updated = await api.users.update(profile!.id || (profile as any).userId, { name, phone, gender, dateOfBirth });
+        updated = await api.users.update(targetId, {
+          name: name.trim(),
+          phone: phone.trim(),
+          gender,
+          dateOfBirth: dateOfBirth || null,
+        });
       }
-      await updateUser(updated as any);
+      if (updated) {
+        await updateUser(updated as any);
+      }
       Alert.alert('Profile Updated', 'Your changes have been saved successfully.', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);
@@ -889,75 +954,389 @@ export function ReportScreen({ route, navigation }: any) {
 }
 
 // Mandir Pooja
-export function MandirPoojaScreen({ navigation }: any) {
-  const { user } = useAuth();
+export function MandirPoojaScreen({ route, navigation }: any) {
+  const { user, theme } = useAuth();
+  const isDark = theme === 'dark';
   const isFocused = useIsFocused();
+  const initialTab = route?.params?.initialTab;
+  const [activeTab, setActiveTab] = useState<'available' | 'bookings'>(initialTab === 'bookings' ? 'bookings' : 'available');
   const [poojas, setPoojas] = useState<MandirPooja[]>([]);
   const [bookings, setBookings] = useState<PoojaBooking[]>([]);
+  const [selectedBooking, setSelectedBooking] = useState<PoojaBooking | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (isFocused) {
-      Promise.all([
+    if (initialTab === 'bookings') {
+      setActiveTab('bookings');
+    }
+  }, [initialTab]);
+
+  const loadData = useCallback(async () => {
+    try {
+      const [p, b] = await Promise.all([
         api.mandirPooja.list(),
         api.mandirPooja.bookings({ userId: user?.id }).catch(() => []),
-      ]).then(([p, b]) => { setPoojas(p); setBookings(b); }).finally(() => setLoading(false));
+      ]);
+      setPoojas(p);
+      setBookings(b);
+    } catch {
+    } finally {
+      setLoading(false);
     }
-  }, [isFocused, user?.id]);
+  }, [user?.id]);
 
-  if (loading) return <ScreenWrapper scroll><SectionTitle title="Mandir Pooja" /><GlassCard><Text style={typography.body}>Loading...</Text></GlassCard></ScreenWrapper>;
+  useEffect(() => {
+    if (isFocused) {
+      loadData();
+    }
+  }, [isFocused, loadData]);
+
+  const getStatusBadge = (status?: string) => {
+    const s = (status || 'pending').toLowerCase();
+    if (s === 'completed') {
+      return {
+        label: 'Completed',
+        icon: 'checkmark-circle' as const,
+        color: '#10B981',
+        bg: isDark ? 'rgba(16, 185, 129, 0.15)' : '#D1FAE5',
+        border: isDark ? 'rgba(16, 185, 129, 0.3)' : '#A7F3D0',
+        desc: 'The sacred rituals have been successfully performed by temple priests.',
+      };
+    }
+    if (s === 'confirmed') {
+      return {
+        label: 'Scheduled',
+        icon: 'time' as const,
+        color: '#F59E0B',
+        bg: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7',
+        border: isDark ? 'rgba(245, 158, 11, 0.3)' : '#FDE68A',
+        desc: 'Puja is confirmed. Priests will perform the rituals on the scheduled date.',
+      };
+    }
+    if (s === 'cancelled') {
+      return {
+        label: 'Cancelled',
+        icon: 'close-circle' as const,
+        color: '#EF4444',
+        bg: isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEE2E2',
+        border: isDark ? 'rgba(239, 68, 68, 0.3)' : '#FECACA',
+        desc: 'This puja booking has been cancelled.',
+      };
+    }
+    return {
+      label: 'Pending',
+      icon: 'hourglass-outline' as const,
+      color: '#6B7280',
+      bg: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F3F4F6',
+      border: isDark ? 'rgba(255, 255, 255, 0.15)' : '#E5E7EB',
+      desc: 'Awaiting confirmation from temple management.',
+    };
+  };
+
+  if (loading) {
+    return (
+      <ScreenWrapper scroll>
+        <SectionTitle title="Mandir Pooja" />
+        <GlassCard><Text style={typography.body}>Loading...</Text></GlassCard>
+      </ScreenWrapper>
+    );
+  }
 
   return (
     <ScreenWrapper scroll>
       <SectionTitle title="Mandir Pooja" />
-      {poojas.length > 0 && (
-        <>
-          <Text style={[typography.sectionTitle, { marginBottom: 12 }]}>Available Poojas</Text>
-          {poojas.map(p => (
-            <TouchableOpacity key={p.id} onPress={() => navigation.navigate('MandirPoojaDetail', { poojaId: p.id })} style={{ marginBottom: 10 }}>
-              <GlassCard style={{ padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.accentGold + '20', alignItems: 'center', justifyContent: 'center' }}>
-                  <Ionicons name="flame" size={24} color={colors.accentGold} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={typography.cardTitle}>{p.name}</Text>
-                  {p.description && <Text style={typography.caption} numberOfLines={2}>{p.description}</Text>}
-                  <Text style={[typography.price, { marginTop: 4 }]}>₹{p.price}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-              </GlassCard>
-            </TouchableOpacity>
-          ))}
-        </>
-      )}
 
-      {bookings.length > 0 && (
-        <>
-          <Text style={[typography.sectionTitle, { marginTop: 20, marginBottom: 12 }]}>My Bookings</Text>
-          {bookings.map(b => {
-            const pooja = poojas.find(p => p.id === b.poojaId);
-            return (
-              <GlassCard key={b.id} style={{ marginBottom: 8, padding: 14 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <View>
-                    <Text style={[typography.cardTitle, { fontSize: 14 }]}>{pooja?.name || 'Pooja'}</Text>
-                    <Text style={typography.caption}>{new Date(b.bookingDate).toLocaleDateString()} · ₹{b.amount}</Text>
+      {/* Segmented Tab Switcher */}
+      <View style={{ flexDirection: 'row', backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : colors.surfaceLight, borderRadius: 14, padding: 4, marginBottom: 16 }}>
+        <TouchableOpacity
+          onPress={() => setActiveTab('available')}
+          style={{
+            flex: 1,
+            paddingVertical: 10,
+            borderRadius: 10,
+            backgroundColor: activeTab === 'available' ? colors.primary : 'transparent',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'row',
+            gap: 6,
+          }}
+        >
+          <Ionicons name="flame" size={16} color={activeTab === 'available' ? '#FFF' : colors.textMuted} />
+          <Text style={{ fontSize: 13, fontWeight: '700', color: activeTab === 'available' ? '#FFF' : colors.textSecondary }}>
+            Available Pujas
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => setActiveTab('bookings')}
+          style={{
+            flex: 1,
+            paddingVertical: 10,
+            borderRadius: 10,
+            backgroundColor: activeTab === 'bookings' ? colors.primary : 'transparent',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'row',
+            gap: 6,
+          }}
+        >
+          <Ionicons name="calendar-outline" size={16} color={activeTab === 'bookings' ? '#FFF' : colors.textMuted} />
+          <Text style={{ fontSize: 13, fontWeight: '700', color: activeTab === 'bookings' ? '#FFF' : colors.textSecondary }}>
+            My Bookings{bookings.length > 0 ? ` (${bookings.length})` : ''}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Tab 1: Available Pujas */}
+      {activeTab === 'available' && (
+        poojas.length === 0 ? (
+          <GlassCard style={{ alignItems: 'center', padding: 28 }}>
+            <Ionicons name="flame" size={48} color={colors.accentGold} />
+            <Text style={[typography.cardTitle, { marginTop: 12 }]}>No Pujas Available</Text>
+            <Text style={[typography.body, { textAlign: 'center', marginTop: 8, color: colors.textSecondary }]}>
+              Check back soon for upcoming sacred pujas and temple ceremonies.
+            </Text>
+          </GlassCard>
+        ) : (
+          <View style={{ gap: 10 }}>
+            {poojas.map(p => (
+              <TouchableOpacity key={p.id} onPress={() => navigation.navigate('MandirPoojaDetail', { poojaId: p.id })}>
+                <GlassCard style={{ padding: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.accentGold + '20', alignItems: 'center', justifyContent: 'center' }}>
+                    <Ionicons name="flame" size={24} color={colors.accentGold} />
                   </View>
-                  <Text style={[typography.caption, { color: b.status === 'confirmed' ? colors.success : colors.warning, fontWeight: '600' }]}>{b.status.toUpperCase()}</Text>
-                </View>
-              </GlassCard>
-            );
-          })}
-        </>
+                  <View style={{ flex: 1 }}>
+                    <Text style={typography.cardTitle}>{p.name}</Text>
+                    {p.description && <Text style={typography.caption} numberOfLines={2}>{p.description}</Text>}
+                    <Text style={[typography.price, { marginTop: 4 }]}>₹{p.price}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                </GlassCard>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )
       )}
 
-      {poojas.length === 0 && bookings.length === 0 && (
-        <GlassCard style={{ alignItems: 'center', padding: 24 }}>
-          <Ionicons name="flame" size={48} color={colors.accentGold} />
-          <Text style={[typography.cardTitle, { marginTop: 12 }]}>Book a Sacred Pooja</Text>
-          <Text style={[typography.body, { textAlign: 'center', marginTop: 8 }]}>Satyanarayan Pooja, Rudrabhishek, Navgraha Shanti and more</Text>
-        </GlassCard>
+      {/* Tab 2: My Bookings */}
+      {activeTab === 'bookings' && (
+        bookings.length === 0 ? (
+          <GlassCard style={{ alignItems: 'center', padding: 28, marginTop: 12 }}>
+            <Ionicons name="calendar-clear-outline" size={48} color={colors.accentGold} />
+            <Text style={[typography.cardTitle, { marginTop: 14, textAlign: 'center' }]}>No Puja Bookings Yet</Text>
+            <Text style={[typography.body, { textAlign: 'center', marginTop: 8, color: colors.textSecondary, lineHeight: 20 }]}>
+              Book sacred Vedic pujas performed by experienced temple priests for health, peace, and prosperity.
+            </Text>
+            <GradientButton
+              title="Browse Available Pujas"
+              onPress={() => setActiveTab('available')}
+              style={{ marginTop: 20, minWidth: 200 }}
+            />
+          </GlassCard>
+        ) : (
+          <View style={{ gap: 12 }}>
+            {bookings.map(b => {
+              const matchedPooja = poojas.find(p => p.id === b.poojaId);
+              const poojaName = b.poojaName || matchedPooja?.name || 'Sacred Mandir Puja';
+              const poojaDesc = b.poojaDescription || matchedPooja?.description;
+              const badge = getStatusBadge(b.status);
+
+              return (
+                <TouchableOpacity
+                  key={b.id}
+                  activeOpacity={0.8}
+                  onPress={() => setSelectedBooking({ ...b, poojaName, poojaDescription: poojaDesc })}
+                >
+                  <GlassCard style={{ padding: 16 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+                        <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.accentGold + '20', alignItems: 'center', justifyContent: 'center' }}>
+                          <Ionicons name="flame" size={22} color={colors.accentGold} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[typography.cardTitle, { fontSize: 16 }]} numberOfLines={1}>
+                            {poojaName}
+                          </Text>
+                          <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
+                            Booking ID: #{b.id.slice(0, 8).toUpperCase()}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 4,
+                        paddingHorizontal: 10,
+                        paddingVertical: 4,
+                        borderRadius: 12,
+                        backgroundColor: badge.bg,
+                        borderWidth: 1,
+                        borderColor: badge.border,
+                      }}>
+                        <Ionicons name={badge.icon} size={13} color={badge.color} />
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: badge.color }}>
+                          {badge.label}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9', marginVertical: 12 }} />
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Ionicons name="calendar" size={15} color={colors.primary} />
+                        <Text style={[typography.caption, { color: colors.textPrimary, fontWeight: '600' }]}>
+                          Date: {new Date(b.bookingDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </Text>
+                      </View>
+                      <Text style={{ fontSize: 15, fontWeight: '800', color: colors.accentGold }}>
+                        ₹{b.amount}
+                      </Text>
+                    </View>
+
+                    <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 10, lineHeight: 17 }}>
+                      {badge.desc}
+                    </Text>
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 10, gap: 4 }}>
+                      <Text style={{ fontSize: 12, fontWeight: '700', color: colors.primary }}>
+                        View Full Details
+                      </Text>
+                      <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+                    </View>
+                  </GlassCard>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )
       )}
+
+      {/* Puja Details Modal */}
+      <CustomModal
+        visible={!!selectedBooking}
+        onClose={() => setSelectedBooking(null)}
+        title={selectedBooking?.poojaName || "Puja Booking Details"}
+      >
+        {selectedBooking && (
+          <View style={{ padding: 16, gap: 16, paddingBottom: 36 }}>
+            {/* Status Card */}
+            {(() => {
+              const badge = getStatusBadge(selectedBooking.status);
+              return (
+                <View
+                  style={{
+                    backgroundColor: badge.bg,
+                    borderColor: badge.border,
+                    borderWidth: 1,
+                    borderRadius: 16,
+                    padding: 14,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 12,
+                  }}
+                >
+                  <Ionicons name={badge.icon} size={28} color={badge.color} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontSize: 15, fontWeight: "800", color: badge.color }}>
+                      Status: {badge.label}
+                    </Text>
+                    <Text style={{ fontSize: 12, color: badge.color, marginTop: 2, lineHeight: 16, opacity: 0.9 }}>
+                      {badge.desc}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })()}
+
+            {/* Puja Info Grid */}
+            <View
+              style={{
+                backgroundColor: isDark ? "rgba(255,255,255,0.04)" : colors.surfaceLight,
+                borderColor: colors.cardBorder,
+                borderWidth: 1,
+                borderRadius: 16,
+                padding: 14,
+                gap: 10,
+              }}
+            >
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>Scheduled Date</Text>
+                <Text style={{ fontSize: 13, fontWeight: "700", color: colors.textPrimary }}>
+                  {new Date(selectedBooking.bookingDate).toLocaleDateString([], {
+                    weekday: "short",
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </Text>
+              </View>
+
+              <View style={{ height: 1, backgroundColor: colors.divider }} />
+
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>Amount Paid</Text>
+                <Text style={{ fontSize: 14, fontWeight: "800", color: colors.accentGold }}>
+                  ₹{selectedBooking.amount}
+                </Text>
+              </View>
+
+              <View style={{ height: 1, backgroundColor: colors.divider }} />
+
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>Booking ID</Text>
+                <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textPrimary }}>
+                  #{selectedBooking.id.slice(0, 8).toUpperCase()}
+                </Text>
+              </View>
+
+              {selectedBooking.transactionReference && (
+                <>
+                  <View style={{ height: 1, backgroundColor: colors.divider }} />
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text style={{ fontSize: 13, color: colors.textSecondary }}>Transaction Ref</Text>
+                    <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textPrimary }}>
+                      {selectedBooking.transactionReference}
+                    </Text>
+                  </View>
+                </>
+              )}
+
+              <View style={{ height: 1, backgroundColor: colors.divider }} />
+
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <Text style={{ fontSize: 13, color: colors.textSecondary }}>Booked On</Text>
+                <Text style={{ fontSize: 12, color: colors.textMuted }}>
+                  {new Date(selectedBooking.createdAt).toLocaleDateString()} · {new Date(selectedBooking.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </Text>
+              </View>
+            </View>
+
+            {/* About Puja */}
+            {selectedBooking.poojaDescription && (
+              <View>
+                <Text style={{ fontSize: 14, fontWeight: "800", color: colors.textPrimary, marginBottom: 6 }}>
+                  About this Puja & Rituals
+                </Text>
+                <Text style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 20 }}>
+                  {selectedBooking.poojaDescription}
+                </Text>
+              </View>
+            )}
+
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 8 }}>
+              <GradientButton
+                title="Book Another Puja"
+                onPress={() => {
+                  setSelectedBooking(null);
+                  setActiveTab("available");
+                }}
+                style={{ flex: 1 }}
+              />
+            </View>
+          </View>
+        )}
+      </CustomModal>
     </ScreenWrapper>
   );
 }

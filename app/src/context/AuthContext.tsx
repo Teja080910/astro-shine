@@ -33,7 +33,7 @@ interface AuthState {
   loginWithOtp: (identifier: string, otp: string, role: AppRole, type?: 'phone' | 'email') => Promise<void>;
   logout: () => Promise<void>;
   switchRole: (role: AppRole) => void;
-  updateUser: (u: User | Astrologer) => Promise<void>;
+  updateUser: (u: Partial<User> | Partial<Astrologer> | User | Astrologer) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState>(null!);
@@ -202,20 +202,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const switchRole = (r: AppRole) => setRole(r);
 
-  const updateUser = async (u: User | Astrologer) => {
+  const updateUser = async (u: Partial<User> | Partial<Astrologer> | User | Astrologer) => {
     if (role === "astrologer") {
-      setAstrologer(u as Astrologer);
+      setAstrologer((prev) => (prev ? ({ ...prev, ...u } as Astrologer) : (u as Astrologer)));
     } else {
-      setUser(u as User);
+      setUser((prev) => (prev ? ({ ...prev, ...u } as User) : (u as User)));
     }
     try {
       const stored = await AsyncStorage.getItem("auth");
       if (stored) {
         const data = JSON.parse(stored);
         if (role === "astrologer") {
-          data.astrologer = u;
+          data.astrologer = { ...(data.astrologer || {}), ...u };
         } else {
-          data.user = u;
+          data.user = { ...(data.user || {}), ...u };
         }
         await AsyncStorage.setItem("auth", JSON.stringify(data));
       }

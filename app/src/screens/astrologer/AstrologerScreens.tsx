@@ -2088,6 +2088,26 @@ export function AstrologerConsultationScreen({ route, navigation }: any) {
   );
 }
 
+function formatDisplayDate(dateStr?: string | null): string {
+  if (!dateStr) return "Not set";
+  try {
+    const clean = String(dateStr).split("T")[0];
+    const parts = clean.split("-");
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const monthIndex = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      if (monthIndex >= 0 && monthIndex < 12 && !isNaN(day) && !isNaN(year)) {
+        return `${months[monthIndex]} ${day}, ${year}`;
+      }
+    }
+    return clean;
+  } catch {
+    return String(dateStr);
+  }
+}
+
 export function AstrologerProfileScreen({ navigation }: any) {
   const { astrologer, role, logout, updateUser, theme, setTheme } = useAuth();
   const [pwOpen, setPwOpen] = useState(false);
@@ -2104,6 +2124,33 @@ export function AstrologerProfileScreen({ navigation }: any) {
   const [isChatEnabled, setIsChatEnabled] = useState(astrologer?.isChatEnabled ?? true);
   const [isAudioCallEnabled, setIsAudioCallEnabled] = useState(astrologer?.isAudioCallEnabled ?? true);
   const [isVideoCallEnabled, setIsVideoCallEnabled] = useState(astrologer?.isVideoCallEnabled ?? true);
+
+  const isFocused = useIsFocused();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadAstrologer = async () => {
+    const targetId = astrologer?.userId || (astrologer as any)?.id;
+    if (targetId) {
+      try {
+        const fresh = await api.astrologers.get(targetId);
+        if (fresh) {
+          await updateUser(fresh);
+        }
+      } catch {}
+    }
+  };
+
+  useEffect(() => {
+    if (isFocused) {
+      loadAstrologer();
+    }
+  }, [isFocused, astrologer?.userId, (astrologer as any)?.id]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadAstrologer();
+    setRefreshing(false);
+  };
 
   useEffect(() => {
     if (astrologer) {
@@ -2147,7 +2194,6 @@ export function AstrologerProfileScreen({ navigation }: any) {
   };
 
   const items = [
-    { icon: "person-outline", label: "Edit Profile", route: "EditProfile" },
     {
       icon: "document-attach-outline",
       label: "Documents & Verification",
@@ -2217,7 +2263,17 @@ export function AstrologerProfileScreen({ navigation }: any) {
   };
 
   return (
-    <ScreenWrapper scroll>
+    <ScreenWrapper
+      scroll
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.primaryLight}
+          colors={[colors.primaryLight]}
+        />
+      }
+    >
       <View style={{ paddingBottom: 100 }}>
         {/* Hero Header Card */}
         <View
@@ -2398,17 +2454,38 @@ export function AstrologerProfileScreen({ navigation }: any) {
               borderColor: colors.cardBorder,
             }}
           >
-            <Text
+            <View
               style={{
-                fontSize: 11,
-                fontWeight: "800",
-                color: colors.primaryLight,
-                letterSpacing: 1,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
                 marginBottom: 8,
               }}
             >
-              PROFILE DETAILS
-            </Text>
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontWeight: "800",
+                  color: colors.primaryLight,
+                  letterSpacing: 1,
+                }}
+              >
+                PROFILE DETAILS
+              </Text>
+              <TouchableOpacity
+                onPress={() => navigation.navigate("EditProfile")}
+                style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="create-outline" size={14} color={colors.primaryLight} />
+                <Text style={{ color: colors.primaryLight, fontSize: 12, fontWeight: "600" }}>Edit</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.divider }}>
+              <Ionicons name="person-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
+              <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>Name</Text>
+              <Text style={[typography.body, { fontWeight: "600", color: colors.textPrimary }]}>{profile?.name || "Not set"}</Text>
+            </View>
             <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.divider }}>
               <Ionicons name="call-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
               <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>Phone</Text>
@@ -2422,7 +2499,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
             <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.divider }}>
               <Ionicons name="calendar-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
               <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>Date of Birth</Text>
-              <Text style={[typography.body, { fontWeight: "600", color: colors.textPrimary }]}>{(profile as any)?.dateOfBirth ? String((profile as any).dateOfBirth).split("T")[0] : "Not set"}</Text>
+              <Text style={[typography.body, { fontWeight: "600", color: colors.textPrimary }]}>{formatDisplayDate((profile as any)?.dateOfBirth)}</Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8 }}>
               <Ionicons name="ribbon-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />

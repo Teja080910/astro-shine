@@ -24,7 +24,7 @@ export function MandirPoojaDetailScreen({ route, navigation }: any) {
       const order = await api.payments.createOrder({
         amount: Number(pooja.price),
         purpose: 'pooja_booking',
-        metadata: { poojaId: pooja.id, bookingDate },
+        metadata: { poojaId: pooja.id, poojaName: pooja.name, bookingDate },
       });
       navigation.navigate('Payment', {
         razorpayOrderId: order.razorpayOrderId, key: order.key, amount: order.amount,

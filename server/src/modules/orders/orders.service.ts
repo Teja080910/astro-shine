@@ -153,21 +153,47 @@ export class OrdersService {
       status: r.status,
     });
 
-    if (normalizedStatus === 'delivered') {
-      const shortId = r.id.slice(0, 8).toUpperCase();
-      try {
-        await this.notifications.create({
-          userId: r.userId,
-          type: 'transactional',
-          title: 'Order Delivered',
-          body: `Your order #${shortId} has been delivered. Tap to view the details.`,
-          data: { screen: 'OrderHistory', orderId: r.id },
-        });
-      } catch (e) {
-        this.logger.warn(
-          `Order delivered notification failed: ${(e as Error)?.message}`,
-        );
-      }
+    const shortId = r.id.slice(0, 8).toUpperCase();
+    const statusNotifications: Record<string, { title: string; body: string }> = {
+      delivered: {
+        title: 'Order Delivered 📦',
+        body: `Your order #${shortId} has been delivered. Tap to view the details.`,
+      },
+      shipped: {
+        title: 'Order Shipped 🚚',
+        body: `Your order #${shortId} has been shipped and is on its way.`,
+      },
+      confirmed: {
+        title: 'Order Confirmed ✅',
+        body: `Your order #${shortId} has been confirmed.`,
+      },
+      processing: {
+        title: 'Order Processing ⏳',
+        body: `Your order #${shortId} is being processed.`,
+      },
+      cancelled: {
+        title: 'Order Cancelled ❌',
+        body: `Your order #${shortId} has been cancelled.`,
+      },
+    };
+
+    const notifConfig = statusNotifications[normalizedStatus] || {
+      title: `Order Status: ${normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1)}`,
+      body: `Your order #${shortId} status has been updated to ${normalizedStatus}.`,
+    };
+
+    try {
+      await this.notifications.create({
+        userId: r.userId,
+        type: 'transactional',
+        title: notifConfig.title,
+        body: notifConfig.body,
+        data: { screen: 'OrderHistory', orderId: r.id },
+      });
+    } catch (e) {
+      this.logger.warn(
+        `Order status notification failed: ${(e as Error)?.message}`,
+      );
     }
 
     return r;
