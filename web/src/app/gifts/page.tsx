@@ -34,14 +34,6 @@ export default function GiftsPage() {
   const [image, setImage] = useState('');
   const [isActive, setIsActive] = useState(true);
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(t);
-  }, [search]);
-
   const fetchData = useCallback(() => {
     setLoading(true);
     setError('');
@@ -142,6 +134,7 @@ export default function GiftsPage() {
 
       <div className="mb-6">
         <SearchInput
+          onEnter={() => { setDebouncedSearch(search); setPage(1); }}
           value={search}
           onChange={setSearch}
           placeholder={tab === 'gifts' ? 'Search gifts by name...' : 'Search by gift, sender, receiver or status...'}

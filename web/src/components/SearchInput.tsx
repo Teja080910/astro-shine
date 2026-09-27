@@ -5,11 +5,13 @@ import { Search } from 'lucide-react';
 export function SearchInput({
   value,
   onChange,
+  onEnter,
   placeholder = 'Search...',
   className = '',
 }: {
   value: string;
   onChange: (value: string) => void;
+  onEnter?: (value: string) => void;
   placeholder?: string;
   className?: string;
 }) {
@@ -20,6 +22,12 @@ export function SearchInput({
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            onEnter?.(value);
+          }
+        }}
         placeholder={placeholder}
         className="input-field pl-10 pr-4 py-3 text-sm w-full"
       />

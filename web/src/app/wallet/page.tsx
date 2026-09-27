@@ -21,6 +21,7 @@ export default function WalletPage() {
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [summary, setSummary] = useState<{ balance: number; totalAdded: number; totalDeducted: number } | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -33,6 +34,7 @@ export default function WalletPage() {
       api.get<any>('/wallet').catch(() => null),
     ]).then(([walletRes, users, astros, admins, mine]) => {
       const wallets = unwrapList<any>(walletRes);
+      setSummary(Array.isArray(walletRes) ? null : (walletRes?.summary ?? null));
       const userMap = Object.fromEntries(users.map((u: any) => [u.id, u.name]));
       const astroMap = Object.fromEntries(astros.map((a: any) => [a.userId || a.id, a.name]));
       const adminMap = Object.fromEntries(admins.map((a: any) => [a.userId || a.id, a.name]));
@@ -65,6 +67,7 @@ export default function WalletPage() {
         api.get<any>('/wallet').catch(() => null),
       ]);
       const wallets = unwrapList<any>(updated);
+      setSummary(Array.isArray(updated) ? null : (updated?.summary ?? null));
       const userMap = Object.fromEntries(updatedUsers.map((u: any) => [u.id, u.name]));
       const astroMap = Object.fromEntries(updatedAstros.map((a: any) => [a.userId || a.id, a.name]));
       const adminMap = Object.fromEntries(updatedAdmins.map((a: any) => [a.userId || a.id, a.name]));
@@ -84,9 +87,9 @@ export default function WalletPage() {
     }
   };
 
-  const totalBalance = data.reduce((s: number, w: any) => s + Number(w.balance), 0);
-  const totalAdded = data.reduce((s: number, w: any) => s + Number(w.totalAdded), 0);
-  const totalDeducted = data.reduce((s: number, w: any) => s + Number(w.totalDeducted), 0);
+  const totalBalance = summary ? summary.balance : data.reduce((s: number, w: any) => s + Number(w.balance), 0);
+  const totalAdded = summary ? summary.totalAdded : data.reduce((s: number, w: any) => s + Number(w.totalAdded), 0);
+  const totalDeducted = summary ? summary.totalDeducted : data.reduce((s: number, w: any) => s + Number(w.totalDeducted), 0);
 
   const filtered = data.filter((w: any) => matchesSearch(search, w.ownerName, w.ownerType));
 
@@ -100,6 +103,10 @@ export default function WalletPage() {
             <GradientButton onClick={() => setWithdrawModal(true)}>Withdraw from Admin</GradientButton>
           )}
         </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by owner or type..." />
       </div>
 
       {loading ? (
@@ -121,10 +128,6 @@ export default function WalletPage() {
           <p className="text-text-muted text-sm">Total Deducted</p>
           <p className="text-2xl font-bold text-danger">-₹{totalDeducted.toFixed(2)}</p>
         </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by owner or type..." />
       </div>
 
       <Table headers={['Owner', 'Type', 'Balance', 'Total Added', 'Total Deducted']} emptyMessage="No wallets found">

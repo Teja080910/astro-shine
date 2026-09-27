@@ -20,11 +20,6 @@ export default function CallsPage() {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    const t = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 300);
-    return () => clearTimeout(t);
-  }, [search]);
-
-  useEffect(() => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim());
     setLoading(true);
@@ -47,7 +42,7 @@ export default function CallsPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by type, status, user or astrologer..." />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by type, status, user or astrologer..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
       </div>
 
       {loading ? (

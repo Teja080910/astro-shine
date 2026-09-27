@@ -3,20 +3,20 @@ import { ConfigService } from '@nestjs/config';
 import { Client } from 'minio';
 import { extname } from 'path';
 
-const ALLOWED_EXTENSIONS = [
+const IMAGE_DOC_EXTENSIONS = [
   '.jpg',
   '.jpeg',
   '.png',
   '.gif',
   '.webp',
   '.pdf',
-  '.mp4',
-  '.mp3',
-  '.wav',
   '.doc',
   '.docx',
 ];
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MEDIA_EXTENSIONS = ['.mp4', '.mov', '.m4v', '.webm', '.mp3', '.wav'];
+const ALLOWED_EXTENSIONS = [...IMAGE_DOC_EXTENSIONS, ...MEDIA_EXTENSIONS];
+const IMAGE_DOC_MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MEDIA_MAX_FILE_SIZE = 100 * 1024 * 1024;
 
 @Injectable()
 export class MinioStorageService {
@@ -86,14 +86,19 @@ export class MinioStorageService {
 
   async saveFile(file: Express.Multer.File): Promise<{ filename: string; url: string; size: number }> {
     if (!file) throw new BadRequestException('No file provided');
-    if (file.size > MAX_FILE_SIZE) {
-      throw new BadRequestException(`File size exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`);
-    }
 
     const ext = extname(file.originalname).toLowerCase();
     if (!ALLOWED_EXTENSIONS.includes(ext)) {
       throw new BadRequestException(
         `File type ${ext} not allowed. Allowed: ${ALLOWED_EXTENSIONS.join(', ')}`,
+      );
+    }
+
+    const isMedia = MEDIA_EXTENSIONS.includes(ext);
+    const maxSize = isMedia ? MEDIA_MAX_FILE_SIZE : IMAGE_DOC_MAX_FILE_SIZE;
+    if (file.size > maxSize) {
+      throw new BadRequestException(
+        `File size exceeds ${maxSize / 1024 / 1024}MB limit${isMedia ? ' for video/audio files' : ''}`,
       );
     }
 

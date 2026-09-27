@@ -44,7 +44,7 @@ export function Table({ headers, children, emptyMessage, sortIndex, sortDir, onS
         <thead>
           <tr className="border-b border-divider">
             {headers.map((h, i) => (
-              <th key={h} className={`text-left text-sm font-medium px-4 py-3 ${onSort ? 'cursor-pointer select-none hover:text-text-primary transition-colors' : ''} ${sortIndex === i ? 'text-text-primary' : 'text-text-secondary'}`} onClick={() => onSort?.(i)}>
+              <th key={`${i}-${h}`} className={`text-left text-sm font-medium px-4 py-3 ${onSort ? 'cursor-pointer select-none hover:text-text-primary transition-colors' : ''} ${sortIndex === i ? 'text-text-primary' : 'text-text-secondary'}`} onClick={() => onSort?.(i)}>
                 <span className="inline-flex items-center gap-1">
                   {h}
                   {onSort && sortIndex === i && (

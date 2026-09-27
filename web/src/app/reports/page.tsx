@@ -22,11 +22,6 @@ export default function ReportsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const { admin } = useAuthStore();
 
-  useEffect(() => {
-    const t = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 300);
-    return () => clearTimeout(t);
-  }, [search]);
-
   const fetchReports = useCallback(() => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim());
@@ -62,7 +57,7 @@ export default function ReportsPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search reports by reason or status..." />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search reports by reason or status..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
       </div>
 
       {loading ? (

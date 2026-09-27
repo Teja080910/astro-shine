@@ -23,14 +23,6 @@ export default function UsersPage() {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [search]);
-
-  useEffect(() => {
     setLoading(true);
     setError('');
     const params = `?page=${page}&limit=${limit}${debouncedSearch ? `&q=${encodeURIComponent(debouncedSearch)}` : ''}`;
@@ -70,6 +62,7 @@ export default function UsersPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { setDebouncedSearch(search); setPage(1); } }}
             placeholder="Search by name, email, or phone..."
             className="input-field pl-10 pr-4 py-3 text-sm w-full"
           />

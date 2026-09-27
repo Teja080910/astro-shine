@@ -27,14 +27,6 @@ export default function MandirPoojaPage() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [search]);
-
   const query = `page=${page}&limit=${limit}${
     debouncedSearch ? `&q=${encodeURIComponent(debouncedSearch)}` : ''
   }`;
@@ -127,6 +119,7 @@ export default function MandirPoojaPage() {
 
       <div className="mb-6">
         <SearchInput
+          onEnter={() => { setDebouncedSearch(search); setPage(1); }}
           value={search}
           onChange={setSearch}
           placeholder={tab === 'poojas' ? 'Search poojas by name or description...' : 'Search bookings by status...'}

@@ -20,11 +20,6 @@ export default function ReviewsPage() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    const t = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 300);
-    return () => clearTimeout(t);
-  }, [search]);
-
   const fetchReviews = useCallback(() => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim());
@@ -58,7 +53,7 @@ export default function ReviewsPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search reviews by comment or rating..." />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search reviews by comment or rating..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
       </div>
 
       {loading ? (

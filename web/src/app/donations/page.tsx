@@ -27,14 +27,6 @@ function DonationsContent() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(t);
-  }, [search]);
-
   const refresh = useCallback(() => {
     setLoading(true);
     setFetchError('');
@@ -86,6 +78,10 @@ function DonationsContent() {
         </div>
       </div>
 
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by type, note, amount..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center h-64 text-text-secondary">Loading donations...</div>
       ) : fetchError ? (
@@ -108,9 +104,6 @@ function DonationsContent() {
           </div>
 
           <h2 className="text-xl font-bold text-text-primary mb-4">Donation Logs</h2>
-          <div className="flex flex-col sm:flex-row gap-3 mb-6">
-            <SearchInput value={search} onChange={setSearch} placeholder="Search by type, note, amount..." />
-          </div>
           <Table headers={['Type', 'Amount', 'Note', 'Date']} emptyMessage="No donation logs found">
             {logs.map((l: any) => (
               <tr key={l.id} className="border-b border-divider hover:bg-surface-light/50">

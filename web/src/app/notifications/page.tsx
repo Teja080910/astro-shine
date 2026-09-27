@@ -62,14 +62,6 @@ export default function NotificationsPage() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(t);
-  }, [search]);
-
   const fetchAll = useCallback(() => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (debouncedSearch) params.set('q', debouncedSearch);
@@ -117,7 +109,7 @@ export default function NotificationsPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search notifications by title, body, type, or target..." />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search notifications by title, body, or type..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
       </div>
 
       {loading ? (
@@ -125,27 +117,37 @@ export default function NotificationsPage() {
       ) : error ? (
         <div className="rounded-lg px-4 py-3 text-sm" style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#EF4444' }}>{error}</div>
       ) : (
-        <div className="glass-card p-6">
-          {filtered.length === 0 ? <p style={{ color: 'var(--text-secondary)' }}>{data.length === 0 ? 'No notifications sent yet.' : 'No notifications match your search.'}</p> :
-            filtered.slice(0, 50).map(n => {
-              const ts = typeStyles[n.type] || typeStyles.system;
-              return (
-                <div key={n.id} className="border-b py-3 last:border-0" style={{ borderColor: 'var(--divider)' }}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ backgroundColor: ts.bg, color: ts.text }}>{n.type}</span>
-                    <p className="font-medium" style={{ color: 'var(--text-primary)' }}>{n.title}</p>
+        <>
+          <div className="glass-card p-6">
+            {data.length === 0 ? <p style={{ color: 'var(--text-secondary)' }}>{debouncedSearch ? 'No notifications match your search.' : 'No notifications sent yet.'}</p> :
+              data.map(n => {
+                const ts = typeStyles[n.type] || typeStyles.system;
+                return (
+                  <div key={n.id} className="border-b py-3 last:border-0" style={{ borderColor: 'var(--divider)' }}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ backgroundColor: ts.bg, color: ts.text }}>{n.type}</span>
+                      <p className="font-medium" style={{ color: 'var(--text-primary)' }}>{n.title}</p>
+                    </div>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{n.body}</p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{formatDate(n.createdAt)}</span>
+                      {n.userId && <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>→ User → {(n as any).targetName || 'Unknown'}</span>}
+                      {n.astrologerId && <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>→ Astrologer → {(n as any).targetName || 'Unknown'}</span>}
+                      {!n.userId && !n.astrologerId && <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>→ (no target)</span>}
+                    </div>
                   </div>
-                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{n.body}</p>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{formatDate(n.createdAt)}</span>
-                    {n.userId && <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>→ User → {(n as any).targetName || 'Unknown'}</span>}
-                    {n.astrologerId && <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>→ Astrologer → {(n as any).targetName || 'Unknown'}</span>}
-                    {!n.userId && !n.astrologerId && <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>→ (no target)</span>}
-                  </div>
-                </div>
-              );
-            })}
-        </div>
+                );
+              })}
+          </div>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={(l) => { setLimit(l); setPage(1); }}
+          />
+        </>
       )}
 
       <CustomModal open={composing} onClose={() => setComposing(false)} title="Compose Notification">

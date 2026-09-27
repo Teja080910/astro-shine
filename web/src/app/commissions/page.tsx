@@ -29,14 +29,6 @@ export default function CommissionsPage() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(t);
-  }, [search]);
-
   const refresh = useCallback(() => {
     setLoading(true);
     setError('');
@@ -103,7 +95,7 @@ export default function CommissionsPage() {
         <button onClick={() => openEdit({} as Commission)} className="gradient-btn">Add Commission</button>
       </div>
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by astrologer, type, status..." />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by astrologer, type, status..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
       </div>
       <Table headers={['Astrologer', 'Type', 'Value', 'Min Amount', 'Max Cap', 'Status', '']} emptyMessage="No commissions found">
         {loading ? (

@@ -30,14 +30,6 @@ export default function MuhuratPage() {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [search]);
-
-  useEffect(() => {
     api.get<any[]>('/muhurat-categories').then(setCategories).catch(() => []);
   }, []);
 
@@ -106,7 +98,7 @@ export default function MuhuratPage() {
               ))}
             </select>
           </div>
-          <SearchInput value={search} onChange={setSearch} placeholder="Search by name, date or status..." />
+          <SearchInput value={search} onChange={setSearch} placeholder="Search by name, date or status..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
         </div>
       </div>
 

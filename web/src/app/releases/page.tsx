@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
-import { SearchInput, matchesSearch } from '@/components/SearchInput';
+import { SearchInput } from '@/components/SearchInput';
+import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 
 export default function ReleasesPage() {
@@ -20,13 +21,28 @@ export default function ReleasesPage() {
   const [downloadUrl, setDownloadUrl] = useState('');
   const [isMandatory, setIsMandatory] = useState(false);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    api.get<any[]>('/releases')
-      .then(setData)
+  const fetchData = useCallback(() => {
+    setLoading(true);
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (debouncedSearch) params.set('q', debouncedSearch);
+    api.get<any>(`/releases?${params.toString()}`)
+      .then((res) => {
+        const list = unwrapList<any>(res);
+        setData(list.data);
+        setTotal(list.total);
+        setTotalPages(list.totalPages);
+      })
       .catch((e) => setError(e.message || 'Failed to load releases'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [page, limit, debouncedSearch]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const openForm = (r: any) => {
     setSelected(r);
@@ -44,19 +60,17 @@ export default function ReleasesPage() {
     const payload = { appName, platform, version, buildNumber: parseInt(buildNumber), releaseNotes, downloadUrl, isMandatory };
     try {
       if (selected?.id) {
-        const updated = await api.put(`/releases/${selected.id}`, payload);
-        setData(data.map(r => r.id === selected.id ? updated : r));
+        await api.put(`/releases/${selected.id}`, payload);
+        setSelected(null);
+        fetchData();
       } else {
-        const created = await api.post('/releases', payload);
-        setData([created, ...data]);
+        await api.post('/releases', payload);
+        setSelected(null);
+        if (page !== 1) setPage(1);
+        else fetchData();
       }
-      setSelected(null);
     } catch (e: any) { alert(e.message || 'Failed to save'); }
   };
-
-  const filtered = data.filter((r: any) =>
-    matchesSearch(search, r.appName, r.platform, r.version, r.releaseNotes, r.isActive ? 'Active' : 'Inactive')
-  );
 
   return (
     <AdminLayout>
@@ -64,17 +78,18 @@ export default function ReleasesPage() {
         <h1 className="text-3xl font-extrabold text-text-primary">App Releases</h1>
         <button onClick={() => openForm(null)} className="gradient-btn">Add Release</button>
       </div>
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by app, platform or version..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center h-64 text-text-secondary">Loading releases...</div>
       ) : error ? (
         <div className="bg-red-900/20 border border-red-800 text-red-400 rounded-lg px-4 py-3 text-sm">{error}</div>
       ) : (
         <>
-          <div className="flex flex-col sm:flex-row gap-3 mb-6">
-            <SearchInput value={search} onChange={setSearch} placeholder="Search by app, platform, version, status or notes..." />
-          </div>
           <Table headers={['App', 'Platform', 'Version', 'Build', 'Mandatory', 'Status', 'Date', '']} emptyMessage="No releases found">
-            {filtered.map((r: any) => (
+            {data.map((r: any) => (
               <tr key={r.id} className="border-b border-divider hover:bg-surface-light/50">
                 <td className="px-4 py-3 text-text-primary font-bold">{r.appName}</td>
                 <td className="px-4 py-3"><Badge variant="info">{r.platform}</Badge></td>
@@ -87,6 +102,14 @@ export default function ReleasesPage() {
               </tr>
             ))}
           </Table>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={(l) => { setLimit(l); setPage(1); }}
+          />
         </>
       )}
 

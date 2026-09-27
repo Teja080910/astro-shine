@@ -21,11 +21,6 @@ export default function LiveSessionsPage() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    const t = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 300);
-    return () => clearTimeout(t);
-  }, [search]);
-
   const loadSessions = useCallback(async () => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim());
@@ -62,15 +57,16 @@ export default function LiveSessionsPage() {
         <h1 className="text-3xl font-extrabold text-text-primary">Live Sessions</h1>
         <span className="text-text-secondary">{total} total</span>
       </div>
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by title, astrologer or status..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center h-64 text-text-secondary">Loading live sessions...</div>
       ) : error ? (
         <div className="bg-red-900/20 border border-red-800 text-red-400 rounded-lg px-4 py-3 text-sm">{error}</div>
       ) : (
         <>
-          <div className="flex flex-col sm:flex-row gap-3 mb-6">
-            <SearchInput value={search} onChange={setSearch} placeholder="Search by title, astrologer or status..." />
-          </div>
           <Table headers={['Title', 'Astrologer', 'Status', 'Viewers', 'Date']} emptyMessage="No live sessions found">
             {data.map((s: any) => (
               <tr key={s.id} className="border-b border-divider hover:bg-surface-light/50">

@@ -22,14 +22,6 @@ export default function NewsPage() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(t);
-  }, [search]);
-
   const fetchNews = useCallback(() => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (debouncedSearch) params.set('q', debouncedSearch);
@@ -70,7 +62,7 @@ export default function NewsPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search news by title, content, or status..." />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search news by title or content..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
       </div>
 
       {loading ? (

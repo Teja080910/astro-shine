@@ -23,14 +23,6 @@ export default function OrdersPage() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(t);
-  }, [search]);
-
   const fetchOrders = useCallback(() => {
     setLoading(true);
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
@@ -97,13 +89,14 @@ export default function OrdersPage() {
         <span className="text-text-secondary">{orders.length} of {total} total</span>
       </div>
 
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by order ID or status..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center h-64 text-text-secondary">Loading orders...</div>
       ) : (
         <>
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <SearchInput value={search} onChange={setSearch} placeholder="Search by order ID or status..." />
-        </div>
         <Table headers={['Order ID', 'User', 'Total Amount', 'Status', 'Date', '']} emptyMessage="No orders found">
           {orders.map(o => (
             <tr key={o.id} className="border-b border-divider hover:bg-surface-light/50">

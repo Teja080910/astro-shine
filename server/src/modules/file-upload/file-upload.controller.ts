@@ -9,7 +9,9 @@ export class FileUploadController {
   constructor(private readonly service: FileUploadService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: 100 * 1024 * 1024 } }),
+  )
   async upload(
     @UploadedFile() file: Express.Multer.File,
     @Query('destination') destination: string = 'local',

@@ -21,14 +21,6 @@ export default function MuhuratCategoriesPage() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [search]);
-
   const fetchData = useCallback(async () => {
     const params = new URLSearchParams({
       page: String(page),
@@ -103,7 +95,7 @@ export default function MuhuratCategoriesPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by name or description..." />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by name or description..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
       </div>
 
       <div className="glass-card-solid p-6">

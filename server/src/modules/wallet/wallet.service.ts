@@ -37,7 +37,7 @@ export class WalletService {
         .orderBy(order);
     }
 
-    const [data, countRows] = await Promise.all([
+    const [data, countRows, summaryRows] = await Promise.all([
       this.db
         .select()
         .from(schema.wallets)
@@ -45,8 +45,21 @@ export class WalletService {
         .limit(pagination.limit)
         .offset(pagination.offset),
       this.db.select({ count: sql<number>`count(*)::int` }).from(schema.wallets),
+      this.db.select({
+        balance: sql<string>`COALESCE(SUM(${schema.wallets.balance}), 0)`,
+        totalAdded: sql<string>`COALESCE(SUM(${schema.wallets.totalAdded}), 0)`,
+        totalDeducted: sql<string>`COALESCE(SUM(${schema.wallets.totalDeducted}), 0)`,
+      }).from(schema.wallets),
     ]);
-    return paginated(data, Number(countRows[0]?.count || 0), pagination);
+    const summary = summaryRows[0] || { balance: '0', totalAdded: '0', totalDeducted: '0' };
+    return {
+      ...paginated(data, Number(countRows[0]?.count || 0), pagination),
+      summary: {
+        balance: Number(summary.balance || 0),
+        totalAdded: Number(summary.totalAdded || 0),
+        totalDeducted: Number(summary.totalDeducted || 0),
+      },
+    };
   }
 
   async getWalletByUserId(userId: string) {

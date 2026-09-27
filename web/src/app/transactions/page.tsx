@@ -21,14 +21,6 @@ export default function TransactionsPage() {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(t);
-  }, [search]);
-
-  useEffect(() => {
     setLoading(true);
     setError('');
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
@@ -51,15 +43,16 @@ export default function TransactionsPage() {
         <span className="text-text-secondary">{data.length} of {total} total</span>
       </div>
 
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by type, category, description, status..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center h-64 text-text-secondary">Loading transactions...</div>
       ) : error ? (
         <div className="bg-red-900/20 border border-red-800 text-red-400 rounded-lg px-4 py-3 text-sm">{error}</div>
       ) : (
         <>
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
-          <SearchInput value={search} onChange={setSearch} placeholder="Search by type, category, description, status..." />
-        </div>
         <Table headers={['Type', 'Category', 'User', 'Astrologer', 'Amount', 'Fee', 'Net', 'Status', 'Date']} emptyMessage="No transactions found">
           {data.map((t: any) => (
             <tr key={t.id} className="border-b border-divider hover:bg-surface-light/50">

@@ -27,14 +27,6 @@ export default function BlogsPage() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(t);
-  }, [search]);
-
   const fetchBlogs = useCallback(() => {
     const endpoint = showMine ? '/blogs/my' : '/blogs';
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
@@ -102,7 +94,7 @@ export default function BlogsPage() {
       </div>
 
       <div className="mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by title, slug, status or tag..." />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by title, slug or status..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
       </div>
 
       {loading ? (

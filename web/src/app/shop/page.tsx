@@ -31,14 +31,6 @@ export default function ShopPage() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
-    }, 300);
-    return () => clearTimeout(t);
-  }, [search]);
-
   const fetchData = useCallback(() => {
     setLoading(true);
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
@@ -106,15 +98,16 @@ export default function ShopPage() {
         <h1 className="text-3xl font-extrabold text-text-primary">Shop Products</h1>
         <button onClick={() => openForm(null)} className="gradient-btn">Add Product</button>
       </div>
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by name, category or description..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center h-64 text-text-secondary">Loading products...</div>
       ) : error ? (
         <div className="bg-red-900/20 border border-red-800 text-red-400 rounded-lg px-4 py-3 text-sm">{error}</div>
       ) : (
         <>
-          <div className="flex flex-col sm:flex-row gap-3 mb-6">
-            <SearchInput value={search} onChange={setSearch} placeholder="Search by name, category or description..." />
-          </div>
           <Table headers={['Name', 'Category', 'Price', 'Compare', 'Stock', 'Status', '']} emptyMessage="No products found">
             {data.map((p: any) => (
               <tr key={p.id} className="border-b border-divider hover:bg-surface-light/50">
