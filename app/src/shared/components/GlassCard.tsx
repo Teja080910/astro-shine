@@ -8,7 +8,7 @@ interface Props { children?: React.ReactNode; style?: ViewStyle; noPadding?: boo
 export function GlassCard({ children, style, noPadding }: Props) {
   const { theme } = useAuth();
   const isDark = theme === 'dark';
-  const cardBg = 'transparent';
+  const cardBg = isDark ? 'transparent' : '#FFFFFF';
   const cardBorder = isDark ? 'rgba(245, 158, 11, 0.25)' : '#FDE68A';
 
   return (
@@ -23,6 +23,11 @@ const styles = StyleSheet.create({
     borderRadius: radii.card,
     borderWidth: 1,
     overflow: 'hidden',
+    shadowColor: '#D97706',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   padding: { padding: 16 },
 });

@@ -19,7 +19,7 @@ process.on('uncaughtException', (err: any) => {
 });
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
 
   const corsOrigin = process.env.CORS_ORIGIN;
   app.enableCors({

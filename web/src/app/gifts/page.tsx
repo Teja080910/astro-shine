@@ -96,6 +96,20 @@ export default function GiftsPage() {
     } catch (err) { console.error(err); }
   };
 
+  const [redeeming, setRedeeming] = useState<string | null>(null);
+
+  const handleRedeem = async (id: string) => {
+    setRedeeming(id);
+    try {
+      await api.put(`/gifts/transactions/${id}/redeem`, {});
+      fetchData();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setRedeeming(null);
+    }
+  };
+
   const handleDelete = async () => {
     if (!deleteTarget) return;
     try {
@@ -181,7 +195,7 @@ export default function GiftsPage() {
         </>
       ) : (
         <>
-          <Table headers={['Gift', 'Sender', 'Receiver', 'Status', 'Redeemed At', 'Date']} emptyMessage="No gift transactions yet">
+          <Table headers={['Gift', 'Sender', 'Receiver', 'Status', 'Redeemed At', 'Date', '']} emptyMessage="No gift transactions yet">
             {filteredTransactions.map(t => {
               const gift = gifts.find(g => g.id === t.giftId);
               const giftName = (t as any).giftName || gift?.name;
@@ -200,9 +214,20 @@ export default function GiftsPage() {
                   </td>
                   <td className="px-4 py-3 text-text-secondary text-sm">{(t as any).senderName || t.senderId?.slice(0, 8) || '-'}</td>
                   <td className="px-4 py-3 text-text-secondary text-sm">{(t as any).receiverName || t.receiverId?.slice(0, 8) || '-'}</td>
-                  <td className="px-4 py-3">{t.isRedeemed ? <Badge variant="success">Redeemed</Badge> : <Badge variant="warning">Pending</Badge>}</td>
+                  <td className="px-4 py-3">{t.isRedeemed ? <Badge variant="success">Redeemed</Badge> : <Badge variant="warning">Sent</Badge>}</td>
                   <td className="px-4 py-3 text-text-muted text-sm">{t.redeemedAt ? formatDate(t.redeemedAt) : '-'}</td>
                   <td className="px-4 py-3 text-text-muted text-sm">{formatDate(t.createdAt)}</td>
+                  <td className="px-4 py-3">
+                    {!t.isRedeemed && (
+                      <button
+                        onClick={() => handleRedeem(t.id)}
+                        disabled={redeeming === t.id}
+                        className="text-primary-light hover:underline text-sm font-medium disabled:opacity-50"
+                      >
+                        {redeeming === t.id ? 'Marking...' : 'Mark Redeemed'}
+                      </button>
+                    )}
+                  </td>
                 </tr>
               );
             })}

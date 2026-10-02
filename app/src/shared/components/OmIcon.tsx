@@ -1,11 +1,11 @@
 import React from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 
-export function OmIcon({ isDark }: { isDark: boolean }) {
+export function BrandLogo({ isDark }: { isDark?: boolean }) {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../../../assets/om_symbol.png')}
+        source={require('../../../assets/logo_clean.png')}
         style={styles.image}
         resizeMode="contain"
       />
@@ -13,10 +13,12 @@ export function OmIcon({ isDark }: { isDark: boolean }) {
   );
 }
 
+export const OmIcon = BrandLogo;
+
 const styles = StyleSheet.create({
   container: {
-    width: 36,
-    height: 36,
+    width: 38,
+    height: 38,
     alignItems: 'center',
     justifyContent: 'center',
   },

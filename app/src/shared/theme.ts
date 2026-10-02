@@ -1,6 +1,6 @@
 import { MD3DarkTheme, MD3LightTheme, configureFonts } from 'react-native-paper';
 
-let activeTheme = 'dark';
+let activeTheme = 'light';
 
 export const setThemeState = (theme: 'light' | 'dark') => {
   activeTheme = theme;
@@ -14,23 +14,25 @@ export const colors = {
   primaryDark: '#B45309',
   secondary: '#EA580C',
   accentGold: '#F59E0B',
+  maroon: '#8B1E1E',
+  sacredRed: '#DC2626',
   success: '#22C55E',
   warning: '#F97316',
   danger: '#DC2626',
   white: '#FFFFFF',
   black: '#000000',
 
-  get background() { return activeTheme === 'dark' ? '#09090B' : '#FFFFFF'; },
+  get background() { return activeTheme === 'dark' ? '#09090B' : '#FFFDF7'; },
   get surface() { return activeTheme === 'dark' ? '#111827' : '#FFFFFF'; },
-  get surfaceLight() { return activeTheme === 'dark' ? '#1F2937' : '#FFFBEB'; },
-  get card() { return activeTheme === 'dark' ? '#1F2937' : '#FFFBEB'; },
+  get surfaceLight() { return activeTheme === 'dark' ? '#1F2937' : '#FFF8E7'; },
+  get card() { return activeTheme === 'dark' ? '#1F2937' : '#FFFFFF'; },
   get cardBorder() { return activeTheme === 'dark' ? 'rgba(245, 158, 11, 0.25)' : '#FDE68A'; },
-  get textPrimary() { return activeTheme === 'dark' ? '#F9FAFB' : '#D97706'; },
+  get textPrimary() { return activeTheme === 'dark' ? '#F9FAFB' : '#7F1D1D'; },
   get textSecondary() { return activeTheme === 'dark' ? '#E5E7EB' : '#374151'; },
-  get textMuted() { return activeTheme === 'dark' ? '#9CA3AF' : '#6B7280'; },
+  get textMuted() { return activeTheme === 'dark' ? '#9CA3AF' : '#786C6A'; },
   get divider() { return activeTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#FDE68A'; },
   get inputBorder() { return activeTheme === 'dark' ? 'rgba(245, 158, 11, 0.3)' : '#FCD34D'; },
-  get glassBg() { return activeTheme === 'dark' ? 'rgba(17, 24, 39, 0.85)' : 'rgba(255, 255, 255, 0.95)'; },
+  get glassBg() { return activeTheme === 'dark' ? 'rgba(17, 24, 39, 0.85)' : 'rgba(255, 253, 247, 0.95)'; },
   gradientStart: '#D97706',
   gradientMid: '#F59E0B',
   gradientEnd: '#FBBF24',
@@ -67,7 +69,13 @@ export const shadows = {
       shadowOpacity: 0.05,
       shadowRadius: 16,
       elevation: 4,
-    } : {};
+    } : {
+      shadowColor: '#D97706',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.06,
+      shadowRadius: 12,
+      elevation: 2,
+    };
   },
   get button() {
     return activeTheme === 'dark' ? {
@@ -76,7 +84,13 @@ export const shadows = {
       shadowOpacity: 0.3,
       shadowRadius: 8,
       elevation: 3,
-    } : {};
+    } : {
+      shadowColor: '#EA580C',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.25,
+      shadowRadius: 6,
+      elevation: 2,
+    };
   },
   get floating() {
     return activeTheme === 'dark' ? {
@@ -85,7 +99,13 @@ export const shadows = {
       shadowOpacity: 0.15,
       shadowRadius: 10,
       elevation: 5,
-    } : {};
+    } : {
+      shadowColor: '#D97706',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.12,
+      shadowRadius: 10,
+      elevation: 4,
+    };
   },
 };
 
@@ -126,12 +146,12 @@ export const lightTheme = {
     primary: colors.primary,
     primaryContainer: colors.primaryLight,
     secondary: colors.secondary,
-    background: '#FFFFFF',
+    background: '#FFFDF7',
     surface: '#FFFFFF',
-    surfaceVariant: '#FFFBEB',
+    surfaceVariant: '#FFF8E7',
     error: colors.danger,
     onPrimary: colors.white,
-    onBackground: '#D97706',
+    onBackground: '#7F1D1D',
     onSurface: '#374151',
     outline: '#FDE68A',
     outlineVariant: '#FCD34D',

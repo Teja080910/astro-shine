@@ -3,8 +3,11 @@ import {
   Inject,
   BadRequestException,
   NotFoundException,
+  UnauthorizedException,
   Logger,
 } from '@nestjs/common';
+import { createHmac, timingSafeEqual } from 'crypto';
+import { ConfigService } from '@nestjs/config';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
 import { eq, sql, desc } from 'drizzle-orm';
@@ -40,6 +43,7 @@ export class WithdrawalService {
     private readonly walletService: WalletService,
     private readonly realtime: RealtimeService,
     private readonly payoutService: PayoutService,
+    private readonly configService: ConfigService,
   ) {}
 
   async findByAstrologerId(astrologerId: string) {
@@ -448,6 +452,61 @@ export class WithdrawalService {
     }
 
     this.realtime.broadcast('withdrawal:updated', { id, status: 'approved' });
+  }
+
+  async handlePayoutWebhook(
+    payload: any,
+    signature: string,
+    rawBody?: Buffer,
+  ) {
+    const secret = this.configService.get<string>(
+      'RAZORPAYX_WEBHOOK_SECRET',
+    );
+    if (!secret) {
+      throw new UnauthorizedException(
+        'RazorpayX webhook secret is not configured',
+      );
+    }
+    if (!signature) {
+      throw new UnauthorizedException('Missing webhook signature');
+    }
+
+    const body = rawBody ? rawBody.toString('utf8') : JSON.stringify(payload);
+    const expected = createHmac('sha256', secret).update(body).digest('hex');
+    const expectedBuf = Buffer.from(expected);
+    const receivedBuf = Buffer.from(signature);
+    if (
+      expectedBuf.length !== receivedBuf.length ||
+      !timingSafeEqual(expectedBuf, receivedBuf)
+    ) {
+      throw new UnauthorizedException('Invalid webhook signature');
+    }
+
+    const entity = payload?.payload?.payout?.entity;
+    if (!entity?.id) return { received: true, ignored: true };
+
+    const updates: Partial<typeof schema.withdrawalRequests.$inferInsert> = {
+      payoutStatus: entity.status || 'unknown',
+      payoutUtr: entity.utr || undefined,
+      payoutResponse: entity,
+      updatedAt: new Date(),
+    };
+    if (entity.status === 'processed') updates.status = 'completed';
+
+    const [updated] = await this.db
+      .update(schema.withdrawalRequests)
+      .set(updates)
+      .where(eq(schema.withdrawalRequests.payoutId, entity.id))
+      .returning();
+
+    if (!updated) return { received: true, ignored: true };
+
+    this.realtime.broadcast('withdrawal:updated', {
+      id: updated.id,
+      status: updated.status,
+      payoutStatus: updated.payoutStatus,
+    });
+    return { received: true };
   }
 
   async reject(id: string, adminId: string, note?: string) {

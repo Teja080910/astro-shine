@@ -80,7 +80,7 @@ export interface MatchmakingRecord {
 
 // ============ Horoscope ============
 export interface HoroscopeRecord {
-  id: string; zodiacSign: string; date: string; prediction: string;
+  id: string | null; zodiacSign: string; date?: string | null; period?: string; prediction: string;
   lovePrediction?: string; careerPrediction?: string; financePrediction?: string; healthPrediction?: string;
   luckyNumber?: number; luckyColor?: string; mood?: string; createdAt: string;
 }

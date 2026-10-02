@@ -17,7 +17,14 @@ export class HoroscopeController {
   constructor(private readonly service: HoroscopeService) {}
 
   @Get()
-  async findAll(@Query('sign') sign?: string, @Query('date') date?: string) {
+  async findAll(
+    @Query('sign') sign?: string,
+    @Query('date') date?: string,
+    @Query('period') period?: string,
+  ) {
+    if (sign && (period === 'weekly' || period === 'monthly')) {
+      return this.service.findBySignPeriod(sign, period);
+    }
     if (sign && date) return this.service.findBySignAndDate(sign, date);
     if (sign) return this.service.findBySign(sign);
     return this.service.findAll();

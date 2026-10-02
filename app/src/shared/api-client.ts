@@ -146,6 +146,8 @@ class ApiClient {
   // Horoscope
   horoscope = {
     bySign: (sign: string, date?: string) => this.get<HoroscopeRecord[]>('/horoscope', { sign, date }),
+    byPeriod: (sign: string, period: 'weekly' | 'monthly') =>
+      this.get<HoroscopeRecord>('/horoscope', { sign, period }),
     today: (sign: string) => this.get<HoroscopeRecord>('/horoscope', { sign, date: new Date().toISOString().split('T')[0] }),
     create: (d: any) => this.post<HoroscopeRecord>('/horoscope', d),
   };
@@ -269,6 +271,8 @@ class ApiClient {
   // Reports
   reports = {
     list: () => this.get<Report[]>('/reports'),
+    my: () => this.get<Report[]>('/reports/my'),
+    received: () => this.get<Report[]>('/reports/received'),
     get: (id: string) => this.get<Report>(`/reports/${id}`),
     create: (d: any) => this.post<Report>('/reports', d),
     resolve: (id: string, adminId: string) => this.put<Report>(`/reports/${id}/resolve`, { adminId }),

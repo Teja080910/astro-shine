@@ -91,6 +91,28 @@ const HOROSCOPE_LUCKY: Record<
   pisces: { number: 7, color: 'Sea Green', mood: 'Dreamy' },
 };
 
+const ZODIAC_NUMBERS: Record<string, number> = {
+  aries: 1,
+  taurus: 2,
+  gemini: 3,
+  cancer: 4,
+  leo: 5,
+  virgo: 6,
+  libra: 7,
+  scorpio: 8,
+  sagittarius: 9,
+  capricorn: 10,
+  aquarius: 11,
+  pisces: 12,
+};
+
+const HOROSCOPE_COM_SECTIONS: Record<string, string> = {
+  love: 'love/horoscope-love-daily-today',
+  career: 'career/horoscope-career-daily-today',
+  finance: 'money/horoscope-money-weekly',
+  health: 'wellness/horoscope-wellness-daily-today',
+};
+
 @Injectable()
 export class LocalAstrologyService {
   private readonly logger = new Logger(LocalAstrologyService.name);
@@ -263,22 +285,93 @@ export class LocalAstrologyService {
     };
   }
 
-  private async fetchFreeHoroscope(sign: string): Promise<string | null> {
+  private async fetchFreeHoroscope(
+    sign: string,
+    period: 'daily' | 'weekly' | 'monthly' = 'daily',
+  ): Promise<string | null> {
     try {
+      const params: Record<string, string> = {
+        sign: sign.charAt(0).toUpperCase() + sign.slice(1),
+      };
+      if (period === 'daily') params.day = 'today';
       const res = await axios.get(
-        'https://horoscope-app-api.vercel.app/api/v1/get-horoscope/daily',
-        {
-          params: {
-            sign: sign.charAt(0).toUpperCase() + sign.slice(1),
-            day: 'today',
-          },
-          timeout: 8000,
-        },
+        `https://horoscope-app-api.vercel.app/api/v1/get-horoscope/${period}`,
+        { params, timeout: 8000 },
       );
       const text = res.data?.data?.horoscope;
       return typeof text === 'string' && text.trim() ? text.trim() : null;
     } catch (e: any) {
-      this.logger.warn(`Free horoscope API unavailable: ${e?.message || e}`);
+      this.logger.warn(
+        `Free ${period} horoscope API unavailable: ${e?.message || e}`,
+      );
+      return null;
+    }
+  }
+
+  async periodHoroscope(
+    sign: string,
+    period: 'weekly' | 'monthly',
+  ): Promise<HoroscopeResult> {
+    const normalized = (sign || '').toLowerCase();
+    const lucky = HOROSCOPE_LUCKY[normalized] || HOROSCOPE_LUCKY.aries;
+    const remote = await this.fetchFreeHoroscope(normalized, period);
+    if (!remote) {
+      throw new ServiceUnavailableException(
+        `Horoscope data is unavailable for ${normalized}/${period}`,
+      );
+    }
+    return {
+      prediction: remote,
+      lovePrediction: '',
+      careerPrediction: '',
+      financePrediction: '',
+      healthPrediction: '',
+      luckyNumber: lucky.number,
+      luckyColor: lucky.color,
+      mood: lucky.mood,
+    };
+  }
+
+  private decodeEntities(text: string): string {
+    return text
+      .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+      .replace(/&#x([0-9a-f]+);/gi, (_, code) =>
+        String.fromCharCode(parseInt(code, 16)),
+      )
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;|&apos;/g, "'")
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>');
+  }
+
+  private async fetchFreeCategoryHoroscope(
+    category: keyof typeof HOROSCOPE_COM_SECTIONS,
+    sign: string,
+  ): Promise<string | null> {
+    const signNumber = ZODIAC_NUMBERS[sign];
+    if (!signNumber) return null;
+    try {
+      const res = await axios.get<string>(
+        `https://www.horoscope.com/us/horoscopes/${HOROSCOPE_COM_SECTIONS[category]}.aspx`,
+        {
+          params: { sign: signNumber },
+          timeout: 8000,
+        },
+      );
+      const match = /<p><strong>[^<]*<\/strong>\s*[-–]\s*([\s\S]*?)<\/p>/i.exec(
+        res.data || '',
+      );
+      if (!match) return null;
+      const text = this.decodeEntities(match[1].replace(/<[^>]+>/g, ''))
+        .replace(/\s+/g, ' ')
+        .trim();
+      return text || null;
+    } catch (e: any) {
+      this.logger.warn(
+        `Free ${category} horoscope unavailable: ${e?.message || e}`,
+      );
       return null;
     }
   }
@@ -287,7 +380,13 @@ export class LocalAstrologyService {
     const normalized = (sign || '').toLowerCase();
     const lucky = HOROSCOPE_LUCKY[normalized] || HOROSCOPE_LUCKY.aries;
 
-    const remote = await this.fetchFreeHoroscope(normalized);
+    const [remote, love, career, finance, health] = await Promise.all([
+      this.fetchFreeHoroscope(normalized),
+      this.fetchFreeCategoryHoroscope('love', normalized),
+      this.fetchFreeCategoryHoroscope('career', normalized),
+      this.fetchFreeCategoryHoroscope('finance', normalized),
+      this.fetchFreeCategoryHoroscope('health', normalized),
+    ]);
     if (!remote) {
       throw new ServiceUnavailableException(
         `Horoscope data is unavailable from the primary and free sources for ${normalized}/${date}`,
@@ -296,10 +395,10 @@ export class LocalAstrologyService {
 
     return {
       prediction: remote,
-      lovePrediction: '',
-      careerPrediction: '',
-      financePrediction: '',
-      healthPrediction: '',
+      lovePrediction: love || '',
+      careerPrediction: career || '',
+      financePrediction: finance || '',
+      healthPrediction: health || '',
       luckyNumber: lucky.number,
       luckyColor: lucky.color,
       mood: lucky.mood,

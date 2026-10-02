@@ -113,7 +113,10 @@ export class NotificationsService {
       await this.push.sendToUsers(userIds, {
         title: notification.title,
         body: notification.body,
-        data: (notification.data as Record<string, any>) || {},
+        data: {
+          ...((notification.data as Record<string, any>) || {}),
+          type: notification.type,
+        },
         image: notification.image,
       });
     } catch (e) {

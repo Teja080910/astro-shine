@@ -66,6 +66,11 @@ if [ "$TRACKED" = "0" ] && \
   done
 fi
 
+# idempotent enum guard (bootstrap path marks journal entries without running them)
+psql "$DB_URL" -X -q -c \
+  "ALTER TYPE transaction_category ADD VALUE IF NOT EXISTS 'pooja_booking';" \
+  2>/dev/null || true
+
 APPLIED=0
 for tag in "${MIG_TAGS[@]}"; do
   SQL="$MIG_DIR/$tag.sql"

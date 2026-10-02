@@ -256,12 +256,21 @@ export function AstrologerHomeScreen({ navigation }: any) {
   };
 
   const toggleOnline = async (v: boolean) => {
+    const previous = isOnline;
     setIsOnline(v);
-    if (astrologer?.userId)
+    if (!astrologer?.userId) return;
+    try {
       await api.astrologers.updateStatus(
         astrologer.userId,
         v ? "online" : "offline",
       );
+    } catch (e: any) {
+      setIsOnline(previous);
+      Alert.alert(
+        "Status update failed",
+        e?.message || "Could not update your online status. Try again.",
+      );
+    }
   };
 
   const statItems = [
@@ -2217,6 +2226,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
       route: "Notifications",
     },
     { icon: "help-circle-outline", label: "Help & Support", route: "Support" },
+    { icon: "flag-outline", label: "Reports Against Me", route: "AstrologerReports" },
   ];
 
   if (role === "admin") {

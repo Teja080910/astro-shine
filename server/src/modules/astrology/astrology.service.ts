@@ -336,8 +336,40 @@ export class AstrologyService {
   async calculateHoroscope(
     sign: string,
     dateStr: string,
+    period: 'daily' | 'weekly' | 'monthly' = 'daily',
   ): Promise<HoroscopeResult> {
     const normalized = (sign || '').toLowerCase();
+
+    if (period !== 'daily') {
+      try {
+        const res = await this.call<any>(
+          `horoscope_prediction/${period}/${normalized}`,
+        );
+        const prediction = Array.isArray(res?.prediction)
+          ? res.prediction.join(' ')
+          : res?.prediction;
+        if (typeof prediction === 'string' && prediction.trim()) {
+          const lucky = HOROSCOPE_LUCKY[normalized] || HOROSCOPE_LUCKY.aries;
+          return {
+            prediction: prediction.trim(),
+            lovePrediction: '',
+            careerPrediction: '',
+            financePrediction: '',
+            healthPrediction: '',
+            luckyNumber: lucky.number,
+            luckyColor: lucky.color,
+            mood: lucky.mood,
+          };
+        }
+        throw new Error('Empty prediction from primary API');
+      } catch (e: any) {
+        this.logger.warn(
+          `${period} horoscope falling back to free source: ${e.message}`,
+        );
+        return this.local.periodHoroscope(normalized, period);
+      }
+    }
+
     try {
       const res = await this.call<any>(
         `sun_sign_prediction/daily/${normalized}`,

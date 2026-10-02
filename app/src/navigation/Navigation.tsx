@@ -2,9 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/AuthContext';
 import { FloatingBottomBar, colors, BrandSplash } from '../shared';
 import { api } from '../shared/api-client';
@@ -32,6 +33,9 @@ import {
   NotificationsScreen,
   OrderHistoryScreen,
   HoroscopeScreen,
+  HoroscopeDetailScreen,
+  MyReportsScreen,
+  AstrologerReportsScreen,
   PanchangScreen,
   PrivacyPolicyScreen,
   ReportScreen,
@@ -164,6 +168,37 @@ export function Navigation() {
   const { role, loading } = useAuth();
   const [splashDone, setSplashDone] = useState(false);
   const navigationRef = useNavigationContainerRef();
+  const handledIdsRef = useRef<Set<string>>(new Set());
+  const handledIdsLoadedRef = useRef<Promise<Set<string>> | null>(null);
+
+  const getHandledIds = () => {
+    if (!handledIdsLoadedRef.current) {
+      handledIdsLoadedRef.current = AsyncStorage.getItem('push_handled_ids')
+        .then((json) => {
+          try {
+            return new Set<string>(json ? JSON.parse(json) : []);
+          } catch {
+            return new Set<string>();
+          }
+        })
+        .catch(() => new Set<string>());
+    }
+    return handledIdsLoadedRef.current;
+  };
+
+  const markHandled = (id: string) => {
+    handledIdsRef.current.add(id);
+    getHandledIds()
+      .then(async (set) => {
+        set.add(id);
+        const arr = [...set];
+        await AsyncStorage.setItem(
+          'push_handled_ids',
+          JSON.stringify(arr.length > 100 ? arr.slice(-100) : arr),
+        );
+      })
+      .catch(() => {});
+  };
 
   useEffect(() => {
     const t = setTimeout(() => setSplashDone(true), 1400);
@@ -171,16 +206,33 @@ export function Navigation() {
   }, []);
 
   const handleNotificationResponse = useCallback(
-    (response: Notifications.NotificationResponse | null) => {
-      const data = response?.notification?.request?.content?.data;
-      if (!data) return;
-      const target = resolveNotificationTarget({ data } as any, (role as any) || 'user');
-      if (!target || !navigationRef.isReady()) return;
+    async (response: Notifications.NotificationResponse | null) => {
+      const request = response?.notification?.request;
+      const data = request?.content?.data;
+      if (!request || !data) return;
+
+      const id = request.identifier;
+      if (id) {
+        if (handledIdsRef.current.has(id)) return;
+        const persisted = await getHandledIds();
+        if (persisted.has(id)) return; // stale tap re-delivered from a previous session
+      }
+
+      const target = resolveNotificationTarget(
+        { data, type: (data as any)?.type } as any,
+        (role as any) || 'user',
+      );
+      if (!target) {
+        if (id) markHandled(id); // nothing to open — consume it so it never retries
+        return;
+      }
+      if (!navigationRef.isReady()) return; // retry on next role/effect run, don't consume
       try {
         (navigationRef as any).navigate(target.screen, target.params);
       } catch (e) {
         console.warn('[push] navigation failed:', (e as Error)?.message);
       }
+      if (id) markHandled(id);
     },
     [role, navigationRef],
   );
@@ -218,6 +270,8 @@ export function Navigation() {
             <Stack.Screen name="Kundli" component={KundliScreen} options={headerOpts('Kundli')} />
             <Stack.Screen name="Matchmaking" component={MatchmakingScreen} options={headerOpts('Matchmaking')} />
             <Stack.Screen name="Panchang" component={PanchangScreen} options={headerOpts('Panchang')} />
+            <Stack.Screen name="HoroscopeDetail" component={HoroscopeDetailScreen} options={headerOpts('Horoscope')} />
+            <Stack.Screen name="MyReports" component={MyReportsScreen} options={headerOpts('My Reports')} />
             <Stack.Screen name="Shop" component={ShopScreen} options={headerOpts('Shop')} />
             <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} options={headerOpts('Orders')} />
             <Stack.Screen name="Videos" component={VideosScreen} options={headerOpts('Videos')} />
@@ -265,6 +319,7 @@ export function Navigation() {
             <Stack.Screen name="Reviews" component={AstrologerReviewsScreen} options={headerOpts('Ratings & Reviews')} />
             <Stack.Screen name="Consultations" component={AstrologerConsultationScreen} options={headerOpts('Consultation History')} />
             <Stack.Screen name="Gifts" component={AstrologerGiftScreen} options={headerOpts('Gifts')} />
+            <Stack.Screen name="AstrologerReports" component={AstrologerReportsScreen} options={headerOpts('Reports Against Me')} />
             <Stack.Screen name="Payment" component={PaymentScreen} options={{ headerShown: false }} />
             <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} options={{ headerShown: false }} />
             <Stack.Screen name="PaymentFailure" component={PaymentFailureScreen} options={{ headerShown: false }} />

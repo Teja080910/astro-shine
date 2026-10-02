@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [astrologer, setAstrologer] = useState<Astrologer | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [role, setRole] = useState<AppRole>(null);
-  const [theme, setThemeVal] = useState<"light" | "dark">("dark");
+  const [theme, setThemeVal] = useState<"light" | "dark">("light");
   const [loading, setLoading] = useState(true);
 
   const systemScheme = useColorScheme();
@@ -69,9 +69,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (storedTheme === "light" || storedTheme === "dark") {
           setThemeVal(storedTheme);
           setThemeState(storedTheme);
-        } else if (systemScheme) {
-          setThemeVal(systemScheme);
-          setThemeState(systemScheme);
+        } else {
+          setThemeVal("light");
+          setThemeState("light");
         }
       } catch {
         console.log('Failed to restore auth state');

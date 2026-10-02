@@ -97,14 +97,6 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
       if (isFirstConnection) {
         client.broadcast.emit('user:online', { userId: payload.userId, role: payload.role || 'user' });
-
-        if (payload.role === 'astrologer') {
-          try {
-            await this.astrologersService.updateOnlineStatus(payload.userId, 'online');
-          } catch (e: any) {
-            this.logger.error('[WS] Failed to update astrologer online status on connect:', e.message);
-          }
-        }
       }
 
       const convs = await this.conversationsService.findByUser(payload.userId);

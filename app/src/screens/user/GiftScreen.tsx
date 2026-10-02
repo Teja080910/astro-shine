@@ -266,7 +266,7 @@ export function GiftScreen({ route, navigation }: any) {
                         <Text style={[typography.body, { fontWeight: '600' }]}>{gift?.name || 'Gift'} → {astro?.name || 'Astrologer'}</Text>
                         <Text style={typography.caption}>{new Date(t.createdAt).toLocaleDateString()}</Text>
                       </View>
-                      <Text style={[typography.caption, { color: t.isRedeemed ? colors.success : colors.warning }]}>{t.isRedeemed ? 'Redeemed' : 'Pending'}</Text>
+                      <Text style={[typography.caption, { color: t.isRedeemed ? colors.success : colors.accentGold }]}>{t.isRedeemed ? 'Redeemed' : 'Sent'}</Text>
                     </View>
                   );
                 })}

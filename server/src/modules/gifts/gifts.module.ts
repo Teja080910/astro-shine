@@ -3,6 +3,7 @@ import { GiftsService } from './gifts.service';
 import { GiftsController } from './gifts.controller';
 import { AuthModule } from '../auth/auth.module';
 import { RealtimeModule } from '../../common/realtime.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
-@Module({ imports: [AuthModule, RealtimeModule], controllers: [GiftsController], providers: [GiftsService], exports: [GiftsService] })
+@Module({ imports: [AuthModule, RealtimeModule, NotificationsModule], controllers: [GiftsController], providers: [GiftsService], exports: [GiftsService] })
 export class GiftsModule {}

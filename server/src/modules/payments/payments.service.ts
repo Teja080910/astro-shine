@@ -133,6 +133,13 @@ export class PaymentsService {
       throw new UnauthorizedException('Payment order does not belong to this user');
     }
 
+    if (paymentOrder.status === 'paid') {
+      const transaction = paymentOrder.transactionId
+        ? await this.transactionsService.findById(paymentOrder.transactionId)
+        : null;
+      return { success: true, transaction, alreadyProcessed: true };
+    }
+
     if (FINAL_STATES.includes(paymentOrder.status as any)) {
       throw new BadRequestException('Payment order is already in a final state');
     }
@@ -152,15 +159,13 @@ export class PaymentsService {
       await this.db
         .update(schema.paymentOrders)
         .set({
-          status: 'failed',
-          failedReason: `Razorpay payment status: ${razorpayPayment.status}`,
           razorpayPaymentId,
           razorpaySignature,
           updatedAt: new Date(),
         })
         .where(eq(schema.paymentOrders.id, paymentOrder.id));
 
-      return { success: false, status: 'failed' };
+      return { success: false, status: razorpayPayment.status };
     }
 
     return this.processSuccessfulPayment(paymentOrder, razorpayPaymentId, razorpaySignature);
@@ -346,6 +351,7 @@ export class PaymentsService {
       success: true,
       transaction: finalTransaction,
       ...(result.wallet ? { wallet: result.wallet } : {}),
+      ...(result.booking ? { booking: result.booking } : {}),
     };
   }
 
@@ -384,9 +390,10 @@ export class PaymentsService {
     };
   }
 
-  async handleWebhook(body: any, signature: string) {
+  async handleWebhook(body: any, signature: string, rawBody?: Buffer) {
+    const payload = rawBody ? rawBody.toString('utf8') : JSON.stringify(body);
     const isValid = Razorpay.validateWebhookSignature(
-      JSON.stringify(body),
+      payload,
       signature,
       this.configService.get<string>('RAZORPAY_WEBHOOK_SECRET')!,
     );

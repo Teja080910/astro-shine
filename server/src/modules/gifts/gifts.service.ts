@@ -10,6 +10,7 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
 import { eq, sql, aliasedTable, desc, ilike } from 'drizzle-orm';
 import { RealtimeService } from '../../common/realtime.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { parsePrice } from '../../common/utils/parse-price';
 import { UUID_RE } from '../../common/utils/validation';
 import {
@@ -24,6 +25,7 @@ export class GiftsService {
   constructor(
     @Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>,
     private readonly realtime: RealtimeService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async findAll(pagination?: Pagination) {
@@ -324,6 +326,18 @@ export class GiftsService {
       receiverId: data.receiverId,
     });
 
+    this.notifications
+      .create({
+        astrologerId: data.receiverId,
+        type: 'transactional',
+        title: 'Gift received 🎁',
+        body: `You received "${gift.name}" worth ₹${amountStr}. Redeem it in Gifts.`,
+        data: { type: 'gift_received', giftId: data.giftId },
+      })
+      .catch((e) =>
+        this.logger.warn(`Gift notification failed: ${e.message}`),
+      );
+
     this.logger.log(
       `Gift ${data.giftId} sent from ${data.senderId} to ${data.receiverId} (${amountStr})`,
     );
@@ -351,6 +365,23 @@ export class GiftsService {
       .set({ isRedeemed: true, redeemedAt: new Date() })
       .where(eq(schema.giftTransactions.id, id))
       .returning();
+
+    this.realtime.emitToUser(txn.senderId, 'gift:redeemed', {
+      giftTransactionId: r.id,
+      receiverId: txn.receiverId,
+    });
+    this.notifications
+      .create({
+        userId: txn.senderId,
+        type: 'transactional',
+        title: 'Gift redeemed',
+        body: 'Your gift has been redeemed by the astrologer.',
+        data: { type: 'gift_redeemed', giftTransactionId: r.id },
+      })
+      .catch((e) =>
+        this.logger.warn(`Gift redeem notification failed: ${e.message}`),
+      );
+
     return r;
   }
 }

@@ -5,6 +5,7 @@ import {
 import { PaymentsService } from './payments.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import type { RawBodyRequest } from '@nestjs/common';
 import type { Request } from 'express';
 
 @Controller('payments')
@@ -49,10 +50,14 @@ export class PaymentsController {
   @Post('webhook')
   @HttpCode(HttpStatus.OK)
   async handleWebhook(
-    @Req() req: Request,
+    @Req() req: RawBodyRequest<Request>,
     @Headers('x-razorpay-signature') signature: string,
   ) {
-    return this.paymentsService.handleWebhook(req.body, signature);
+    return this.paymentsService.handleWebhook(
+      req.body,
+      signature,
+      req.rawBody,
+    );
   }
 
   @Post(':id/refund')

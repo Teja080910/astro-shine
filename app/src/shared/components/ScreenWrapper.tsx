@@ -27,7 +27,7 @@ interface Props {
 export function ScreenWrapper({ children, scroll, style, noPadding, edges = ['top', 'bottom'], backgroundColor, refreshControl }: Props) {
   const { theme } = useAuth();
   const isDark = theme === 'dark';
-  const bg = backgroundColor || (isDark ? '#09090B' : '#FFFFFF');
+  const bg = backgroundColor || (isDark ? '#09090B' : '#FFFDF7');
   const isDarkBar = backgroundColor ? true : isDark;
 
   const scrollRef = useRef<ScrollView>(null);

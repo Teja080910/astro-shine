@@ -250,11 +250,35 @@ export class AstrologersService {
     id: string,
     onlineStatus: 'online' | 'offline' | 'busy',
   ) {
+    const before = await this.db.query.astrologers.findFirst({
+      where: eq(schema.astrologers.userId, id),
+      columns: { onlineStatus: true },
+    });
     const result = await this.update(id, { onlineStatus } as any);
     this.realtime.broadcast('astrologer:status-changed', {
       astrologerId: id,
       onlineStatus,
     });
+
+    if (onlineStatus === 'online' && before?.onlineStatus !== 'online') {
+      const favorites = await this.db.query.favoriteAstrologers.findMany({
+        where: eq(schema.favoriteAstrologers.astrologerId, id),
+        columns: { userId: true },
+      });
+      const name = (result as any)?.name || 'Your astrologer';
+      for (const fav of favorites) {
+        this.notificationsService
+          .create({
+            userId: fav.userId,
+            type: 'reminder',
+            title: `${name} is online now`,
+            body: 'Tap to start a chat or call consultation.',
+            data: { type: 'astrologer_online', astrologerId: id },
+          })
+          .catch(() => {});
+      }
+    }
+
     return result;
   }
 

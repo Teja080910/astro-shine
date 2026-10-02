@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl, KeyboardAvoidingView, Platform, Keyboard, Dimensions, Image } from 'react-native';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
-import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, CustomModal, colors, typography, radii, shadows, Navbar } from '../../shared';
+import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, CustomModal, colors, typography, radii, shadows, Navbar, resolveMediaUrl } from '../../shared';
 import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
-import type { Blog, MandirPooja, Notification, PoojaBooking, SupportTicket, TicketReply, NewsItem, Video, PanchangRecord, CommissionLog, HoroscopeRecord } from '../../shared/types';
+import type { Blog, MandirPooja, Notification, PoojaBooking, SupportTicket, TicketReply, NewsItem, Video, PanchangRecord, CommissionLog, HoroscopeRecord, Report } from '../../shared/types';
 import { useAuth } from '../../context/AuthContext';
 import { resolveNotificationTarget } from '../../shared/notification-router';
 import { useChat } from '../../context/ChatContext';
@@ -26,126 +26,175 @@ function to12h(t: string): string {
 }
 
 // Horoscope
+const HOROSCOPE_SIGNS = [
+  { sign: 'aries', label: 'Aries', emoji: '♈', range: 'Mar 21 – Apr 19' },
+  { sign: 'taurus', label: 'Taurus', emoji: '♉', range: 'Apr 20 – May 20' },
+  { sign: 'gemini', label: 'Gemini', emoji: '♊', range: 'May 21 – Jun 20' },
+  { sign: 'cancer', label: 'Cancer', emoji: '♋', range: 'Jun 21 – Jul 22' },
+  { sign: 'leo', label: 'Leo', emoji: '♌', range: 'Jul 23 – Aug 22' },
+  { sign: 'virgo', label: 'Virgo', emoji: '♍', range: 'Aug 23 – Sep 22' },
+  { sign: 'libra', label: 'Libra', emoji: '♎', range: 'Sep 23 – Oct 22' },
+  { sign: 'scorpio', label: 'Scorpio', emoji: '♏', range: 'Oct 23 – Nov 21' },
+  { sign: 'sagittarius', label: 'Sagittarius', emoji: '♐', range: 'Nov 22 – Dec 21' },
+  { sign: 'capricorn', label: 'Capricorn', emoji: '♑', range: 'Dec 22 – Jan 19' },
+  { sign: 'aquarius', label: 'Aquarius', emoji: '♒', range: 'Jan 20 – Feb 18' },
+  { sign: 'pisces', label: 'Pisces', emoji: '♓', range: 'Feb 19 – Mar 20' },
+];
+
 export function HoroscopeScreen({ navigation }: any) {
+  return (
+    <ScreenWrapper scroll noPadding>
+      <Navbar title="Horoscope" navigation={navigation} />
+      <View style={{ padding: 16 }}>
+        <Text style={[typography.sectionTitle, { color: colors.accentGold, fontSize: 24 }]}>
+          Horoscope
+        </Text>
+        <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4, marginBottom: 16 }]}>
+          Select your zodiac sign to read today's prediction
+        </Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', paddingBottom: 100 }}>
+          {HOROSCOPE_SIGNS.map((z) => (
+            <TouchableOpacity
+              key={z.sign}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('HoroscopeDetail', { sign: z.sign, label: z.label })}
+              style={{
+                width: '31.5%',
+                marginBottom: 12,
+                paddingVertical: 16,
+                borderRadius: radii.lg,
+                alignItems: 'center',
+                backgroundColor: colors.surfaceLight,
+                borderWidth: 1,
+                borderColor: colors.cardBorder,
+              }}
+            >
+              <Text style={{ fontSize: 30 }}>{z.emoji}</Text>
+              <Text style={{ color: colors.textPrimary, fontWeight: '700', fontSize: 13, marginTop: 6 }}>
+                {z.label}
+              </Text>
+              <Text style={{ color: colors.textSecondary, fontSize: 9, marginTop: 2, textAlign: 'center' }}>
+                {z.range}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    </ScreenWrapper>
+  );
+}
+
+export function HoroscopeDetailScreen({ route, navigation }: any) {
   const { horoscopeVersion } = useChat();
-  const [horoscope, setHoroscope] = useState<HoroscopeRecord[]>([]);
+  const sign: string = (route?.params?.sign || 'aries').toLowerCase();
+  const label: string = route?.params?.label || sign;
+  const meta = HOROSCOPE_SIGNS.find((z) => z.sign === sign);
+  const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+  const [record, setRecord] = useState<HoroscopeRecord | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedSign, setSelectedSign] = useState('aries');
-  const [activeTab, setActiveTab] = useState<'general' | 'love' | 'career' | 'finance' | 'health'>('general');
   const today = new Date().toISOString().split('T')[0];
 
-  const ZODIAC_SIGNS = [
-    { sign: 'aries', label: 'Aries' },
-    { sign: 'taurus', label: 'Taurus' },
-    { sign: 'gemini', label: 'Gemini' },
-    { sign: 'cancer', label: 'Cancer' },
-    { sign: 'leo', label: 'Leo' },
-    { sign: 'virgo', label: 'Virgo' },
-    { sign: 'libra', label: 'Libra' },
-    { sign: 'scorpio', label: 'Scorpio' },
-    { sign: 'sagittarius', label: 'Sagittarius' },
-    { sign: 'capricorn', label: 'Capricorn' },
-    { sign: 'aquarius', label: 'Aquarius' },
-    { sign: 'pisces', label: 'Pisces' },
-  ];
-
-  const CATEGORIES = [
-    { key: 'general' as const, label: 'General', icon: 'star' },
-    { key: 'love' as const, label: 'Love', icon: 'heart' },
-    { key: 'career' as const, label: 'Career', icon: 'briefcase' },
-    { key: 'finance' as const, label: 'Finance', icon: 'cash' },
-    { key: 'health' as const, label: 'Health', icon: 'pulse' },
-  ];
-
   useEffect(() => {
-    api.horoscope.bySign(selectedSign, today).then((h) => {
-      setHoroscope(Array.isArray(h) ? h : [h]);
-    }).catch(() => {}).finally(() => setLoading(false));
-  }, [selectedSign, horoscopeVersion]);
+    let cancelled = false;
+    setLoading(true);
+    const request =
+      period === 'daily'
+        ? api.horoscope.bySign(sign, today)
+        : api.horoscope.byPeriod(sign, period);
+    request
+      .then((h: any) => {
+        if (cancelled) return;
+        setRecord(Array.isArray(h) ? h[0] : h);
+      })
+      .catch((e: any) => {
+        if (!cancelled) {
+          console.warn('Horoscope fetch failed:', e?.message || e);
+          setRecord(null);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [sign, period, horoscopeVersion]);
 
-  const current = horoscope[0];
-  const predictionText =
-    activeTab === 'general' ? current?.prediction :
-    activeTab === 'love' ? (current?.lovePrediction || current?.prediction) :
-    activeTab === 'career' ? (current?.careerPrediction || current?.prediction) :
-    activeTab === 'finance' ? (current?.financePrediction || current?.prediction) :
-    activeTab === 'health' ? (current?.healthPrediction || current?.prediction) :
-    current?.prediction;
+  const PERIODS = [
+    { key: 'daily' as const, label: 'Daily' },
+    { key: 'weekly' as const, label: 'Weekly' },
+    { key: 'monthly' as const, label: 'Monthly' },
+  ];
 
   return (
     <ScreenWrapper scroll noPadding>
-      <Navbar title="Daily Horoscope" navigation={navigation} />
-      <View style={{ padding: 16 }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, height: 44, marginBottom: 16 }} contentContainerStyle={{ alignItems: 'center' }}>
-          {ZODIAC_SIGNS.map((z) => (
+      <Navbar title={`${label} Horoscope`} navigation={navigation} />
+      <View style={{ padding: 16, paddingBottom: 100 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          <Text style={{ fontSize: 44 }}>{meta?.emoji || '✨'}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>{label}</Text>
+            <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>{meta?.range}</Text>
+          </View>
+        </View>
+
+        <View style={{ flexDirection: 'row', backgroundColor: colors.surfaceLight, borderRadius: radii.lg, padding: 4, marginBottom: 16 }}>
+          {PERIODS.map((p) => (
             <TouchableOpacity
-              key={z.sign}
-              onPress={() => setSelectedSign(z.sign)}
+              key={p.key}
+              onPress={() => setPeriod(p.key)}
               style={{
-                paddingHorizontal: 16, paddingVertical: 8, marginRight: 8,
-                borderRadius: 20, backgroundColor: selectedSign === z.sign ? colors.accentGold : colors.surfaceLight,
+                flex: 1,
+                paddingVertical: 10,
+                borderRadius: radii.md,
+                alignItems: 'center',
+                backgroundColor: period === p.key ? colors.accentGold : 'transparent',
               }}
             >
-              <Text style={{ color: selectedSign === z.sign ? '#FFF' : colors.textPrimary, fontWeight: '600', fontSize: 14 }}>
-                {z.label}
+              <Text style={{ color: period === p.key ? '#FFF' : colors.textPrimary, fontWeight: '700', fontSize: 13 }}>
+                {p.label}
               </Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, height: 36, marginBottom: 16 }} contentContainerStyle={{ alignItems: 'center', gap: 8 }}>
-          {CATEGORIES.map((cat) => (
-            <TouchableOpacity
-              key={cat.key}
-              onPress={() => setActiveTab(cat.key)}
-              style={{
-                flexDirection: 'row', alignItems: 'center', gap: 4,
-                paddingHorizontal: 14, paddingVertical: 6,
-                borderRadius: 16, backgroundColor: activeTab === cat.key ? colors.accentGold : colors.surfaceLight,
-              }}
-            >
-              <Ionicons name={cat.icon as any} size={14} color={activeTab === cat.key ? '#FFF' : colors.textSecondary} />
-              <Text style={{ color: activeTab === cat.key ? '#FFF' : colors.textPrimary, fontWeight: '600', fontSize: 12 }}>
-                {cat.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        </View>
+
         {loading ? (
-          <GlassCard><Text style={typography.body}>Loading...</Text></GlassCard>
-        ) : current ? (
-          <View style={{ paddingBottom: 100 }}>
-            <GlassCard style={{ padding: 16 }}>
-              <Text style={[typography.sectionTitle, { color: colors.accentGold, marginBottom: 8 }]}>
-                {selectedSign.charAt(0).toUpperCase() + selectedSign.slice(1)} — {CATEGORIES.find(c => c.key === activeTab)?.label}
-              </Text>
-              <Text style={[typography.body, { lineHeight: 22 }]}>{predictionText}</Text>
+          <GlassCard><Text style={[typography.body, { textAlign: 'center' }]}>Loading...</Text></GlassCard>
+        ) : record?.prediction ? (
+          <GlassCard style={{ padding: 16 }}>
+            <Text style={[typography.caption, { color: colors.accentGold, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8 }]}>
+              {period} prediction
+            </Text>
+            <Text style={[typography.body, { lineHeight: 23 }]}>{record.prediction}</Text>
+            {period === 'daily' && (
               <View style={{ flexDirection: 'row', marginTop: 16, gap: 16 }}>
-                {current.luckyNumber && (
+                {record.luckyNumber != null && (
                   <View style={{ flex: 1 }}>
                     <Text style={[typography.caption, { color: colors.textSecondary }]}>Lucky #</Text>
-                    <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>{current.luckyNumber}</Text>
+                    <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>{record.luckyNumber}</Text>
                   </View>
                 )}
-                {current.luckyColor && (
+                {record.luckyColor && (
                   <View style={{ flex: 1 }}>
                     <Text style={[typography.caption, { color: colors.textSecondary }]}>Color</Text>
-                    <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>{current.luckyColor}</Text>
+                    <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>{record.luckyColor}</Text>
                   </View>
                 )}
-                {current.mood && (
+                {record.mood && (
                   <View style={{ flex: 1 }}>
                     <Text style={[typography.caption, { color: colors.textSecondary }]}>Mood</Text>
-                    <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>{current.mood}</Text>
+                    <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>{record.mood}</Text>
                   </View>
                 )}
               </View>
-            </GlassCard>
-            <Text style={[typography.caption, { textAlign: 'center', marginTop: 12, color: colors.textSecondary }]}>
-              {new Date(current.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-            </Text>
-          </View>
+            )}
+          </GlassCard>
         ) : (
-          <GlassCard><Text style={[typography.body, { textAlign: 'center', marginVertical: 16 }]}>No horoscope data available for today</Text></GlassCard>
+          <GlassCard>
+            <Text style={[typography.body, { textAlign: 'center', marginVertical: 16 }]}>
+              Horoscope is temporarily unavailable. Please try again later.
+            </Text>
+          </GlassCard>
         )}
       </View>
     </ScreenWrapper>
@@ -163,37 +212,95 @@ export function PanchangScreen() {
     api.panchang.byDate(today).then(setData).catch(() => {}).finally(() => setLoading(false));
   }, [panchangVersion]);
 
-  if (loading) return <ScreenWrapper scroll><SectionTitle title="Panchang" /><GlassCard><Text style={typography.body}>Loading...</Text></GlassCard></ScreenWrapper>;
+  if (loading) {
+    return (
+      <ScreenWrapper scroll>
+        <SectionTitle title="Panchang" />
+        <GlassCard><Text style={typography.body}>Loading...</Text></GlassCard>
+      </ScreenWrapper>
+    );
+  }
+
+  const abhijit = data?.data?.abhijitMuhurta;
+  const inauspicious = data?.data?.rahuKaal || data?.rahuKaal;
+
+  const gridItems = data
+    ? [
+        { icon: 'star', label: 'Nakshatra', value: data.nakshatra },
+        { icon: 'leaf', label: 'Yoga', value: data.yoga },
+        { icon: 'time', label: 'Karana', value: data.karana },
+        { icon: 'partly-sunny', label: 'Paksha', value: data.tithi?.startsWith('Shukla') ? 'Shukla' : data.tithi?.startsWith('Krishna') ? 'Krishna' : undefined },
+      ].filter((i) => i.value)
+    : [];
 
   return (
     <ScreenWrapper scroll>
-      <SectionTitle title="Panchang" />
-      {data ? (
-        <View style={{ paddingBottom: 100 }}>
-          <Text style={[typography.caption, { marginBottom: 16, color: colors.textSecondary }]}>
-            {new Date(data.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-          </Text>
-          <GlassCard style={{ padding: 16 }}>
-            <Row icon="water" label="Tithi" value={data.tithi} />
-            <Row icon="star" label="Nakshatra" value={data.nakshatra} />
-            <Row icon="leaf" label="Yoga" value={data.yoga} />
-            <Row icon="time" label="Karana" value={data.karana} />
-          </GlassCard>
-          <GlassCard style={{ padding: 16, marginTop: 12 }}>
-            <Row icon="sunny" label="Sunrise" value={data.sunrise ? to12h(data.sunrise) : undefined} />
-            <Row icon="moon" label="Sunset" value={data.sunset ? to12h(data.sunset) : undefined} />
-            <Row icon="moon" label="Moonrise" value={data.moonrise ? to12h(data.moonrise) : undefined} />
-            <Row icon="moon" label="Moonset" value={data.moonset ? to12h(data.moonset) : undefined} />
-          </GlassCard>
-          {data.rahuKaal && (
-            <GlassCard style={{ padding: 16, marginTop: 12 }}>
-              <Row icon="alert-circle" label="Rahu Kaal" value={`${to12h(data.rahuKaal.start)} - ${to12h(data.rahuKaal.end)}`} />
+      <View style={{ paddingBottom: 100 }}>
+        <Text style={[typography.sectionTitle, { color: colors.accentGold, fontSize: 24 }]}>Panchang</Text>
+        {data ? (
+          <>
+            <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4, marginBottom: 16 }]}>
+              {new Date(data.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+            </Text>
+
+            <GlassCard style={{ padding: 18, alignItems: 'center', marginBottom: 12 }}>
+              <Ionicons name="moon" size={26} color={colors.accentGold} />
+              <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 6 }]}>Tithi</Text>
+              <Text style={[typography.sectionTitle, { color: colors.textPrimary, fontSize: 22, marginTop: 2, textAlign: 'center' }]}>
+                {data.tithi || '-'}
+              </Text>
             </GlassCard>
-          )}
-          </View>
+
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+              {gridItems.map((item) => (
+                <GlassCard key={item.label} style={{ width: '48.5%', padding: 14, marginBottom: 10 }}>
+                  <Ionicons name={item.icon as any} size={18} color={colors.accentGold} />
+                  <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 6 }]}>{item.label}</Text>
+                  <Text style={[typography.cardTitle, { color: colors.textPrimary, marginTop: 2 }]} numberOfLines={2}>
+                    {item.value}
+                  </Text>
+                </GlassCard>
+              ))}
+            </View>
+
+            <GlassCard style={{ padding: 16, marginTop: 2 }}>
+              <Text style={[typography.caption, { color: colors.accentGold, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8 }]}>
+                Sun & Moon
+              </Text>
+              <Row icon="sunny" label="Sunrise" value={data.sunrise ? to12h(data.sunrise) : undefined} />
+              <Row icon="sunny" label="Sunset" value={data.sunset ? to12h(data.sunset) : undefined} />
+              <Row icon="moon" label="Moonrise" value={data.moonrise ? to12h(data.moonrise) : undefined} />
+              <Row icon="moon" label="Moonset" value={data.moonset ? to12h(data.moonset) : undefined} />
+            </GlassCard>
+
+            <GlassCard style={{ padding: 16, marginTop: 12 }}>
+              <Text style={[typography.caption, { color: colors.accentGold, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8 }]}>
+                Muhurta
+              </Text>
+              {inauspicious && (
+                <Row
+                  icon="alert-circle"
+                  label="Rahu Kaal (avoid)"
+                  value={`${to12h(inauspicious.start)} - ${to12h(inauspicious.end)}`}
+                />
+              )}
+              {abhijit && (
+                <Row
+                  icon="checkmark-circle"
+                  label="Abhijit (auspicious)"
+                  value={`${to12h(abhijit.start)} - ${to12h(abhijit.end)}`}
+                />
+              )}
+            </GlassCard>
+          </>
         ) : (
-        <GlassCard><Text style={[typography.body, { textAlign: 'center', marginVertical: 16 }]}>No panchang data available for today</Text></GlassCard>
-      )}
+          <GlassCard>
+            <Text style={[typography.body, { textAlign: 'center', marginVertical: 16 }]}>
+              No panchang data available for today
+            </Text>
+          </GlassCard>
+        )}
+      </View>
     </ScreenWrapper>
   );
 }
@@ -953,6 +1060,89 @@ export function ReportScreen({ route, navigation }: any) {
   );
 }
 
+function ReportsStatusScreen({ navigation, mode }: any) {
+  const [reports, setReports] = useState<Report[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    (mode === 'received' ? api.reports.received() : api.reports.my())
+      .then((r) => {
+        if (!cancelled) setReports(r);
+      })
+      .catch((e: any) => console.warn('Reports fetch failed:', e?.message || e))
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode]);
+
+  return (
+    <ScreenWrapper scroll noPadding>
+      <Navbar
+        title={mode === 'received' ? 'Reports Against Me' : 'My Reports'}
+        navigation={navigation}
+      />
+      <View style={{ padding: 16, paddingBottom: 100 }}>
+        {loading ? (
+          <GlassCard><Text style={typography.body}>Loading...</Text></GlassCard>
+        ) : reports.length === 0 ? (
+          <EmptyState
+            icon={<Ionicons name="shield-checkmark-outline" size={48} color={colors.textMuted} />}
+            title="No reports"
+            subtitle={mode === 'received' ? 'No reports have been filed against you.' : 'You have not filed any reports yet.'}
+          />
+        ) : (
+          reports.map((r) => {
+            const reviewed = (r.status || '').toLowerCase() === 'reviewed';
+            return (
+              <GlassCard key={r.id} style={{ padding: 14, marginBottom: 10 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Text style={[typography.cardTitle, { flex: 1, textTransform: 'capitalize' }]}>
+                    {String(r.reason || '').replace(/_/g, ' ')}
+                  </Text>
+                  <View
+                    style={{
+                      paddingHorizontal: 10,
+                      paddingVertical: 4,
+                      borderRadius: 12,
+                      backgroundColor: reviewed ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)',
+                    }}
+                  >
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: reviewed ? colors.success : colors.warning }}>
+                      {reviewed ? 'Reviewed' : 'Pending'}
+                    </Text>
+                  </View>
+                </View>
+                {r.description ? (
+                  <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 6 }]}>
+                    {r.description}
+                  </Text>
+                ) : null}
+                <Text style={[typography.caption, { color: colors.textMuted, marginTop: 8 }]}>
+                  Filed {new Date(r.createdAt).toLocaleDateString()}
+                  {r.resolvedAt ? ` · Reviewed ${new Date(r.resolvedAt).toLocaleDateString()}` : ''}
+                </Text>
+              </GlassCard>
+            );
+          })
+        )}
+      </View>
+    </ScreenWrapper>
+  );
+}
+
+export function MyReportsScreen(props: any) {
+  return <ReportsStatusScreen {...props} mode="mine" />;
+}
+
+export function AstrologerReportsScreen(props: any) {
+  return <ReportsStatusScreen {...props} mode="received" />;
+}
+
 // Mandir Pooja
 export function MandirPoojaScreen({ route, navigation }: any) {
   const { user, theme } = useAuth();
@@ -1490,7 +1680,7 @@ export function OrderHistoryScreen() {
                       >
                         {item.productImage ? (
                           <Image
-                            source={{ uri: item.productImage }}
+                            source={{ uri: resolveMediaUrl(item.productImage) }}
                             style={{ width: 40, height: 40, borderRadius: 8 }}
                           />
                         ) : (

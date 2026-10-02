@@ -73,7 +73,7 @@ export function AstrologerGiftScreen() {
               </GlassCard>
               <GlassCard style={{ flex: 1, alignItems: 'center', padding: 16 }}>
                 <Text style={{ fontSize: 28, fontWeight: '800', color: colors.warning }}>{pendingCount}</Text>
-                <Text style={typography.caption}>Pending</Text>
+                <Text style={typography.caption}>To Redeem</Text>
               </GlassCard>
               <GlassCard style={{ flex: 1, alignItems: 'center', padding: 16 }}>
                 <Text style={{ fontSize: 28, fontWeight: '800', color: colors.success }}>₹{totalValue}</Text>

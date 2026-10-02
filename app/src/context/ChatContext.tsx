@@ -191,22 +191,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     });
 
     socket.on('users:online-list', (list: { userId: string; role?: string }[]) => {
-      setOnlineUsers((prev) => {
-        const next = { ...prev };
-        list.forEach((u) => {
-          next[u.userId] = true;
-        });
-        return next;
+      const map: Record<string, boolean> = {};
+      list.forEach((u) => {
+        map[u.userId] = true;
       });
-      setAstrologerStatuses((prev) => {
-        const next = { ...prev };
-        list.forEach((u) => {
-          if (u.role === 'astrologer') {
-            next[u.userId] = 'online';
-          }
-        });
-        return next;
-      });
+      setOnlineUsers(map);
     });
 
     socket.on('user:status', (data: { userId: string; isOnline: boolean; role?: string }) => {
@@ -301,6 +290,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     });
 
     socket.on('gift:sent', () => {
+      setGiftVersion(v => v + 1);
+    });
+
+    socket.on('gift:redeemed', () => {
       setGiftVersion(v => v + 1);
     });
 

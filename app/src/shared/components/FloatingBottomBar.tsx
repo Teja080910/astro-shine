@@ -17,10 +17,10 @@ export function FloatingBottomBar({ tabs, activeTab, onTabPress }: Props) {
   const totalUnread = Object.values(unreadCounts).reduce((s, c) => s + c, 0);
   const badgeCount = totalUnread > 99 ? 99 : totalUnread;
 
-  const activeColor = '#D97706';
-  const inactiveColor = isDark ? '#9CA3AF' : '#6B7280';
+  const activeColor = isDark ? '#F59E0B' : '#EA580C';
+  const inactiveColor = isDark ? '#9CA3AF' : '#786C6A';
   const barBg = isDark ? '#111827' : '#FFFFFF';
-  const borderColor = isDark ? '#374151' : '#E5E7EB';
+  const borderColor = isDark ? '#374151' : '#FDE68A';
 
   return (
     <View style={[styles.tabBarRoot, { paddingBottom: Math.max(insets.bottom, 8) }]}>

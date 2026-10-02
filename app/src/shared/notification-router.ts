@@ -33,6 +33,8 @@ const USER_ROUTES = [
   'Donation',
   'Gifts',
   'Report',
+  'MyReports',
+  'HoroscopeDetail',
   'ChatRoom',
 ];
 
@@ -53,6 +55,7 @@ const ASTROLOGER_ROUTES = [
   'Reviews',
   'Consultations',
   'Gifts',
+  'AstrologerReports',
   'ChatRoom',
 ];
 
@@ -117,6 +120,19 @@ export function resolveNotificationTarget(
     if (target) return target;
   }
 
+  switch (data.type) {
+    case 'report_status':
+      return build(role === 'astrologer' ? 'AstrologerReports' : 'MyReports');
+    case 'gift_received':
+    case 'gift_redeemed':
+      return build('Gifts');
+    case 'pooja_booking':
+      if (data.poojaId) return build('MandirPoojaDetail');
+      return build('MandirPooja');
+    default:
+      break;
+  }
+
   if (data.blogId) return build('BlogDetail');
   if (data.newsId) return build('NewsDetail');
   if (data.ticketId) {
@@ -133,7 +149,9 @@ export function resolveNotificationTarget(
       return build('Muhurat');
     case 'promotional':
       return build('Blogs');
+    case 'system':
+      return build('Notifications');
     default:
-      return build('Support');
+      return null;
   }
 }
