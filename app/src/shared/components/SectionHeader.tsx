@@ -20,7 +20,7 @@ export function SectionHeader({ title, onSeeAll, style, icon, showUnderline }: P
 
   return (
     <View style={[styles.container, style]}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, flexShrink: 1, minWidth: 0 }}>
         {icon && (
           <View
             style={{
@@ -35,8 +35,14 @@ export function SectionHeader({ title, onSeeAll, style, icon, showUnderline }: P
             <Ionicons name={icon as any} size={18} color={isDark ? '#F87171' : '#7F1D1D'} />
           </View>
         )}
-        <View>
-          <Text style={{ fontSize: 17, fontWeight: '800', color: titleColor }}>{title}</Text>
+        <View style={{ flexShrink: 1, minWidth: 0 }}>
+          <Text
+            style={{ fontSize: 17, fontWeight: '800', color: titleColor }}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
+            {title}
+          </Text>
           {shouldUnderline && (
             <View
               style={{

@@ -8,11 +8,11 @@ interface Props { children?: React.ReactNode; style?: ViewStyle; noPadding?: boo
 export function GlassCard({ children, style, noPadding }: Props) {
   const { theme } = useAuth();
   const isDark = theme === 'dark';
-  const cardBg = isDark ? 'transparent' : '#FFFFFF';
+  const cardBg = isDark ? '#111827' : '#FFFFFF';
   const cardBorder = isDark ? 'rgba(245, 158, 11, 0.25)' : '#FDE68A';
 
   return (
-    <View style={[styles.card, !noPadding && styles.padding, { backgroundColor: cardBg, borderColor: cardBorder }, style]}>
+    <View style={[styles.card, !noPadding && styles.padding, { backgroundColor: cardBg, borderColor: cardBorder }, isDark && { shadowColor: '#000', shadowOpacity: 0.35 }, style]}>
       {children}
     </View>
   );

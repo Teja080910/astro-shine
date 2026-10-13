@@ -181,7 +181,13 @@ export function AstrologerMuhuratScreen() {
       <View style={styles.cardHeader}>
         <View style={styles.titleContainer}>
           <Ionicons name="time" size={18} color={colors.primary} style={{ marginRight: 6 }} />
-          <Text style={[typography.cardTitle, { color: colors.textPrimary, fontWeight: '700' }]}>{item.name}</Text>
+          <Text
+            style={[typography.cardTitle, { color: colors.textPrimary, fontWeight: '700', flexShrink: 1 }]}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
+            {item.name}
+          </Text>
         </View>
         <BadgeBadge active={item.isActive} />
       </View>
@@ -204,14 +210,18 @@ export function AstrologerMuhuratScreen() {
       <View style={[styles.divider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' }]} />
 
       <View style={styles.actionsRow}>
-        <Text style={[typography.caption, { color: colors.textMuted }]}>
+        <Text
+          style={[typography.caption, { color: colors.textMuted, flex: 1, flexShrink: 1, minWidth: 0, marginRight: 8 }]}
+          numberOfLines={2}
+          ellipsizeMode="tail"
+        >
           Category: <Text style={{ color: colors.primary, fontWeight: '600' }}>{item.categoryName}</Text>
         </Text>
         <View style={styles.actionButtons}>
-          <TouchableOpacity onPress={() => startEdit(item)} style={styles.actionBtn}>
+          <TouchableOpacity onPress={() => startEdit(item)} style={[styles.actionBtn, { borderColor: colors.cardBorder }]}>
             <Ionicons name="pencil" size={16} color={colors.primary} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => deleteItem(item.id)} style={[styles.actionBtn, { marginLeft: 8 }]}>
+          <TouchableOpacity onPress={() => deleteItem(item.id)} style={[styles.actionBtn, { marginLeft: 8, borderColor: colors.cardBorder }]}>
             <Ionicons name="trash" size={16} color="#EF4444" />
           </TouchableOpacity>
         </View>

@@ -126,6 +126,27 @@ export function HoroscopeDetailScreen({ route, navigation }: any) {
     { key: 'monthly' as const, label: 'Monthly' },
   ];
 
+  const CATEGORIES = [
+    { key: 'general' as const, label: 'General' },
+    { key: 'love' as const, label: 'Love' },
+    { key: 'career' as const, label: 'Career' },
+    { key: 'finance' as const, label: 'Finance' },
+    { key: 'health' as const, label: 'Health' },
+  ];
+
+  const [category, setCategory] = useState<'general' | 'love' | 'career' | 'finance' | 'health'>('general');
+
+  useEffect(() => {
+    setCategory('general');
+  }, [period]);
+
+  const predictionText =
+    category === 'love' ? (record?.lovePrediction || record?.prediction) :
+    category === 'career' ? (record?.careerPrediction || record?.prediction) :
+    category === 'finance' ? (record?.financePrediction || record?.prediction) :
+    category === 'health' ? (record?.healthPrediction || record?.prediction) :
+    record?.prediction;
+
   return (
     <ScreenWrapper scroll noPadding>
       <Navbar title={`${label} Horoscope`} navigation={navigation} />
@@ -158,36 +179,67 @@ export function HoroscopeDetailScreen({ route, navigation }: any) {
           ))}
         </View>
 
+        {period === 'daily' && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ flexGrow: 0, marginBottom: 14 }}
+            contentContainerStyle={{ gap: 8 }}
+          >
+            {CATEGORIES.map((cat) => (
+              <TouchableOpacity
+                key={cat.key}
+                onPress={() => setCategory(cat.key)}
+                style={{
+                  paddingHorizontal: 14,
+                  paddingVertical: 7,
+                  borderRadius: 16,
+                  backgroundColor: category === cat.key ? colors.accentGold : colors.surfaceLight,
+                  borderWidth: 1,
+                  borderColor: category === cat.key ? colors.accentGold : colors.cardBorder,
+                }}
+              >
+                <Text style={{ color: category === cat.key ? '#FFF' : colors.textPrimary, fontWeight: '700', fontSize: 12 }}>
+                  {cat.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+
         {loading ? (
           <GlassCard><Text style={[typography.body, { textAlign: 'center' }]}>Loading...</Text></GlassCard>
         ) : record?.prediction ? (
           <GlassCard style={{ padding: 16 }}>
             <Text style={[typography.caption, { color: colors.accentGold, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8 }]}>
-              {period} prediction
+              {period === 'daily' ? `${category} prediction` : `${period} prediction`}
             </Text>
-            <Text style={[typography.body, { lineHeight: 23 }]}>{record.prediction}</Text>
-            {period === 'daily' && (
-              <View style={{ flexDirection: 'row', marginTop: 16, gap: 16 }}>
-                {record.luckyNumber != null && (
-                  <View style={{ flex: 1 }}>
-                    <Text style={[typography.caption, { color: colors.textSecondary }]}>Lucky #</Text>
-                    <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>{record.luckyNumber}</Text>
-                  </View>
-                )}
-                {record.luckyColor && (
-                  <View style={{ flex: 1 }}>
-                    <Text style={[typography.caption, { color: colors.textSecondary }]}>Color</Text>
-                    <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>{record.luckyColor}</Text>
-                  </View>
-                )}
-                {record.mood && (
-                  <View style={{ flex: 1 }}>
-                    <Text style={[typography.caption, { color: colors.textSecondary }]}>Mood</Text>
-                    <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>{record.mood}</Text>
-                  </View>
-                )}
-              </View>
-            )}
+            <Text style={[typography.body, { lineHeight: 23 }]}>{predictionText}</Text>
+            {period === 'daily' && (() => {
+              const stats = [
+                { label: 'Lucky #', value: record.luckyNumber != null ? String(record.luckyNumber) : null },
+                { label: 'Color', value: record.luckyColor || null },
+                { label: 'Mood', value: record.mood || null },
+              ].filter((s) => s.value);
+              if (!stats.length) return null;
+              const maxLen = Math.max(...stats.map((s) => s.value!.length));
+              const statFontSize = maxLen >= 11 ? 12 : maxLen >= 9 ? 13.5 : maxLen >= 7 ? 15 : 17;
+              return (
+                <View style={{ flexDirection: 'row', marginTop: 16, gap: 12 }}>
+                  {stats.map((s) => (
+                    <View key={s.label} style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={[typography.caption, { color: colors.textSecondary }]}>{s.label}</Text>
+                      <Text
+                        style={{ fontSize: statFontSize, fontWeight: '700', color: colors.accentGold }}
+                        numberOfLines={1}
+                      >
+                        {s.value}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              );
+            })()}
           </GlassCard>
         ) : (
           <GlassCard>
@@ -1216,7 +1268,7 @@ export function MandirPoojaScreen({ route, navigation }: any) {
     return {
       label: 'Pending',
       icon: 'hourglass-outline' as const,
-      color: '#6B7280',
+      color: isDark ? '#9CA3AF' : '#6B7280',
       bg: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F3F4F6',
       border: isDark ? 'rgba(255, 255, 255, 0.15)' : '#E5E7EB',
       desc: 'Awaiting confirmation from temple management.',
@@ -1344,7 +1396,7 @@ export function MandirPoojaScreen({ route, navigation }: any) {
                           <Ionicons name="flame" size={22} color={colors.accentGold} />
                         </View>
                         <View style={{ flex: 1 }}>
-                          <Text style={[typography.cardTitle, { fontSize: 16 }]} numberOfLines={1}>
+                          <Text style={[typography.cardTitle, { fontSize: 16 }]} numberOfLines={2}>
                             {poojaName}
                           </Text>
                           <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>
@@ -1776,11 +1828,18 @@ export function AstrologerRequestsScreen() {
         requests.map(r => (
           <GlassCard key={r.id} style={{ marginBottom: 8, padding: 14 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <View>
-                <Text style={[typography.cardTitle, { fontSize: 14 }]}>{(r as any).userName || 'User'}</Text>
-                <Text style={typography.caption}>{r.type === 'video' ? 'Video Call' : 'Audio Call'} · {new Date(r.createdAt).toLocaleString()}</Text>
+              <View style={{ flex: 1, flexShrink: 1, minWidth: 0, marginRight: 8 }}>
+                <Text
+                  style={[typography.cardTitle, { fontSize: 14 }]}
+                  numberOfLines={2}
+                >
+                  {(r as any).userName || 'User'}
+                </Text>
+                <Text style={typography.caption} numberOfLines={2}>
+                  {r.type === 'video' ? 'Video Call' : 'Audio Call'} · {new Date(r.createdAt).toLocaleString()}
+                </Text>
               </View>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
+              <View style={{ flexDirection: 'row', gap: 8, flexShrink: 0 }}>
                 <GradientButton title="Accept" onPress={() => api.calls.updateStatus(r.id, 'ongoing').then(() => setRequests(prev => prev.filter(x => x.id !== r.id)))} small />
                 <GradientButton title="Decline" variant="danger" onPress={() => api.calls.updateStatus(r.id, 'cancelled').then(() => setRequests(prev => prev.filter(x => x.id !== r.id)))} small />
               </View>
@@ -1947,7 +2006,7 @@ export function AstrologerDocumentsScreen() {
           {docs.map((doc, i) => (
             <View key={i} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.glassBg, borderColor: colors.cardBorder, borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 8 }}>
               <Ionicons name="document-text-outline" size={20} color={colors.primaryLight} style={{ marginRight: 10 }} />
-              <Text style={[typography.body, { color: colors.textPrimary, flex: 1 }]} numberOfLines={1}>
+              <Text style={[typography.body, { color: colors.textPrimary, flex: 1 }]} numberOfLines={2}>
                 {doc.split('/').pop()?.substring(14) || `Document ${i + 1}`}
               </Text>
               <TouchableOpacity onPress={() => removeDoc(i)} style={{ padding: 6 }}>
@@ -2268,7 +2327,7 @@ export function CreateBlogScreen({ navigation, route }: any) {
         <Text style={[typography.pageTitle, { marginBottom: 16 }]}>Create Blog</Text>
         <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Title</Text>
         <TextInput
-          style={[styles.input, { marginBottom: 12 }]}
+          style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary, marginBottom: 12 }]}
           value={title}
           onChangeText={setTitle}
           placeholder="Blog title"
@@ -2276,7 +2335,7 @@ export function CreateBlogScreen({ navigation, route }: any) {
         />
         <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Excerpt (optional)</Text>
         <TextInput
-          style={[styles.input, { marginBottom: 12 }]}
+          style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary, marginBottom: 12 }]}
           value={excerpt}
           onChangeText={setExcerpt}
           placeholder="Short summary"
@@ -2284,7 +2343,7 @@ export function CreateBlogScreen({ navigation, route }: any) {
         />
         <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Content</Text>
         <TextInput
-          style={[styles.input, { marginBottom: 12, height: 200, textAlignVertical: 'top', paddingTop: 12 }]}
+          style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary, marginBottom: 12, height: 200, textAlignVertical: 'top', paddingTop: 12 }]}
           value={content}
           onChangeText={setContent}
           placeholder="Write your blog content..."
@@ -2293,7 +2352,7 @@ export function CreateBlogScreen({ navigation, route }: any) {
         />
         <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Tags (comma separated, optional)</Text>
         <TextInput
-          style={[styles.input, { marginBottom: 20 }]}
+          style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary, marginBottom: 20 }]}
           value={tags}
           onChangeText={setTags}
           placeholder="e.g. astrology, vedic, gemstones"

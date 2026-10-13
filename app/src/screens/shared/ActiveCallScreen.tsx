@@ -110,7 +110,7 @@ export function ActiveCallScreen() {
                     <RemoteVideo track={remoteVideoTrack} style={StyleSheet.absoluteFill} />
                   )}
                   <View style={styles.remoteNameContainer}>
-                    <Text style={styles.remoteVideoName}>{otherName}</Text>
+                    <Text style={styles.remoteVideoName} numberOfLines={2}>{otherName}</Text>
                     {isRemoteMuted && (
                       <Ionicons name="mic-off" size={16} color={colors.danger} style={{ marginLeft: 6 }} />
                     )}
@@ -119,7 +119,7 @@ export function ActiveCallScreen() {
               ) : (
                 <>
                   <Ionicons name="person-circle" size={80} color={colors.textMuted} />
-                  <Text style={styles.remoteName}>{otherName}</Text>
+                  <Text style={styles.remoteName} numberOfLines={2}>{otherName}</Text>
                   {isRemoteVideoMuted && (
                     <Text style={{ color: colors.textMuted, fontSize: 14, marginTop: 8 }}>Camera turned off</Text>
                   )}
@@ -158,7 +158,7 @@ export function ActiveCallScreen() {
             <View style={styles.avatarLarge}>
               <Ionicons name="person" size={64} color={colors.white} />
             </View>
-            <Text style={styles.name}>{otherName}</Text>
+            <Text style={styles.name} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>{otherName}</Text>
             <Text style={styles.status}>
               {callState === 'active'
                 ? (isMuted ? 'You are muted' : isRemoteMuted ? 'Muted' : formatTime(seconds))
@@ -224,15 +224,17 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0A0A0A', justifyContent: 'space-between' },
   audioContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   avatarLarge: { width: 120, height: 120, borderRadius: 60, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center', marginBottom: 24 },
-  name: { fontSize: 24, fontWeight: '700', color: colors.white, marginBottom: 8 },
-  status: { fontSize: 16, color: colors.textMuted },
+  name: { fontSize: 24, fontWeight: '700', color: colors.white, marginBottom: 8, paddingHorizontal: 24, textAlign: 'center' },
+  status: { fontSize: 16, color: '#9CA3AF' },
   videoContainer: { flex: 1, position: 'relative' },
   remoteVideo: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a1a1a' },
-  remoteName: { color: colors.white, fontSize: 18, marginTop: 12 },
+  remoteName: { color: colors.white, fontSize: 18, marginTop: 12, paddingHorizontal: 24, textAlign: 'center' },
   remoteNameContainer: {
     position: 'absolute',
     bottom: 20,
     left: 20,
+    right: 20,
+    maxWidth: '70%',
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -245,8 +247,9 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 16,
     fontWeight: '600',
+    flexShrink: 1,
   },
-  localVideo: { position: 'absolute', top: 50, right: 16, width: 100, height: 140, borderRadius: 12, backgroundColor: colors.surfaceLight, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  localVideo: { position: 'absolute', top: 50, right: 16, width: 100, height: 140, borderRadius: 12, backgroundColor: '#2C2C2E', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
   selfMuteWrapper: { position: 'absolute', top: 12, left: 0, right: 0, alignItems: 'center', zIndex: 20 },
   selfMutePill: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.65)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
   selfMuteText: { color: colors.white, fontSize: 13, fontWeight: '600', marginLeft: 6 },

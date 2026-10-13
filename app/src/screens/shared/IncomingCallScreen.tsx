@@ -60,7 +60,14 @@ export function IncomingCallScreen() {
               <Ionicons name="person" size={64} color={colors.white} />
             </View>
           </Animated.View>
-          <Text style={styles.name}>{incomingCall.callerName || 'Incoming Call'}</Text>
+          <Text
+            style={styles.name}
+            numberOfLines={2}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
+            {incomingCall.callerName || 'Incoming Call'}
+          </Text>
           <Text style={styles.callType}>{incomingCall.type === 'video' ? 'Video Call' : 'Audio Call'}</Text>
         </View>
         <View style={styles.actions}>
@@ -84,8 +91,8 @@ const styles = StyleSheet.create({
   content: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   avatarRing: { width: 120, height: 120, borderRadius: 60, backgroundColor: colors.primary + '40', justifyContent: 'center', alignItems: 'center', marginBottom: 24 },
   avatar: { width: 100, height: 100, borderRadius: 50, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' },
-  name: { fontSize: 28, fontWeight: '700', color: colors.white, marginBottom: 8 },
-  callType: { fontSize: 16, color: colors.textMuted },
+  name: { fontSize: 28, fontWeight: '700', color: colors.white, marginBottom: 8, paddingHorizontal: 24, textAlign: 'center' },
+  callType: { fontSize: 16, color: '#9CA3AF' },
   actions: { flexDirection: 'row', justifyContent: 'center', gap: 60, paddingBottom: 40 },
   rejectButton: { alignItems: 'center' },
   acceptButton: { alignItems: 'center' },

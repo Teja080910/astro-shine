@@ -68,15 +68,36 @@ export function AstrologerGiftScreen() {
             <Text style={[typography.body, { marginBottom: 16, marginTop: 8 }]}>Gifts sent to you by users</Text>
             <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
               <GlassCard style={{ flex: 1, alignItems: 'center', padding: 16 }}>
-                <Text style={{ fontSize: 28, fontWeight: '800', color: colors.accentGold }}>{transactions.length}</Text>
+                <Text
+                  style={{ fontSize: 28, fontWeight: '800', color: colors.accentGold, flexShrink: 1 }}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.6}
+                >
+                  {transactions.length}
+                </Text>
                 <Text style={typography.caption}>Total Gifts</Text>
               </GlassCard>
               <GlassCard style={{ flex: 1, alignItems: 'center', padding: 16 }}>
-                <Text style={{ fontSize: 28, fontWeight: '800', color: colors.warning }}>{pendingCount}</Text>
+                <Text
+                  style={{ fontSize: 28, fontWeight: '800', color: colors.warning, flexShrink: 1 }}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.6}
+                >
+                  {pendingCount}
+                </Text>
                 <Text style={typography.caption}>To Redeem</Text>
               </GlassCard>
               <GlassCard style={{ flex: 1, alignItems: 'center', padding: 16 }}>
-                <Text style={{ fontSize: 28, fontWeight: '800', color: colors.success }}>₹{totalValue}</Text>
+                <Text
+                  style={{ fontSize: 28, fontWeight: '800', color: colors.success, flexShrink: 1 }}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.6}
+                >
+                  ₹{totalValue}
+                </Text>
                 <Text style={typography.caption}>Total Value</Text>
               </GlassCard>
             </View>

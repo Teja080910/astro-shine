@@ -14,6 +14,7 @@ import {
   TextInput,
   TouchableOpacity,
   Pressable,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -43,6 +44,7 @@ import {
   OmIcon,
   Navbar,
   resolveMediaUrl,
+  formatAmount,
 } from "../../shared";
 import { api } from "../../shared/api-client";
 import { config } from "../../config";
@@ -119,12 +121,497 @@ function getAstrologerOnlineStatus(
 }
 
 // User Home Dashboard
+function AstrologerRowCard({
+  item,
+  type = "chat",
+  navigation,
+  isFav,
+  onToggleFav,
+  onAction,
+  bottom,
+  style,
+}: {
+  item: Astrologer;
+  type?: "chat" | "audio" | "video";
+  navigation: any;
+  isFav: boolean;
+  onToggleFav: () => void;
+  onAction?: () => void;
+  bottom?: React.ReactNode;
+  style?: any;
+}) {
+  const { theme } = useAuth();
+  const isDark = theme === "dark";
+  const { astrologerStatuses, onlineUsers } = useChat();
+  const cardBg = isDark ? "#111827" : "#FFFFFF";
+  const cardBorderColor = isDark ? "rgba(245, 158, 11, 0.25)" : "#FDE68A";
+  const isOnline = getAstrologerOnlineStatus(item, astrologerStatuses, onlineUsers);
+  const isVerified = item.verificationStatus === "approved";
+
+  let rate = "0";
+  if (type === "chat") rate = item.chatPricePerMin || item.pricePerMin || "25.00";
+  else if (type === "audio") rate = item.audioCallPricePerMin || item.pricePerMin || "18.00";
+  else if (type === "video") rate = item.videoCallPricePerMin || item.pricePerMin || "50.00";
+
+  const rateNum = parseFloat(rate);
+  const priceVal = isNaN(rateNum) ? "25.00" : rateNum.toFixed(2);
+
+  const absoluteAvatar = item.avatar
+    ? (item.avatar.startsWith("http") || item.avatar.startsWith("data:") ? item.avatar : `${config.apiUrl}${item.avatar}`)
+    : null;
+
+  const rawSkills = (item.skills && item.skills.length > 0 ? item.skills : item.specialization) || [
+    type === "chat" ? "Nadi" : type === "audio" ? "Tarot" : "Nadi",
+    type === "chat" ? "Past Life" : type === "audio" ? "Numerology" : "Past Life",
+    type === "chat" ? "Life Guidance" : type === "audio" ? "Relationship Guidance" : "Life Guidance",
+  ];
+
+  const formattedSkills = rawSkills.map((s: string) => {
+    if (s === "Psychological Astrology") return "Astro-Psych";
+    if (s === "Past Life Regression") return "Past Life";
+    if (s === "Relationship Guidance" || s === "Relationship Advice") return "Relationship";
+    if (s === "Marriage Guidance") return "Marriage";
+    if (s === "Career Guidance") return "Career";
+    if (s === "Personal Growth") return "Growth";
+    if (s === "Nadi Astrology" || s === "Nadi Reading") return "Nadi";
+    if (s === "Love Predictions" || s === "Love Astrology") return "Love";
+    if (s === "Birth Chart Analysis") return "Birth Chart";
+    if (s === "Tarot Reading") return "Tarot";
+    if (s === "Palm Reading") return "Palmistry";
+    if (s === "Vastu Correction") return "Vastu";
+    if (s === "Gemstone Advice") return "Gemstones";
+    if (s === "Business Astrology") return "Business";
+    if (s === "Muhurat Fixing") return "Muhurat";
+    if (s === "Energy Healing") return "Healing";
+    if (s === "Karma Analysis") return "Karma";
+    if (s === "Horary Predictions") return "Horary";
+    if (s === "Stock Market Astrology") return "Stock Market";
+    if (s === "Crystal Therapy") return "Crystals";
+    if (s === "Chakra Balancing") return "Chakra";
+    if (s === "Intuitive Reading") return "Intuitive";
+    return s;
+  });
+
+  const displaySkills: string[] = [];
+  let totalLen = 0;
+  for (const sk of formattedSkills) {
+    if (displaySkills.length >= 3) break;
+    if (displaySkills.length >= 2 && totalLen + sk.length > 20) break;
+    displaySkills.push(sk);
+    totalLen += sk.length;
+  }
+
+  return (
+    <View
+      style={[
+        styles.astroRowCard,
+        { backgroundColor: cardBg, borderColor: cardBorderColor },
+        style,
+      ]}
+    >
+      {/* Top Info Row: Avatar on Left, Details on Right */}
+      <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+        {/* Avatar with Gold Ring & Online Pill */}
+        <TouchableOpacity
+          onPress={() => navigation.navigate("AstrologerDetail", { id: item.userId })}
+          style={styles.astroCardAvatarWrap}
+          activeOpacity={0.8}
+        >
+          <View style={styles.astroAvatarGoldRing}>
+            {absoluteAvatar ? (
+              <Image source={{ uri: absoluteAvatar }} style={styles.astroAvatarImg} />
+            ) : (
+              <View
+                style={[
+                  styles.astroAvatarImg,
+                  {
+                    backgroundColor: isDark ? "#374151" : "#FFF8E7",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  },
+                ]}
+              >
+                <Text
+                  style={{
+                    fontSize: 22,
+                    fontWeight: "800",
+                    color: isDark ? "#FBBF24" : "#7F1D1D",
+                  }}
+                >
+                  {item.name ? item.name.charAt(0).toUpperCase() : "A"}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Online Status Badge */}
+          <View
+            style={[
+              styles.onlinePill,
+              {
+                backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
+                borderColor: isOnline ? "#BBF7D0" : (isDark ? "#374151" : "#E5E7EB"),
+              },
+            ]}
+          >
+            <View
+              style={[
+                styles.onlineDot,
+                { backgroundColor: isOnline ? "#22C55E" : "#9CA3AF" },
+              ]}
+            />
+            <Text
+              style={[
+                styles.onlineText,
+                { color: isOnline ? "#16A34A" : (isDark ? "#9CA3AF" : "#6B7280") },
+              ]}
+            >
+              {isOnline ? "Online" : "Offline"}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* Details Column */}
+        <View style={{ flex: 1, paddingLeft: 12 }}>
+          {/* Name + Verified + Heart */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => navigation.navigate("AstrologerDetail", { id: item.userId })}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 5,
+                flex: 1,
+                minWidth: 0,
+                paddingRight: 6,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 15,
+                  fontWeight: "800",
+                  color: isDark ? "#F9FAFB" : "#111827",
+                  flexShrink: 1,
+                }}
+                numberOfLines={2}
+              >
+                {item.name || "Astrologer"}
+              </Text>
+              {isVerified && (
+                <Ionicons name="checkmark-circle" size={15} color="#3B82F6" />
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={onToggleFav}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons
+                name={isFav ? "heart" : "heart-outline"}
+                size={19}
+                color={isFav ? "#DC2626" : (isDark ? "#9CA3AF" : "#DC2626")}
+              />
+            </TouchableOpacity>
+          </View>
+
+          {/* Subtitle / Specialization */}
+          <Text
+            style={{
+              fontSize: 11,
+              fontWeight: "500",
+              color: isDark ? "#9CA3AF" : "#6B7280",
+              marginTop: 2,
+            }}
+            numberOfLines={2}
+          >
+            {item.specialization?.length
+              ? item.specialization.join(", ")
+              : "Nadi Astrology, Past Life"}
+          </Text>
+
+          {/* Rating Stars + Review Count */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+              marginTop: 4,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
+              {[1, 2, 3, 4, 5].map((star) => {
+                const ratingVal = parseFloat(String(item.rating || "4.5"));
+                return (
+                  <Ionicons
+                    key={star}
+                    name={star <= Math.round(ratingVal) ? "star" : "star-outline"}
+                    size={12}
+                    color="#F59E0B"
+                  />
+                );
+              })}
+            </View>
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: "800",
+                color: isDark ? "#F3F4F6" : "#1F2937",
+              }}
+            >
+              {item.rating ? parseFloat(String(item.rating)).toFixed(1) : "4.5"}
+            </Text>
+            <Text style={{ fontSize: 11, color: isDark ? "#9CA3AF" : "#6B7280" }}>
+              ({item.totalReviews
+                ? (item.totalReviews >= 1000
+                  ? `${(item.totalReviews / 1000).toFixed(1)}K`
+                  : item.totalReviews)
+                : type === "chat" ? "2.3K" : type === "audio" ? "1.8K" : "2.3K"})
+            </Text>
+          </View>
+
+          {/* Experience & Languages */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+              marginTop: 4,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+              <Ionicons
+                name="briefcase-outline"
+                size={11}
+                color={isDark ? "#9CA3AF" : "#6B7280"}
+              />
+              <Text
+                style={{
+                  fontSize: 10,
+                  color: isDark ? "#E5E7EB" : "#4B5563",
+                  fontWeight: "500",
+                }}
+              >
+                {item.experience || 8}+ Years Exp
+              </Text>
+            </View>
+
+            <Text style={{ color: isDark ? "#4B5563" : "#D1D5DB", fontSize: 10 }}>|</Text>
+
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 3,
+                flex: 1,
+                minWidth: 0,
+              }}
+            >
+              <Ionicons
+                name="globe-outline"
+                size={11}
+                color={isDark ? "#9CA3AF" : "#6B7280"}
+              />
+              <Text
+                style={{
+                  fontSize: 10,
+                  color: isDark ? "#E5E7EB" : "#4B5563",
+                  fontWeight: "500",
+                  flexShrink: 1,
+                }}
+                numberOfLines={2}
+              >
+                {item.languages?.length
+                  ? item.languages.slice(0, 2).join(" · ")
+                  : "Hindi · English"}
+              </Text>
+            </View>
+          </View>
+
+          {/* Skill Chips / Tags */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+              marginTop: 6,
+              flexWrap: "nowrap",
+              overflow: "hidden",
+              maxWidth: "100%",
+            }}
+          >
+            {displaySkills.map((skill, sIdx) => (
+              <View
+                key={sIdx}
+                style={{
+                  backgroundColor: isDark ? "rgba(217, 119, 6, 0.15)" : "#FFF7ED",
+                  borderColor: isDark ? "rgba(217, 119, 6, 0.3)" : "#FED7AA",
+                  borderWidth: 1,
+                  borderRadius: 10,
+                  paddingHorizontal: 6,
+                  paddingVertical: 2,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 2.5,
+                  flexShrink: 1,
+                }}
+              >
+                {sIdx === 0 && (
+                  <Ionicons
+                    name="flower-outline"
+                    size={9}
+                    color={isDark ? "#FBBF24" : "#D97706"}
+                  />
+                )}
+                <Text
+                  style={{
+                    fontSize: 8.5,
+                    fontWeight: "600",
+                    color: isDark ? "#FDE68A" : "#7C2D12",
+                  }}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {skill}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
+
+      {bottom ?? (
+        /* Bottom Row: Price, Best Offer Badge, Action Button */
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginTop: 12,
+            paddingTop: 10,
+            borderTopWidth: 1,
+            borderTopColor: isDark ? "rgba(255,255,255,0.08)" : "#FDE68A",
+          }}
+        >
+          {/* Rate */}
+          <View style={{ flexDirection: "row", alignItems: "baseline" }}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "900",
+                color: isDark ? "#F59E0B" : "#7F1D1D",
+              }}
+            >
+              ₹{priceVal}
+            </Text>
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: "600",
+                color: isDark ? "#FBBF24" : "#7F1D1D",
+              }}
+            >
+              /min
+            </Text>
+          </View>
+
+          {/* Best Offer Badge */}
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 3,
+              backgroundColor: isDark ? "#372015" : "#451A03",
+              borderRadius: 12,
+              paddingHorizontal: 7,
+              paddingVertical: 3,
+            }}
+          >
+            <Text style={{ fontSize: 9 }}>👑</Text>
+            <Text
+              style={{
+                color: "#FDE68A",
+                fontSize: 10,
+                fontWeight: "800",
+              }}
+            >
+              Best Offer
+            </Text>
+          </View>
+
+          {/* Vertical Divider */}
+          <View
+            style={{
+              width: 1,
+              height: 18,
+              backgroundColor: isDark ? "#374151" : "#E5E7EB",
+              marginHorizontal: 1,
+            }}
+          />
+
+          {/* Action Button */}
+          <TouchableOpacity
+            onPress={() => onAction?.()}
+            style={{
+              backgroundColor: "#EA580C",
+              borderRadius: 20,
+              paddingHorizontal: 12,
+              paddingVertical: 7,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 4,
+              shadowColor: "#EA580C",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+              elevation: 2,
+            }}
+          >
+            <Ionicons
+              name={
+                type === "chat"
+                  ? "chatbubble-ellipses"
+                  : type === "audio"
+                  ? "call"
+                  : "videocam"
+              }
+              size={13}
+              color="#FFFFFF"
+            />
+            <Text
+              style={{
+                color: "#FFFFFF",
+                fontSize: 12,
+                fontWeight: "800",
+              }}
+            >
+              {type === "chat"
+                ? "Chat Now ›"
+                : type === "audio"
+                ? "Call Now ›"
+                : "Video Call ›"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+}
+
+
 export function UserHomeScreen({ navigation }: any) {
   const { user, theme, setTheme } = useAuth();
   const { conversations, openConversation, astrologerStatuses, onlineUsers, horoscopeVersion, blogVersion, notificationVersion, walletVersion, panchangVersion } = useChat();
   const { initiateCall } = useCall();
   const isFocused = useIsFocused();
   const isDark = theme === "dark";
+  const { width: screenWidth } = useWindowDimensions();
+  const isCompact = screenWidth < 380;
 
   const titleColor = isDark ? "#FBBF24" : "#7F1D1D";
   const iconColor = isDark ? "#F59E0B" : "#7F1D1D";
@@ -417,463 +904,16 @@ export function UserHomeScreen({ navigation }: any) {
     }
   };
 
-  const renderAstroRowCard = (item: Astrologer, type: "chat" | "audio" | "video") => {
-    const isOnline = getAstrologerOnlineStatus(item, astrologerStatuses, onlineUsers);
-    const isVerified = item.verificationStatus === "approved";
-    const isFav = favoriteAstrologers.some((f) => f.userId === item.userId);
-    
-    let rate = "0";
-    if (type === "chat") rate = item.chatPricePerMin || item.pricePerMin || "25.00";
-    else if (type === "audio") rate = item.audioCallPricePerMin || item.pricePerMin || "18.00";
-    else if (type === "video") rate = item.videoCallPricePerMin || item.pricePerMin || "50.00";
-    
-    const rateNum = parseFloat(rate);
-    const priceVal = isNaN(rateNum) ? "25.00" : rateNum.toFixed(2);
-    
-    const absoluteAvatar = item.avatar
-      ? (item.avatar.startsWith("http") || item.avatar.startsWith("data:") ? item.avatar : `${config.apiUrl}${item.avatar}`)
-      : null;
-
-    const rawSkills = (item.skills && item.skills.length > 0 ? item.skills : item.specialization) || [
-      type === "chat" ? "Nadi" : type === "audio" ? "Tarot" : "Nadi",
-      type === "chat" ? "Past Life" : type === "audio" ? "Numerology" : "Past Life",
-      type === "chat" ? "Life Guidance" : type === "audio" ? "Relationship Guidance" : "Life Guidance",
-    ];
-
-    const formattedSkills = rawSkills.map((s: string) => {
-      if (s === "Psychological Astrology") return "Astro-Psych";
-      if (s === "Past Life Regression") return "Past Life";
-      if (s === "Relationship Guidance" || s === "Relationship Advice") return "Relationship";
-      if (s === "Marriage Guidance") return "Marriage";
-      if (s === "Career Guidance") return "Career";
-      if (s === "Personal Growth") return "Growth";
-      if (s === "Nadi Astrology" || s === "Nadi Reading") return "Nadi";
-      if (s === "Love Predictions" || s === "Love Astrology") return "Love";
-      if (s === "Birth Chart Analysis") return "Birth Chart";
-      if (s === "Tarot Reading") return "Tarot";
-      if (s === "Palm Reading") return "Palmistry";
-      if (s === "Vastu Correction") return "Vastu";
-      if (s === "Gemstone Advice") return "Gemstones";
-      if (s === "Business Astrology") return "Business";
-      if (s === "Muhurat Fixing") return "Muhurat";
-      if (s === "Energy Healing") return "Healing";
-      if (s === "Karma Analysis") return "Karma";
-      if (s === "Horary Predictions") return "Horary";
-      if (s === "Stock Market Astrology") return "Stock Market";
-      if (s === "Crystal Therapy") return "Crystals";
-      if (s === "Chakra Balancing") return "Chakra";
-      if (s === "Intuitive Reading") return "Intuitive";
-      return s;
-    });
-
-    const displaySkills: string[] = [];
-    let totalLen = 0;
-    for (const sk of formattedSkills) {
-      if (displaySkills.length >= 3) break;
-      if (displaySkills.length >= 2 && totalLen + sk.length > 20) break;
-      displaySkills.push(sk);
-      totalLen += sk.length;
-    }
-
-    return (
-      <View
-        style={[
-          styles.astroRowCard,
-          {
-            backgroundColor: cardBg,
-            borderColor: cardBorderColor,
-          },
-        ]}
-      >
-        {/* Top Info Row: Avatar on Left, Details on Right */}
-        <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-          {/* Avatar with Gold Ring & Online Pill */}
-          <TouchableOpacity
-            onPress={() => navigation.navigate("AstrologerDetail", { id: item.userId })}
-            style={styles.astroCardAvatarWrap}
-            activeOpacity={0.8}
-          >
-            <View style={styles.astroAvatarGoldRing}>
-              {absoluteAvatar ? (
-                <Image source={{ uri: absoluteAvatar }} style={styles.astroAvatarImg} />
-              ) : (
-                <View
-                  style={[
-                    styles.astroAvatarImg,
-                    {
-                      backgroundColor: isDark ? "#374151" : "#FFF8E7",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    },
-                  ]}
-                >
-                  <Text
-                    style={{
-                      fontSize: 22,
-                      fontWeight: "800",
-                      color: isDark ? "#FBBF24" : "#7F1D1D",
-                    }}
-                  >
-                    {item.name ? item.name.charAt(0).toUpperCase() : "A"}
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            {/* Online Status Badge */}
-            <View
-              style={[
-                styles.onlinePill,
-                {
-                  backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
-                  borderColor: isOnline ? "#BBF7D0" : (isDark ? "#374151" : "#E5E7EB"),
-                },
-              ]}
-            >
-              <View
-                style={[
-                  styles.onlineDot,
-                  { backgroundColor: isOnline ? "#22C55E" : "#9CA3AF" },
-                ]}
-              />
-              <Text
-                style={[
-                  styles.onlineText,
-                  { color: isOnline ? "#16A34A" : (isDark ? "#9CA3AF" : "#6B7280") },
-                ]}
-              >
-                {isOnline ? "Online" : "Offline"}
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          {/* Details Column */}
-          <View style={{ flex: 1, paddingLeft: 12 }}>
-            {/* Name + Verified + Heart */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <TouchableOpacity
-                onPress={() => navigation.navigate("AstrologerDetail", { id: item.userId })}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 5,
-                  flex: 1,
-                  minWidth: 0,
-                  paddingRight: 6,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 15,
-                    fontWeight: "800",
-                    color: isDark ? "#F9FAFB" : "#111827",
-                  }}
-                  numberOfLines={1}
-                >
-                  {item.name || "Astrologer"}
-                </Text>
-                {isVerified && (
-                  <Ionicons name="checkmark-circle" size={15} color="#3B82F6" />
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => handleToggleFavorite(item.userId)}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons
-                  name={isFav ? "heart" : "heart-outline"}
-                  size={19}
-                  color={isFav ? "#DC2626" : (isDark ? "#9CA3AF" : "#DC2626")}
-                />
-              </TouchableOpacity>
-            </View>
-
-            {/* Subtitle / Specialization */}
-            <Text
-              style={{
-                fontSize: 11,
-                fontWeight: "500",
-                color: isDark ? "#9CA3AF" : "#6B7280",
-                marginTop: 2,
-              }}
-              numberOfLines={1}
-            >
-              {item.specialization?.length
-                ? item.specialization.join(", ")
-                : "Nadi Astrology, Past Life"}
-            </Text>
-
-            {/* Rating Stars + Review Count */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 4,
-                marginTop: 4,
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 1 }}>
-                {[1, 2, 3, 4, 5].map((star) => {
-                  const ratingVal = parseFloat(String(item.rating || "4.5"));
-                  return (
-                    <Ionicons
-                      key={star}
-                      name={star <= Math.round(ratingVal) ? "star" : "star-outline"}
-                      size={12}
-                      color="#F59E0B"
-                    />
-                  );
-                })}
-              </View>
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: "800",
-                  color: isDark ? "#F3F4F6" : "#1F2937",
-                }}
-              >
-                {item.rating ? parseFloat(String(item.rating)).toFixed(1) : "4.5"}
-              </Text>
-              <Text style={{ fontSize: 11, color: isDark ? "#9CA3AF" : "#6B7280" }}>
-                ({item.totalReviews
-                  ? (item.totalReviews >= 1000
-                    ? `${(item.totalReviews / 1000).toFixed(1)}K`
-                    : item.totalReviews)
-                  : type === "chat" ? "2.3K" : type === "audio" ? "1.8K" : "2.3K"})
-              </Text>
-            </View>
-
-            {/* Experience & Languages */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 6,
-                marginTop: 4,
-              }}
-            >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-                <Ionicons
-                  name="briefcase-outline"
-                  size={11}
-                  color={isDark ? "#9CA3AF" : "#6B7280"}
-                />
-                <Text
-                  style={{
-                    fontSize: 10,
-                    color: isDark ? "#E5E7EB" : "#4B5563",
-                    fontWeight: "500",
-                  }}
-                >
-                  {item.experience || 8}+ Years Exp
-                </Text>
-              </View>
-
-              <Text style={{ color: isDark ? "#4B5563" : "#D1D5DB", fontSize: 10 }}>|</Text>
-
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 3,
-                  flex: 1,
-                  minWidth: 0,
-                }}
-              >
-                <Ionicons
-                  name="globe-outline"
-                  size={11}
-                  color={isDark ? "#9CA3AF" : "#6B7280"}
-                />
-                <Text
-                  style={{
-                    fontSize: 10,
-                    color: isDark ? "#E5E7EB" : "#4B5563",
-                    fontWeight: "500",
-                  }}
-                  numberOfLines={1}
-                >
-                  {item.languages?.length
-                    ? item.languages.slice(0, 2).join(" · ")
-                    : "Hindi · English"}
-                </Text>
-              </View>
-            </View>
-
-            {/* Skill Chips / Tags */}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 4,
-                marginTop: 6,
-                flexWrap: "nowrap",
-                overflow: "hidden",
-                maxWidth: "100%",
-              }}
-            >
-              {displaySkills.map((skill, sIdx) => (
-                <View
-                  key={sIdx}
-                  style={{
-                    backgroundColor: isDark ? "rgba(217, 119, 6, 0.15)" : "#FFF7ED",
-                    borderColor: isDark ? "rgba(217, 119, 6, 0.3)" : "#FED7AA",
-                    borderWidth: 1,
-                    borderRadius: 10,
-                    paddingHorizontal: 6,
-                    paddingVertical: 2,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 2.5,
-                    flexShrink: 1,
-                  }}
-                >
-                  {sIdx === 0 && (
-                    <Ionicons
-                      name="flower-outline"
-                      size={9}
-                      color={isDark ? "#FBBF24" : "#D97706"}
-                    />
-                  )}
-                  <Text
-                    style={{
-                      fontSize: 8.5,
-                      fontWeight: "600",
-                      color: isDark ? "#FDE68A" : "#7C2D12",
-                    }}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {skill}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        </View>
-
-        {/* Bottom Row: Price, Best Offer Badge, Action Button */}
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginTop: 12,
-            paddingTop: 10,
-            borderTopWidth: 1,
-            borderTopColor: isDark ? "rgba(255,255,255,0.08)" : "#FDE68A",
-          }}
-        >
-          {/* Rate */}
-          <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "900",
-                color: isDark ? "#F59E0B" : "#7F1D1D",
-              }}
-            >
-              ₹{priceVal}
-            </Text>
-            <Text
-              style={{
-                fontSize: 11,
-                fontWeight: "600",
-                color: isDark ? "#FBBF24" : "#7F1D1D",
-              }}
-            >
-              /min
-            </Text>
-          </View>
-
-          {/* Best Offer Badge */}
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 3,
-              backgroundColor: isDark ? "#372015" : "#451A03",
-              borderRadius: 12,
-              paddingHorizontal: 7,
-              paddingVertical: 3,
-            }}
-          >
-            <Text style={{ fontSize: 9 }}>👑</Text>
-            <Text
-              style={{
-                color: "#FDE68A",
-                fontSize: 10,
-                fontWeight: "800",
-              }}
-            >
-              Best Offer
-            </Text>
-          </View>
-
-          {/* Vertical Divider */}
-          <View
-            style={{
-              width: 1,
-              height: 18,
-              backgroundColor: isDark ? "#374151" : "#E5E7EB",
-              marginHorizontal: 1,
-            }}
-          />
-
-          {/* Action Button */}
-          <TouchableOpacity
-            onPress={() => handleAstroAction(item, type)}
-            style={{
-              backgroundColor: "#EA580C",
-              borderRadius: 20,
-              paddingHorizontal: 12,
-              paddingVertical: 7,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 4,
-              shadowColor: "#EA580C",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.25,
-              shadowRadius: 4,
-              elevation: 2,
-            }}
-          >
-            <Ionicons
-              name={
-                type === "chat"
-                  ? "chatbubble-ellipses"
-                  : type === "audio"
-                  ? "call"
-                  : "videocam"
-              }
-              size={13}
-              color="#FFFFFF"
-            />
-            <Text
-              style={{
-                color: "#FFFFFF",
-                fontSize: 12,
-                fontWeight: "800",
-              }}
-            >
-              {type === "chat"
-                ? "Chat Now ›"
-                : type === "audio"
-                ? "Call Now ›"
-                : "Video Call ›"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  };
+  const renderAstroRowCard = (item: Astrologer, type: "chat" | "audio" | "video") => (
+    <AstrologerRowCard
+      item={item}
+      type={type}
+      navigation={navigation}
+      isFav={favoriteAstrologers.some((f) => f.userId === item.userId)}
+      onToggleFav={() => handleToggleFavorite(item.userId)}
+      onAction={() => handleAstroAction(item, type)}
+    />
+  );
 
   if (loading)
     return (
@@ -909,23 +949,35 @@ export function UserHomeScreen({ navigation }: any) {
             <Ionicons name="menu-outline" size={28} color={iconColor} />
           </TouchableOpacity>
 
-          <View style={{ alignItems: "center", flex: 1 }}>
+          <View
+            style={{
+              alignItems: "center",
+              flex: 1,
+              flexShrink: 1,
+              minWidth: 0,
+              paddingHorizontal: 4,
+            }}
+          >
             <View
               style={{
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 6,
+                maxWidth: "100%",
               }}
             >
               <OmIcon isDark={isDark} />
               <Text
                 style={{
-                  fontSize: 20,
+                  fontSize: isCompact ? 16 : 20,
                   fontWeight: "900",
                   color: isDark ? "#FBBF24" : "#8B1E1E",
                   letterSpacing: 0.5,
+                  flexShrink: 1,
                 }}
+                numberOfLines={1}
+                ellipsizeMode="tail"
               >
                 ASTROSHINE
               </Text>
@@ -939,12 +991,22 @@ export function UserHomeScreen({ navigation }: any) {
                 marginTop: 1,
                 textAlign: "center",
               }}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
             >
               YOUR DESTINY, OUR GUIDANCE
             </Text>
           </View>
 
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+              flexShrink: 0,
+            }}
+          >
             <TouchableOpacity
               onPress={() => setTheme(isDark ? "light" : "dark")}
               style={{ padding: 4 }}
@@ -996,7 +1058,7 @@ export function UserHomeScreen({ navigation }: any) {
               paddingHorizontal: 14,
               paddingTop: 10,
               paddingBottom: 10,
-              minHeight: 128,
+              minHeight: isCompact ? 118 : 128,
               shadowColor: "#D97706",
               shadowOffset: { width: 0, height: 3 },
               shadowOpacity: isDark ? 0 : 0.08,
@@ -1013,7 +1075,9 @@ export function UserHomeScreen({ navigation }: any) {
           <View
             style={{
               flex: 1,
-              maxWidth: "58%",
+              flexShrink: 1,
+              minWidth: 0,
+              maxWidth: isCompact ? "52%" : "58%",
               justifyContent: "space-between",
               zIndex: 5,
             }}
@@ -1029,15 +1093,18 @@ export function UserHomeScreen({ navigation }: any) {
                 Namaste, 👋
               </Text>
               <Text
+                numberOfLines={2}
+                adjustsFontSizeToFit
+                minimumFontScale={0.65}
+                ellipsizeMode="tail"
                 style={{
-                  fontSize: 17,
+                  fontSize: isCompact ? 15 : 17,
                   fontWeight: "800",
                   color: isDark ? "#F9FAFB" : "#7F1D1D",
                   marginTop: 1,
                   marginBottom: 6,
+                  flexShrink: 1,
                 }}
-                numberOfLines={1}
-                adjustsFontSizeToFit
               >
                 {user?.name || "Khushboo Sharma"}
               </Text>
@@ -1047,12 +1114,22 @@ export function UserHomeScreen({ navigation }: any) {
             <View
               style={{
                 flexDirection: "row",
+                flexWrap: "wrap",
                 alignItems: "center",
-                gap: 7,
+                gap: isCompact ? 5 : 7,
+                rowGap: 4,
                 marginBottom: 6,
               }}
             >
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 4,
+                  flexShrink: 1,
+                  minWidth: 0,
+                }}
+              >
                 <Ionicons
                   name="wallet"
                   size={15}
@@ -1060,12 +1137,15 @@ export function UserHomeScreen({ navigation }: any) {
                 />
                 <Text
                   style={{
-                    fontSize: 14,
+                    fontSize: isCompact ? 12.5 : 14,
                     color: "#DC2626",
                     fontWeight: "800",
+                    flexShrink: 1,
                   }}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
                 >
-                  ₹{wallet?.balance || "1131.00"}
+                  ₹{formatAmount(wallet?.balance)}
                 </Text>
               </View>
               <TouchableOpacity
@@ -1073,8 +1153,9 @@ export function UserHomeScreen({ navigation }: any) {
                 style={{
                   backgroundColor: "#EA580C",
                   borderRadius: 14,
-                  paddingHorizontal: 10,
+                  paddingHorizontal: isCompact ? 8 : 10,
                   paddingVertical: 3.5,
+                  flexShrink: 0,
                   shadowColor: "#EA580C",
                   shadowOffset: { width: 0, height: 1 },
                   shadowOpacity: 0.2,
@@ -1085,9 +1166,10 @@ export function UserHomeScreen({ navigation }: any) {
                 <Text
                   style={{
                     color: "#FFF",
-                    fontSize: 10.5,
+                    fontSize: isCompact ? 9.5 : 10.5,
                     fontWeight: "700",
                   }}
+                  numberOfLines={1}
                 >
                   + Add Money
                 </Text>
@@ -1108,15 +1190,17 @@ export function UserHomeScreen({ navigation }: any) {
                 size={12}
                 color="#EA580C"
               />
-              <Text
-                style={{
-                  fontSize: 10.5,
-                  color: isDark ? "#D1D5DB" : "#4B5563",
-                  fontWeight: "500",
-                }}
-              >
-                {formatDate(new Date())}
-              </Text>
+                <Text
+                  style={{
+                    fontSize: 10.5,
+                    color: isDark ? "#D1D5DB" : "#4B5563",
+                    fontWeight: "500",
+                    flexShrink: 1,
+                  }}
+                  numberOfLines={2}
+                >
+                  {formatDate(new Date())}
+                </Text>
             </View>
 
             {/* Location Row */}
@@ -1132,17 +1216,19 @@ export function UserHomeScreen({ navigation }: any) {
                 size={12}
                 color="#EA580C"
               />
-              <Text
-                style={{
-                  fontSize: 10.5,
-                  color: isDark ? "#D1D5DB" : "#4B5563",
-                  fontWeight: "500",
-                }}
-              >
-                {location
-                  ? `${location.city}, ${location.region}`
-                  : "Jaipur, Rajasthan"}
-              </Text>
+                <Text
+                  style={{
+                    fontSize: 10.5,
+                    color: isDark ? "#D1D5DB" : "#4B5563",
+                    fontWeight: "500",
+                    flexShrink: 1,
+                  }}
+                  numberOfLines={2}
+                >
+                  {location
+                    ? `${location.city}, ${location.region}`
+                    : "Jaipur, Rajasthan"}
+                </Text>
             </View>
           </View>
 
@@ -1179,6 +1265,7 @@ export function UserHomeScreen({ navigation }: any) {
                     color: isDark ? "#F9FAFB" : "#7F1D1D",
                     lineHeight: 14,
                   }}
+                  numberOfLines={1}
                 >
                   {weather?.temp || (weatherLoading ? "--" : "28°C")}
                 </Text>
@@ -1189,6 +1276,7 @@ export function UserHomeScreen({ navigation }: any) {
                     fontWeight: "500",
                     lineHeight: 11,
                   }}
+                  numberOfLines={1}
                 >
                   {weather?.condition || (weatherLoading ? "--" : "Sunny")}
                 </Text>
@@ -1202,8 +1290,8 @@ export function UserHomeScreen({ navigation }: any) {
                 position: "absolute",
                 right: -4,
                 bottom: -6,
-                width: 155,
-                height: 125,
+                width: Math.min(155, screenWidth * 0.42),
+                height: Math.min(125, screenWidth * 0.34),
               }}
               resizeMode="contain"
             />
@@ -1334,7 +1422,7 @@ export function UserHomeScreen({ navigation }: any) {
               />
             </View>
 
-            <View style={{ flex: 1, minWidth: 140 }}>
+            <View style={{ flex: 1, flexShrink: 1, minWidth: 0 }}>
               <Text
                 style={{
                   fontSize: 15,
@@ -1362,7 +1450,9 @@ export function UserHomeScreen({ navigation }: any) {
                     fontSize: 11.5,
                     fontWeight: "600",
                     color: isDark ? "#F59E0B" : "#EA580C",
+                    flexShrink: 1,
                   }}
+                  numberOfLines={2}
                 >
                   ({ZODIAC_SIGNS.find((z) => z.sign === selectedSign)?.range || "Mar 21 – Apr 19"})
                 </Text>
@@ -1398,7 +1488,7 @@ export function UserHomeScreen({ navigation }: any) {
                 backgroundColor: "#DC2626",
                 alignItems: "center",
                 justifyContent: "center",
-                marginLeft: 4,
+                flexShrink: 0,
               }}
             >
               <Ionicons name="chevron-forward" size={18} color="#FFFFFF" />
@@ -1407,17 +1497,23 @@ export function UserHomeScreen({ navigation }: any) {
 
           {/* Sub-tabs Row (Directly below preview, NO lucky stats) */}
           <View
-            style={[
-              styles.subTabsRow,
-              {
-                borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A",
-                justifyContent: "space-between",
-                paddingHorizontal: 0,
-                paddingTop: 12,
-                marginTop: 12,
-              },
-            ]}
+            style={{
+              borderTopWidth: 1,
+              borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A",
+              paddingTop: 12,
+              marginTop: 12,
+            }}
           >
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                paddingRight: 2,
+              }}
+            >
             <TouchableOpacity
               onPress={() => setActiveHoroscopeTab("love")}
               style={[
@@ -1565,6 +1661,7 @@ export function UserHomeScreen({ navigation }: any) {
                 Health
               </Text>
             </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
 
@@ -2184,7 +2281,7 @@ export function UserHomeScreen({ navigation }: any) {
                         uri={item.avatar}
                         name={item.name}
                       />
-                      <Text style={typography.cardTitle} numberOfLines={1}>
+                      <Text style={typography.cardTitle} numberOfLines={2}>
                         {item.name}
                       </Text>
                       <StarRating
@@ -2243,7 +2340,7 @@ export function UserHomeScreen({ navigation }: any) {
                     uri={item.avatar}
                     name={item.name}
                   />
-                  <Text style={typography.cardTitle} numberOfLines={1}>
+                  <Text style={typography.cardTitle} numberOfLines={2}>
                     {item.name}
                   </Text>
                   <StarRating
@@ -2314,7 +2411,7 @@ export function UserHomeScreen({ navigation }: any) {
                     uri={item.avatar}
                     name={item.name}
                   />
-                  <Text style={typography.cardTitle} numberOfLines={1}>
+                  <Text style={typography.cardTitle} numberOfLines={2}>
                     {item.name}
                   </Text>
                   <StarRating
@@ -2385,7 +2482,7 @@ export function UserHomeScreen({ navigation }: any) {
                         color={colors.accentGold}
                       />
                     </View>
-                    <Text style={typography.cardTitle} numberOfLines={1}>
+                    <Text style={typography.cardTitle} numberOfLines={2}>
                       {item.name}
                     </Text>
                     {item.description && (
@@ -2457,7 +2554,7 @@ export function UserHomeScreen({ navigation }: any) {
                       </View>
                     </View>
                     <View style={{ padding: 10 }}>
-                      <Text style={typography.cardTitle} numberOfLines={1}>
+                      <Text style={typography.cardTitle} numberOfLines={2}>
                         {item.title}
                       </Text>
                       {item.category && (
@@ -2702,6 +2799,8 @@ export function AstrologerListScreen({ route, navigation }: any) {
   const { openConversation, astrologerStatuses, onlineUsers } = useChat();
   const { initiateCall } = useCall();
   const isFocused = useIsFocused();
+  const { width: windowWidth } = useWindowDimensions();
+  const cardWidth = Math.min(Math.max(240, windowWidth - 32), 600);
   const [data, setData] = useState<Astrologer[]>([]);
   const [search, setSearch] = useState("");
   const [selectedCat, setSelectedCat] = useState("All");
@@ -2729,10 +2828,29 @@ export function AstrologerListScreen({ route, navigation }: any) {
 
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   useEffect(() => {
-    if (isFocused && onlyFavorites) {
-      api.favorites.list().then((favs: any[]) => setFavoriteIds(favs.map((f: any) => f.userId))).catch(() => {});
+    if (isFocused) {
+      api.favorites.list()
+        .then((favs: any[]) => setFavoriteIds(favs.map((f: any) => f.userId)))
+        .catch(() => {});
     }
-  }, [isFocused, onlyFavorites]);
+  }, [isFocused]);
+
+  const handleToggleFavorite = async (astrologerId: string) => {
+    try {
+      const res = await api.favorites.toggle(astrologerId);
+      setFavoriteIds((prev) =>
+        res.isFavorite
+          ? (prev.includes(astrologerId) ? prev : [...prev, astrologerId])
+          : prev.filter((id) => id !== astrologerId)
+      );
+    } catch {
+      setFavoriteIds((prev) =>
+        prev.includes(astrologerId)
+          ? prev.filter((id) => id !== astrologerId)
+          : [...prev, astrologerId]
+      );
+    }
+  };
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -2826,44 +2944,17 @@ export function AstrologerListScreen({ route, navigation }: any) {
         renderItem={({ item }) => {
           const isOnline = getAstrologerOnlineStatus(item, astrologerStatuses, onlineUsers);
           const isVerified = item.verificationStatus === "approved";
+          const listType: "chat" | "audio" | "video" = onlyAudio ? "audio" : onlyVideo ? "video" : "chat";
           return (
-            <TouchableOpacity
-              onPress={() =>
-                navigation.navigate("AstrologerDetail", { id: item.userId })
-              }
-              style={{ marginBottom: 12 }}
-            >
-              <GlassCard>
-                <View style={styles.row}>
-                  <Avatar size={56} online={isOnline} uri={item.avatar} name={item.name} />
-                  <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={typography.cardTitle} numberOfLines={1}>
-                      {item.name}
-                    </Text>
-                    <StarRating
-                      rating={
-                        typeof item.rating === "string"
-                          ? parseFloat(item.rating)
-                          : item.rating
-                      }
-                      size={12}
-                    />
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        flexWrap: "wrap",
-                        marginTop: 4,
-                        gap: 4,
-                      }}
-                    >
-                      {item.specialization?.slice(0, 2).map((s) => (
-                        <Chip key={s} label={s} />
-                      ))}
-                    </View>
-                  </View>
-                </View>
-
-                {/* Quick Action Buttons Row */}
+            <View style={{ marginBottom: 12, width: cardWidth, alignSelf: "center" }}>
+              <AstrologerRowCard
+                item={item}
+                type={listType}
+                navigation={navigation}
+                isFav={favoriteIds.includes(item.userId)}
+                onToggleFav={() => handleToggleFavorite(item.userId)}
+                style={{ width: cardWidth, marginRight: 0 }}
+                bottom={
                 <View
                   style={{
                     flexDirection: "row",
@@ -2908,7 +2999,10 @@ export function AstrologerListScreen({ route, navigation }: any) {
                   >
                     <Ionicons name="chatbubbles" size={14} color={item.isChatEnabled === false ? colors.textMuted : "#FFF"} />
                     <Text
-                      style={{ color: item.isChatEnabled === false ? colors.textMuted : "#FFF", fontSize: 11, fontWeight: "700" }}
+                      style={{ color: item.isChatEnabled === false ? colors.textMuted : "#FFF", fontSize: 11, fontWeight: "700", flexShrink: 1 }}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.7}
                     >
                       {item.isChatEnabled === false
                         ? "Chat N/A"
@@ -2957,7 +3051,10 @@ export function AstrologerListScreen({ route, navigation }: any) {
                   >
                     <Ionicons name="call" size={14} color={item.isAudioCallEnabled === false ? colors.textMuted : "#FFF"} />
                     <Text
-                      style={{ color: item.isAudioCallEnabled === false ? colors.textMuted : "#FFF", fontSize: 11, fontWeight: "700" }}
+                      style={{ color: item.isAudioCallEnabled === false ? colors.textMuted : "#FFF", fontSize: 11, fontWeight: "700", flexShrink: 1 }}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.7}
                     >
                       {item.isAudioCallEnabled === false
                         ? "Call N/A"
@@ -3006,7 +3103,10 @@ export function AstrologerListScreen({ route, navigation }: any) {
                   >
                     <Ionicons name="videocam" size={14} color={item.isVideoCallEnabled === false ? colors.textMuted : "#FFF"} />
                     <Text
-                      style={{ color: item.isVideoCallEnabled === false ? colors.textMuted : "#FFF", fontSize: 11, fontWeight: "700" }}
+                      style={{ color: item.isVideoCallEnabled === false ? colors.textMuted : "#FFF", fontSize: 11, fontWeight: "700", flexShrink: 1 }}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.7}
                     >
                       {item.isVideoCallEnabled === false
                         ? "Video N/A"
@@ -3014,8 +3114,9 @@ export function AstrologerListScreen({ route, navigation }: any) {
                     </Text>
                   </TouchableOpacity>
                 </View>
-               </GlassCard>
-            </TouchableOpacity>
+                }
+              />
+            </View>
           );
         }}
       />
@@ -4105,7 +4206,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
                         <Ionicons name="gift" size={24} color={colors.accentGold} />
                       )}
                     </View>
-                    <Text style={{ fontSize: 12, color: isDark ? '#9CA3AF' : '#64748B', fontWeight: '500', textAlign: 'center' }} numberOfLines={1}>{item.name}</Text>
+                    <Text style={{ fontSize: 12, color: isDark ? '#9CA3AF' : '#64748B', fontWeight: '500', textAlign: 'center' }} numberOfLines={2}>{item.name}</Text>
                     <Text style={{ fontSize: 13, fontWeight: '800', color: isDark ? '#FFF' : '#0F172A' }}>₹{item.price}</Text>
                   </TouchableOpacity>
                 );
@@ -4228,7 +4329,7 @@ export function WalletScreen() {
       <View style={{ width: "100%", maxWidth: 600, alignSelf: "center", padding: 16 }}>
         <GlassCard style={styles.balanceCard}>
         <Text style={typography.caption}>Available Balance</Text>
-        <Text style={styles.balance}>₹{wallet?.balance || "0"}</Text>
+        <Text style={styles.balance}>₹{formatAmount(wallet?.balance)}</Text>
         <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}>
           <View style={{ flex: 1 }}>
             <GradientButton
@@ -4419,7 +4520,7 @@ export function WalletScreen() {
                 style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
               >
                 <View style={{ flex: 1, marginRight: 12 }}>
-                  <Text style={typography.cardTitle} numberOfLines={1}>
+                  <Text style={typography.cardTitle} numberOfLines={2}>
                     {title}
                   </Text>
                   <Text style={typography.caption}>
@@ -5397,7 +5498,7 @@ export function ShopScreen({ navigation }: any) {
                   />
                 )}
               </View>
-              <Text style={typography.cardTitle} numberOfLines={1}>
+              <Text style={typography.cardTitle} numberOfLines={2}>
                 {item.name}
               </Text>
               <Text style={typography.price}>₹{item.price}</Text>
@@ -5846,7 +5947,12 @@ export function ProfileScreen({ navigation }: any) {
             </View>
           </View>
 
-          <Text style={[styles.profileName, { color: textPrimaryColor }]}>
+          <Text
+            style={[styles.profileName, { color: textPrimaryColor }]}
+            numberOfLines={2}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
             {user?.name || "User Profile"}
           </Text>
 
@@ -5857,7 +5963,7 @@ export function ProfileScreen({ navigation }: any) {
             ]}
           >
             <Ionicons name="mail" size={13} color={goldTextColor} />
-            <Text style={[styles.emailPillText, { color: goldTextColor }]}>
+            <Text style={[styles.emailPillText, { color: goldTextColor }]} numberOfLines={2}>
               {user?.email || "user@astroshine.com"}
             </Text>
           </View>
@@ -5874,7 +5980,7 @@ export function ProfileScreen({ navigation }: any) {
               style={styles.profileStatCol}
             >
               <Text style={[styles.profileStatVal, { color: goldTextColor }]}>
-                ₹{wallet?.balance || "0"}
+                ₹{formatAmount(wallet?.balance)}
               </Text>
               <Text style={[styles.profileStatLab, { color: mutedTextColor }]}>
                 Wallet
@@ -5931,27 +6037,52 @@ export function ProfileScreen({ navigation }: any) {
             <View style={[styles.menuRowItem, styles.menuRowBorder, { borderBottomColor: rowBorderColor }]}>
               <Ionicons name="person-outline" size={18} color={goldTextColor} style={{ marginRight: 10 }} />
               <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Name</Text>
-              <Text style={{ color: user?.name ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: user?.name ? "600" : "400" }}>{user?.name || "Not set"}</Text>
+              <Text
+                style={{ color: user?.name ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: user?.name ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
+                numberOfLines={2}
+              >
+                {user?.name || "Not set"}
+              </Text>
             </View>
             <View style={[styles.menuRowItem, styles.menuRowBorder, { borderBottomColor: rowBorderColor }]}>
               <Ionicons name="mail-outline" size={18} color={goldTextColor} style={{ marginRight: 10 }} />
               <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Email</Text>
-              <Text style={{ color: user?.email ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: user?.email ? "600" : "400" }}>{user?.email || "Not set"}</Text>
+              <Text
+                style={{ color: user?.email ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: user?.email ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
+                numberOfLines={2}
+              >
+                {user?.email || "Not set"}
+              </Text>
             </View>
             <View style={[styles.menuRowItem, styles.menuRowBorder, { borderBottomColor: rowBorderColor }]}>
               <Ionicons name="call-outline" size={18} color={goldTextColor} style={{ marginRight: 10 }} />
               <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Phone</Text>
-              <Text style={{ color: user?.phone ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: user?.phone ? "600" : "400" }}>{user?.phone || "Not set"}</Text>
+              <Text
+                style={{ color: user?.phone ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: user?.phone ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
+                numberOfLines={2}
+              >
+                {user?.phone || "Not set"}
+              </Text>
             </View>
             <View style={[styles.menuRowItem, styles.menuRowBorder, { borderBottomColor: rowBorderColor }]}>
               <Ionicons name="male-female-outline" size={18} color={goldTextColor} style={{ marginRight: 10 }} />
               <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Gender</Text>
-              <Text style={{ color: (user as any)?.gender ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: (user as any)?.gender ? "600" : "400" }}>{(user as any)?.gender ? String((user as any).gender).charAt(0).toUpperCase() + String((user as any).gender).slice(1) : "Not set"}</Text>
+              <Text
+                style={{ color: (user as any)?.gender ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: (user as any)?.gender ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
+                numberOfLines={2}
+              >
+                {(user as any)?.gender ? String((user as any).gender).charAt(0).toUpperCase() + String((user as any).gender).slice(1) : "Not set"}
+              </Text>
             </View>
             <View style={styles.menuRowItem}>
               <Ionicons name="calendar-outline" size={18} color={goldTextColor} style={{ marginRight: 10 }} />
               <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Date of Birth</Text>
-              <Text style={{ color: (user as any)?.dateOfBirth ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: (user as any)?.dateOfBirth ? "600" : "400" }}>{formatDisplayDate((user as any)?.dateOfBirth)}</Text>
+              <Text
+                style={{ color: (user as any)?.dateOfBirth ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: (user as any)?.dateOfBirth ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
+                numberOfLines={2}
+              >
+                {formatDisplayDate((user as any)?.dateOfBirth)}
+              </Text>
             </View>
           </View>
 
@@ -6624,6 +6755,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: colors.textPrimary,
     marginTop: 10,
+    textAlign: "center",
   },
   emailPill: {
     flexDirection: "row",
@@ -6635,11 +6767,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.cardBorder,
     marginTop: 6,
+    maxWidth: "92%",
   },
   emailPillText: {
     fontSize: 12,
     fontWeight: "600",
     color: colors.primaryLight,
+    flexShrink: 1,
   },
   profileStatsRow: {
     flexDirection: "row",
@@ -6733,6 +6867,7 @@ const styles = StyleSheet.create({
   },
   astroRowCard: {
     width: 338,
+    maxWidth: "100%",
     marginRight: 14,
     borderRadius: 22,
     borderWidth: 1,

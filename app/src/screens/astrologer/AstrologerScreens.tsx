@@ -11,6 +11,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useAuth } from "../../context/AuthContext";
@@ -32,6 +33,7 @@ import {
   typography,
   OmIcon,
   Navbar,
+  formatAmount,
 } from "../../shared";
 import { api } from "../../shared/api-client";
 import { resolveNotificationTarget } from "../../shared/notification-router";
@@ -51,6 +53,8 @@ export function AstrologerHomeScreen({ navigation }: any) {
   const { astrologerStatuses, onlineUsers, statsVersion, blogVersion, notificationVersion } = useChat();
   const isFocused = useIsFocused();
   const isDark = theme === "dark";
+  const { width: screenWidth } = useWindowDimensions();
+  const isCompact = screenWidth < 380;
   const [isOnline, setIsOnline] = useState(
     astrologer?.onlineStatus === "online",
   );
@@ -179,10 +183,10 @@ export function AstrologerHomeScreen({ navigation }: any) {
         .filter((t) => t.type === "credit")
         .reduce((s, t) => s + Number(t.amount), 0);
       setStats({
-        todayEarnings: `₹${todayEarn}`,
+        todayEarnings: `₹${formatAmount(todayEarn)}`,
         totalCalls: String(astro.totalCalls || "0"),
         rating: astro.rating || "0",
-        totalEarnings: `₹${astro.totalEarnings || "0"}`,
+        totalEarnings: `₹${formatAmount(astro.totalEarnings)}`,
       });
       setIsChatEnabled(astro.isChatEnabled ?? true);
       setIsAudioCallEnabled(astro.isAudioCallEnabled ?? true);
@@ -319,23 +323,35 @@ export function AstrologerHomeScreen({ navigation }: any) {
               <Ionicons name="menu-outline" size={28} color={iconColor} />
             </TouchableOpacity>
 
-            <View style={{ alignItems: "center", flex: 1 }}>
+            <View
+              style={{
+                alignItems: "center",
+                flex: 1,
+                flexShrink: 1,
+                minWidth: 0,
+                paddingHorizontal: 4,
+              }}
+            >
               <View
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 6,
+                  maxWidth: "100%",
                 }}
               >
                 <OmIcon isDark={isDark} />
                 <Text
                   style={{
-                    fontSize: 20,
+                    fontSize: isCompact ? 16 : 20,
                     fontWeight: "900",
                     color: isDark ? "#FBBF24" : "#D97706",
                     letterSpacing: 0.5,
+                    flexShrink: 1,
                   }}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
                 >
                   ASTROSHINE
                 </Text>
@@ -349,13 +365,21 @@ export function AstrologerHomeScreen({ navigation }: any) {
                   marginTop: 1,
                   textAlign: "center",
                 }}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
               >
                 YOUR DESTINY, OUR GUIDANCE
               </Text>
             </View>
 
             <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+                flexShrink: 0,
+              }}
             >
               <TouchableOpacity
                 onPress={() => setTheme(isDark ? "light" : "dark")}
@@ -397,7 +421,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
               },
             ]}
           >
-            <View style={{ flex: 1 }}>
+            <View style={{ flex: 1, flexShrink: 1, minWidth: 0 }}>
               <Text
                 style={{
                   fontSize: 13,
@@ -409,13 +433,16 @@ export function AstrologerHomeScreen({ navigation }: any) {
               </Text>
               <Text
                 style={{
-                  fontSize: 18,
+                  fontSize: isCompact ? 16 : 18,
                   fontWeight: "800",
                   color: titleColor,
                   marginVertical: 2,
+                  flexShrink: 1,
                 }}
-                numberOfLines={1}
+                numberOfLines={2}
                 adjustsFontSizeToFit
+                minimumFontScale={0.65}
+                ellipsizeMode="tail"
               >
                 {astrologer?.name || "Astrologer"}
               </Text>
@@ -439,9 +466,11 @@ export function AstrologerHomeScreen({ navigation }: any) {
                     fontSize: 11,
                     color: goldTextColor,
                     fontWeight: "700",
+                    flexShrink: 1,
                   }}
+                  numberOfLines={1}
                 >
-                  {stats.totalEarnings || "₹0"}
+                  ₹{formatAmount(String(stats.totalEarnings ?? "").replace(/[^0-9.]/g, ""))}
                 </Text>
               </TouchableOpacity>
               <View
@@ -462,7 +491,9 @@ export function AstrologerHomeScreen({ navigation }: any) {
                     fontSize: 11,
                     color: bodyTextColor,
                     fontWeight: "500",
+                    flexShrink: 1,
                   }}
+                  numberOfLines={2}
                 >
                   {formatDate(new Date())}
                 </Text>
@@ -485,7 +516,9 @@ export function AstrologerHomeScreen({ navigation }: any) {
                     fontSize: 11,
                     color: bodyTextColor,
                     fontWeight: "500",
+                    flexShrink: 1,
                   }}
+                  numberOfLines={2}
                 >
                   {location
                     ? `${location.city}, ${location.region}`
@@ -496,14 +529,17 @@ export function AstrologerHomeScreen({ navigation }: any) {
 
             <View
               style={{
-                width: 85,
+                width: isCompact ? 64 : 85,
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
               <Image
                 source={require("../../../assets/ganesha_header.png")}
-                style={{ width: 85, height: 95 }}
+                style={{
+                  width: isCompact ? 64 : 85,
+                  height: isCompact ? 72 : 95,
+                }}
                 resizeMode="contain"
               />
             </View>
@@ -527,10 +563,14 @@ export function AstrologerHomeScreen({ navigation }: any) {
                       fontWeight: "800",
                       color: titleColor,
                     }}
+                    numberOfLines={1}
                   >
                     {weather?.temp || (weatherLoading ? "--" : "28°C")}
                   </Text>
-                  <Text style={{ fontSize: 11, color: mutedTextColor }}>
+                  <Text
+                    style={{ fontSize: 11, color: mutedTextColor }}
+                    numberOfLines={1}
+                  >
                     {weather?.condition || (weatherLoading ? "--" : "Sunny")}
                   </Text>
                 </View>
@@ -557,7 +597,9 @@ export function AstrologerHomeScreen({ navigation }: any) {
                     fontSize: 10,
                     fontWeight: "700",
                     color: goldTextColor,
+                    flexShrink: 1,
                   }}
+                  numberOfLines={1}
                 >
                   {greeting.text}
                 </Text>
@@ -857,7 +899,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
               {/* Call History */}
               <TouchableOpacity
                 onPress={() => navigation.navigate("Consultations", { filter: "audio" })}
-                style={{ alignItems: "center", width: 70 }}
+                style={{ alignItems: "center", flex: 1 }}
               >
                 <View
                   style={{
@@ -881,7 +923,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
               {/* Chat History */}
               <TouchableOpacity
                 onPress={() => navigation.navigate("Consultations", { filter: "chat" })}
-                style={{ alignItems: "center", width: 70 }}
+                style={{ alignItems: "center", flex: 1 }}
               >
                 <View
                   style={{
@@ -905,7 +947,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
               {/* Video History */}
               <TouchableOpacity
                 onPress={() => navigation.navigate("Consultations", { filter: "video" })}
-                style={{ alignItems: "center", width: 70 }}
+                style={{ alignItems: "center", flex: 1 }}
               >
                 <View
                   style={{
@@ -929,7 +971,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
               {/* Gifts History */}
               <TouchableOpacity
                 onPress={() => navigation.navigate("Gifts")}
-                style={{ alignItems: "center", width: 70 }}
+                style={{ alignItems: "center", flex: 1 }}
               >
                 <View
                   style={{
@@ -1966,7 +2008,7 @@ export function AstrologerConsultationScreen({ route, navigation }: any) {
                           <Text style={[typography.cardTitle, { fontSize: 14 }]}>
                             Chat Consultation
                           </Text>
-                          <Text style={typography.caption} numberOfLines={1}>
+                          <Text style={typography.caption} numberOfLines={2}>
                             {item.userName} ·{" "}
                             {new Date(item.createdAt).toLocaleString("en-IN", {
                               timeZone: "Asia/Kolkata",
@@ -2005,6 +2047,10 @@ export function AstrologerConsultationScreen({ route, navigation }: any) {
                         flexDirection: "row",
                         alignItems: "center",
                         gap: 10,
+                        flex: 1,
+                        flexShrink: 1,
+                        minWidth: 0,
+                        marginRight: 8,
                       }}
                     >
                       <View
@@ -2032,11 +2078,14 @@ export function AstrologerConsultationScreen({ route, navigation }: any) {
                           }
                         />
                       </View>
-                      <View>
-                        <Text style={[typography.cardTitle, { fontSize: 14 }]}>
+                      <View style={{ flexShrink: 1, minWidth: 0 }}>
+                        <Text
+                          style={[typography.cardTitle, { fontSize: 14 }]}
+                          numberOfLines={2}
+                        >
                           {item.type === "video" ? "Video Call" : "Audio Call"}
                         </Text>
-                        <Text style={typography.caption}>
+                        <Text style={typography.caption} numberOfLines={2}>
                           {item.userName} ·{" "}
                           {new Date(item.createdAt).toLocaleString("en-IN", {
                             timeZone: "Asia/Kolkata",
@@ -2119,6 +2168,7 @@ function formatDisplayDate(dateStr?: string | null): string {
 
 export function AstrologerProfileScreen({ navigation }: any) {
   const { astrologer, role, logout, updateUser, theme, setTheme } = useAuth();
+  const isDark = theme === "dark";
   const [pwOpen, setPwOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [currentPw, setCurrentPw] = useState("");
@@ -2359,7 +2409,10 @@ export function AstrologerProfileScreen({ navigation }: any) {
                 fontSize: 12,
                 fontWeight: "600",
                 color: colors.primaryLight,
+                flexShrink: 1,
               }}
+              numberOfLines={2}
+              ellipsizeMode="tail"
             >
               {profile?.specialization?.join(", ") || "Vedic Astrologer"}
             </Text>
@@ -2388,7 +2441,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
                   color: colors.textPrimary,
                 }}
               >
-                ₹{profile?.totalEarnings || 0}
+                ₹{formatAmount(profile?.totalEarnings)}
               </Text>
               <Text
                 style={{
@@ -2494,22 +2547,42 @@ export function AstrologerProfileScreen({ navigation }: any) {
             <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.divider }}>
               <Ionicons name="person-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
               <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>Name</Text>
-              <Text style={[typography.body, { fontWeight: "600", color: colors.textPrimary }]}>{profile?.name || "Not set"}</Text>
+              <Text
+                style={[typography.body, { fontWeight: "600", color: colors.textPrimary, flexShrink: 1, textAlign: "right" }]}
+                numberOfLines={2}
+              >
+                {profile?.name || "Not set"}
+              </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.divider }}>
               <Ionicons name="call-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
               <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>Phone</Text>
-              <Text style={[typography.body, { fontWeight: "600", color: colors.textPrimary }]}>{profile?.phone || "Not set"}</Text>
+              <Text
+                style={[typography.body, { fontWeight: "600", color: colors.textPrimary, flexShrink: 1, textAlign: "right" }]}
+                numberOfLines={2}
+              >
+                {profile?.phone || "Not set"}
+              </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.divider }}>
               <Ionicons name="male-female-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
               <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>Gender</Text>
-              <Text style={[typography.body, { fontWeight: "600", color: colors.textPrimary }]}>{(profile as any)?.gender ? String((profile as any).gender).charAt(0).toUpperCase() + String((profile as any).gender).slice(1) : "Not set"}</Text>
+              <Text
+                style={[typography.body, { fontWeight: "600", color: colors.textPrimary, flexShrink: 1, textAlign: "right" }]}
+                numberOfLines={2}
+              >
+                {(profile as any)?.gender ? String((profile as any).gender).charAt(0).toUpperCase() + String((profile as any).gender).slice(1) : "Not set"}
+              </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.divider }}>
               <Ionicons name="calendar-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
               <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>Date of Birth</Text>
-              <Text style={[typography.body, { fontWeight: "600", color: colors.textPrimary }]}>{formatDisplayDate((profile as any)?.dateOfBirth)}</Text>
+              <Text
+                style={[typography.body, { fontWeight: "600", color: colors.textPrimary, flexShrink: 1, textAlign: "right" }]}
+                numberOfLines={2}
+              >
+                {formatDisplayDate((profile as any)?.dateOfBirth)}
+              </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8 }}>
               <Ionicons name="ribbon-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
@@ -2524,7 +2597,12 @@ export function AstrologerProfileScreen({ navigation }: any) {
             <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.divider }}>
               <Ionicons name="briefcase-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
               <Text style={[typography.body, { flex: 1, color: colors.textSecondary }]}>Experience</Text>
-              <Text style={[typography.body, { fontWeight: "600", color: colors.textPrimary }]}>{profile?.experience ? `${profile.experience} years` : "Not set"}</Text>
+              <Text
+                style={[typography.body, { fontWeight: "600", color: colors.textPrimary, flexShrink: 1, textAlign: "right" }]}
+                numberOfLines={2}
+              >
+                {profile?.experience ? `${profile.experience} years` : "Not set"}
+              </Text>
             </View>
             <View style={{ flexDirection: "row", alignItems: "center", paddingVertical: 8, borderTopWidth: 1, borderTopColor: colors.divider }}>
               <Ionicons name="language-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
@@ -2813,7 +2891,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
                   width: 38,
                   height: 38,
                   borderRadius: 12,
-                  backgroundColor: "#FEE2E2",
+                  backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEE2E2",
                   alignItems: "center",
                   justifyContent: "center",
                   marginRight: 12,
@@ -2842,9 +2920,9 @@ export function AstrologerProfileScreen({ navigation }: any) {
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "center",
-            backgroundColor: "#FEF2F2",
+            backgroundColor: isDark ? "rgba(239, 68, 68, 0.12)" : "#FEF2F2",
             borderWidth: 1,
-            borderColor: "#FECACA",
+            borderColor: isDark ? "rgba(239, 68, 68, 0.3)" : "#FECACA",
             borderRadius: 18,
             paddingVertical: 14,
             marginTop: 24,

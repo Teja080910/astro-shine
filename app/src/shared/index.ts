@@ -23,3 +23,4 @@ export { OmIcon } from './components/OmIcon';
 export { Navbar } from './components/Navbar';
 export { BrandSplash } from './components/BrandSplash';
 export { resolveMediaUrl } from './media';
+export { formatAmount } from './format';

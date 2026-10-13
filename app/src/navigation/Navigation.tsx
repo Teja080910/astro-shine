@@ -270,7 +270,7 @@ export function Navigation() {
             <Stack.Screen name="Kundli" component={KundliScreen} options={headerOpts('Kundli')} />
             <Stack.Screen name="Matchmaking" component={MatchmakingScreen} options={headerOpts('Matchmaking')} />
             <Stack.Screen name="Panchang" component={PanchangScreen} options={headerOpts('Panchang')} />
-            <Stack.Screen name="HoroscopeDetail" component={HoroscopeDetailScreen} options={headerOpts('Horoscope')} />
+            <Stack.Screen name="HoroscopeDetail" component={HoroscopeDetailScreen} options={{ headerShown: false }} />
             <Stack.Screen name="MyReports" component={MyReportsScreen} options={headerOpts('My Reports')} />
             <Stack.Screen name="Shop" component={ShopScreen} options={headerOpts('Shop')} />
             <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} options={headerOpts('Orders')} />

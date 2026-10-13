@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
     zIndex: -1,
   },
   header: { alignItems: 'center', marginBottom: 24 },
-  headerLogo: { width: 280, height: 203, marginBottom: 8 },
+  headerLogo: { width: '78%', maxWidth: 280, aspectRatio: 280 / 203, height: undefined, marginBottom: 8 },
   headerTitle: { color: '#FFFFFF' },
   headerSub: { color: '#B6B6C2' },
   error: { color: colors.danger, textAlign: 'center', marginBottom: 16, fontSize: 14 },

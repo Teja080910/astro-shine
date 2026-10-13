@@ -293,9 +293,9 @@ export function ChatRoomScreen({ route, navigation }: any) {
           }}
         />
         {isUser && !needsFunds && (
-          <View style={styles.chargeIndicator}>
+          <View style={[styles.chargeIndicator, { backgroundColor: colors.surfaceLight }]}>
             <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
-            <Text style={styles.chargeText}>₹{chatPrice}/min — charged per minute</Text>
+            <Text style={[styles.chargeText, { color: colors.textMuted }]}>₹{chatPrice}/min — charged per minute</Text>
           </View>
         )}
         {isUser && needsFunds ? (
