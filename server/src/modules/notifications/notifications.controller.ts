@@ -11,33 +11,66 @@ import {
   HttpCode,
   HttpStatus,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { AuthGuard } from '../../common/guards/auth.guard';
 import { parsePagination } from '../../common/utils/pagination';
 
 @Controller('notifications')
+@UseGuards(AuthGuard)
 export class NotificationsController {
   constructor(private readonly service: NotificationsService) {}
 
   @Get()
   async findAll(
+    @Req() req: any,
     @Query('userId') userId?: string,
     @Query('astrologerId') astrologerId?: string,
     @Query() query?: any,
   ) {
-    if (userId) return this.service.findByUserId(userId);
-    if (astrologerId) return this.service.findByAstrologerId(astrologerId);
+    const isAdmin = req.userRole === 'admin';
+    if (userId) {
+      if (!isAdmin && userId !== req.userId) {
+        throw new ForbiddenException('You can only view your own notifications');
+      }
+      return this.service.findByUserId(userId);
+    }
+    if (astrologerId) {
+      if (!isAdmin && astrologerId !== req.userId) {
+        throw new ForbiddenException('You can only view your own notifications');
+      }
+      return this.service.findByAstrologerId(astrologerId);
+    }
+    if (!isAdmin) {
+      throw new ForbiddenException('Only admins can list all notifications');
+    }
     return this.service.findAll(parsePagination(query));
   }
 
+  private async assertCanAccess(id: string, req: any) {
+    const notification = await this.service.findById(id);
+    if (!notification) return notification;
+    if (
+      req.userRole !== 'admin' &&
+      notification.userId !== req.userId &&
+      notification.astrologerId !== req.userId
+    ) {
+      throw new ForbiddenException('You can only access your own notifications');
+    }
+    return notification;
+  }
+
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.service.findById(id);
+  async findOne(@Param('id') id: string, @Req() req: any) {
+    return this.assertCanAccess(id, req);
   }
 
   @Post()
-  async create(@Body() body: any) {
+  async create(@Body() body: any, @Req() req: any) {
+    if (req.userRole !== 'admin') {
+      throw new ForbiddenException('Only admins can create notifications');
+    }
     return this.service.create(body);
   }
 
@@ -55,7 +88,8 @@ export class NotificationsController {
   }
 
   @Put(':id/read')
-  async markAsRead(@Param('id') id: string) {
+  async markAsRead(@Param('id') id: string, @Req() req: any) {
+    await this.assertCanAccess(id, req);
     return this.service.markAsRead(id);
   }
 
@@ -63,7 +97,16 @@ export class NotificationsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async markAllAsRead(
     @Body() body: { userId?: string; astrologerId?: string },
+    @Req() req: any,
   ) {
+    if (req.userRole !== 'admin') {
+      if (body.userId && body.userId !== req.userId) {
+        throw new ForbiddenException('You can only update your own notifications');
+      }
+      if (body.astrologerId && body.astrologerId !== req.userId) {
+        throw new ForbiddenException('You can only update your own notifications');
+      }
+    }
     await this.service.markAllAsRead(body.userId, body.astrologerId);
   }
 }

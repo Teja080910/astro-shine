@@ -33,7 +33,13 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     const errorDetails = await res.json().catch(() => ({}));
     throw new Error(errorDetails.message || `API error: ${res.status}`);
   }
-  return res.json();
+  const text = await res.text();
+  if (!text) return undefined as T;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return text as unknown as T;
+  }
 }
 
 export const api = {

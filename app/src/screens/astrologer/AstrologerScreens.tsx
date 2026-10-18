@@ -5,6 +5,9 @@ import {
   Alert,
   FlatList,
   Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -1325,6 +1328,20 @@ export function AstrologerWithdrawalScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [errorVisible, setErrorVisible] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [payoutMethod, setPayoutMethod] = useState<"bank" | "upi">("bank");
+  const [upiId, setUpiId] = useState("");
+
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSub = Keyboard.addListener(showEvent, () => setKeyboardOpen(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardOpen(false));
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   const loadData = useCallback(async () => {
     try {
@@ -1344,18 +1361,30 @@ export function AstrologerWithdrawalScreen() {
   };
 
   const handleSubmit = async () => {
-    if (!amount || !bankAc || !ifsc) return;
+    if (!amount) return;
+    if (payoutMethod === "bank" && (!bankAc || !ifsc)) return;
+    if (payoutMethod === "upi") {
+      const upi = upiId.trim();
+      if (!upi || !/^[\w.\-]{2,256}@[a-zA-Z]{2,64}$/.test(upi)) {
+        setErrorMsg("Please enter a valid UPI ID (e.g. name@upi)");
+        setErrorVisible(true);
+        return;
+      }
+    }
     setLoading(true);
     try {
       await api.withdrawals.create({
         amount,
-        bankAccount: { accountNumber: bankAc, ifsc },
+        bankAccount: payoutMethod === "upi"
+          ? { method: "upi", vpa: upiId.trim() }
+          : { method: "bank", accountNumber: bankAc, ifsc },
         astrologerId: astrologer?.userId,
       });
       setShowForm(false);
       setAmount("");
       setBankAc("");
       setIfsc("");
+      setUpiId("");
       await loadData();
     } catch (e: any) {
       setErrorMsg(
@@ -1377,13 +1406,20 @@ export function AstrologerWithdrawalScreen() {
   };
 
   return (
-    <ScreenWrapper>
-      <ScrollView
-        contentContainerStyle={{ padding: 16 }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+    <ScreenWrapper edges={['bottom']}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ padding: 16, paddingBottom: keyboardOpen ? 320 : 40 }}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
         <GlassCard style={{ padding: 20, alignItems: "center" }}>
           <Ionicons name="cash-outline" size={48} color={colors.accentGold} />
           <Text style={[typography.sectionTitle, { marginTop: 12 }]}>
@@ -1392,7 +1428,7 @@ export function AstrologerWithdrawalScreen() {
           <Text
             style={[typography.body, { textAlign: "center", marginTop: 4 }]}
           >
-            Request a withdrawal to your bank account
+            Request a withdrawal to your bank account or UPI ID
           </Text>
           <GradientButton
             title="New Withdrawal Request"
@@ -1444,49 +1480,129 @@ export function AstrologerWithdrawalScreen() {
                   { marginBottom: 4, color: colors.textSecondary },
                 ]}
               >
-                Account Number
+                Payout Method
               </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: colors.surfaceLight,
-                    borderColor: colors.cardBorder,
-                    color: colors.textPrimary,
-                  },
-                ]}
-                value={bankAc}
-                onChangeText={setBankAc}
-                placeholder="Enter account number"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="number-pad"
-              />
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                {(["bank", "upi"] as const).map((m) => {
+                  const active = payoutMethod === m;
+                  return (
+                    <TouchableOpacity
+                      key={m}
+                      onPress={() => setPayoutMethod(m)}
+                      style={{
+                        flex: 1,
+                        height: 44,
+                        borderRadius: radii.button,
+                        borderWidth: 1,
+                        borderColor: active ? colors.accentGold : colors.cardBorder,
+                        backgroundColor: active ? colors.accentGold + "22" : colors.surfaceLight,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        flexDirection: "row",
+                        gap: 6,
+                      }}
+                    >
+                      <Ionicons
+                        name={m === "bank" ? "business-outline" : "phone-portrait-outline"}
+                        size={16}
+                        color={active ? colors.accentGold : colors.textSecondary}
+                      />
+                      <Text
+                        style={{
+                          color: active ? colors.accentGold : colors.textSecondary,
+                          fontWeight: "700",
+                          fontSize: 13,
+                        }}
+                      >
+                        {m === "bank" ? "Bank Account" : "UPI"}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
-            <View style={{ marginBottom: 12 }}>
-              <Text
-                style={[
-                  typography.label,
-                  { marginBottom: 4, color: colors.textSecondary },
-                ]}
-              >
-                IFSC Code
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: colors.surfaceLight,
-                    borderColor: colors.cardBorder,
-                    color: colors.textPrimary,
-                  },
-                ]}
-                value={ifsc}
-                onChangeText={setIfsc}
-                placeholder="Enter IFSC code"
-                placeholderTextColor={colors.textMuted}
-                autoCapitalize="characters"
-              />
-            </View>
+            {payoutMethod === "bank" ? (
+              <>
+                <View style={{ marginBottom: 12 }}>
+                  <Text
+                    style={[
+                      typography.label,
+                      { marginBottom: 4, color: colors.textSecondary },
+                    ]}
+                  >
+                    Account Number
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        backgroundColor: colors.surfaceLight,
+                        borderColor: colors.cardBorder,
+                        color: colors.textPrimary,
+                      },
+                    ]}
+                    value={bankAc}
+                    onChangeText={setBankAc}
+                    placeholder="Enter account number"
+                    placeholderTextColor={colors.textMuted}
+                    keyboardType="number-pad"
+                  />
+                </View>
+                <View style={{ marginBottom: 12 }}>
+                  <Text
+                    style={[
+                      typography.label,
+                      { marginBottom: 4, color: colors.textSecondary },
+                    ]}
+                  >
+                    IFSC Code
+                  </Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      {
+                        backgroundColor: colors.surfaceLight,
+                        borderColor: colors.cardBorder,
+                        color: colors.textPrimary,
+                      },
+                    ]}
+                    value={ifsc}
+                    onChangeText={setIfsc}
+                    placeholder="Enter IFSC code"
+                    placeholderTextColor={colors.textMuted}
+                    autoCapitalize="characters"
+                  />
+                </View>
+              </>
+            ) : (
+              <View style={{ marginBottom: 12 }}>
+                <Text
+                  style={[
+                    typography.label,
+                    { marginBottom: 4, color: colors.textSecondary },
+                  ]}
+                >
+                  UPI ID
+                </Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    {
+                      backgroundColor: colors.surfaceLight,
+                      borderColor: colors.cardBorder,
+                      color: colors.textPrimary,
+                    },
+                  ]}
+                  value={upiId}
+                  onChangeText={setUpiId}
+                  placeholder="e.g. name@okhdfcbank"
+                  placeholderTextColor={colors.textMuted}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+            )}
             <View style={{ flexDirection: "row", gap: 10 }}>
               <TouchableOpacity
                 onPress={() => setShowForm(false)}
@@ -1575,7 +1691,8 @@ export function AstrologerWithdrawalScreen() {
             </GlassCard>
           ))
         )}
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
       <ConfirmDialog
         visible={errorVisible}
         title="Withdrawal Error"

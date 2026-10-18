@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Delete,
   Param,
   Body,
   Query,
@@ -47,6 +48,26 @@ export class ReportsController {
     body.reporterId = req.userId;
     body.reporterRole = req.userRole || 'user';
     return this.service.create(body);
+  }
+
+  @Put(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() body: { reason?: any; description?: string | null; status?: string },
+    @Req() req: any,
+  ) {
+    if (req.userRole !== 'admin') {
+      throw new ForbiddenException('Only admins can update reports');
+    }
+    return this.service.update(id, body);
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: string, @Req() req: any) {
+    if (req.userRole !== 'admin') {
+      throw new ForbiddenException('Only admins can delete reports');
+    }
+    return this.service.delete(id);
   }
 
   @Put(':id/resolve')

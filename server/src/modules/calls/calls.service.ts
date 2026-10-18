@@ -27,7 +27,10 @@ export class CallsService {
   }
 
   async findAll(pagination?: Pagination) {
-    if (!pagination?.enabled) return this.db.query.callLogs.findMany();
+    if (!pagination?.enabled) {
+      const calls = await this.db.query.callLogs.findMany();
+      return this.withUserNames(calls);
+    }
     const conditions: any[] = [];
     if (pagination.q) {
       const pattern = `%${pagination.q}%`;
@@ -42,7 +45,7 @@ export class CallsService {
       build().orderBy(desc(schema.callLogs.createdAt)).limit(pagination.limit).offset(pagination.offset),
       this.db.select({ count: sql<number>`count(*)::int` }).from(schema.callLogs).where(where),
     ]);
-    return paginated(data, countRows[0]?.count ?? 0, pagination);
+    return paginated(await this.withUserNames(data), countRows[0]?.count ?? 0, pagination);
   }
 
   async findById(id: string) { return this.db.query.callLogs.findFirst({ where: eq(schema.callLogs.id, id) }); }
@@ -84,10 +87,18 @@ export class CallsService {
 
   private async withUserNames(calls: any[]) {
     const userIds = [...new Set(calls.map(c => c.userId).filter(Boolean))];
-    if (userIds.length === 0) return calls.map(c => ({ ...c, userName: 'Unknown User' }));
-    const users = await this.db.query.users.findMany({ where: inArray(schema.users.id, userIds as string[]) });
+    const astrologerIds = [...new Set(calls.map(c => c.astrologerId).filter(Boolean))];
+    const allIds = [...new Set([...userIds, ...astrologerIds])];
+    if (allIds.length === 0) {
+      return calls.map(c => ({ ...c, userName: 'Unknown User', astrologerName: 'Unknown Astrologer' }));
+    }
+    const users = await this.db.query.users.findMany({ where: inArray(schema.users.id, allIds as string[]) });
     const userMap = new Map(users.map(u => [u.id, u.name]));
-    return calls.map(call => ({ ...call, userName: userMap.get(call.userId) || 'Unknown User' }));
+    return calls.map(call => ({
+      ...call,
+      userName: userMap.get(call.userId) || 'Unknown User',
+      astrologerName: userMap.get(call.astrologerId) || 'Unknown Astrologer',
+    }));
   }
 
   async create(data: typeof schema.callLogs.$inferInsert) {

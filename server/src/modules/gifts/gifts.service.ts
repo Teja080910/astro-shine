@@ -201,7 +201,44 @@ export class GiftsService {
     });
     if (!receiver) throw new NotFoundException('Astrologer not found');
 
-    await this.db.transaction(async (tx) => {
+    const [senderUser, receiverUser] = await Promise.all([
+      this.db.query.users.findFirst({
+        where: eq(schema.users.id, senderId),
+        columns: { name: true },
+      }),
+      this.db.query.users.findFirst({
+        where: eq(schema.users.id, receiverId),
+        columns: { name: true },
+      }),
+    ]);
+    const senderName = senderUser?.name?.trim() || 'A user';
+    const receiverName = receiverUser?.name?.trim() || 'the astrologer';
+    // Stored on every gift notification so the admin log can describe the
+    // transfer (who sent what to whom) without using recipient-facing copy.
+    const giftMeta = {
+      giftId,
+      giftName: gift.name,
+      amount: amountStr,
+      senderId,
+      senderName,
+      receiverId,
+      receiverName,
+    };
+
+    this.notifications
+      .create({
+        userId: senderId,
+        type: 'transactional',
+        title: 'Gift payment initiated',
+        body: `Processing your payment of ₹${amountStr} for "${gift.name}" to ${receiverName}.`,
+        data: { type: 'gift_initiated', status: 'processing', ...giftMeta },
+      })
+      .catch((e) =>
+        this.logger.warn(`Gift initiated notification failed: ${e.message}`),
+      );
+
+    try {
+      await this.db.transaction(async (tx) => {
       // Lock and deduct sender wallet
       const senderWallet = (
         await tx.execute<{ id: string; balance: string }>(
@@ -292,7 +329,21 @@ export class GiftsService {
           updatedAt: new Date(),
         })
         .where(eq(schema.astrologers.userId, receiverId));
-    });
+      });
+    } catch (e: any) {
+      this.notifications
+        .create({
+          userId: senderId,
+          type: 'transactional',
+          title: 'Gift payment failed',
+          body: `Your payment of ₹${amountStr} for "${gift.name}" to ${receiverName} could not be processed. ${e?.message || 'Please try again.'}`,
+          data: { type: 'gift_failed', status: 'rejected', ...giftMeta },
+        })
+        .catch((err) =>
+          this.logger.warn(`Gift failure notification failed: ${err.message}`),
+        );
+      throw e;
+    }
 
     // Emit wallet updates outside transaction
     const updatedSenderBalance = Number(
@@ -331,11 +382,23 @@ export class GiftsService {
         astrologerId: data.receiverId,
         type: 'transactional',
         title: 'Gift received 🎁',
-        body: `You received "${gift.name}" worth ₹${amountStr}. Redeem it in Gifts.`,
-        data: { type: 'gift_received', giftId: data.giftId },
+        body: `You received "${gift.name}" worth ₹${amountStr} from ${senderName}. Redeem it in Gifts.`,
+        data: { type: 'gift_received', status: 'received', ...giftMeta },
       })
       .catch((e) =>
         this.logger.warn(`Gift notification failed: ${e.message}`),
+      );
+
+    this.notifications
+      .create({
+        userId: data.senderId,
+        type: 'transactional',
+        title: 'Gift payment successful',
+        body: `Payment of ₹${amountStr} for "${gift.name}" was successful. It has been credited to ${receiverName}.`,
+        data: { type: 'gift_success', status: 'approved', ...giftMeta },
+      })
+      .catch((e) =>
+        this.logger.warn(`Gift success notification failed: ${e.message}`),
       );
 
     this.logger.log(
@@ -376,7 +439,7 @@ export class GiftsService {
         type: 'transactional',
         title: 'Gift redeemed',
         body: 'Your gift has been redeemed by the astrologer.',
-        data: { type: 'gift_redeemed', giftTransactionId: r.id },
+        data: { type: 'gift_redeemed', status: 'redeemed', giftTransactionId: r.id },
       })
       .catch((e) =>
         this.logger.warn(`Gift redeem notification failed: ${e.message}`),

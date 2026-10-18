@@ -131,6 +131,26 @@ export class OrdersService {
 
   async create(data: typeof schema.orders.$inferInsert) {
     const [r] = await this.db.insert(schema.orders).values(data).returning();
+    if (r?.userId) {
+      const shortId = r.id.slice(0, 8).toUpperCase();
+      try {
+        await this.notifications.create({
+          userId: r.userId,
+          type: 'transactional',
+          title: 'Order placed 🛍️',
+          body: `Your order #${shortId} has been placed and is awaiting confirmation.`,
+          data: {
+            screen: 'OrderHistory',
+            orderId: r.id,
+            status: r.status || 'pending',
+          },
+        });
+      } catch (e) {
+        this.logger.warn(
+          `Order placed notification failed: ${(e as Error)?.message}`,
+        );
+      }
+    }
     return r;
   }
 
@@ -188,7 +208,11 @@ export class OrdersService {
         type: 'transactional',
         title: notifConfig.title,
         body: notifConfig.body,
-        data: { screen: 'OrderHistory', orderId: r.id },
+        data: {
+          screen: 'OrderHistory',
+          orderId: r.id,
+          status: normalizedStatus,
+        },
       });
     } catch (e) {
       this.logger.warn(

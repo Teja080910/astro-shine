@@ -14,6 +14,7 @@ import { eq, sql, desc } from 'drizzle-orm';
 import { WalletService } from '../wallet/wallet.service';
 import { RealtimeService } from '../../common/realtime.service';
 import { PayoutService } from '../payout/payout.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { paginated, Pagination } from '../../common/utils/pagination';
 
 type WithdrawalRow = {
@@ -44,6 +45,7 @@ export class WithdrawalService {
     private readonly realtime: RealtimeService,
     private readonly payoutService: PayoutService,
     private readonly configService: ConfigService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async findByAstrologerId(astrologerId: string) {
@@ -263,6 +265,47 @@ export class WithdrawalService {
       .values(data)
       .returning();
     this.realtime.broadcast('withdrawal:new', r);
+
+    if (r.astrologerId) {
+      const amountStr = Number(r.amount).toFixed(2);
+      this.notifications
+        .create({
+          astrologerId: r.astrologerId,
+          type: 'transactional',
+          title: 'Withdrawal request submitted',
+          body: `Your withdrawal request of ₹${amountStr} has been submitted and is pending admin approval.`,
+          data: {
+            type: 'withdrawal_requested',
+            withdrawalId: r.id,
+            amount: r.amount,
+            status: 'pending',
+          },
+        })
+        .catch((e) =>
+          this.logger.warn(`Withdrawal request notification failed: ${e.message}`),
+        );
+
+      try {
+        const astrologerUser = await this.db.query.users.findFirst({
+          where: eq(schema.users.id, r.astrologerId),
+          columns: { name: true },
+        });
+        await this.notifications.notifyAdmins({
+          type: 'system',
+          title: 'Withdrawal approval pending',
+          body: `${astrologerUser?.name || 'An astrologer'} requested a withdrawal of ₹${amountStr}.`,
+          data: {
+            type: 'withdrawal_requested',
+            withdrawalId: r.id,
+            amount: r.amount,
+            status: 'pending',
+          },
+        });
+      } catch (e: any) {
+        this.logger.warn(`Withdrawal admin notification failed: ${e.message}`);
+      }
+    }
+
     return r;
   }
 
@@ -401,6 +444,18 @@ export class WithdrawalService {
         .where(eq(schema.withdrawalRequests.id, id));
     });
 
+    this.notifications
+      .create({
+        astrologerId: request.astrologerId,
+        type: 'transactional',
+        title: 'Withdrawal approved',
+        body: `Your withdrawal request of ₹${amount.toFixed(2)} has been approved and is being processed to your bank account.`,
+        data: { type: 'withdrawal_approved', withdrawalId: id, amount: amount.toFixed(2), status: 'approved' },
+      })
+      .catch((e) =>
+        this.logger.warn(`Withdrawal approved notification failed: ${e.message}`),
+      );
+
     // Initiate RazorpayX payout to astrologer's bank account
     try {
       const user = await this.db.query.users.findFirst({
@@ -436,22 +491,135 @@ export class WithdrawalService {
             updatedAt: new Date(),
           })
           .where(eq(schema.withdrawalRequests.id, id));
+
+        this.notifications
+          .create({
+            astrologerId: request.astrologerId,
+            type: 'transactional',
+            title: 'Withdrawal settled',
+            body: `Your withdrawal of ₹${amount.toFixed(2)} has been settled to your bank account.`,
+            data: { type: 'withdrawal_settled', withdrawalId: id, amount: amount.toFixed(2), status: 'completed' },
+          })
+          .catch((e) =>
+            this.logger.warn(`Withdrawal settled notification failed: ${e.message}`),
+          );
       }
     } catch (e: any) {
+      const message = this.extractPayoutError(e);
       this.logger.error(
-        `[Withdrawal] Payout initiation failed for ${id}: ${e.message}`,
+        `[Withdrawal] Payout initiation failed for ${id}: ${message}`,
       );
-      await this.db
-        .update(schema.withdrawalRequests)
-        .set({
-          payoutStatus: 'failed',
-          payoutResponse: { error: e.message } as any,
-          updatedAt: new Date(),
+
+      await this.refundFailedPayout(id, request.astrologerId!, amount, {
+        error: message,
+        raw: e?.data || e?.response?.data || e?.error || null,
+      });
+
+      this.notifications
+        .create({
+          astrologerId: request.astrologerId,
+          type: 'transactional',
+          title: 'Withdrawal failed',
+          body: `Your withdrawal of ₹${amount.toFixed(2)} could not be processed. The amount has been returned to your wallet and will be retried after review.`,
+          data: { type: 'withdrawal_failed', withdrawalId: id, amount: amount.toFixed(2), status: 'failed' },
         })
-        .where(eq(schema.withdrawalRequests.id, id));
+        .catch((err) =>
+          this.logger.warn(`Withdrawal failed notification failed: ${err.message}`),
+        );
     }
 
     this.realtime.broadcast('withdrawal:updated', { id, status: 'approved' });
+
+    const [updated] = await this.db
+      .select()
+      .from(schema.withdrawalRequests)
+      .where(eq(schema.withdrawalRequests.id, id))
+      .limit(1);
+    return updated;
+  }
+
+  private extractPayoutError(e: any): string {
+    const data = e?.data || e?.response?.data || e?.error;
+    if (data?.error?.description) return data.error.description;
+    if (data?.description) return data.description;
+    if (typeof data === 'string' && data.length > 0) return data;
+    if (e?.message && typeof e.message === 'string' && e.message !== '{}') return e.message;
+    try {
+      const s = JSON.stringify(data);
+      if (s && s !== '{}' && s !== 'null') return s.slice(0, 500);
+    } catch {}
+    return 'Unknown payout error (see payout_response)';
+  }
+
+  private async refundFailedPayout(
+    withdrawalId: string,
+    astrologerId: string,
+    amount: number,
+    response: any,
+  ) {
+    const amountStr = amount.toFixed(2);
+    let updatedBalance: string | undefined;
+    try {
+      await this.db.transaction(async (tx) => {
+        const wResult = await tx.execute<{ id: string; balance: string }>(
+          sql`SELECT id, balance FROM wallets WHERE astrologer_id = ${astrologerId} LIMIT 1 FOR UPDATE`,
+        );
+        const w = wResult.rows?.[0];
+
+        if (w) {
+          await tx
+            .update(schema.wallets)
+            .set({
+              balance: sql`${schema.wallets.balance} + ${amountStr}::decimal`,
+              totalDeducted: sql`${schema.wallets.totalDeducted} - ${amountStr}::decimal`,
+              updatedAt: new Date(),
+            })
+            .where(eq(schema.wallets.id, w.id));
+
+          await tx.insert(schema.transactions).values({
+            walletId: w.id,
+            astrologerId,
+            type: 'credit',
+            category: 'refund',
+            amount: amountStr,
+            fee: '0',
+            netAmount: amountStr,
+            status: 'success',
+            description: 'Withdrawal payout failed — amount returned to wallet',
+            referenceId: withdrawalId,
+          });
+
+          updatedBalance = (Number(w.balance) + amount).toFixed(2);
+        }
+
+        await tx
+          .update(schema.withdrawalRequests)
+          .set({
+            status: 'pending',
+            payoutStatus: 'failed',
+            payoutResponse: response as any,
+            processedBy: null,
+            processedAt: null,
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.withdrawalRequests.id, withdrawalId));
+      });
+
+      this.realtime.emitToUser(
+        astrologerId,
+        'wallet:updated',
+        updatedBalance !== undefined ? { balance: updatedBalance } : {},
+      );
+      this.realtime.broadcast('withdrawal:updated', {
+        id: withdrawalId,
+        status: 'pending',
+        payoutStatus: 'failed',
+      });
+    } catch (err: any) {
+      this.logger.error(
+        `[Withdrawal] Failed to refund failed payout ${withdrawalId}: ${err.message}`,
+      );
+    }
   }
 
   async handlePayoutWebhook(
@@ -501,6 +669,45 @@ export class WithdrawalService {
 
     if (!updated) return { received: true, ignored: true };
 
+    if (updated.astrologerId && updated.status === 'completed') {
+      this.notifications
+        .create({
+          astrologerId: updated.astrologerId,
+          type: 'transactional',
+          title: 'Withdrawal settled',
+          body: `Your withdrawal of ₹${Number(updated.amount).toFixed(2)} has been settled to your bank account.`,
+          data: { type: 'withdrawal_settled', withdrawalId: updated.id, amount: updated.amount, status: 'completed' },
+        })
+        .catch((e) =>
+          this.logger.warn(`Withdrawal settled notification failed: ${e.message}`),
+        );
+    } else if (
+      updated.astrologerId &&
+      (entity.status === 'failed' || entity.status === 'reversed' || entity.status === 'cancelled')
+    ) {
+      const isRefundable = updated.status === 'approved';
+      if (isRefundable) {
+        await this.refundFailedPayout(
+          updated.id,
+          updated.astrologerId,
+          Number(updated.amount),
+          entity,
+        );
+      }
+
+      this.notifications
+        .create({
+          astrologerId: updated.astrologerId,
+          type: 'transactional',
+          title: 'Withdrawal failed',
+          body: `Your withdrawal of ₹${Number(updated.amount).toFixed(2)} could not be processed. The amount has been returned to your wallet and will be retried after review.`,
+          data: { type: 'withdrawal_failed', withdrawalId: updated.id, amount: updated.amount, status: 'failed' },
+        })
+        .catch((e) =>
+          this.logger.warn(`Withdrawal failed notification failed: ${e.message}`),
+        );
+    }
+
     this.realtime.broadcast('withdrawal:updated', {
       id: updated.id,
       status: updated.status,
@@ -521,6 +728,21 @@ export class WithdrawalService {
       })
       .where(eq(schema.withdrawalRequests.id, id))
       .returning();
+
+    if (r?.astrologerId) {
+      this.notifications
+        .create({
+          astrologerId: r.astrologerId,
+          type: 'transactional',
+          title: 'Withdrawal rejected',
+          body: `Your withdrawal request of ₹${Number(r.amount).toFixed(2)} was rejected.${note ? ` Reason: ${note}` : ''}`,
+          data: { type: 'withdrawal_rejected', withdrawalId: r.id, amount: r.amount, status: 'rejected' },
+        })
+        .catch((e) =>
+          this.logger.warn(`Withdrawal rejected notification failed: ${e.message}`),
+        );
+    }
+
     this.realtime.broadcast('withdrawal:updated', { id, status: 'rejected' });
     return r;
   }

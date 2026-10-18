@@ -3,11 +3,19 @@ import { ConfigService } from '@nestjs/config';
 import RazorpayX from 'razorpayx';
 
 export interface BankDetails {
-  accountNumber: string;
-  ifsc: string;
+  method?: 'bank' | 'upi';
+  vpa?: string;
+  accountNumber?: string;
+  ifsc?: string;
   name?: string;
   holderName?: string;
   account_name?: string;
+}
+
+export interface PayoutDestination {
+  accountType: 'bank_account' | 'vpa';
+  bankAccount?: { name: string; ifsc: string; account_number: string };
+  vpa?: { address: string };
 }
 
 @Injectable()
@@ -35,9 +43,24 @@ export class PayoutService {
       bank.name || bank.holderName || bank.account_name || 'Astrologer Payout';
     return {
       name,
-      ifsc: bank.ifsc,
-      account_number: bank.accountNumber,
+      ifsc: bank.ifsc as string,
+      account_number: bank.accountNumber as string,
     };
+  }
+
+  private resolveDestination(bank: BankDetails): PayoutDestination {
+    if (bank.method === 'upi' || bank.vpa) {
+      const vpa = (bank.vpa || '').trim();
+      if (!vpa) {
+        throw new BadRequestException('UPI ID (VPA) is required for UPI payouts');
+      }
+      return { accountType: 'vpa', vpa: { address: vpa } };
+    }
+    const normalized = this.normalizeBank(bank);
+    if (!normalized.account_number || !normalized.ifsc) {
+      throw new BadRequestException('Account number and IFSC are required for bank payouts');
+    }
+    return { accountType: 'bank_account', bankAccount: normalized };
   }
 
   async createOrGetContact(params: {
@@ -75,15 +98,17 @@ export class PayoutService {
     referenceId: string;
   }): Promise<{ fundAccountId: string }> {
     const client = this.getClient();
+    const destination = this.resolveDestination(params.bank);
     try {
       const accounts = await client.FundAccount.getAll({
         contact_id: params.contactId,
       });
-      const bankAccount = this.normalizeBank(params.bank);
-      const existing = accounts?.items?.find(
-        (a: any) =>
-          a.account_type === 'bank_account' &&
-          a.bank_account?.account_number === bankAccount.account_number,
+      const existing = accounts?.items?.find((a: any) =>
+        destination.accountType === 'vpa'
+          ? a.account_type === 'vpa' &&
+            (a.vpa?.address || '').toLowerCase() === destination.vpa!.address.toLowerCase()
+          : a.account_type === 'bank_account' &&
+            a.bank_account?.account_number === destination.bankAccount!.account_number,
       );
       if (existing) {
         return { fundAccountId: existing.id };
@@ -92,12 +117,19 @@ export class PayoutService {
       this.logger.warn(`Failed to fetch existing RazorpayX fund account: ${e.message}`);
     }
 
-    const bankAccount = this.normalizeBank(params.bank);
-    const account = await client.FundAccount.create({
-      contact_id: params.contactId,
-      account_type: 'bank_account',
-      bank_account: bankAccount,
-    } as any);
+    const account = await client.FundAccount.create(
+      destination.accountType === 'vpa'
+        ? ({
+            contact_id: params.contactId,
+            account_type: 'vpa',
+            vpa: destination.vpa,
+          } as any)
+        : ({
+            contact_id: params.contactId,
+            account_type: 'bank_account',
+            bank_account: destination.bankAccount,
+          } as any),
+    );
     return { fundAccountId: account.id };
   }
 
@@ -125,12 +157,15 @@ export class PayoutService {
       referenceId: params.referenceId,
     });
 
+    const destination = this.resolveDestination(params.bank);
+    const mode = destination.accountType === 'vpa' ? 'UPI' : 'IMPS';
+
     const payout = await client.Payout.create({
       account_number: this.configService.get<string>('RAZORPAYX_DEFAULT_ACCOUNT'),
       fund_account_id: fundAccountId,
       amount: Math.round(params.amount * 100),
       currency: 'INR',
-      mode: 'IMPS',
+      mode,
       purpose: 'payout',
       reference_id: params.referenceId,
       narration: `Payout to ${params.astrologerName}`,

@@ -48,6 +48,42 @@ const typeStyles: Record<string, { bg: string; text: string }> = {
   reminder: { bg: 'rgba(234, 179, 8, 0.15)', text: '#EAB308' },
 };
 
+/**
+ * Gift notifications are written for the user/astrologer who receives them
+ * ("You received..."). In the admin log that copy is confusing, so describe
+ * the transfer in the third person using the sender/receiver fields returned
+ * by the API. Falls back to the stored body for older notifications.
+ */
+function adminNotificationText(n: Notification): string | null {
+  const data: any = n.data || {};
+  const type = typeof data.type === 'string' ? data.type : '';
+  if (!type.startsWith('gift_')) return null;
+
+  const targetName = (n as any).targetName as string | undefined;
+  const senderName = data.senderName || (n.userId ? targetName : undefined);
+  const receiverName =
+    data.receiverName || (n.astrologerId ? targetName : undefined);
+  const from = senderName || 'A user';
+  const to = receiverName || 'an astrologer';
+  const amount = data.amount ? `₹${Number(data.amount).toFixed(2)}` : '';
+  const gift = data.giftName ? `gift "${data.giftName}"` : '';
+  const details = [amount, gift].filter(Boolean).join(' ');
+  const item = details ? `a ${details}` : 'a gift';
+
+  switch (type) {
+    case 'gift_success':
+      return `${from} sent ${item} to ${to} — payment successful.`;
+    case 'gift_received':
+      return `${to} received ${item} from ${from}.`;
+    case 'gift_failed':
+      return `${from}'s ${details || 'gift'} to ${to} could not be processed.`;
+    case 'gift_initiated':
+      return `${from} initiated ${item} to ${to}.`;
+    default:
+      return null;
+  }
+}
+
 export default function NotificationsPage() {
   const [data, setData] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -122,18 +158,27 @@ export default function NotificationsPage() {
             {data.length === 0 ? <p style={{ color: 'var(--text-secondary)' }}>{debouncedSearch ? 'No notifications match your search.' : 'No notifications sent yet.'}</p> :
               data.map(n => {
                 const ts = typeStyles[n.type] || typeStyles.system;
+                const adminText = adminNotificationText(n);
+                const meta: any = n.data || {};
+                const eventStatus = typeof meta.status === 'string' ? meta.status : null;
+                const targetRole = meta.audience === 'admin' ? 'admin' : 'user';
                 return (
                   <div key={n.id} className="border-b py-3 last:border-0" style={{ borderColor: 'var(--divider)' }}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-semibold px-2 py-0.5 rounded" style={{ backgroundColor: ts.bg, color: ts.text }}>{n.type}</span>
-                      <p className="font-medium" style={{ color: 'var(--text-primary)' }}>{n.title}</p>
+                    <div className="flex items-start gap-2 mb-1 min-w-0">
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded shrink-0" style={{ backgroundColor: ts.bg, color: ts.text }}>{n.type}</span>
+                      <p className="font-medium break-words min-w-0" style={{ color: 'var(--text-primary)' }}>{n.title}</p>
                     </div>
-                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{n.body}</p>
-                    <div className="flex items-center gap-3 mt-1">
+                    <p className="text-sm break-words whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>{adminText || n.body}</p>
+                    <div className="flex flex-wrap items-center gap-3 mt-1">
                       <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>{formatDate(n.createdAt)}</span>
-                      {n.userId && <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>→ User → {(n as any).targetName || 'Unknown'}</span>}
-                      {n.astrologerId && <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>→ Astrologer → {(n as any).targetName || 'Unknown'}</span>}
-                      {!n.userId && !n.astrologerId && <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>→ (no target)</span>}
+                      {eventStatus && (
+                        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: 'rgba(148, 163, 184, 0.15)', color: 'var(--text-secondary)' }}>
+                          status: {eventStatus}
+                        </span>
+                      )}
+                      {n.userId && <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>To {targetRole} · {(n as any).targetName || 'Unknown'}</span>}
+                      {n.astrologerId && <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>To astrologer · {(n as any).targetName || 'Unknown'}</span>}
+                      {!n.userId && !n.astrologerId && <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>To everyone</span>}
                     </div>
                   </div>
                 );

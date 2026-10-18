@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
 import { Pagination, unwrapList } from '@/components/Pagination';
@@ -27,6 +28,21 @@ export default function AstrologersPage() {
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [withdrawalDetail, setWithdrawalDetail] = useState<any | null>(null);
+  const [withdrawalLoading, setWithdrawalLoading] = useState(false);
+
+  const openDetails = (a: Astrologer) => {
+    setSelected(a);
+    setChatPrice((a as any).chatPricePerMin || a.pricePerMin);
+    setAudioPrice((a as any).audioCallPricePerMin || a.pricePerMin);
+    setVideoPrice((a as any).videoCallPricePerMin || a.pricePerMin);
+    setWithdrawalDetail(null);
+    setWithdrawalLoading(true);
+    api.get<any>(`/withdrawals/astrologers/${a.userId}`)
+      .then(setWithdrawalDetail)
+      .catch(() => setWithdrawalDetail(null))
+      .finally(() => setWithdrawalLoading(false));
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -180,12 +196,7 @@ export default function AstrologersPage() {
             <td className="px-4 py-3">
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => {
-                    setSelected(a);
-                    setChatPrice((a as any).chatPricePerMin || a.pricePerMin);
-                    setAudioPrice((a as any).audioCallPricePerMin || a.pricePerMin);
-                    setVideoPrice((a as any).videoCallPricePerMin || a.pricePerMin);
-                  }}
+                  onClick={() => openDetails(a)}
                   className="text-primary-light hover:underline text-xs font-bold"
                 >
                   View
@@ -240,6 +251,66 @@ export default function AstrologersPage() {
             <p><span className="font-medium text-text-primary">Rating:</span> {Number(selected.rating).toFixed(2)} ({selected.totalReviews} reviews)</p>
             <p><span className="font-medium text-text-primary">Total Earnings:</span> ₹{selected.totalEarnings}</p>
             <p><span className="font-medium text-text-primary">Bio:</span> {selected.bio || '-'}</p>
+
+            <div className="border-t border-divider pt-4">
+              <p className="text-xs font-bold text-text-primary uppercase tracking-wider mb-3">Earnings & Withdrawals</p>
+              {withdrawalLoading ? (
+                <p className="text-xs text-text-muted">Loading withdrawal details...</p>
+              ) : withdrawalDetail ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="p-3 rounded-xl bg-surface-light/30 border border-card-border">
+                      <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Total Earnings</p>
+                      <p className="text-sm font-bold text-text-primary">₹{Number(withdrawalDetail.totalEarnings || 0).toFixed(2)}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-surface-light/30 border border-card-border">
+                      <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Total Withdrawn</p>
+                      <p className="text-sm font-bold text-success">₹{Number(withdrawalDetail.totalWithdrawn || 0).toFixed(2)}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-surface-light/30 border border-card-border">
+                      <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Pending</p>
+                      <p className="text-sm font-bold text-amber-400">₹{Number(withdrawalDetail.pendingAmount || 0).toFixed(2)}</p>
+                    </div>
+                    <div className="p-3 rounded-xl bg-surface-light/30 border border-card-border">
+                      <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider mb-1">Available Balance</p>
+                      <p className="text-sm font-bold text-primary-light">₹{Number(withdrawalDetail.availableBalance || 0).toFixed(2)}</p>
+                    </div>
+                  </div>
+
+                  {withdrawalDetail.withdrawals?.length > 0 ? (
+                    <div className="rounded-xl border border-card-border overflow-hidden">
+                      <table className="w-full text-xs">
+                        <thead className="bg-surface-light/40">
+                          <tr>
+                            <th className="px-3 py-2 text-left font-bold text-text-muted uppercase tracking-wider">Amount</th>
+                            <th className="px-3 py-2 text-left font-bold text-text-muted uppercase tracking-wider">Status</th>
+                            <th className="px-3 py-2 text-left font-bold text-text-muted uppercase tracking-wider">Date</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {withdrawalDetail.withdrawals.map((w: any) => (
+                            <tr key={w.id} className="border-t border-divider">
+                              <td className="px-3 py-2 font-semibold text-text-primary">₹{w.amount}</td>
+                              <td className="px-3 py-2">
+                                {w.status === 'completed' && <Badge variant="success">Completed</Badge>}
+                                {w.status === 'approved' && <Badge variant="success">Approved</Badge>}
+                                {w.status === 'pending' && <Badge variant="warning">Pending</Badge>}
+                                {w.status === 'rejected' && <Badge variant="danger">Rejected</Badge>}
+                              </td>
+                              <td className="px-3 py-2 text-text-muted">{formatDate(w.createdAt)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-text-muted">No withdrawal requests yet.</p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-text-muted">Withdrawal details unavailable.</p>
+              )}
+            </div>
 
             {selected.verificationNote && (
               <div className="p-3 rounded-xl bg-red-500/5 border border-red-500/20">

@@ -1,4 +1,4 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject, BadRequestException, Logger } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
 import { eq, desc, sql, aliasedTable, or, ilike } from 'drizzle-orm';
@@ -8,6 +8,8 @@ import { paginated, type Pagination } from '../../common/utils/pagination';
 
 @Injectable()
 export class AstrologersService {
+  private readonly logger = new Logger(AstrologersService.name);
+
   constructor(
     @Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>,
     private readonly realtime: RealtimeService,
@@ -215,6 +217,25 @@ export class AstrologersService {
       });
     }
 
+    const submittedDocs =
+      Array.isArray(data.verificationDoc) && data.verificationDoc.length > 0;
+    if (submittedDocs) {
+      this.notificationsService
+        .notifyAdmins({
+          type: 'system',
+          title: 'Astrologer KYC pending approval',
+          body: `${(updatedAstro as any)?.name || 'An astrologer'} submitted KYC documents for review.`,
+          data: {
+            type: 'kyc_pending',
+            astrologerId: id,
+            status: 'pending',
+          },
+        })
+        .catch((e: any) =>
+          this.logger.warn(`KYC admin notification failed: ${e.message}`),
+        );
+    }
+
     return updatedAstro;
   }
 
@@ -238,7 +259,7 @@ export class AstrologersService {
             : note
               ? `Your KYC was rejected: ${note}`
               : 'Your KYC documents were rejected. Please re-upload valid documents.',
-        data: { screen: 'Documents' },
+        data: { screen: 'Documents', type: 'kyc_review', status },
       });
     } catch {}
 

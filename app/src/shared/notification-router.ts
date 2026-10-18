@@ -125,7 +125,16 @@ export function resolveNotificationTarget(
       return build(role === 'astrologer' ? 'AstrologerReports' : 'MyReports');
     case 'gift_received':
     case 'gift_redeemed':
+    case 'gift_initiated':
+    case 'gift_success':
+    case 'gift_failed':
       return build('Gifts');
+    case 'withdrawal_requested':
+    case 'withdrawal_approved':
+    case 'withdrawal_rejected':
+    case 'withdrawal_settled':
+    case 'withdrawal_failed':
+      return build(role === 'astrologer' ? 'Withdrawals' : 'Wallet');
     case 'pooja_booking':
       if (data.poojaId) return build('MandirPoojaDetail');
       return build('MandirPooja');

@@ -104,11 +104,16 @@ function DonationsContent() {
           </div>
 
           <h2 className="text-xl font-bold text-text-primary mb-4">Donation Logs</h2>
-          <Table headers={['Type', 'Amount', 'Note', 'Date']} emptyMessage="No donation logs found">
+          <Table headers={['Type', 'Donor / Admin', 'Amount', 'Note', 'Date']} emptyMessage="No donation logs found">
             {logs.map((l: any) => (
               <tr key={l.id} className="border-b border-divider hover:bg-surface-light/50">
                 <td className="px-4 py-3">
                   {l.type === 'received' ? <Badge variant="success">Received</Badge> : <Badge variant="danger">Withdrawn</Badge>}
+                </td>
+                <td className="px-4 py-3 text-text-primary font-medium">
+                  {l.type === 'received'
+                    ? (l.userName || (l.userId ? `${l.userId.slice(0, 8)}...` : 'Anonymous'))
+                    : (l.adminName || 'Admin')}
                 </td>
                 <td className="px-4 py-3 text-text-primary font-medium">₹{l.amount}</td>
                 <td className="px-4 py-3 text-text-secondary">{l.note || '-'}</td>
