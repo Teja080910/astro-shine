@@ -99,7 +99,7 @@ export default function OrdersPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by order ID or status..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by order ID or status..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
       </div>
 
       {loading ? (

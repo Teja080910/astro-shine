@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
 import { Pagination, unwrapList } from '@/components/Pagination';
+import { SearchInput } from '@/components/SearchInput';
 import { api } from '@/lib/api';
 import { config } from '@/config';
-import { FileText, ExternalLink, Search, Shield, CheckCircle, XCircle } from 'lucide-react';
+import { FileText, ExternalLink, Shield, CheckCircle, XCircle } from 'lucide-react';
 import type { Astrologer } from '@astro-shine/shared-types';
 
 export default function AstrologersPage() {
@@ -110,17 +111,12 @@ export default function AstrologersPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="relative flex-1 max-w-md">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { setDebouncedSearch(search); setPage(1); } }}
-            placeholder="Search by name, email, or specialization..."
-            className="input-field pl-10 pr-4 py-3 text-sm w-full"
-          />
-        </div>
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          onEnter={(v) => { setDebouncedSearch(v); setPage(1); }}
+          placeholder="Search by name, email, or specialization..."
+        />
         <div className="flex gap-2">
           {(['all', 'pending', 'approved', 'rejected'] as const).map(s => (
             <button

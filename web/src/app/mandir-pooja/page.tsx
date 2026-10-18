@@ -119,7 +119,7 @@ export default function MandirPoojaPage() {
 
       <div className="mb-6">
         <SearchInput
-          onEnter={() => { setDebouncedSearch(search); setPage(1); }}
+          onEnter={(v) => { setDebouncedSearch(v); setPage(1); }}
           value={search}
           onChange={setSearch}
           placeholder={tab === 'poojas' ? 'Search poojas by name or description...' : 'Search bookings by status...'}

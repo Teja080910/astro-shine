@@ -119,7 +119,7 @@ export default function SupportPage() {
       </div>
 
       <div className="flex gap-2 mb-4">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by subject, status, or priority..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by subject, status, or priority..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
         {filters.map(f => (
           <button key={f.value} onClick={() => { setStatusFilter(f.value); setPage(1); }}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${statusFilter === f.value ? 'bg-accent-gold text-white' : 'bg-surface-light text-text-secondary hover:bg-surface-light/80'}`}>

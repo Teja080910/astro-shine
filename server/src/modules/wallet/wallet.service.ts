@@ -5,6 +5,21 @@ import { eq, and, sql } from 'drizzle-orm';
 import { RealtimeService } from '../../common/realtime.service';
 import { paginated, type Pagination } from '../../common/utils/pagination';
 
+type WalletRow = {
+  id: string;
+  user_id: string | null;
+  astrologer_id: string | null;
+  admin_id: string | null;
+  balance: string;
+  total_added: string;
+  total_deducted: string;
+  currency: string;
+  created_at: string;
+  updated_at: string;
+  owner_name: string;
+  owner_type: string;
+};
+
 @Injectable()
 export class WalletService {
   private readonly logger = new Logger(WalletService.name);
@@ -29,35 +44,85 @@ export class WalletService {
   }
 
   async findAll(pagination?: Pagination) {
-    const order = sql`${schema.wallets.createdAt} DESC`;
+    const pattern = pagination?.q ? `%${pagination.q}%` : undefined;
+    const ownerType = sql`CASE
+      WHEN w.admin_id IS NOT NULL THEN 'Admin'
+      WHEN w.astrologer_id IS NOT NULL THEN 'Astrologer'
+      ELSE 'User'
+    END`;
+    const searchClause = pattern
+      ? sql`WHERE (COALESCE(u.name, '') ILIKE ${pattern} OR ${ownerType} ILIKE ${pattern})`
+      : sql``;
+    const joins = sql`
+      FROM wallets w
+      LEFT JOIN users u ON u.id = COALESCE(w.user_id, w.astrologer_id, w.admin_id)
+    `;
+
+    const selectClause = sql`
+      SELECT w.id, w.user_id, w.astrologer_id, w.admin_id, w.balance,
+             w.total_added, w.total_deducted, w.currency, w.created_at, w.updated_at,
+             COALESCE(u.name, '') AS owner_name,
+             ${ownerType} AS owner_type
+      ${joins}
+      ${searchClause}
+      ORDER BY w.created_at DESC
+    `;
+
+    const mapRow = (r: WalletRow) => ({
+      id: r.id,
+      userId: r.user_id,
+      astrologerId: r.astrologer_id,
+      adminId: r.admin_id,
+      balance: r.balance,
+      totalAdded: r.total_added,
+      totalDeducted: r.total_deducted,
+      currency: r.currency,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+      ownerName: r.owner_name || (r.admin_id ? 'Admin' : 'Unknown'),
+      ownerType: r.owner_type,
+    });
+
     if (!pagination?.enabled) {
-      return this.db
-        .select()
-        .from(schema.wallets)
-        .orderBy(order);
+      const rows = await this.db.execute<WalletRow>(selectClause);
+      return rows.rows.map(mapRow);
     }
 
-    const [data, countRows, summaryRows] = await Promise.all([
-      this.db
-        .select()
-        .from(schema.wallets)
-        .orderBy(order)
-        .limit(pagination.limit)
-        .offset(pagination.offset),
-      this.db.select({ count: sql<number>`count(*)::int` }).from(schema.wallets),
-      this.db.select({
-        balance: sql<string>`COALESCE(SUM(${schema.wallets.balance}), 0)`,
-        totalAdded: sql<string>`COALESCE(SUM(${schema.wallets.totalAdded}), 0)`,
-        totalDeducted: sql<string>`COALESCE(SUM(${schema.wallets.totalDeducted}), 0)`,
-      }).from(schema.wallets),
+    const [rows, countRows, summaryRows] = await Promise.all([
+      this.db.execute<WalletRow>(
+        sql`${selectClause} LIMIT ${pagination.limit} OFFSET ${pagination.offset}`,
+      ),
+      this.db.execute<{ count: number }>(sql`
+        SELECT COUNT(*)::int AS count
+        ${joins}
+        ${searchClause}
+      `),
+      this.db.execute<{
+        balance: string;
+        total_added: string;
+        total_deducted: string;
+      }>(sql`
+        SELECT COALESCE(SUM(balance), 0) AS balance,
+               COALESCE(SUM(total_added), 0) AS total_added,
+               COALESCE(SUM(total_deducted), 0) AS total_deducted
+        FROM wallets
+      `),
     ]);
-    const summary = summaryRows[0] || { balance: '0', totalAdded: '0', totalDeducted: '0' };
+    const summary = summaryRows.rows[0] || {
+      balance: '0',
+      total_added: '0',
+      total_deducted: '0',
+    };
     return {
-      ...paginated(data, Number(countRows[0]?.count || 0), pagination),
+      ...paginated(
+        rows.rows.map(mapRow),
+        Number(countRows.rows[0]?.count || 0),
+        pagination,
+      ),
       summary: {
         balance: Number(summary.balance || 0),
-        totalAdded: Number(summary.totalAdded || 0),
-        totalDeducted: Number(summary.totalDeducted || 0),
+        totalAdded: Number(summary.total_added || 0),
+        totalDeducted: Number(summary.total_deducted || 0),
       },
     };
   }

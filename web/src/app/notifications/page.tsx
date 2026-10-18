@@ -109,7 +109,7 @@ export default function NotificationsPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search notifications by title, body, or type..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search notifications by title, body, or type..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
       </div>
 
       {loading ? (

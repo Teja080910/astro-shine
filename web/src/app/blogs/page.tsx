@@ -94,7 +94,7 @@ export default function BlogsPage() {
       </div>
 
       <div className="mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by title, slug or status..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by title, slug or status..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
       </div>
 
       {loading ? (

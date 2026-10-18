@@ -44,7 +44,7 @@ export default function TransactionsPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by type, category, description, status..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by type, category, description, status..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
       </div>
 
       {loading ? (

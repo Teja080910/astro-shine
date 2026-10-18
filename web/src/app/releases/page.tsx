@@ -79,7 +79,7 @@ export default function ReleasesPage() {
         <button onClick={() => openForm(null)} className="gradient-btn">Add Release</button>
       </div>
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by app, platform or version..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by app, platform or version..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
       </div>
 
       {loading ? (

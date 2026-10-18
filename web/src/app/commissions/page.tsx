@@ -95,7 +95,7 @@ export default function CommissionsPage() {
         <button onClick={() => openEdit({} as Commission)} className="gradient-btn">Add Commission</button>
       </div>
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by astrologer, type, status..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by astrologer, type, status..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
       </div>
       <Table headers={['Astrologer', 'Type', 'Value', 'Min Amount', 'Max Cap', 'Status', '']} emptyMessage="No commissions found">
         {loading ? (

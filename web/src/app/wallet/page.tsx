@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
-import { SearchInput, matchesSearch } from '@/components/SearchInput';
+import { SearchInput } from '@/components/SearchInput';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { Table, GradientButton, CustomModal } from '@/components/UIComponents';
 import { api } from '@/lib/api';
@@ -17,39 +17,33 @@ export default function WalletPage() {
   const [withdrawError, setWithdrawError] = useState('');
   const [adminWallet, setAdminWallet] = useState<any>(null);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [summary, setSummary] = useState<{ balance: number; totalAdded: number; totalDeducted: number } | null>(null);
 
-  useEffect(() => {
+  const fetchWallets = useCallback(() => {
     setLoading(true);
     setError('');
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (debouncedSearch) params.set('q', debouncedSearch);
     Promise.all([
-      api.get<any>(`/wallet/all?page=${page}&limit=${limit}`),
-      api.get<any[]>('/users').catch(() => []),
-      api.get<any[]>('/astrologers').catch(() => []),
-      api.get<any[]>('/admins').catch(() => []),
+      api.get<any>(`/wallet/all?${params.toString()}`),
       api.get<any>('/wallet').catch(() => null),
-    ]).then(([walletRes, users, astros, admins, mine]) => {
+    ]).then(([walletRes, mine]) => {
       const wallets = unwrapList<any>(walletRes);
       setSummary(Array.isArray(walletRes) ? null : (walletRes?.summary ?? null));
-      const userMap = Object.fromEntries(users.map((u: any) => [u.id, u.name]));
-      const astroMap = Object.fromEntries(astros.map((a: any) => [a.userId || a.id, a.name]));
-      const adminMap = Object.fromEntries(admins.map((a: any) => [a.userId || a.id, a.name]));
-      const enriched = wallets.data.map((w: any) => ({
-        ...w,
-        ownerName: w.adminId ? adminMap[w.adminId] || 'Admin' : w.astrologerId ? astroMap[w.astrologerId] : userMap[w.userId] || 'Unknown',
-        ownerType: w.adminId ? 'Admin' : w.astrologerId ? 'Astrologer' : 'User',
-      }));
-      setData(enriched);
+      setData(wallets.data);
       setTotal(wallets.total);
       setTotalPages(wallets.totalPages);
       setAdminWallet(mine && mine.adminId ? mine : null);
-      setLoading(false);
-    }).catch(() => { setLoading(false); setError('Failed to load wallet data'); });
-  }, [page, limit]);
+    }).catch(() => { setError('Failed to load wallet data'); })
+      .finally(() => setLoading(false));
+  }, [page, limit, debouncedSearch]);
+
+  useEffect(() => { fetchWallets(); }, [fetchWallets]);
 
   const handleWithdraw = async () => {
     const amount = parseFloat(withdrawAmount);
@@ -59,27 +53,7 @@ export default function WalletPage() {
       await api.post('/withdrawals/admin', { amount });
       setWithdrawModal(false);
       setWithdrawAmount('');
-      const [updated, updatedUsers, updatedAstros, updatedAdmins, mine] = await Promise.all([
-        api.get<any>(`/wallet/all?page=${page}&limit=${limit}`),
-        api.get<any[]>('/users').catch(() => []),
-        api.get<any[]>('/astrologers').catch(() => []),
-        api.get<any[]>('/admins').catch(() => []),
-        api.get<any>('/wallet').catch(() => null),
-      ]);
-      const wallets = unwrapList<any>(updated);
-      setSummary(Array.isArray(updated) ? null : (updated?.summary ?? null));
-      const userMap = Object.fromEntries(updatedUsers.map((u: any) => [u.id, u.name]));
-      const astroMap = Object.fromEntries(updatedAstros.map((a: any) => [a.userId || a.id, a.name]));
-      const adminMap = Object.fromEntries(updatedAdmins.map((a: any) => [a.userId || a.id, a.name]));
-      const enriched = wallets.data.map((w: any) => ({
-        ...w,
-        ownerName: w.adminId ? adminMap[w.adminId] || 'Admin' : w.astrologerId ? astroMap[w.astrologerId] : userMap[w.userId] || 'Unknown',
-        ownerType: w.adminId ? 'Admin' : w.astrologerId ? 'Astrologer' : 'User',
-      }));
-      setData(enriched);
-      setTotal(wallets.total);
-      setTotalPages(wallets.totalPages);
-      setAdminWallet(mine && mine.adminId ? mine : null);
+      fetchWallets();
     } catch (e: any) {
       setWithdrawError(e.message || 'Withdrawal failed');
     } finally {
@@ -91,14 +65,12 @@ export default function WalletPage() {
   const totalAdded = summary ? summary.totalAdded : data.reduce((s: number, w: any) => s + Number(w.totalAdded), 0);
   const totalDeducted = summary ? summary.totalDeducted : data.reduce((s: number, w: any) => s + Number(w.totalDeducted), 0);
 
-  const filtered = data.filter((w: any) => matchesSearch(search, w.ownerName, w.ownerType));
-
   return (
     <AdminLayout>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-extrabold text-text-primary">Wallets</h1>
         <div className="flex items-center gap-3">
-          <span className="text-text-secondary">{filtered.length} of {total} wallets</span>
+          <span className="text-text-secondary">{data.length} of {total} wallets</span>
           {adminWallet && Number(adminWallet.balance) > 0 && (
             <GradientButton onClick={() => setWithdrawModal(true)}>Withdraw from Admin</GradientButton>
           )}
@@ -106,7 +78,12 @@ export default function WalletPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by owner or type..." />
+        <SearchInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Search by owner or type..."
+          onEnter={(v) => { setDebouncedSearch(v); setPage(1); }}
+        />
       </div>
 
       {loading ? (
@@ -131,7 +108,7 @@ export default function WalletPage() {
       </div>
 
       <Table headers={['Owner', 'Type', 'Balance', 'Total Added', 'Total Deducted']} emptyMessage="No wallets found">
-        {filtered.map((w: any) => (
+        {data.map((w: any) => (
           <tr key={w.id} className="border-b border-divider hover:bg-surface-light/50">
             <td className="px-4 py-3 text-text-primary font-medium">{w.ownerName}</td>
             <td className="px-4 py-3 text-text-secondary">{w.ownerType}</td>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 
 export function SearchInput({
   value,
@@ -29,8 +29,21 @@ export function SearchInput({
           }
         }}
         placeholder={placeholder}
-        className="input-field pl-10 pr-4 py-3 text-sm w-full"
+        className="input-field pl-10 pr-10 py-3 text-sm w-full"
       />
+      {value && (
+        <button
+          type="button"
+          aria-label="Clear search"
+          onClick={() => {
+            onChange('');
+            onEnter?.('');
+          }}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+        >
+          <X size={16} />
+        </button>
+      )}
     </div>
   );
 }

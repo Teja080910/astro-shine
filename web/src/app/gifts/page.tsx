@@ -148,7 +148,7 @@ export default function GiftsPage() {
 
       <div className="mb-6">
         <SearchInput
-          onEnter={() => { setDebouncedSearch(search); setPage(1); }}
+          onEnter={(v) => { setDebouncedSearch(v); setPage(1); }}
           value={search}
           onChange={setSearch}
           placeholder={tab === 'gifts' ? 'Search gifts by name...' : 'Search by gift, sender, receiver or status...'}

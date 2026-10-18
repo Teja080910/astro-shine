@@ -50,7 +50,7 @@ function WithdrawalsContent() {
     <>
       <h1 className="text-3xl font-extrabold text-text-primary mb-6">Withdrawals</h1>
       <div className="mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by requester, status, payout or amount..." onEnter={() => { setDebouncedSearch(search); setPage(1); }} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by requester, status, payout or amount..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
       </div>
       <Table headers={['Requester', 'Type', 'Amount', 'Status', 'Payout', 'Date', '']} emptyMessage="No withdrawals found">
         {data.map((w: any) => (
