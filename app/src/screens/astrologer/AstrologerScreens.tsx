@@ -52,7 +52,7 @@ import type {
 import * as Location from "expo-location";
 
 export function AstrologerHomeScreen({ navigation }: any) {
-  const { astrologer, theme, setTheme, updateUser } = useAuth();
+  const { astrologer, theme, updateUser } = useAuth();
   const { astrologerStatuses, onlineUsers, statsVersion, blogVersion, notificationVersion } = useChat();
   const isFocused = useIsFocused();
   const isDark = theme === "dark";
@@ -384,16 +384,6 @@ export function AstrologerHomeScreen({ navigation }: any) {
                 flexShrink: 0,
               }}
             >
-              <TouchableOpacity
-                onPress={() => setTheme(isDark ? "light" : "dark")}
-                style={{ padding: 4 }}
-              >
-                <Ionicons
-                  name={isDark ? "sunny-outline" : "moon-outline"}
-                  size={22}
-                  color={iconColor}
-                />
-              </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => navigation.navigate("Notifications")}
                 style={{ padding: 4, position: "relative" }}

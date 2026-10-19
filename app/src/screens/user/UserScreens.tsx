@@ -605,7 +605,7 @@ function AstrologerRowCard({
 
 
 export function UserHomeScreen({ navigation }: any) {
-  const { user, theme, setTheme } = useAuth();
+  const { user, theme } = useAuth();
   const { conversations, openConversation, astrologerStatuses, onlineUsers, horoscopeVersion, blogVersion, notificationVersion, walletVersion, panchangVersion } = useChat();
   const { initiateCall } = useCall();
   const isFocused = useIsFocused();
@@ -1007,17 +1007,6 @@ export function UserHomeScreen({ navigation }: any) {
               flexShrink: 0,
             }}
           >
-            <TouchableOpacity
-              onPress={() => setTheme(isDark ? "light" : "dark")}
-              style={{ padding: 4 }}
-            >
-              <Ionicons
-                name={isDark ? "sunny-outline" : "moon-outline"}
-                size={22}
-                color={iconColor}
-              />
-            </TouchableOpacity>
-
             <TouchableOpacity
               onPress={() => navigation.navigate("Astrologers")}
               style={{ padding: 4 }}
