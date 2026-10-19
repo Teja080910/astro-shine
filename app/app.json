@@ -54,6 +54,12 @@
           "locationWhenInUsePermission": "Allow Astro Shine to use your location to show weather and local panchang data."
         }
       ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Astro Shine to access your photos to set your profile picture."
+        }
+      ],
       "expo-audio",
       "expo-video",
       [

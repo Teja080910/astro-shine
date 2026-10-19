@@ -157,7 +157,7 @@ export class AstrologersService {
   }
 
   async update(id: string, data: any) {
-    const { name, phone, gender, dateOfBirth, ...astroFields } = data;
+    const { name, phone, gender, dateOfBirth, avatar, ...astroFields } = data;
     console.log('DEBUG Astrologer Update payload:', {
       id,
       name,
@@ -189,6 +189,7 @@ export class AstrologersService {
     if (name !== undefined) userUpdate.name = name;
     if (phone !== undefined) userUpdate.phone = phone;
     if (gender !== undefined) userUpdate.gender = gender;
+    if (avatar !== undefined) userUpdate.avatar = avatar || null;
     if (dateOfBirth !== undefined) {
       userUpdate.dateOfBirth = dateOfBirth === '' ? null : dateOfBirth;
     }

@@ -9,6 +9,7 @@ import { useAuth } from '../../context/AuthContext';
 import { resolveNotificationTarget } from '../../shared/notification-router';
 import { useChat } from '../../context/ChatContext';
 import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { Video as ExpoVideo, ResizeMode } from 'expo-av';
 import YoutubeIframe from 'react-native-youtube-iframe';
 
@@ -663,6 +664,40 @@ export function EditProfileScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [avatar, setAvatar] = useState((profile as any)?.avatar || '');
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
+  const pickAvatar = async () => {
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Permission Needed', 'Please allow photo access to change your profile picture.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+      if (result.canceled || !result.assets?.[0]) return;
+      const asset = result.assets[0];
+      setAvatarUploading(true);
+      const uploaded = await api.uploadFile(
+        {
+          uri: asset.uri,
+          name: asset.fileName || `avatar-${Date.now()}.jpg`,
+          mimeType: asset.mimeType || 'image/jpeg',
+        },
+        'minio',
+      );
+      setAvatar(uploaded.url);
+    } catch (e: any) {
+      Alert.alert('Upload Failed', e?.response?.data?.message || e?.message || 'Could not upload photo. Please try again.');
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -714,6 +749,7 @@ export function EditProfileScreen() {
       setPhone(profile.phone || '');
       setGender((profile as any).gender || 'male');
       setDateOfBirth((profile as any).dateOfBirth ? (profile as any).dateOfBirth.split('T')[0] : '');
+      setAvatar((profile as any).avatar || '');
       if (role === 'astrologer') {
         setBio((profile as any).bio || '');
         setExperience(String((profile as any).experience || ''));
@@ -746,6 +782,7 @@ export function EditProfileScreen() {
           phone: phone.trim(),
           gender,
           dateOfBirth: dateOfBirth || null,
+          avatar,
           bio,
           experience: parseInt(experience) || 0,
           specialization: specialization.split(',').map((s: string) => s.trim()).filter(Boolean),
@@ -763,6 +800,7 @@ export function EditProfileScreen() {
           phone: phone.trim(),
           gender,
           dateOfBirth: dateOfBirth || null,
+          avatar,
         });
       }
       if (updated) {
@@ -796,6 +834,63 @@ export function EditProfileScreen() {
         >
           <View style={{ width: '100%', maxWidth: 600, alignSelf: 'center', padding: 16 }}>
             <SectionTitle title="Edit Profile" />
+
+          <View style={{ alignItems: 'center', marginBottom: 20 }}>
+            <TouchableOpacity onPress={pickAvatar} disabled={avatarUploading} activeOpacity={0.8}>
+              <View
+                style={{
+                  padding: 3,
+                  borderRadius: 50,
+                  borderWidth: 2.5,
+                  borderColor: colors.accentGold,
+                  backgroundColor: colors.surface,
+                }}
+              >
+                {avatar ? (
+                  <Image
+                    source={{ uri: resolveMediaUrl(avatar) }}
+                    style={{ width: 88, height: 88, borderRadius: 44 }}
+                  />
+                ) : (
+                  <View
+                    style={{
+                      width: 88,
+                      height: 88,
+                      borderRadius: 44,
+                      backgroundColor: colors.primary,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Text style={{ color: colors.white, fontSize: 32, fontWeight: '700' }}>
+                      {(name || '?').trim().split(/\s+/).map((p) => p[0]).join('').slice(0, 2).toUpperCase()}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <View
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  right: 0,
+                  backgroundColor: colors.accentGold,
+                  width: 30,
+                  height: 30,
+                  borderRadius: 15,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderWidth: 2,
+                  borderColor: colors.background,
+                }}
+              >
+                <Ionicons name={avatarUploading ? 'hourglass-outline' : 'camera'} size={15} color="#000" />
+              </View>
+            </TouchableOpacity>
+            <Text style={[typography.caption, { marginTop: 8, color: colors.textMuted }]}>
+              {avatarUploading ? 'Uploading photo...' : 'Tap to change profile photo'}
+            </Text>
+          </View>
+
           <View style={{ marginBottom: 14 }}>
             <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Name</Text>
             <TextInput
