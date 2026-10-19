@@ -43,7 +43,13 @@ export class NotificationsController {
       return this.service.findByAstrologerId(astrologerId);
     }
     if (!isAdmin) {
-      throw new ForbiddenException('Only admins can list all notifications');
+      // Non-admin callers without an explicit filter get their own inbox,
+      // resolved by role. This keeps the mobile apps working even when the
+      // client fails to send userId/astrologerId (e.g. stale stored session).
+      if (req.userRole === 'astrologer') {
+        return this.service.findByAstrologerId(req.userId);
+      }
+      return this.service.findByUserId(req.userId);
     }
     return this.service.findAll(parsePagination(query));
   }
