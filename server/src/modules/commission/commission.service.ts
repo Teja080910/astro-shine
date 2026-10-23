@@ -352,6 +352,14 @@ export class CommissionService {
           referenceId: messageId,
         });
       }
+
+      await tx
+        .update(schema.astrologers)
+        .set({
+          totalEarnings: sql`${schema.astrologers.totalEarnings} + ${amountStr}::decimal`,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.astrologers.userId, astrologerId));
     });
   }
 }

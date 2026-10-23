@@ -319,17 +319,18 @@ export function AstrologerHomeScreen({ navigation }: any) {
         <View style={{ width: "100%", maxWidth: 600, alignSelf: "center" }}>
           {/* Top Header Bar */}
           <View style={styles.topHeader}>
-            <TouchableOpacity
-              onPress={() => setMenuOpen(true)}
-              style={{ padding: 4, width: 40 }}
-            >
-              <Ionicons name="menu-outline" size={28} color={iconColor} />
-            </TouchableOpacity>
+            <View style={{ flex: 1, alignItems: "flex-start" }}>
+              <TouchableOpacity
+                onPress={() => setMenuOpen(true)}
+                style={{ padding: 4, width: 40 }}
+              >
+                <Ionicons name="menu-outline" size={28} color={iconColor} />
+              </TouchableOpacity>
+            </View>
 
             <View
               style={{
                 alignItems: "center",
-                flex: 1,
                 flexShrink: 1,
                 minWidth: 0,
                 paddingHorizontal: 4,
@@ -378,8 +379,10 @@ export function AstrologerHomeScreen({ navigation }: any) {
 
             <View
               style={{
+                flex: 1,
                 flexDirection: "row",
                 alignItems: "center",
+                justifyContent: "flex-end",
                 gap: 6,
                 flexShrink: 0,
               }}

@@ -6,11 +6,26 @@ import type { Conversation, ConversationMessage } from '../shared/types';
 import { config } from '../config';
 import { useAuth } from './AuthContext';
 
+export interface ChatBilling {
+  conversationId: string;
+  startedAt: number;
+  elapsedSeconds: number;
+  rate: number;
+  astrologerShareRate: number;
+  minutesCharged: number;
+  totalCharged: number;
+  totalEarned: number;
+  isActive: boolean;
+  reason?: string;
+  endedAt?: number;
+}
+
 interface ChatState {
   connected: boolean;
   conversations: Conversation[];
   activeConversation: Conversation | null;
   messages: ConversationMessage[];
+  chatBilling: Record<string, ChatBilling>;
   onlineUsers: Record<string, boolean>;
   typingUsers: Record<string, string | null>;
   unreadCounts: Record<string, number>;
@@ -41,6 +56,8 @@ interface ChatState {
   stopTyping: (conversationId: string) => void;
   markAsRead: (conversationId: string) => void;
   joinRoom: (conversationId: string) => void;
+  leaveRoom: (conversationId: string) => void;
+  resetChatBilling: (conversationId: string) => void;
 }
 
 const ChatContext = createContext<ChatState>(null!);
@@ -56,6 +73,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversation, setActiveConversationState] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
+  const [chatBilling, setChatBilling] = useState<Record<string, ChatBilling>>({});
   const [onlineUsers, setOnlineUsers] = useState<Record<string, boolean>>({});
   const [typingUsers, setTypingUsers] = useState<Record<string, string | null>>({});
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
@@ -112,6 +130,24 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     socket.on('disconnect', (reason) => {
       if (__DEV__) console.log(`[WS] Disconnected: ${reason}`);
       setConnected(false);
+      // The server stops billing when the socket goes away; freeze the local
+      // clock so the chat timer cannot keep ticking without being charged.
+      setChatBilling(prev => {
+        const next: Record<string, ChatBilling> = {};
+        for (const [id, billing] of Object.entries(prev)) {
+          next[id] = billing.isActive
+            ? {
+                ...billing,
+                isActive: false,
+                elapsedSeconds: Math.max(
+                  billing.elapsedSeconds || 0,
+                  Math.floor((Date.now() - billing.startedAt) / 1000),
+                ),
+              }
+            : billing;
+        }
+        return next;
+      });
     });
     socket.on('connect_error', (err) => {
       console.error('[WS] Connect error:', err.message);
@@ -240,6 +276,21 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     socket.on('chat:blocked', (data: { message: string }) => {
       setChatBlockedMessage(data.message);
     });
+
+    const mergeChatBilling = (data: Partial<ChatBilling> & { conversationId?: string }) => {
+      if (!data?.conversationId) return;
+      setChatBilling(prev => {
+        const merged = { ...(prev[data.conversationId!] || {}), ...data } as ChatBilling;
+        // Re-anchor the local clock on server ticks so the timer cannot drift.
+        if (merged.isActive && typeof data.elapsedSeconds === 'number') {
+          merged.startedAt = Date.now() - data.elapsedSeconds * 1000;
+        }
+        return { ...prev, [data.conversationId!]: merged };
+      });
+    };
+    socket.on('chat:session', mergeChatBilling);
+    socket.on('chat:billing', mergeChatBilling);
+    socket.on('chat:session-end', mergeChatBilling);
 
     socket.on('support:ticket-updated', () => {
       setSupportVersion(v => v + 1);
@@ -455,6 +506,22 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const leaveRoom = useCallback((conversationId: string) => {
+    const socket = socketRef.current;
+    if (socket?.connected) {
+      socket.emit('leave:conversation', { conversationId });
+    }
+  }, []);
+
+  const resetChatBilling = useCallback((conversationId: string) => {
+    setChatBilling(prev => {
+      if (!prev[conversationId]) return prev;
+      const next = { ...prev };
+      delete next[conversationId];
+      return next;
+    });
+  }, []);
+
   return (
     <ChatContext.Provider
       value={{
@@ -462,6 +529,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         conversations,
         activeConversation,
         messages,
+        chatBilling,
         onlineUsers,
         typingUsers,
         unreadCounts,
@@ -492,6 +560,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         stopTyping,
         markAsRead,
         joinRoom,
+        leaveRoom,
+        resetChatBilling,
       }}
     >
       {children}

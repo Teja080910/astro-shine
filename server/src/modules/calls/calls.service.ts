@@ -117,8 +117,20 @@ export class CallsService {
     const now = new Date();
     const call = await this.findById(id);
     if (!call) return null;
-    const startedAt = call.startedAt ? new Date(call.startedAt) : now;
-    const duration = Math.floor((now.getTime() - startedAt.getTime()) / 1000);
+
+    // Compute elapsed time in Postgres. Call timestamps are stored as local
+    // wall-clock `timestamp` values, while Drizzle parses them as UTC; doing
+    // the subtraction in JS can therefore produce a negative duration (and no
+    // earnings) on servers whose timezone is not UTC.
+    const durationResult = await this.db.execute<{ seconds: number }>(sql`
+      SELECT GREATEST(
+        0,
+        FLOOR(EXTRACT(EPOCH FROM (now() - COALESCE(started_at, now()))))::int
+      ) AS seconds
+      FROM call_logs
+      WHERE id = ${id}
+    `);
+    const duration = Number(durationResult.rows?.[0]?.seconds ?? 0);
     const ratePerMin = parseFloat(call.ratePerMin || '0');
     const cost = ratePerMin > 0 ? ((duration / 60) * ratePerMin).toFixed(2) : '0';
     const [r] = await this.db.update(schema.callLogs).set({

@@ -39,9 +39,19 @@ function isConsecutive(prev: any, curr: any): boolean {
   return diff < 60000;
 }
 
+function formatDuration(totalSeconds: number): string {
+  const safe = Math.max(0, Math.floor(totalSeconds || 0));
+  const hours = Math.floor(safe / 3600);
+  const minutes = Math.floor((safe % 3600) / 60);
+  const seconds = safe % 60;
+  const mm = String(minutes).padStart(2, '0');
+  const ss = String(seconds).padStart(2, '0');
+  return hours > 0 ? `${hours}:${mm}:${ss}` : `${mm}:${ss}`;
+}
+
 export function ChatRoomScreen({ route, navigation }: any) {
   const { conversationId, participantId, participantRole, participantName, participantAvatar } = route.params;
-  const { messages, loadMessages, loadMoreMessages, sendMessage, startTyping, stopTyping, markAsRead, typingUsers, hasMore, loading, onlineUsers, connected, joinRoom, setActiveConversation, astrologerStatuses, chatBlockedMessage, clearChatBlocked } = useChat();
+  const { messages, loadMessages, loadMoreMessages, sendMessage, startTyping, stopTyping, markAsRead, typingUsers, hasMore, loading, onlineUsers, connected, joinRoom, leaveRoom, resetChatBilling, setActiveConversation, astrologerStatuses, chatBlockedMessage, clearChatBlocked, chatBilling } = useChat();
   const { initiateCall } = useCall();
   const { user, astrologer: authAstrologer } = useAuth();
   const currentUserId = user?.id || authAstrologer?.userId || authAstrologer?.id || '';
@@ -66,6 +76,26 @@ export function ChatRoomScreen({ route, navigation }: any) {
   const [reportReason, setReportReason] = useState('');
   const [reportDesc, setReportDesc] = useState('');
   const [reportSubmitting, setReportSubmitting] = useState(false);
+
+  const billing = chatBilling[conversationId];
+  const [clock, setClock] = useState(Date.now());
+  const astrologerRate = parseFloat(String((authAstrologer as any)?.chatPricePerMin || (authAstrologer as any)?.pricePerMin || '0')) || 0;
+  const sessionRate = billing?.rate ?? (isUser ? chatPrice : astrologerRate);
+  const elapsedSeconds = billing?.isActive
+    ? Math.max(0, Math.floor((clock - billing.startedAt) / 1000))
+    : (billing?.elapsedSeconds ?? 0);
+
+  useEffect(() => {
+    if (!billing?.isActive) return;
+    setClock(Date.now());
+    const interval = setInterval(() => setClock(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, [billing?.isActive, billing?.startedAt]);
+
+  useEffect(() => {
+    resetChatBilling(conversationId);
+    return () => { leaveRoom(conversationId); };
+  }, [conversationId, leaveRoom, resetChatBilling]);
 
   useEffect(() => {
     if (isUser && participantId) {
@@ -160,6 +190,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
                     setBalanceDialogVisible(true);
                     return;
                   }
+                  leaveRoom(conversationId);
                   initiateCall(participantId, participantName || 'Astrologer', 'audio');
                 }}
                 hitSlop={{ top: 15, bottom: 15, left: 8, right: 8 }}
@@ -177,6 +208,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
                     setBalanceDialogVisible(true);
                     return;
                   }
+                  leaveRoom(conversationId);
                   initiateCall(participantId, participantName || 'Astrologer', 'video');
                 }}
                 hitSlop={{ top: 15, bottom: 15, left: 8, right: 8 }}
@@ -198,7 +230,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
         </View>
       ),
     });
-  }, [navigation, isOnline, typing, participantId, currentUserId, participantName, participantRole, chatPrice, isUser, initiateCall, walletBalance, audioCallPrice, videoCallPrice]);
+  }, [navigation, isOnline, typing, participantId, currentUserId, participantName, participantRole, chatPrice, isUser, initiateCall, walletBalance, audioCallPrice, videoCallPrice, leaveRoom, conversationId]);
 
   useEffect(() => {
     loadMessages(conversationId);
@@ -274,6 +306,23 @@ export function ChatRoomScreen({ route, navigation }: any) {
   return (
     <ScreenWrapper noPadding>
       <View style={{ flex: 1 }}>
+        <View style={[styles.sessionBar, { backgroundColor: colors.surfaceLight, borderBottomColor: colors.divider }]}>
+          <View style={styles.sessionTimerWrap}>
+            <Ionicons name="stopwatch-outline" size={15} color={billing?.isActive ? colors.primaryLight : colors.textMuted} />
+            <Text style={[styles.sessionTimer, { color: billing?.isActive ? colors.textPrimary : colors.textMuted }]}>{formatDuration(elapsedSeconds)}</Text>
+            {billing?.isActive && <View style={[styles.sessionLiveDot, { backgroundColor: colors.success }]} />}
+          </View>
+          <Text style={[styles.sessionAmount, { color: isUser ? colors.textSecondary : colors.accentGold }]}>
+            {isUser ? `Spent ₹${(billing?.totalCharged ?? 0).toFixed(2)}` : `Earned ₹${(billing?.totalEarned ?? 0).toFixed(2)}`}
+          </Text>
+          <Text style={[styles.sessionRate, { color: colors.textMuted }]} numberOfLines={1}>
+            {billing?.isActive
+              ? (sessionRate > 0 ? `₹${sessionRate.toFixed(2)}/min` : '')
+              : billing
+                ? 'Session ended'
+                : (isUser ? 'Starts on first message' : 'Waiting for user')}
+          </Text>
+        </View>
         <FlatList
           ref={flatListRef}
           data={messages}
@@ -292,12 +341,6 @@ export function ChatRoomScreen({ route, navigation }: any) {
             }, 100);
           }}
         />
-        {isUser && !needsFunds && (
-          <View style={[styles.chargeIndicator, { backgroundColor: colors.surfaceLight }]}>
-            <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
-            <Text style={[styles.chargeText, { color: colors.textMuted }]}>₹{chatPrice}/min — charged per minute</Text>
-          </View>
-        )}
         {isUser && needsFunds ? (
           <View style={[styles.inputBar, { flexDirection: 'column', alignItems: 'center', gap: 8, paddingVertical: 16, borderTopColor: colors.divider, borderTopWidth: StyleSheet.hairlineWidth }]}>
             <Ionicons name="wallet-outline" size={24} color={colors.danger} />
@@ -444,6 +487,20 @@ const headerStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
   list: { padding: 16, paddingBottom: 8 },
+  sessionBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 8,
+  },
+  sessionTimerWrap: { flexDirection: 'row', alignItems: 'center', gap: 5, flexShrink: 0 },
+  sessionTimer: { fontSize: 13, fontWeight: '700' },
+  sessionLiveDot: { width: 6, height: 6, borderRadius: 3, marginLeft: 1 },
+  sessionAmount: { fontSize: 12, fontWeight: '600', flexShrink: 0 },
+  sessionRate: { fontSize: 10, fontWeight: '500', flexShrink: 1 },
   dateHeader: { alignItems: 'center', marginVertical: 12 },
   dateHeaderText: {
     fontSize: 12,

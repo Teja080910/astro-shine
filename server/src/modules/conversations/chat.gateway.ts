@@ -28,6 +28,19 @@ interface OnlineUserEntry {
   disconnectTimeout?: ReturnType<typeof setTimeout>;
 }
 
+interface ChatSession {
+  conversationId: string;
+  userId: string;
+  astrologerId: string;
+  rate: number;
+  astrologerShareRate: number;
+  startedAt: number;
+  minutesCharged: number;
+  totalCharged: number;
+  totalEarned: number;
+  interval: ReturnType<typeof setInterval>;
+}
+
 @WebSocketGateway({
   cors: {
     origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : true,
@@ -40,7 +53,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
   private readonly logger = new Logger(ChatGateway.name);
   private onlineUsers = new Map<string, OnlineUserEntry>();
-  private lastChatCharge = new Map<string, number>();
+  private chatSessions = new Map<string, ChatSession>();
 
   constructor(
     private readonly authService: AuthService,
@@ -148,6 +161,8 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         this.logger.debug(`[WS] Grace period expired. User ${userId} (${role}) marked offline`);
         this.server.emit('user:offline', { userId, role });
 
+        this.stopChatSessionsForUser(userId);
+
         if (role === 'astrologer') {
           try {
             await this.astrologersService.updateOnlineStatus(userId, 'offline');
@@ -190,6 +205,180 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     return !!entry && entry.socketIds.size > 0;
   }
 
+  // ─── Chat Billing Sessions ───
+
+  private chatSessionPayload(session: ChatSession) {
+    return {
+      conversationId: session.conversationId,
+      userId: session.userId,
+      astrologerId: session.astrologerId,
+      startedAt: session.startedAt,
+      elapsedSeconds: Math.max(
+        0,
+        Math.floor((Date.now() - session.startedAt) / 1000),
+      ),
+      rate: session.rate,
+      astrologerShareRate: session.astrologerShareRate,
+      minutesCharged: session.minutesCharged,
+      totalCharged: Number(session.totalCharged.toFixed(2)),
+      totalEarned: Number(session.totalEarned.toFixed(2)),
+      isActive: true,
+    };
+  }
+
+  private async startChatSession(conversationId: string, userId: string) {
+    const existing = this.chatSessions.get(conversationId);
+    if (existing) return existing;
+
+    const conversation =
+      await this.conversationsService.findById(conversationId);
+    const astrologerId =
+      conversation.participantOneRole === 'astrologer'
+        ? conversation.participantOneId
+        : conversation.participantTwoId;
+    if (!astrologerId) return null;
+
+    const astrologer = await this.astrologersService.findById(astrologerId);
+    const rate = parseFloat(
+      astrologer?.chatPricePerMin || astrologer?.pricePerMin || '5',
+    );
+    if (!Number.isFinite(rate) || rate <= 0) return null;
+
+    const commission =
+      await this.commissionService.findByAstrologerId(astrologerId);
+    const percentage =
+      commission && commission.isActive ? parseFloat(commission.value) : 10;
+    const safePercentage = Math.max(
+      0,
+      Math.min(100, Number.isFinite(percentage) ? percentage : 10),
+    );
+    const astrologerShareRate = Number(
+      (rate * (1 - safePercentage / 100)).toFixed(2),
+    );
+
+    const session: ChatSession = {
+      conversationId,
+      userId,
+      astrologerId,
+      rate,
+      astrologerShareRate,
+      startedAt: Date.now(),
+      minutesCharged: 0,
+      totalCharged: 0,
+      totalEarned: 0,
+      interval: setInterval(() => {
+        void this.chargeChatMinute(conversationId);
+      }, 60000),
+    };
+    this.chatSessions.set(conversationId, session);
+    this.logger.log(
+      `[ChatBilling] Started session ${conversationId} — ₹${rate.toFixed(2)}/min`,
+    );
+
+    const payload = this.chatSessionPayload(session);
+    this.emitToUser(userId, 'chat:session', payload);
+    this.emitToUser(astrologerId, 'chat:session', payload);
+    return session;
+  }
+
+  private async chargeChatMinute(conversationId: string) {
+    const session = this.chatSessions.get(conversationId);
+    if (!session) return;
+
+    try {
+      const hasBalance = await this.walletService.checkSufficientBalance(
+        session.userId,
+        session.rate,
+      );
+      if (!hasBalance) {
+        this.logger.warn(
+          `[ChatBilling] Insufficient balance for ${session.userId} in ${conversationId}`,
+        );
+        this.emitToUser(session.userId, 'chat:blocked', {
+          message:
+            'Insufficient wallet balance. Please recharge to continue chatting.',
+        });
+        this.stopChatSession(conversationId, 'insufficient_balance');
+        return;
+      }
+
+      session.minutesCharged += 1;
+      const chargeReference = `chat-${session.conversationId}-${session.startedAt}-${session.minutesCharged}`;
+
+      await this.walletService.deductFundsAtomic({
+        userId: session.userId,
+        amount: session.rate,
+        description: `Chat with astrologer (${session.minutesCharged} min)`,
+        category: 'chat_charge',
+        referenceId: chargeReference,
+      });
+
+      await this.commissionService.distributeChatEarnings(
+        session.astrologerId,
+        session.conversationId,
+        chargeReference,
+        session.rate,
+      );
+
+      session.totalCharged = Number(
+        (session.totalCharged + session.rate).toFixed(2),
+      );
+      session.totalEarned = Number(
+        (session.totalEarned + session.astrologerShareRate).toFixed(2),
+      );
+
+      this.logger.log(
+        `[ChatBilling] ${conversationId} minute ${session.minutesCharged}: ₹${session.rate.toFixed(2)} charged, ₹${session.astrologerShareRate.toFixed(2)} earned`,
+      );
+
+      const payload = this.chatSessionPayload(session);
+      this.emitToUser(session.userId, 'chat:billing', payload);
+      this.emitToUser(session.astrologerId, 'chat:billing', payload);
+      this.realtime.emitToUser(session.userId, 'wallet:updated', {});
+      this.realtime.broadcast('astrologer:stats-updated', {
+        astrologerId: session.astrologerId,
+      });
+    } catch (e: any) {
+      this.logger.error(
+        `[ChatBilling] Failed to charge ${conversationId}: ${e.message}`,
+      );
+    }
+  }
+
+  private stopChatSession(conversationId: string, reason: string) {
+    const session = this.chatSessions.get(conversationId);
+    if (!session) return;
+
+    clearInterval(session.interval);
+    this.chatSessions.delete(conversationId);
+
+    const payload = {
+      ...this.chatSessionPayload(session),
+      isActive: false,
+      elapsedSeconds: Math.max(
+        0,
+        Math.floor((Date.now() - session.startedAt) / 1000),
+      ),
+      reason,
+      endedAt: Date.now(),
+    };
+    this.emitToUser(session.userId, 'chat:session-end', payload);
+    this.emitToUser(session.astrologerId, 'chat:session-end', payload);
+    this.logger.log(
+      `[ChatBilling] Stopped session ${conversationId} (${reason}) after ${session.minutesCharged} minute(s)`,
+    );
+  }
+
+  private stopChatSessionsForUser(userId: string) {
+    for (const [conversationId, session] of [
+      ...this.chatSessions.entries(),
+    ]) {
+      if (session.userId === userId || session.astrologerId === userId) {
+        this.stopChatSession(conversationId, 'disconnected');
+      }
+    }
+  }
+
   @SubscribeMessage('join:conversation')
   async handleJoinConversation(
     @ConnectedSocket() client: Socket,
@@ -197,6 +386,12 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   ) {
     this.logger.debug(`[WS] join:conversation - socketId: ${client.id}, userId: ${client.data.userId}, conversationId: ${data.conversationId}`);
     client.join(`conversation:${data.conversationId}`);
+
+    // Let clients that join mid-session restore the timer/earnings immediately.
+    const activeSession = this.chatSessions.get(data.conversationId);
+    if (activeSession) {
+      client.emit('chat:session', this.chatSessionPayload(activeSession));
+    }
 
     try {
       const conv = await this.conversationsService.findById(data.conversationId);
@@ -230,6 +425,13 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   ) {
     this.logger.debug(`[WS] leave:conversation - socketId: ${client.id}, conversationId: ${data.conversationId}`);
     client.leave(`conversation:${data.conversationId}`);
+
+    if (client.data.role === 'user') {
+      const session = this.chatSessions.get(data.conversationId);
+      if (session && session.userId === client.data.userId) {
+        this.stopChatSession(data.conversationId, 'left_chat');
+      }
+    }
   }
 
   @SubscribeMessage('message:send')
@@ -251,49 +453,12 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
     if (role === 'user') {
       try {
-        const conversation = await this.conversationsService.findById(data.conversationId);
-        const astrologerId = conversation.participantOneRole === 'astrologer'
-          ? conversation.participantOneId
-          : conversation.participantTwoId;
-        const astrologer = await this.astrologersService.findById(astrologerId);
-        const chatPrice = parseFloat(astrologer?.chatPricePerMin || '5');
-
-        // Per-minute charging: charge chatPrice every 60 seconds
-        const now = Date.now();
-        const lastCharge = this.lastChatCharge.get(data.conversationId) || 0;
-
-        if (lastCharge === 0) {
-          // First message: start the timer without charging
-          this.lastChatCharge.set(data.conversationId, now);
-        } else if (now - lastCharge >= 60000) {
-          // Check balance first
-          const hasBalance = await this.walletService.checkSufficientBalance(userId, chatPrice);
-          if (!hasBalance) {
-            client.emit('chat:blocked', {
-              message: 'Insufficient wallet balance. Please recharge to continue chatting.',
-            });
-            return;
-          }
-
-          this.lastChatCharge.set(data.conversationId, now);
-
-          await this.walletService.deductFundsAtomic({
-            userId,
-            amount: chatPrice,
-            description: 'Chat per minute',
-            category: 'chat_charge',
-            referenceId: message.id,
-          });
-
-          await this.commissionService.distributeChatEarnings(
-            astrologerId,
-            data.conversationId,
-            message.id,
-            chatPrice,
-          );
-        }
+        // The first message starts the live chat session; every full minute is
+        // then charged by the session interval so the timer and the money move
+        // together even when no new messages are sent.
+        await this.startChatSession(data.conversationId, userId);
       } catch (e: any) {
-        this.logger.error(`[WS] Failed to deduct chat charge: ${e.message}`);
+        this.logger.error(`[WS] Failed to start chat billing: ${e.message}`);
       }
     }
 
