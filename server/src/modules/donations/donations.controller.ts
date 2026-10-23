@@ -20,6 +20,14 @@ export class DonationsController {
     return this.service.create({ ...body, userId });
   }
 
+  @Post('wallet')
+  async createFromWallet(
+    @Body() body: { amount: number; message?: string },
+    @CurrentUser() userId: string,
+  ) {
+    return this.service.createFromWallet(userId, body?.amount, body?.message);
+  }
+
   @Get('stats')
   async getStats(@Req() req: any) {
     if (req.userRole !== 'admin') throw new ForbiddenException('Only admins can view donation stats');

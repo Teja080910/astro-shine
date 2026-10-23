@@ -51,7 +51,7 @@ import { PaymentSuccessScreen } from '../screens/shared/PaymentSuccessScreen';
 import { PaymentFailureScreen } from '../screens/shared/PaymentFailureScreen';
 import { ChatListScreen } from '../screens/user/ChatListScreen';
 import { ChatRoomScreen } from '../screens/user/ChatRoomScreen';
-import { AstrologerDetailScreen, AstrologerListScreen, GiftScreen, KundliScreen, MatchmakingScreen, ProfileScreen, ShopScreen, UserHomeScreen, WalletScreen, MuhuratScreen } from '../screens/user/UserScreens';
+import { AstrologerDetailScreen, AstrologerListScreen, FavouriteAstrologersScreen, GiftScreen, KundliScreen, MatchmakingScreen, ProfileScreen, QuickActionsScreen, ShopScreen, UserHomeScreen, WalletScreen, MuhuratScreen } from '../screens/user/UserScreens';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -268,10 +268,13 @@ export function Navigation() {
             <Stack.Screen name="AstrologerList" component={AstrologerListScreen} />
             <Stack.Screen name="AstrologerDetail" component={AstrologerDetailScreen} options={headerOpts('Astrologer')} />
             <Stack.Screen name="Kundli" component={KundliScreen} options={headerOpts('Kundli')} />
+            <Stack.Screen name="QuickActions" component={QuickActionsScreen} options={headerOpts('Quick Actions')} />
+            <Stack.Screen name="FavouriteAstrologers" component={FavouriteAstrologersScreen} options={headerOpts('My Favourite Astrologers')} />
             <Stack.Screen name="Matchmaking" component={MatchmakingScreen} options={headerOpts('Matchmaking')} />
             <Stack.Screen name="Panchang" component={PanchangScreen} options={headerOpts('Panchang')} />
             <Stack.Screen name="HoroscopeDetail" component={HoroscopeDetailScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="MyReports" component={MyReportsScreen} options={headerOpts('My Reports')} />
+            <Stack.Screen name="MyReports" component={MyReportsScreen} options={headerOpts('Reports Filed by Me')} />
+            <Stack.Screen name="AstrologerReports" component={AstrologerReportsScreen} options={headerOpts('Reports Against Me')} />
             <Stack.Screen name="Shop" component={ShopScreen} options={headerOpts('Shop')} />
             <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} options={headerOpts('Orders')} />
             <Stack.Screen name="Videos" component={VideosScreen} options={headerOpts('Videos')} />
@@ -320,6 +323,7 @@ export function Navigation() {
             <Stack.Screen name="Consultations" component={AstrologerConsultationScreen} options={headerOpts('Consultation History')} />
             <Stack.Screen name="Gifts" component={AstrologerGiftScreen} options={headerOpts('Gifts')} />
             <Stack.Screen name="AstrologerReports" component={AstrologerReportsScreen} options={headerOpts('Reports Against Me')} />
+            <Stack.Screen name="MyReports" component={MyReportsScreen} options={headerOpts('Reports Filed by Me')} />
             <Stack.Screen name="Payment" component={PaymentScreen} options={{ headerShown: false }} />
             <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} options={{ headerShown: false }} />
             <Stack.Screen name="PaymentFailure" component={PaymentFailureScreen} options={{ headerShown: false }} />

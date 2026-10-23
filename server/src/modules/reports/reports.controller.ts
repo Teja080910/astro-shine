@@ -37,7 +37,7 @@ export class ReportsController {
 
   @Get('received')
   async findReceived(@Req() req: any) {
-    return this.service.findReceived(req.userId);
+    return this.service.findReceived(req.userId, req.userRole || 'astrologer');
   }
 
   @Get(':id')
@@ -59,7 +59,7 @@ export class ReportsController {
     if (req.userRole !== 'admin') {
       throw new ForbiddenException('Only admins can update reports');
     }
-    return this.service.update(id, body);
+    return this.service.update(id, body, req.userId);
   }
 
   @Delete(':id')

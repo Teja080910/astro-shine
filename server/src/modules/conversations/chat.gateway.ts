@@ -108,7 +108,8 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
       this.logger.debug(`[WS] User ${payload.userId} active sockets count: ${this.onlineUsers.get(payload.userId)?.socketIds.size}`);
 
-      if (isFirstConnection) {
+      const manuallyOffline = this.realtime.isManuallyOffline(payload.userId);
+      if (isFirstConnection && !manuallyOffline) {
         client.broadcast.emit('user:online', { userId: payload.userId, role: payload.role || 'user' });
       }
 
@@ -121,7 +122,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
       // Send online status of ALL currently active users to this newly connected client
       for (const [id, u] of this.onlineUsers.entries()) {
-        if (id !== payload.userId && u.socketIds.size > 0) {
+        if (id !== payload.userId && u.socketIds.size > 0 && !this.realtime.isManuallyOffline(id)) {
           client.emit('user:online', { userId: id, role: u.role });
         }
       }
@@ -165,7 +166,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
         if (role === 'astrologer') {
           try {
-            await this.astrologersService.updateOnlineStatus(userId, 'offline');
+            await this.astrologersService.setPresenceStatus(userId, 'offline');
           } catch (e: any) {
             this.logger.error('[WS] Failed to update astrologer offline status on disconnect:', e.message);
           }
@@ -178,7 +179,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   handleGetOnlineUsers(@ConnectedSocket() client: Socket) {
     const list: { userId: string; role: string }[] = [];
     for (const [id, entry] of this.onlineUsers.entries()) {
-      if (entry.socketIds.size > 0) {
+      if (entry.socketIds.size > 0 && !this.realtime.isManuallyOffline(id)) {
         list.push({ userId: id, role: entry.role });
       }
     }
@@ -191,7 +192,9 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     @MessageBody() data: { userId: string },
   ) {
     if (!data?.userId) return;
-    const isOnline = this.isUserOnline(data.userId);
+    const isOnline =
+      this.isUserOnline(data.userId) &&
+      !this.realtime.isManuallyOffline(data.userId);
     const entry = this.onlineUsers.get(data.userId);
     client.emit('user:status', {
       userId: data.userId,
@@ -297,6 +300,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         this.emitToUser(session.userId, 'chat:blocked', {
           message:
             'Insufficient wallet balance. Please recharge to continue chatting.',
+          code: 'insufficient_balance',
         });
         this.stopChatSession(conversationId, 'insufficient_balance');
         return;
@@ -311,6 +315,13 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         description: `Chat with astrologer (${session.minutesCharged} min)`,
         category: 'chat_charge',
         referenceId: chargeReference,
+        metadata: {
+          durationSeconds: 60,
+          minutesCharged: session.minutesCharged,
+          rate: session.rate,
+          astrologerId: session.astrologerId,
+          conversationId: session.conversationId,
+        },
       });
 
       await this.commissionService.distributeChatEarnings(
@@ -400,13 +411,15 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       const otherRole = conv.participantOneId === myId ? conv.participantTwoRole : conv.participantOneRole;
 
       if (otherId) {
-        const otherOnline = this.isUserOnline(otherId);
+        const otherOnline =
+          this.isUserOnline(otherId) &&
+          !this.realtime.isManuallyOffline(otherId);
         client.emit(otherOnline ? 'user:online' : 'user:offline', {
           userId: otherId,
           role: otherRole,
         });
 
-        if (myId) {
+        if (myId && !this.realtime.isManuallyOffline(myId)) {
           this.emitToUser(otherId, 'user:online', {
             userId: myId,
             role: client.data.role,
@@ -437,10 +450,58 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   @SubscribeMessage('message:send')
   async handleMessage(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { conversationId: string; content: string; type?: string },
+    @MessageBody() data: { conversationId: string; content: string; type?: string; mediaUrl?: string },
   ) {
     const { userId, role } = client.data;
     this.logger.debug(`[WS] message:send RECEIVED - userId: ${userId}, socketId: ${client.id}, conversationId: ${data.conversationId}, content: "${data.content}"`);
+
+    // Chat billing may only start once the astrologer has the chart inputs:
+    // the auto birth-details message or a kundli/document attachment. Fail
+    // closed so a lookup error can never start billing without a Kundli.
+    let canStartBilling = role !== 'user';
+
+    if (role === 'user') {
+      try {
+        const conv = await this.conversationsService.findById(data.conversationId);
+        const astrologerId =
+          conv.participantOneRole === 'astrologer'
+            ? conv.participantOneId
+            : conv.participantTwoRole === 'astrologer'
+              ? conv.participantTwoId
+              : null;
+
+        if (astrologerId) {
+          const astro = await this.astrologersService.findById(astrologerId);
+          if (astro && astro.isChatEnabled === false) {
+            this.emitToUser(userId, 'chat:blocked', {
+              conversationId: data.conversationId,
+              message: 'This astrologer has disabled chat consultations right now.',
+              code: 'service_disabled',
+            });
+            return;
+          }
+        }
+
+        const birth = await this.conversationsService.ensureBirthDetailsMessage(data.conversationId);
+        if (birth.created) {
+          const autoRoom = `conversation:${data.conversationId}`;
+          client.emit('message:new', birth.created);
+          client.to(autoRoom).emit('message:new', birth.created);
+          client.to(autoRoom).emit('conversation:updated', {
+            conversationId: data.conversationId,
+            lastMessageAt: birth.created.createdAt,
+            lastMessagePreview: birth.created.content,
+          });
+        }
+
+        canStartBilling = data.mediaUrl
+          ? true
+          : birth.available ||
+            (await this.conversationsService.hasKundliAttachment(data.conversationId));
+      } catch (e: any) {
+        this.logger.error(`[WS] Kundli precheck failed: ${e.message}`);
+      }
+    }
 
     const message = await this.conversationsService.createMessage(
       data.conversationId,
@@ -448,17 +509,26 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       role,
       data.content,
       data.type || 'text',
+      data.mediaUrl,
     );
     this.logger.debug(`[WS] Message persisted - messageId: ${message.id}`);
 
     if (role === 'user') {
-      try {
-        // The first message starts the live chat session; every full minute is
-        // then charged by the session interval so the timer and the money move
-        // together even when no new messages are sent.
-        await this.startChatSession(data.conversationId, userId);
-      } catch (e: any) {
-        this.logger.error(`[WS] Failed to start chat billing: ${e.message}`);
+      if (canStartBilling) {
+        try {
+          // The first message starts the live chat session; every full minute is
+          // then charged by the session interval so the timer and the money move
+          // together even when no new messages are sent.
+          await this.startChatSession(data.conversationId, userId);
+        } catch (e: any) {
+          this.logger.error(`[WS] Failed to start chat billing: ${e.message}`);
+        }
+      } else {
+        this.emitToUser(userId, 'chat:kundli-required', {
+          conversationId: data.conversationId,
+          message:
+            'Share your birth details or attach your Kundli so the astrologer can start the consultation. The timer starts once it is available.',
+        });
       }
     }
 
@@ -589,6 +659,14 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     }
 
     const astro = await this.astrologersService.findById(data.astrologerId);
+    if (astro && data.type === 'audio' && astro.isAudioCallEnabled === false) {
+      client.emit('call:error', { message: 'This astrologer has disabled voice call service right now.' });
+      return;
+    }
+    if (astro && data.type === 'video' && astro.isVideoCallEnabled === false) {
+      client.emit('call:error', { message: 'This astrologer has disabled video call service right now.' });
+      return;
+    }
     const ratePerMin = data.type === 'video'
       ? (astro?.videoCallPricePerMin || astro?.pricePerMin || '0')
       : (astro?.audioCallPricePerMin || astro?.pricePerMin || '0');

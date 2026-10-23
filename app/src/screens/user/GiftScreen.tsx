@@ -28,6 +28,14 @@ export function GiftScreen({ route, navigation }: any) {
   const [sending, setSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+  const initialMode = route?.params?.mode;
+  const historyOnly = initialMode === 'history';
+  const [activeTab, setActiveTab] = useState<'send' | 'history'>(historyOnly ? 'history' : 'send');
+
+  useEffect(() => {
+    navigation.setOptions({ title: historyOnly ? 'Gift History' : 'Gifts' });
+    setActiveTab(historyOnly ? 'history' : 'send');
+  }, [navigation, historyOnly]);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -132,7 +140,7 @@ export function GiftScreen({ route, navigation }: any) {
 
   if (loading) return (
     <ScreenWrapper scroll>
-      <View style={{ padding: 16 }}><Text style={typography.pageTitle}>Gifts</Text></View>
+      <View style={{ padding: 16 }}><Text style={typography.pageTitle}>{historyOnly ? 'Gift History' : 'Gifts'}</Text></View>
       <View style={{ padding: 16 }}><GlassCard style={{ height: 100 }} /><View style={{ height: 12 }} /><GlassCard style={{ height: 100 }} /></View>
     </ScreenWrapper>
   );
@@ -239,69 +247,200 @@ export function GiftScreen({ route, navigation }: any) {
     );
   }
 
-  return (
-    <ScreenWrapper>
-      <FlatList
-        data={gifts}
-        keyExtractor={g => g.id}
-        numColumns={2}
-        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
-        columnWrapperStyle={{ gap: 12 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        ListHeaderComponent={
-          <>
-            <Text style={[typography.body, { marginBottom: 16 }]}>Show appreciation to your astrologer with a thoughtful gift</Text>
-            {transactions.length > 0 && (
-              <GlassCard style={{ padding: 16, marginBottom: 16 }}>
-                <Text style={[typography.cardTitle, { marginBottom: 8 }]}>Your Gift History</Text>
-                {transactions.slice(0, 5).map(t => {
-                  const gift = gifts.find(g => g.id === t.giftId);
-                  const astro = astrologers.find(a => a.userId === t.receiverId);
-                  return (
-                    <View key={t.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.divider }}>
-                      <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colors.accentGold + '20', alignItems: 'center', justifyContent: 'center' }}>
-                        <Ionicons name="gift" size={18} color={colors.accentGold} />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={[typography.body, { fontWeight: '600' }]}>{gift?.name || 'Gift'} → {astro?.name || 'Astrologer'}</Text>
-                        <Text style={typography.caption}>{new Date(t.createdAt).toLocaleDateString()}</Text>
-                      </View>
-                      <Text style={[typography.caption, { color: t.isRedeemed ? colors.success : colors.accentGold }]}>{t.isRedeemed ? 'Redeemed' : 'Sent'}</Text>
-                    </View>
-                  );
-                })}
-              </GlassCard>
-            )}
-            <Text style={[typography.sectionTitle, { marginBottom: 12 }]}>Available Gifts</Text>
-          </>
-        }
-        ListEmptyComponent={
-          loading ? (
-            <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-              <ActivityIndicator size="large" color={colors.primary} />
-            </View>
-          ) : (
-            <EmptyState icon={<Ionicons name="gift-outline" size={48} color={colors.textMuted} />} title="No gifts available" />
-          )
-        }
-        renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => openSendGift(item)} style={{ flex: 0.5 }}>
-            <GlassCard style={{ alignItems: 'center', padding: 20, marginBottom: 12 }}>
-              <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.accentGold + '20', alignItems: 'center', justifyContent: 'center', marginBottom: 10, overflow: 'hidden' }}>
-                {item.image ? (
-                  <Image source={{ uri: resolveMediaUrl(item.image) }} style={{ width: 64, height: 64 }} resizeMode="cover" />
-                ) : (
-                  <Ionicons name="gift" size={32} color={colors.accentGold} />
-                )}
-              </View>
-              <Text style={[typography.cardTitle, { textAlign: 'center' }]}>{item.name}</Text>
-              <Text style={[typography.price, { marginTop: 4 }]}>₹{item.price}</Text>
-              <GradientButton title="Send" onPress={() => openSendGift(item)} small style={{ marginTop: 10, width: '100%' }} />
-            </GlassCard>
-          </TouchableOpacity>
-        )}
-      />
+  const totalGiftValue = transactions.reduce((sum, t) => {
+    const gift = gifts.find((g) => g.id === t.giftId);
+    return sum + Number(t.giftPrice || gift?.price || 0);
+  }, 0);
 
+  return (
+    <ScreenWrapper noPadding>
+      <View style={{ flex: 1, width: '100%', maxWidth: 600, alignSelf: 'center' }}>
+        {activeTab === 'history' ? (
+          <FlatList
+            data={transactions}
+            keyExtractor={(t) => t.id}
+            contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            ListHeaderComponent={
+              <>
+                {!historyOnly && (
+                  <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+                    <TouchableOpacity
+                      onPress={() => setActiveTab('send')}
+                      style={{
+                        flex: 1, paddingVertical: 10, borderRadius: 20, alignItems: 'center',
+                        backgroundColor: colors.surfaceLight, borderWidth: 1, borderColor: colors.cardBorder,
+                      }}
+                    >
+                      <Text style={{ fontWeight: '700', color: colors.textSecondary }}>Send Gift</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setActiveTab('history')}
+                      style={{
+                        flex: 1, paddingVertical: 10, borderRadius: 20, alignItems: 'center',
+                        backgroundColor: colors.accentGold, borderWidth: 1, borderColor: colors.accentGold,
+                      }}
+                    >
+                      <Text style={{ fontWeight: '700', color: '#FFFFFF' }}>Gift History</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+                <Text style={[typography.pageTitle, { color: colors.textPrimary, marginBottom: 4 }]}>
+                  Gift History
+                </Text>
+                <Text style={[typography.caption, { color: colors.textMuted, marginBottom: 14 }]}>
+                  Gifts you have sent to astrologers
+                </Text>
+                {transactions.length > 0 && (
+                  <GlassCard style={{ padding: 14, marginBottom: 14 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <View>
+                        <Text style={[typography.caption, { color: colors.textMuted }]}>Gifts Sent</Text>
+                        <Text style={[typography.sectionTitle, { color: colors.textPrimary }]}>{transactions.length}</Text>
+                      </View>
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={[typography.caption, { color: colors.textMuted }]}>Total Value</Text>
+                        <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>₹{totalGiftValue.toFixed(2)}</Text>
+                      </View>
+                    </View>
+                  </GlassCard>
+                )}
+              </>
+            }
+            renderItem={({ item }) => {
+              const gift = gifts.find((g) => g.id === item.giftId);
+              const astro = astrologers.find((a) => a.userId === item.receiverId);
+              return (
+                <GlassCard style={{ padding: 14, marginBottom: 10 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <View
+                      style={{
+                        width: 48, height: 48, borderRadius: 24, overflow: 'hidden',
+                        backgroundColor: colors.accentGold + '18', alignItems: 'center', justifyContent: 'center',
+                      }}
+                    >
+                      {item.giftImage || gift?.image ? (
+                        <Image source={{ uri: resolveMediaUrl(item.giftImage || gift?.image || '') }} style={{ width: 48, height: 48 }} resizeMode="cover" />
+                      ) : (
+                        <Ionicons name="gift" size={24} color={colors.accentGold} />
+                      )}
+                    </View>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={[typography.cardTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+                        {item.giftName || gift?.name || 'Gift'}
+                      </Text>
+                      <Text style={[typography.caption, { color: colors.textSecondary }]} numberOfLines={1}>
+                        To {astro?.name || 'Astrologer'}
+                      </Text>
+                      <Text style={[typography.caption, { color: colors.textMuted }]}>
+                        {new Date(item.createdAt).toLocaleDateString()} · {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </Text>
+                    </View>
+                    <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                      <Text style={[typography.price, { color: colors.accentGold }]}>₹{item.giftPrice || gift?.price || '0'}</Text>
+                      <View
+                        style={{
+                          backgroundColor: item.isRedeemed ? colors.success + '18' : colors.accentGold + '18',
+                          borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3,
+                        }}
+                      >
+                        <Text style={{ fontSize: 9, fontWeight: '800', color: item.isRedeemed ? colors.success : colors.accentGold }}>
+                          {item.isRedeemed ? 'REDEEMED' : 'SENT'}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </GlassCard>
+              );
+            }}
+            ListEmptyComponent={
+              <EmptyState
+                icon={<Ionicons name="gift-outline" size={48} color={colors.textMuted} />}
+                title="No gifts sent yet"
+                subtitle="Send a gift to show appreciation to your astrologer."
+              />
+            }
+          />
+        ) : (
+          <FlatList
+            data={gifts}
+            keyExtractor={(g) => g.id}
+            numColumns={2}
+            contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+            columnWrapperStyle={{ gap: 12 }}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            ListHeaderComponent={
+              <>
+                {!historyOnly && (
+                  <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
+                    <TouchableOpacity
+                      onPress={() => setActiveTab('send')}
+                      style={{
+                        flex: 1, paddingVertical: 10, borderRadius: 20, alignItems: 'center',
+                        backgroundColor: colors.accentGold, borderWidth: 1, borderColor: colors.accentGold,
+                      }}
+                    >
+                      <Text style={{ fontWeight: '700', color: '#FFFFFF' }}>Send Gift</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => setActiveTab('history')}
+                      style={{
+                        flex: 1, paddingVertical: 10, borderRadius: 20, alignItems: 'center',
+                        backgroundColor: colors.surfaceLight, borderWidth: 1, borderColor: colors.cardBorder,
+                      }}
+                    >
+                      <Text style={{ fontWeight: '700', color: colors.textSecondary }}>Gift History</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+                <Text style={[typography.pageTitle, { color: colors.textPrimary, marginBottom: 4 }]}>Send a Gift</Text>
+                <Text style={[typography.body, { color: colors.textSecondary, marginBottom: 14 }]}>
+                  Show appreciation to your astrologer with a thoughtful gift.
+                </Text>
+                <GlassCard style={{ padding: 14, marginBottom: 16 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Ionicons name="wallet" size={20} color={colors.accentGold} />
+                      <View>
+                        <Text style={[typography.caption, { color: colors.textMuted }]}>Wallet Balance</Text>
+                        <Text style={[typography.cardTitle, { color: colors.textPrimary }]}>₹{wallet?.balance || '0'}</Text>
+                      </View>
+                    </View>
+                    <Text style={[typography.caption, { color: colors.textMuted, flex: 1, textAlign: 'right', marginLeft: 10 }]}>
+                      Entire gift amount goes to the expert
+                    </Text>
+                  </View>
+                </GlassCard>
+                <Text style={[typography.sectionTitle, { color: colors.textPrimary, marginBottom: 12 }]}>Available Gifts</Text>
+              </>
+            }
+            ListEmptyComponent={
+              loading ? (
+                <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+                  <ActivityIndicator size="large" color={colors.primary} />
+                </View>
+              ) : (
+                <EmptyState icon={<Ionicons name="gift-outline" size={48} color={colors.textMuted} />} title="No gifts available" />
+              )
+            }
+            renderItem={({ item }) => (
+              <TouchableOpacity onPress={() => openSendGift(item)} style={{ flex: 0.5 }}>
+                <GlassCard style={{ alignItems: 'center', padding: 16, marginBottom: 12 }}>
+                  <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.accentGold + '20', alignItems: 'center', justifyContent: 'center', marginBottom: 10, overflow: 'hidden' }}>
+                    {item.image ? (
+                      <Image source={{ uri: resolveMediaUrl(item.image) }} style={{ width: 64, height: 64 }} resizeMode="cover" />
+                    ) : (
+                      <Ionicons name="gift" size={32} color={colors.accentGold} />
+                    )}
+                  </View>
+                  <Text style={[typography.cardTitle, { textAlign: 'center' }]} numberOfLines={1}>{item.name}</Text>
+                  <Text style={[typography.price, { marginTop: 4 }]}>₹{item.price}</Text>
+                  <GradientButton title="Send" onPress={() => openSendGift(item)} small style={{ marginTop: 10, width: '100%' }} />
+                </GlassCard>
+              </TouchableOpacity>
+            )}
+          />
+        )}
       <CustomModal
         visible={showSendModal}
         onClose={() => { Keyboard.dismiss(); setShowSendModal(false); }}
@@ -407,6 +546,7 @@ export function GiftScreen({ route, navigation }: any) {
           </View>
         </View>
       </CustomModal>
+      </View>
     </ScreenWrapper>
   );
 }

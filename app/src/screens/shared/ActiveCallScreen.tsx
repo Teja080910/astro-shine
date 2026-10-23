@@ -142,6 +142,24 @@ export function ActiveCallScreen() {
                 </View>
               )}
             </View>
+            <View pointerEvents="none" style={styles.videoTimerWrapper}>
+              <View style={styles.videoTimerPill}>
+                <View
+                  style={[
+                    styles.videoLiveDot,
+                    { backgroundColor: callState === 'active' ? colors.success : colors.warning },
+                  ]}
+                />
+                <Ionicons name="stopwatch-outline" size={14} color={colors.white} />
+                <Text style={styles.videoTimerText}>
+                  {callState === 'active'
+                    ? formatTime(seconds)
+                    : callState === 'ended'
+                      ? 'Call Ended'
+                      : 'Connecting...'}
+                </Text>
+              </View>
+            </View>
             {isMuted && (
               <View pointerEvents="none" style={styles.selfMuteWrapper}>
                 <View style={styles.selfMutePill}>
@@ -250,6 +268,18 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   localVideo: { position: 'absolute', top: 50, right: 16, width: 100, height: 140, borderRadius: 12, backgroundColor: '#2C2C2E', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  videoTimerWrapper: { position: 'absolute', top: 12, left: 16, zIndex: 20 },
+  videoTimerPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  videoLiveDot: { width: 7, height: 7, borderRadius: 4 },
+  videoTimerText: { color: colors.white, fontSize: 13, fontWeight: '700', marginLeft: 2 },
   selfMuteWrapper: { position: 'absolute', top: 12, left: 0, right: 0, alignItems: 'center', zIndex: 20 },
   selfMutePill: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.65)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
   selfMuteText: { color: colors.white, fontSize: 13, fontWeight: '600', marginLeft: 6 },

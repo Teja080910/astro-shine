@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger, ConflictException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
 import { eq, and, sql, inArray, desc } from 'drizzle-orm';
@@ -102,6 +102,24 @@ export class CallsService {
   }
 
   async create(data: typeof schema.callLogs.$inferInsert) {
+    if (data.astrologerId) {
+      const astro = await this.db.query.astrologers.findFirst({
+        where: eq(schema.astrologers.userId, data.astrologerId),
+        columns: { isAudioCallEnabled: true, isVideoCallEnabled: true },
+      });
+      if (astro) {
+        if (data.type === 'audio' && astro.isAudioCallEnabled === false) {
+          throw new ConflictException(
+            'This astrologer has disabled voice call service right now.',
+          );
+        }
+        if (data.type === 'video' && astro.isVideoCallEnabled === false) {
+          throw new ConflictException(
+            'This astrologer has disabled video call service right now.',
+          );
+        }
+      }
+    }
     const [r] = await this.db.insert(schema.callLogs).values(data).returning(); return r;
   }
 
@@ -148,9 +166,15 @@ export class CallsService {
         await this.walletService.deductFundsAtomic({
           userId: call.userId,
           amount: costNum,
-          description: `Call with astrologer (${duration}s)`,
+          description: `${call.type === 'video' ? 'Video' : 'Audio'} call with astrologer (${duration}s)`,
           category: 'call_charge',
           referenceId: call.id,
+          metadata: {
+            callType: call.type,
+            durationSeconds: duration,
+            ratePerMin,
+            astrologerId: call.astrologerId,
+          },
         });
       } catch (e: any) {
         this.logger.error(`[CallsService] Failed to deduct wallet for call ${id}: ${e.message}`);

@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -74,6 +75,39 @@ export function KycGateScreen() {
       setDocs(newDocs);
     } catch (e: any) {
       Alert.alert('Error', e?.response?.data?.message || e?.message || 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const takeLiveSelfie = async () => {
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert('Camera Permission', 'Please allow camera access to complete live KYC.');
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        cameraType: ImagePicker.CameraType.front,
+        quality: 0.7,
+        allowsEditing: false,
+      });
+      if (result.canceled || !result.assets?.[0]) return;
+      const asset = result.assets[0];
+      setUploading(true);
+      const uploaded = await api.uploadFile(
+        {
+          uri: asset.uri,
+          name: asset.fileName || `live-selfie-${Date.now()}.jpg`,
+          mimeType: asset.mimeType || 'image/jpeg',
+        },
+        'minio',
+      );
+      pendingUploadRef.current = true;
+      setDocs((prev) => [...prev, uploaded.url]);
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.message || e?.message || 'Could not capture selfie');
     } finally {
       setUploading(false);
     }
@@ -240,16 +274,44 @@ export function KycGateScreen() {
             <GlassCard style={{ alignItems: 'center', padding: 24, width: '100%' }}>
               <Ionicons name="cloud-upload-outline" size={48} color={colors.primaryLight} />
               <Text style={[typography.body, { textAlign: 'center', marginTop: 12, color: colors.textSecondary }]}>
-                Upload ID proof, certificates, or degree documents
+                Upload ID proof, certificates, or degree documents and complete a live selfie check
               </Text>
               <Text style={[typography.caption, { color: colors.textMuted, marginTop: 4, marginBottom: 16 }]}>
                 Supported: JPG, PNG, PDF
               </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Ionicons name="shield-checkmark-outline" size={14} color={colors.success} />
+                  <Text style={{ fontSize: 11, color: colors.textMuted }}>Live selfie verification</Text>
+                </View>
+              </View>
               <GradientButton
                 title={uploading ? 'Uploading...' : 'Upload Document'}
                 onPress={pickAndUpload}
                 disabled={uploading}
               />
+              <TouchableOpacity
+                onPress={takeLiveSelfie}
+                disabled={uploading}
+                style={{
+                  marginTop: 10,
+                  height: 46,
+                  borderRadius: 24,
+                  borderWidth: 1,
+                  borderColor: colors.accentGold,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexDirection: 'row',
+                  gap: 8,
+                  opacity: uploading ? 0.6 : 1,
+                  width: '100%',
+                }}
+              >
+                <Ionicons name="camera-outline" size={18} color={colors.accentGold} />
+                <Text style={{ fontWeight: '700', color: colors.accentGold }}>
+                  Take Live Selfie
+                </Text>
+              </TouchableOpacity>
               {docs.length > 0 && (
                 <View style={{ marginTop: 16, width: '100%' }}>
                   <GradientButton

@@ -68,9 +68,12 @@ export class ReportsService {
     });
   }
 
-  async findReceived(astrologerId: string) {
+  async findReceived(userId: string, role = 'astrologer') {
     return this.db.query.reports.findMany({
-      where: eq(schema.reports.reportedAstrologerId, astrologerId),
+      where:
+        role === 'user'
+          ? eq(schema.reports.reportedUserId, userId)
+          : eq(schema.reports.reportedAstrologerId, userId),
       orderBy: [desc(schema.reports.createdAt)],
     });
   }
@@ -120,11 +123,25 @@ export class ReportsService {
     });
   }
 
-  async update(id: string, data: { reason?: typeof schema.reports.$inferInsert['reason']; description?: string | null; status?: string }) {
+  async update(
+    id: string,
+    data: { reason?: typeof schema.reports.$inferInsert['reason']; description?: string | null; status?: string },
+    adminId?: string,
+  ) {
     const payload: Partial<typeof schema.reports.$inferInsert> = {};
     if (data.reason !== undefined) payload.reason = data.reason;
     if (data.description !== undefined) payload.description = data.description || null;
-    if (data.status !== undefined) payload.status = data.status;
+    if (data.status !== undefined) {
+      const status = String(data.status).toLowerCase().trim() || 'pending';
+      payload.status = status;
+      if (status === 'pending') {
+        payload.resolvedAt = null;
+        payload.resolvedBy = null;
+      } else {
+        payload.resolvedAt = new Date();
+        if (adminId) payload.resolvedBy = adminId;
+      }
+    }
 
     if (Object.keys(payload).length === 0) {
       throw new BadRequestException('Nothing to update');

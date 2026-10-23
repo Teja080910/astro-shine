@@ -1,15 +1,17 @@
 'use client';
 
 import { useAuthStore } from '@/store/auth';
-import { AlertTriangle, ArrowDownUp, Bell, Calendar, Clock, FileText, Gift, Globe, Key, LayoutDashboard, Link2, LogOut, Menu, MessageSquare, Moon, Newspaper, Package, Percent, Phone, Radio, Receipt, Settings, ShoppingBag, Sparkles, Star, Sun, Ticket, Users, Video, Wallet, X } from 'lucide-react';
+import { AlertTriangle, ArrowDownUp, Bell, Calendar, Clock, FileText, Gift, Globe, Key, LayoutDashboard, Link2, LogOut, Menu, MessageSquare, Moon, Newspaper, Package, Percent, Phone, Radio, Receipt, ShoppingBag, Sparkles, Star, Sun, Ticket, UserCircle, Users, Video, Wallet, X } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import React, { useEffect } from 'react';
 import logoImg from '../assets/logo.png';
+import { imageSrc } from '../lib/media';
 
 const menuItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { href: '/profile', icon: UserCircle, label: 'My Profile' },
   { href: '/users', icon: Users, label: 'Users' },
   { href: '/astrologers', icon: Star, label: 'Astrologers' },
   { href: '/wallet', icon: Wallet, label: 'Wallets' },
@@ -110,15 +112,20 @@ function Sidebar({ mobileOpen, onMobileClose }: { mobileOpen: boolean; onMobileC
       </nav>
       
       <div className="border-t border-divider pt-4 mt-4 space-y-2">
-        <div className="flex items-center gap-3 px-3 py-2 bg-surface-light/30 border border-card-border rounded-2xl">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-accent-gold flex items-center justify-center text-white font-bold text-sm shadow-sm">
-            {admin?.name?.charAt(0).toUpperCase() || 'A'}
+        <Link href="/profile" onClick={onMobileClose} className="flex items-center gap-3 px-3 py-2 bg-surface-light/30 border border-card-border rounded-2xl hover:border-primary/40 hover:bg-surface-light/50 transition-colors">
+          <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-tr from-primary to-accent-gold flex items-center justify-center text-white font-bold text-sm shadow-sm shrink-0">
+            {admin?.avatar ? (
+              <img src={imageSrc(admin.avatar)} alt={admin.name || 'Admin'} className="w-full h-full object-cover" />
+            ) : (
+              admin?.name?.charAt(0).toUpperCase() || 'A'
+            )}
           </div>
-          <div className="flex flex-col overflow-hidden">
+          <div className="flex flex-col overflow-hidden flex-1">
             <span className="text-xs font-bold text-text-primary truncate">{admin?.name || 'Admin'}</span>
             <span className="text-[9px] text-text-muted truncate">{admin?.email || 'admin@astroshine.com'}</span>
           </div>
-        </div>
+          <UserCircle size={14} className="text-text-muted shrink-0" />
+        </Link>
         <button onClick={logout} className="sidebar-link w-full text-left hover:bg-danger/10 hover:text-danger active:scale-95">
           <LogOut size={16} className="text-danger" />
           <span className="font-bold text-xs tracking-wide">Logout</span>

@@ -1107,25 +1107,65 @@ export function EditProfileScreen() {
 // Donation
 export function DonationScreen() {
   const navigation = useNavigation<any>();
+  const isFocused = useIsFocused();
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
+  const [method, setMethod] = useState<'wallet' | 'razorpay'>('wallet');
+  const [balance, setBalance] = useState(0);
+
+  useEffect(() => {
+    if (isFocused) {
+      api.wallet.get().then((w) => setBalance(Number(w.balance || 0))).catch(() => {});
+    }
+  }, [isFocused]);
 
   const handleDonate = async () => {
     const amt = parseFloat(amount);
-    if (!amt || amt <= 0) { Alert.alert('Invalid Amount', 'Please enter a valid donation amount'); return; }
+    if (!amt || amt <= 0) {
+      Alert.alert('Invalid Amount', 'Please enter a valid donation amount');
+      return;
+    }
+    if (method === 'wallet' && balance < amt) {
+      Alert.alert(
+        'Insufficient Balance',
+        `Your wallet balance is ₹${balance.toFixed(2)}. Add funds to donate ₹${amt.toFixed(2)}.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Add Funds', onPress: () => navigation.navigate('Wallet') },
+        ],
+      );
+      return;
+    }
     setLoading(true);
     try {
-      const order = await api.payments.createOrder({ amount: amt, purpose: 'donation' });
-      navigation.navigate('Payment', {
-        razorpayOrderId: order.razorpayOrderId,
-        key: order.key,
-        amount: order.amount,
-        currency: order.currency,
-        purpose: 'donation',
-        paymentOrderId: order.id,
-      });
+      if (method === 'wallet') {
+        const donation = await api.donations.payWithWallet({
+          amount: amt,
+          message: 'Temple Donation',
+        });
+        const wallet = await api.wallet.get();
+        setBalance(Number(wallet.balance || 0));
+        const donationLabel = amount;
+        setAmount('');
+        navigation.navigate('PaymentSuccess', {
+          transaction: { id: donation.transactionId || donation.id },
+          wallet,
+          purpose: 'donation',
+          amount: Number(donationLabel),
+        });
+      } else {
+        const order = await api.payments.createOrder({ amount: amt, purpose: 'donation' });
+        navigation.navigate('Payment', {
+          razorpayOrderId: order.razorpayOrderId,
+          key: order.key,
+          amount: order.amount,
+          currency: order.currency,
+          purpose: 'donation',
+          paymentOrderId: order.id,
+        });
+      }
     } catch (e: any) {
-      Alert.alert('Error', e?.message || 'Failed to initiate donation');
+      Alert.alert('Error', e?.response?.data?.message || e?.message || 'Failed to initiate donation');
     } finally {
       setLoading(false);
     }
@@ -1133,16 +1173,90 @@ export function DonationScreen() {
 
   return (
     <ScreenWrapper scroll>
-      <SectionTitle title="Make a Donation" />
-      <GlassCard style={{ alignItems: 'center', padding: 24 }}>
-        <Ionicons name="heart" size={48} color={colors.danger} />
-        <Text style={[typography.body, { textAlign: 'center', marginTop: 12 }]}>Your contribution helps us maintain this sacred platform</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 16, justifyContent: 'center' }}>
-          {['101', '501', '1100', '2100'].map(a => <Chip key={a} label={`₹${a}`} selected={amount === a} onPress={() => setAmount(a)} />)}
-        </View>
-        <View style={{ marginTop: 12, width: '100%' }}><TextInput style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]} value={amount} onChangeText={setAmount} placeholder="Custom amount" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad" /></View>
-        <GradientButton title={loading ? 'Processing...' : 'Donate Now'} variant="gold" onPress={handleDonate} disabled={loading} style={{ marginTop: 12 }} />
-      </GlassCard>
+      <View style={{ width: '100%', maxWidth: 600, alignSelf: 'center', padding: 16 }}>
+        <Text style={[typography.pageTitle, { color: colors.textPrimary, marginBottom: 4 }]}>
+          Make a Donation
+        </Text>
+        <Text style={[typography.caption, { color: colors.textMuted, marginBottom: 16 }]}>
+          Your contribution helps us maintain this sacred platform
+        </Text>
+        <GlassCard style={{ padding: 20 }}>
+          <View style={{ alignItems: 'center' }}>
+            <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: colors.danger + '18', alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="heart" size={32} color={colors.danger} />
+            </View>
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 18, justifyContent: 'center' }}>
+            {['101', '501', '1100', '2100'].map((a) => (
+              <Chip key={a} label={`₹${a}`} selected={amount === a} onPress={() => setAmount(a)} />
+            ))}
+          </View>
+          <TextInput
+            style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary, marginTop: 14 }]}
+            value={amount}
+            onChangeText={setAmount}
+            placeholder="Custom amount"
+            placeholderTextColor={colors.textMuted}
+            keyboardType="decimal-pad"
+          />
+
+          <Text style={[typography.label, { color: colors.textSecondary, marginTop: 18, marginBottom: 8 }]}>
+            Payment Method
+          </Text>
+          <TouchableOpacity
+            onPress={() => setMethod('wallet')}
+            style={{
+              flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14,
+              borderRadius: radii.input, borderWidth: 1,
+              borderColor: method === 'wallet' ? colors.accentGold : colors.cardBorder,
+              backgroundColor: method === 'wallet' ? colors.accentGold + '12' : colors.surfaceLight,
+            }}
+          >
+            <Ionicons name="wallet" size={22} color={colors.accentGold} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontWeight: '700', color: colors.textPrimary }}>Wallet Balance</Text>
+              <Text style={[typography.caption, { color: colors.textMuted }]}>Available ₹{balance.toFixed(2)}</Text>
+            </View>
+            <Ionicons name={method === 'wallet' ? 'radio-button-on' : 'radio-button-off'} size={20} color={colors.accentGold} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setMethod('razorpay')}
+            style={{
+              flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14,
+              borderRadius: radii.input, borderWidth: 1, marginTop: 10,
+              borderColor: method === 'razorpay' ? colors.accentGold : colors.cardBorder,
+              backgroundColor: method === 'razorpay' ? colors.accentGold + '12' : colors.surfaceLight,
+            }}
+          >
+            <Ionicons name="card-outline" size={22} color={colors.textSecondary} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontWeight: '700', color: colors.textPrimary }}>Pay Online</Text>
+              <Text style={[typography.caption, { color: colors.textMuted }]}>UPI, card or netbanking via Razorpay</Text>
+            </View>
+            <Ionicons name={method === 'razorpay' ? 'radio-button-on' : 'radio-button-off'} size={20} color={colors.accentGold} />
+          </TouchableOpacity>
+
+          <GradientButton
+            title={
+              loading
+                ? 'Processing...'
+                : method === 'wallet'
+                  ? `Donate ₹${amount || '0'} from Wallet`
+                  : `Donate ₹${amount || '0'} Online`
+            }
+            variant="gold"
+            onPress={handleDonate}
+            disabled={loading}
+            style={{ marginTop: 16 }}
+          />
+          <Text style={[typography.caption, { color: colors.textMuted, textAlign: 'center', marginTop: 10 }]}>
+            {method === 'wallet'
+              ? 'The amount will be deducted from your wallet instantly.'
+              : 'You will be redirected to the secure Razorpay checkout.'}
+          </Text>
+        </GlassCard>
+      </View>
     </ScreenWrapper>
   );
 }
@@ -1207,11 +1321,43 @@ export function ReportScreen({ route, navigation }: any) {
   );
 }
 
+const REPORT_FINAL_STATUSES = ['reviewed', 'resolved', 'closed', 'dismissed', 'approved'];
+const REPORT_REVIEW_STATUSES = ['in_review', 'under_review', 'processing'];
+
+function reportStatusMeta(status?: string) {
+  const key = String(status || 'pending').toLowerCase().trim();
+  if (REPORT_FINAL_STATUSES.includes(key)) {
+    return {
+      label: key === 'dismissed' ? 'Dismissed' : 'Reviewed',
+      color: colors.success,
+      backgroundColor: 'rgba(16,185,129,0.15)',
+    };
+  }
+  if (REPORT_REVIEW_STATUSES.includes(key)) {
+    return {
+      label: 'In Review',
+      color: colors.accentGold,
+      backgroundColor: 'rgba(245,158,11,0.15)',
+    };
+  }
+  return {
+    label: 'Pending',
+    color: colors.warning,
+    backgroundColor: 'rgba(245,158,11,0.15)',
+  };
+}
+
 function ReportsStatusScreen({ navigation, mode }: any) {
+  const isFocused = useIsFocused();
+  const pageTitle = mode === 'received'
+    ? 'Reports Against Me'
+    : 'Reports Filed by Me';
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
 
   useEffect(() => {
+    if (!isFocused) return;
     let cancelled = false;
     setLoading(true);
     (mode === 'received' ? api.reports.received() : api.reports.my())
@@ -1225,14 +1371,11 @@ function ReportsStatusScreen({ navigation, mode }: any) {
     return () => {
       cancelled = true;
     };
-  }, [mode]);
+  }, [mode, isFocused]);
 
   return (
     <ScreenWrapper scroll noPadding>
-      <Navbar
-        title={mode === 'received' ? 'Reports Against Me' : 'My Reports'}
-        navigation={navigation}
-      />
+      <Navbar title={pageTitle} navigation={navigation} />
       <View style={{ padding: 16, paddingBottom: 100 }}>
         {loading ? (
           <GlassCard><Text style={typography.body}>Loading...</Text></GlassCard>
@@ -1244,40 +1387,88 @@ function ReportsStatusScreen({ navigation, mode }: any) {
           />
         ) : (
           reports.map((r) => {
-            const reviewed = (r.status || '').toLowerCase() === 'reviewed';
+            const meta = reportStatusMeta(r.status);
             return (
-              <GlassCard key={r.id} style={{ padding: 14, marginBottom: 10 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={[typography.cardTitle, { flex: 1, textTransform: 'capitalize' }]}>
-                    {String(r.reason || '').replace(/_/g, ' ')}
-                  </Text>
-                  <View
-                    style={{
-                      paddingHorizontal: 10,
-                      paddingVertical: 4,
-                      borderRadius: 12,
-                      backgroundColor: reviewed ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)',
-                    }}
-                  >
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: reviewed ? colors.success : colors.warning }}>
-                      {reviewed ? 'Reviewed' : 'Pending'}
+              <TouchableOpacity key={r.id} activeOpacity={0.8} onPress={() => setSelectedReport(r)}>
+                <GlassCard style={{ padding: 14, marginBottom: 10 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={[typography.cardTitle, { flex: 1, textTransform: 'capitalize' }]}>
+                      {String(r.reason || '').replace(/_/g, ' ')}
                     </Text>
+                    <View
+                      style={{
+                        paddingHorizontal: 10,
+                        paddingVertical: 4,
+                        borderRadius: 12,
+                        backgroundColor: meta.backgroundColor,
+                      }}
+                    >
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: meta.color }}>
+                        {meta.label}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-                {r.description ? (
-                  <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 6 }]}>
-                    {r.description}
-                  </Text>
-                ) : null}
-                <Text style={[typography.caption, { color: colors.textMuted, marginTop: 8 }]}>
-                  Filed {new Date(r.createdAt).toLocaleDateString()}
-                  {r.resolvedAt ? ` · Reviewed ${new Date(r.resolvedAt).toLocaleDateString()}` : ''}
-                </Text>
-              </GlassCard>
+                  {r.description ? (
+                    <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 6 }]} numberOfLines={2}>
+                      {r.description}
+                    </Text>
+                  ) : null}
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                    <Text style={[typography.caption, { color: colors.textMuted, flex: 1 }]}>
+                      Filed {new Date(r.createdAt).toLocaleDateString()}
+                      {r.resolvedAt ? ` · Reviewed ${new Date(r.resolvedAt).toLocaleDateString()}` : ''}
+                    </Text>
+                    <Text style={[typography.caption, { color: colors.primary, fontWeight: '700' }]}>View details</Text>
+                  </View>
+                </GlassCard>
+              </TouchableOpacity>
             );
           })
         )}
       </View>
+      <CustomModal
+        visible={!!selectedReport}
+        onClose={() => setSelectedReport(null)}
+        title="Report Details"
+      >
+        {selectedReport && (
+          <View style={{ padding: 16, gap: 10, paddingBottom: 32 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+              <Text style={[typography.cardTitle, { flex: 1, textTransform: 'capitalize' }]}>
+                {String(selectedReport.reason || '').replace(/_/g, ' ')}
+              </Text>
+              <View
+                style={{
+                  paddingHorizontal: 10,
+                  paddingVertical: 4,
+                  borderRadius: 12,
+                  backgroundColor: reportStatusMeta(selectedReport.status).backgroundColor,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontWeight: '700',
+                    color: reportStatusMeta(selectedReport.status).color,
+                  }}
+                >
+                  {reportStatusMeta(selectedReport.status).label}
+                </Text>
+              </View>
+            </View>
+            <Text style={[typography.body, { color: colors.textSecondary }]}>
+              {selectedReport.description || 'No additional details were provided.'}
+            </Text>
+            <Text style={[typography.caption, { color: colors.textMuted }]}>
+              Filed {new Date(selectedReport.createdAt).toLocaleString()}
+              {selectedReport.resolvedAt
+                ? ` · Reviewed ${new Date(selectedReport.resolvedAt).toLocaleString()}`
+                : ''}
+            </Text>
+            <GradientButton title="Close" variant="secondary" onPress={() => setSelectedReport(null)} />
+          </View>
+        )}
+      </CustomModal>
     </ScreenWrapper>
   );
 }
@@ -1772,6 +1963,14 @@ export function OrderHistoryScreen() {
                     <Text style={[typography.caption, { marginTop: 2 }]}>
                       {itemCount} item{itemCount === 1 ? '' : 's'}
                     </Text>
+                    <Text
+                      style={[
+                        typography.caption,
+                        { marginTop: 2, color: order.transactionId ? colors.success : colors.warning, fontWeight: '700' },
+                      ]}
+                    >
+                      {order.transactionId ? 'Paid via Razorpay' : 'Payment pending'}
+                    </Text>
                   </View>
                   <View style={{ alignItems: 'flex-end', gap: 6 }}>
                     <View
@@ -1791,11 +1990,16 @@ export function OrderHistoryScreen() {
                       </Text>
                     </View>
                     <Text style={typography.price}>₹{order.totalAmount}</Text>
-                    <Ionicons
-                      name={isOpen ? 'chevron-up' : 'chevron-down'}
-                      size={16}
-                      color={colors.textMuted}
-                    />
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: colors.primary }}>
+                        {isOpen ? 'Hide Details' : 'View Order'}
+                      </Text>
+                      <Ionicons
+                        name={isOpen ? 'chevron-up' : 'chevron-down'}
+                        size={14}
+                        color={colors.primary}
+                      />
+                    </View>
                   </View>
                 </View>
               </TouchableOpacity>
@@ -1950,13 +2154,20 @@ export function AstrologerRequestsScreen() {
 export function AstrologerScheduleScreen() {
   const { astrologer } = useAuth();
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const [schedules, setSchedules] = useState<Record<number, { startTime: string; endTime: string; isAvailable: boolean }>>({});
+  const defaultSchedules = () => {
+    const map: Record<number, { startTime: string; endTime: string; isAvailable: boolean }> = {};
+    for (let i = 0; i < 7; i++) {
+      map[i] = { startTime: '09:00', endTime: '18:00', isAvailable: true };
+    }
+    return map;
+  };
+  const [schedules, setSchedules] = useState<Record<number, { startTime: string; endTime: string; isAvailable: boolean }>>(defaultSchedules);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!astrologer?.userId) return;
     api.schedule.byAstrologer(astrologer.userId).then((data: any[]) => {
-      const map: Record<number, any> = {};
+      const map = defaultSchedules();
       data.forEach(s => { map[s.dayOfWeek] = { startTime: s.startTime.slice(0, 5), endTime: s.endTime.slice(0, 5), isAvailable: s.isAvailable }; });
       setSchedules(map);
     }).catch(() => {});
@@ -1968,11 +2179,24 @@ export function AstrologerScheduleScreen() {
 
   const saveAll = async () => {
     if (!astrologer?.userId) return;
+    for (let day = 0; day < 7; day++) {
+      const slot = schedules[day];
+      if (!slot?.isAvailable) continue;
+      if (!slot.startTime || !slot.endTime || slot.startTime >= slot.endTime) {
+        Alert.alert('Invalid Schedule', `${days[day]} start time must be before end time.`);
+        return;
+      }
+    }
     setLoading(true);
     try {
-      const bulk = Object.entries(schedules).map(([day, s]) => ({
-        dayOfWeek: Number(day), startTime: s.startTime, endTime: s.endTime, isAvailable: s.isAvailable,
-      }));
+      // Always submit all seven days so untouched days are persisted with
+      // their defaults instead of being silently skipped.
+      const bulk = Array.from({ length: 7 }, (_, day) => {
+        const s = schedules[day] || { startTime: '09:00', endTime: '18:00', isAvailable: true };
+        return {
+          dayOfWeek: day, startTime: s.startTime, endTime: s.endTime, isAvailable: s.isAvailable,
+        };
+      });
       await api.schedule.bulkUpsert(astrologer.userId, bulk);
       Alert.alert('Saved', 'Schedule updated successfully');
     } catch { Alert.alert('Error', 'Failed to save schedule'); }

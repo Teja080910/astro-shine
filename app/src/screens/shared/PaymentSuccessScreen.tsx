@@ -14,6 +14,7 @@ export function PaymentSuccessScreen() {
       case 'wallet_recharge': return 'Wallet Recharged!';
       case 'donation': return 'Donation Successful!';
       case 'pooja_booking': return 'Puja Booked Successfully! 🙏';
+      case 'order_payment': return 'Order Confirmed!';
       default: return 'Payment Successful!';
     }
   };
@@ -23,6 +24,7 @@ export function PaymentSuccessScreen() {
       case 'wallet_recharge': return 'Funds have been added to your wallet.';
       case 'donation': return 'Thank you for your generous contribution.';
       case 'pooja_booking': return 'Your sacred puja has been scheduled. Our temple priests will perform the rituals on the scheduled date.';
+      case 'order_payment': return 'Your payment was successful and your order is confirmed. You can track it in Order History.';
       default: return 'Your payment has been processed successfully.';
     }
   };
@@ -45,10 +47,16 @@ export function PaymentSuccessScreen() {
           )}
         </GlassCard>
         <GradientButton
-          title={purpose === 'pooja_booking' ? 'View My Bookings' : purpose === 'wallet_recharge' ? 'Back to Wallet' : 'Back to Home'}
+          title={
+            purpose === 'pooja_booking' ? 'View My Bookings' :
+            purpose === 'order_payment' ? 'View Order' :
+            purpose === 'wallet_recharge' ? 'Back to Wallet' : 'Back to Home'
+          }
           onPress={() => {
             if (purpose === 'pooja_booking') {
               navigation.navigate('MandirPooja', { initialTab: 'bookings' });
+            } else if (purpose === 'order_payment') {
+              navigation.navigate('OrderHistory');
             } else {
               navigation.navigate('Main', { screen: purpose === 'wallet_recharge' ? 'Wallet' : 'Home' });
             }

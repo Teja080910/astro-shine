@@ -1,8 +1,9 @@
 import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, View, Text } from 'react-native';
+import { ActivityIndicator, Alert, View, Text } from 'react-native';
 import { api } from '../../shared/api-client';
-import { ScreenWrapper, colors, typography } from '../../shared';
+import { Ionicons } from '@expo/vector-icons';
+import { GlassCard, ScreenWrapper, colors, typography } from '../../shared';
 
 type PaymentErrorCategory = 'cancelled' | 'failed' | 'auth_failed' | 'network' | 'timeout' | 'gateway' | 'unknown';
 
@@ -91,7 +92,8 @@ export function PaymentScreen() {
           currency,
           name: 'Astro Shine',
           description: purpose === 'wallet_recharge' ? 'Wallet Recharge' :
-                       purpose === 'donation' ? 'Donation' : 'Payment',
+                       purpose === 'donation' ? 'Donation' :
+                       purpose === 'order_payment' ? 'Store Order' : 'Payment',
           prefill: {},
           theme: { color: '#6D28D9' },
         });
@@ -143,14 +145,59 @@ export function PaymentScreen() {
     openRazorpay();
   }, []);
 
+  const purposeLabel =
+    purpose === 'wallet_recharge' ? 'Wallet Recharge' :
+    purpose === 'donation' ? 'Temple Donation' :
+    purpose === 'order_payment' ? 'Store Order' :
+    purpose === 'pooja_booking' ? 'Puja Booking' : 'Payment';
+  const statusLabel =
+    status === 'loading' ? 'Opening Payment Gateway...' :
+    status === 'processing' ? 'Verifying Payment...' :
+    status === 'success' ? 'Payment Successful!' : 'Payment Failed';
+  const statusColor =
+    status === 'success' ? colors.success :
+    status === 'failed' ? colors.danger : colors.accentGold;
+  const statusIcon =
+    status === 'success' ? 'checkmark-circle' :
+    status === 'failed' ? 'close-circle' : 'time-outline';
+
   return (
     <ScreenWrapper>
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={[typography.pageTitle, { color: colors.textPrimary, marginBottom: 12 }]}>
-          {status === 'loading' ? 'Opening Payment Gateway...' :
-           status === 'processing' ? 'Verifying Payment...' :
-           status === 'success' ? 'Payment Successful!' : 'Payment Failed'}
-        </Text>
+      <View style={{ flex: 1, justifyContent: 'center', padding: 24 }}>
+        <GlassCard style={{ alignItems: 'center', padding: 28 }}>
+          <View
+            style={{
+              width: 72,
+              height: 72,
+              borderRadius: 36,
+              backgroundColor: statusColor + '18',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 16,
+            }}
+          >
+            <Ionicons name={statusIcon as any} size={44} color={statusColor} />
+          </View>
+          <Text style={[typography.pageTitle, { color: colors.textPrimary, textAlign: 'center' }]}>
+            {statusLabel}
+          </Text>
+          <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: 4 }]}>
+            {purposeLabel}
+          </Text>
+          {Number(amount) > 0 ? (
+            <Text style={[typography.price, { color: colors.accentGold, fontSize: 32, marginTop: 12 }]}>
+              ₹{(Number(amount) / 100).toFixed(2)}
+            </Text>
+          ) : null}
+          {status === 'loading' || status === 'processing' ? (
+            <ActivityIndicator size="small" color={colors.accentGold} style={{ marginTop: 16 }} />
+          ) : null}
+          <Text style={[typography.caption, { color: colors.textMuted, marginTop: 14, textAlign: 'center' }]}>
+            {status === 'failed'
+              ? 'No amount has been deducted. You can retry safely.'
+              : 'Secured by Razorpay. Please do not close this screen.'}
+          </Text>
+        </GlassCard>
       </View>
     </ScreenWrapper>
   );

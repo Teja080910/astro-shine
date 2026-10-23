@@ -295,10 +295,12 @@ export class WalletService {
     description: string;
     category: string;
     referenceId?: string;
-  }): Promise<void> {
-    const { userId, astrologerId, amount, description, category, referenceId } = params;
+    metadata?: Record<string, any>;
+  }): Promise<string | undefined> {
+    const { userId, astrologerId, amount, description, category, referenceId, metadata } = params;
 
     let updatedBalance: string | undefined;
+    let transactionId: string | undefined;
 
     await this.db.transaction(async (tx) => {
       if (referenceId) {
@@ -362,7 +364,7 @@ export class WalletService {
         })
         .where(eq(schema.wallets.id, wallet.id));
 
-      await tx.insert(schema.transactions).values({
+      const [transaction] = await tx.insert(schema.transactions).values({
         walletId: wallet.id,
         userId: userId || null,
         astrologerId: astrologerId || null,
@@ -374,7 +376,9 @@ export class WalletService {
         status: 'success',
         description,
         referenceId: referenceId || null,
-      });
+        metadata: metadata || null,
+      }).returning({ id: schema.transactions.id });
+      transactionId = transaction?.id;
 
       updatedBalance = (Number(wallet.balance) - amount).toFixed(2);
     });
@@ -382,6 +386,7 @@ export class WalletService {
     if (updatedBalance !== undefined) {
       this.emitWalletUpdated(userId, astrologerId, undefined, updatedBalance);
     }
+    return transactionId;
   }
 
   async creditFunds(params: {

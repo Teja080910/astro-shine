@@ -152,6 +152,7 @@ export interface Gift {
 export interface GiftTransaction {
   id: string; giftId: string; senderId: string; receiverId: string;
   transactionId?: string; isRedeemed: boolean; redeemedAt?: string;
+  giftName?: string; giftImage?: string; giftPrice?: string;
   createdAt: string;
 }
 

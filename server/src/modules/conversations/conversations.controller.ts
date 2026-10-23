@@ -60,10 +60,17 @@ export class ConversationsController {
   @Post(':id/messages')
   async sendMessage(
     @Param('id') id: string,
-    @Body() body: { content: string; type?: string },
+    @Body() body: { content: string; type?: string; mediaUrl?: string },
     @Req() req: any,
   ) {
-    return this.service.createMessage(id, req.userId, req.userRole || 'user', body.content, body.type);
+    return this.service.createMessage(
+      id,
+      req.userId,
+      req.userRole || 'user',
+      body.content,
+      body.type,
+      body.mediaUrl,
+    );
   }
 
   @Delete(':id')

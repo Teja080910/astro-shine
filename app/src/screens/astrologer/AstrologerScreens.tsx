@@ -99,6 +99,30 @@ export function AstrologerHomeScreen({ navigation }: any) {
     }
   };
 
+  const toggleAllServices = async (val: boolean) => {
+    const prev = {
+      chat: isChatEnabled,
+      audio: isAudioCallEnabled,
+      video: isVideoCallEnabled,
+    };
+    setIsChatEnabled(val);
+    setIsAudioCallEnabled(val);
+    setIsVideoCallEnabled(val);
+    try {
+      const updated = await api.astrologers.update(astrologer!.userId, {
+        isChatEnabled: val,
+        isAudioCallEnabled: val,
+        isVideoCallEnabled: val,
+      });
+      updateUser({ ...astrologer, ...updated });
+    } catch {
+      setIsChatEnabled(prev.chat);
+      setIsAudioCallEnabled(prev.audio);
+      setIsVideoCallEnabled(prev.video);
+      Alert.alert("Error", "Failed to update service status");
+    }
+  };
+
   const [stats, setStats] = useState({
     todayEarnings: "₹0",
     totalCalls: "0",
@@ -373,7 +397,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
                 adjustsFontSizeToFit
                 minimumFontScale={0.7}
               >
-                YOUR DESTINY, OUR GUIDANCE
+                YOUR DESTINY, YOUR GUIDANCE
               </Text>
             </View>
 
@@ -590,12 +614,13 @@ export function AstrologerHomeScreen({ navigation }: any) {
                 />
                 <Text
                   style={{
-                    fontSize: 10,
+                    fontSize: 11,
+                    lineHeight: 14,
                     fontWeight: "700",
                     color: goldTextColor,
                     flexShrink: 1,
                   }}
-                  numberOfLines={1}
+                  numberOfLines={2}
                 >
                   {greeting.text}
                 </Text>
@@ -660,6 +685,61 @@ export function AstrologerHomeScreen({ navigation }: any) {
             >
               Service Status Configuration
             </Text>
+
+            {/* All Services Master Toggle */}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: colors.cardBorder,
+              }}
+            >
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 12,
+                  backgroundColor:
+                    isChatEnabled && isAudioCallEnabled && isVideoCallEnabled
+                      ? "rgba(245, 158, 11, 0.15)"
+                      : "rgba(156, 163, 175, 0.15)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 12,
+                }}
+              >
+                <Ionicons
+                  name="options"
+                  size={20}
+                  color={
+                    isChatEnabled && isAudioCallEnabled && isVideoCallEnabled
+                      ? "#F59E0B"
+                      : mutedTextColor
+                  }
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: colors.textPrimary,
+                  }}
+                >
+                  All Services
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 1 }}>
+                  Turn chat, voice and video on or off together
+                </Text>
+              </View>
+              <Toggle
+                value={isChatEnabled && isAudioCallEnabled && isVideoCallEnabled}
+                onValueChange={toggleAllServices}
+                trackColor={{ false: "#D1D5DB", true: "#F59E0B" }}
+              />
+            </View>
 
             {/* Chat Service Row */}
             <View
@@ -2386,7 +2466,8 @@ export function AstrologerProfileScreen({ navigation }: any) {
       route: "Notifications",
     },
     { icon: "help-circle-outline", label: "Help & Support", route: "Support" },
-    { icon: "flag-outline", label: "Reports Against Me", route: "AstrologerReports" },
+    { icon: "flag-outline", label: "Reports Filed by Me", route: "MyReports" },
+    { icon: "shield-outline", label: "Reports Against Me", route: "AstrologerReports" },
   ];
 
   if (role === "admin") {

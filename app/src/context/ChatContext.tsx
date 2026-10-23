@@ -32,7 +32,10 @@ interface ChatState {
   loading: boolean;
   hasMore: boolean;
   chatBlockedMessage: string | null;
+  chatBlockedCode: string | null;
   clearChatBlocked: () => void;
+  kundliRequiredMessages: Record<string, string>;
+  clearKundliRequired: (conversationId: string) => void;
   astrologerStatuses: Record<string, 'online' | 'offline' | 'busy'>;
   astrologerServices: Record<string, { isChatEnabled: boolean; isAudioCallEnabled: boolean; isVideoCallEnabled: boolean }>;
   horoscopeVersion: number;
@@ -51,7 +54,7 @@ interface ChatState {
   setActiveConversation: (conv: Conversation | null) => void;
   loadMessages: (conversationId: string) => Promise<void>;
   loadMoreMessages: () => Promise<void>;
-  sendMessage: (conversationId: string, content: string) => Promise<void>;
+  sendMessage: (conversationId: string, content: string, type?: string, mediaUrl?: string) => Promise<void>;
   startTyping: (conversationId: string) => void;
   stopTyping: (conversationId: string) => void;
   markAsRead: (conversationId: string) => void;
@@ -93,6 +96,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [chatBlockedMessage, setChatBlockedMessage] = useState<string | null>(null);
+  const [chatBlockedCode, setChatBlockedCode] = useState<string | null>(null);
+  const [kundliRequiredMessages, setKundliRequiredMessages] = useState<Record<string, string>>({});
   const cursorRef = useRef<string | null>(null);
   const typingTimeoutRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const activeConvRef = useRef<Conversation | null>(null);
@@ -162,7 +167,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       if (active?.id === message.conversationId) {
         setMessages((prev) => {
           const exists = prev.some((m) => m.id === message.id);
-          if (exists) return prev;
+          if (exists) {
+            return prev.map((m) =>
+              m.id === message.id ? { ...m, ...message } : m,
+            );
+          }
           const hasOptimistic = prev.some((m) => m.id.startsWith('temp-') && m.senderId === message.senderId && m.conversationId === message.conversationId);
           if (hasOptimistic) {
             return prev.map((m) =>
@@ -273,8 +282,19 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       setStatsVersion(v => v + 1);
     });
 
-    socket.on('chat:blocked', (data: { message: string }) => {
+    socket.on('chat:blocked', (data: { message: string; code?: string }) => {
       setChatBlockedMessage(data.message);
+      setChatBlockedCode(data.code || null);
+    });
+
+    socket.on('chat:kundli-required', (data: { conversationId: string; message?: string }) => {
+      if (!data?.conversationId) return;
+      setKundliRequiredMessages(prev => ({
+        ...prev,
+        [data.conversationId]:
+          data.message ||
+          'Share your birth details or attach your Kundli so the astrologer can start the consultation.',
+      }));
     });
 
     const mergeChatBilling = (data: Partial<ChatBilling> & { conversationId?: string }) => {
@@ -438,8 +458,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
   }, [activeConversation, hasMore, loading]);
 
-  const sendMessage = useCallback(async (conversationId: string, content: string) => {
-    if (!content.trim()) return;
+  const sendMessage = useCallback(async (conversationId: string, content: string, type = 'text', mediaUrl?: string) => {
+    if (!content.trim() && !mediaUrl) return;
     const socket = socketRef.current;
     const uid = userIdRef.current;
     const role = currentRole;
@@ -448,18 +468,19 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       conversationId,
       senderId: uid,
       senderRole: role as any,
-      type: 'text',
+      type: type as any,
       content,
+      mediaUrl: mediaUrl || undefined,
       isDelivered: false,
       isRead: false,
       createdAt: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, optimistic]);
     if (socket?.connected) {
-      socket.emit('message:send', { conversationId, content });
+      socket.emit('message:send', { conversationId, content, type, mediaUrl });
     } else {
       try {
-        const msg = await api.conversations.sendMessage(conversationId, content);
+        const msg = await api.conversations.sendMessage(conversationId, content, type, mediaUrl);
         setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? msg : m)));
       } catch { console.error('Failed to send message via HTTP fallback'); }
     }
@@ -549,7 +570,19 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         loading,
         hasMore,
         chatBlockedMessage,
-        clearChatBlocked: () => setChatBlockedMessage(null),
+        chatBlockedCode,
+        clearChatBlocked: () => {
+          setChatBlockedMessage(null);
+          setChatBlockedCode(null);
+        },
+        kundliRequiredMessages,
+        clearKundliRequired: (conversationId: string) =>
+          setKundliRequiredMessages((prev) => {
+            if (!prev[conversationId]) return prev;
+            const next = { ...prev };
+            delete next[conversationId];
+            return next;
+          }),
         loadConversations,
         openConversation,
         setActiveConversation,

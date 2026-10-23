@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, Pressable, KeyboardAvoidingView, Platform, StyleSheet, Keyboard, Alert } from 'react-native';
+import { View, Text, FlatList, TextInput, TouchableOpacity, Pressable, KeyboardAvoidingView, Platform, StyleSheet, Keyboard, Alert, Linking } from 'react-native';
+import * as DocumentPicker from 'expo-document-picker';
 import { ScreenWrapper, colors, radii, typography, GradientButton, ConfirmDialog, InsufficientBalanceDialog, CustomModal, Chip } from '../../shared';
 import { ChatBubble } from '../../shared/components/ChatBubble';
 import { TypingIndicator } from '../../shared/components/TypingIndicator';
@@ -51,7 +52,7 @@ function formatDuration(totalSeconds: number): string {
 
 export function ChatRoomScreen({ route, navigation }: any) {
   const { conversationId, participantId, participantRole, participantName, participantAvatar } = route.params;
-  const { messages, loadMessages, loadMoreMessages, sendMessage, startTyping, stopTyping, markAsRead, typingUsers, hasMore, loading, onlineUsers, connected, joinRoom, leaveRoom, resetChatBilling, setActiveConversation, astrologerStatuses, chatBlockedMessage, clearChatBlocked, chatBilling } = useChat();
+  const { messages, loadMessages, loadMoreMessages, sendMessage, startTyping, stopTyping, markAsRead, typingUsers, hasMore, loading, onlineUsers, connected, joinRoom, leaveRoom, resetChatBilling, setActiveConversation, astrologerStatuses, chatBlockedMessage, chatBlockedCode, clearChatBlocked, chatBilling, kundliRequiredMessages, clearKundliRequired } = useChat();
   const { initiateCall } = useCall();
   const { user, astrologer: authAstrologer } = useAuth();
   const currentUserId = user?.id || authAstrologer?.userId || authAstrologer?.id || '';
@@ -76,8 +77,10 @@ export function ChatRoomScreen({ route, navigation }: any) {
   const [reportReason, setReportReason] = useState('');
   const [reportDesc, setReportDesc] = useState('');
   const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [uploadingKundli, setUploadingKundli] = useState(false);
 
   const billing = chatBilling[conversationId];
+  const kundliRequiredMessage = kundliRequiredMessages[conversationId];
   const [clock, setClock] = useState(Date.now());
   const astrologerRate = parseFloat(String((authAstrologer as any)?.chatPricePerMin || (authAstrologer as any)?.pricePerMin || '0')) || 0;
   const sessionRate = billing?.rate ?? (isUser ? chatPrice : astrologerRate);
@@ -261,6 +264,44 @@ export function ChatRoomScreen({ route, navigation }: any) {
     stopTyping(conversationId);
   }, [input, conversationId]);
 
+  const handleAttachKundli = useCallback(async () => {
+    if (uploadingKundli || !isUser) return;
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'image/*'],
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled || !result.assets?.length) return;
+      const file = result.assets[0];
+      if (file.size && file.size > 20 * 1024 * 1024) {
+        Alert.alert('File too large', 'Please attach a Kundli up to 20 MB.');
+        return;
+      }
+      setUploadingKundli(true);
+      const uploaded = await api.uploadFile(
+        {
+          uri: file.uri,
+          name: file.name || 'kundli.pdf',
+          mimeType: file.mimeType || 'application/pdf',
+        },
+        'minio',
+      );
+      await sendMessage(
+        conversationId,
+        `Kundli – ${file.name || 'document'}`,
+        'file',
+        uploaded.url,
+      );
+    } catch (e: any) {
+      Alert.alert(
+        'Upload failed',
+        e?.response?.data?.message || e?.message || 'Could not upload the Kundli. Please try again.',
+      );
+    } finally {
+      setUploadingKundli(false);
+    }
+  }, [uploadingKundli, isUser, conversationId, sendMessage]);
+
   const handleChangeText = useCallback((text: string) => {
     setInput(text);
     if (text.trim()) {
@@ -283,6 +324,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
     const prev = index > 0 ? messages[index - 1] : null;
     const showDateHeader = !prev || !sameDay(prev.createdAt, item.createdAt);
     const grouped = isConsecutive(prev, item);
+    const isOwn = item.senderId === currentUserId;
 
     return (
       <View>
@@ -291,14 +333,40 @@ export function ChatRoomScreen({ route, navigation }: any) {
             <Text style={[styles.dateHeaderText, { color: colors.textMuted, backgroundColor: colors.surfaceLight }]}>{formatDateHeader(item.createdAt)}</Text>
           </View>
         )}
-        <ChatBubble
-          message={item.content || ''}
-          isOwn={item.senderId === currentUserId}
-          timestamp={item.createdAt}
-          isDelivered={item.isDelivered}
-          isRead={item.isRead}
-          grouped={grouped}
-        />
+        {item.type === 'file' && item.mediaUrl ? (
+          <View style={[styles.fileRow, { justifyContent: isOwn ? 'flex-end' : 'flex-start' }]}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => Linking.openURL(item.mediaUrl)}
+              style={[
+                styles.fileCard,
+                {
+                  backgroundColor: isOwn ? colors.primary : colors.surfaceLight,
+                  borderColor: isOwn ? colors.primary : colors.cardBorder,
+                },
+              ]}
+            >
+              <View style={[styles.fileIconWrap, { backgroundColor: isOwn ? 'rgba(255,255,255,0.2)' : colors.background }]}>
+                <Ionicons name="document-text-outline" size={22} color={isOwn ? '#FFFFFF' : colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text numberOfLines={2} style={[styles.fileName, { color: isOwn ? '#FFFFFF' : colors.textPrimary }]}>
+                  {item.content || 'Kundli document'}
+                </Text>
+                <Text style={[styles.fileHint, { color: isOwn ? 'rgba(255,255,255,0.8)' : colors.textMuted }]}>Tap to view</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <ChatBubble
+            message={item.content || ''}
+            isOwn={isOwn}
+            timestamp={item.createdAt}
+            isDelivered={item.isDelivered}
+            isRead={item.isRead}
+            grouped={grouped}
+          />
+        )}
       </View>
     );
   }, [currentUserId, messages]);
@@ -320,7 +388,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
               ? (sessionRate > 0 ? `₹${sessionRate.toFixed(2)}/min` : '')
               : billing
                 ? 'Session ended'
-                : (isUser ? 'Starts on first message' : 'Waiting for user')}
+                : (isUser ? 'Starts once birth details are shared' : 'Waiting for user')}
           </Text>
         </View>
         <FlatList
@@ -364,6 +432,20 @@ export function ChatRoomScreen({ route, navigation }: any) {
                   : Math.max(insets.bottom, 20)
               }
             ]}>
+              {isUser && (
+                <TouchableOpacity
+                  style={[styles.attachButton, uploadingKundli && { opacity: 0.5 }]}
+                  onPress={handleAttachKundli}
+                  disabled={uploadingKundli}
+                  hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                >
+                  <Ionicons
+                    name={uploadingKundli ? 'hourglass-outline' : 'attach'}
+                    size={22}
+                    color={colors.primary}
+                  />
+                </TouchableOpacity>
+              )}
               <TextInput
                 style={[styles.input, { backgroundColor: colors.surfaceLight, color: colors.textPrimary }]}
                 placeholder="Type a message..."
@@ -388,12 +470,38 @@ export function ChatRoomScreen({ route, navigation }: any) {
         visible={!!chatBlockedMessage}
         title="Chat Blocked"
         subtitle={chatBlockedMessage || ''}
-        icon={<Ionicons name="wallet-outline" size={48} color={colors.danger} />}
-        actions={[
-          { label: 'Add Funds', onPress: () => { clearChatBlocked(); handleAddFunds(); }, variant: 'primary' },
-          { label: 'Close', onPress: () => clearChatBlocked(), variant: 'secondary' },
-        ]}
+        icon={
+          chatBlockedCode === 'service_disabled'
+            ? <Ionicons name="lock-closed-outline" size={48} color={colors.danger} />
+            : <Ionicons name="wallet-outline" size={48} color={colors.danger} />
+        }
+        actions={
+          chatBlockedCode === 'service_disabled'
+            ? [{ label: 'Close', onPress: () => clearChatBlocked(), variant: 'secondary' }]
+            : [
+                { label: 'Add Funds', onPress: () => { clearChatBlocked(); handleAddFunds(); }, variant: 'primary' },
+                { label: 'Close', onPress: () => clearChatBlocked(), variant: 'secondary' },
+              ]
+        }
         onClose={() => clearChatBlocked()}
+      />
+      <ConfirmDialog
+        visible={!!kundliRequiredMessage}
+        title="Kundli Required"
+        subtitle={kundliRequiredMessage || ''}
+        icon={<Ionicons name="document-text-outline" size={48} color={colors.primary} />}
+        actions={[
+          {
+            label: 'Add Birth Details',
+            onPress: () => {
+              clearKundliRequired(conversationId);
+              navigation.navigate('Kundli');
+            },
+            variant: 'primary',
+          },
+          { label: 'Close', onPress: () => clearKundliRequired(conversationId), variant: 'secondary' },
+        ]}
+        onClose={() => clearKundliRequired(conversationId)}
       />
       <InsufficientBalanceDialog
         visible={balanceDialogVisible}
@@ -535,6 +643,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sendButtonDisabled: { opacity: 0.5 },
+  attachButton: {
+    width: 36,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 2,
+  },
+  fileRow: { flexDirection: 'row', marginVertical: 4 },
+  fileCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    maxWidth: '78%',
+    borderRadius: radii.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  fileIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fileName: { fontSize: 14, fontWeight: '600' },
+  fileHint: { fontSize: 11, marginTop: 2 },
   chargeIndicator: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     paddingVertical: 6, backgroundColor: colors.surfaceLight, gap: 4,

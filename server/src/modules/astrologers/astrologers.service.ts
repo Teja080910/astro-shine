@@ -268,6 +268,15 @@ export class AstrologersService {
     return result;
   }
 
+  /**
+   * Presence-only update (socket connect/disconnect). Never touches the
+   * manual availability flag so an explicit "offline" toggle survives
+   * reconnects.
+   */
+  async setPresenceStatus(id: string, onlineStatus: 'online' | 'offline' | 'busy') {
+    return this.update(id, { onlineStatus } as any);
+  }
+
   async updateOnlineStatus(
     id: string,
     onlineStatus: 'online' | 'offline' | 'busy',
@@ -277,6 +286,19 @@ export class AstrologersService {
       columns: { onlineStatus: true },
     });
     const result = await this.update(id, { onlineStatus } as any);
+
+    // Manual availability: "offline" must hide the astrologer even though
+    // their socket is still connected, and must persist across reconnects.
+    if (onlineStatus === 'offline') {
+      this.realtime.setManualOffline(id, true);
+      this.realtime.broadcast('user:offline', { userId: id, role: 'astrologer' });
+    } else {
+      this.realtime.setManualOffline(id, false);
+      if (onlineStatus === 'online' && this.realtime.isUserConnected(id)) {
+        this.realtime.broadcast('user:online', { userId: id, role: 'astrologer' });
+      }
+    }
+
     this.realtime.broadcast('astrologer:status-changed', {
       astrologerId: id,
       onlineStatus,

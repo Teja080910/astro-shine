@@ -14,6 +14,18 @@ export class ConversationsService {
       throw new ConflictException('Cannot create conversation with yourself');
     }
 
+    if (requesterRole === 'user' && participantRole === 'astrologer') {
+      const astro = await this.db.query.astrologers.findFirst({
+        where: eq(schema.astrologers.userId, participantId),
+        columns: { isChatEnabled: true },
+      });
+      if (astro && astro.isChatEnabled === false) {
+        throw new ConflictException(
+          'This astrologer has disabled chat consultations right now.',
+        );
+      }
+    }
+
     const [existing] = await this.db.select()
       .from(schema.conversations)
       .where(
@@ -55,18 +67,26 @@ export class ConversationsService {
     return conversation;
   }
 
+  private static readonly BIRTH_DETAILS_PREFIX = '📋 Birth Details';
+
   /**
-   * Auto-share the user's birth details (DOB / TOB / POB) as the first message
-   * of a conversation so the astrologer has the chart inputs up front.
-   * Only runs while the conversation is still empty, which keeps it
-   * idempotent and avoids injecting it into ongoing chats.
+   * Auto-share the user's birth details (DOB / TOB / POB) as a message in the
+   * conversation so the astrologer always has the chart inputs up front.
+   * Idempotent (checks for an existing birth-details message) and safe to
+   * call at any point in the conversation's life.
+   *
+   * Returns whether kundli inputs are available to the astrologer, plus the
+   * message that was just created (if any) so callers can broadcast it.
    */
-  private async ensureBirthDetailsMessage(conversationId: string) {
+  async ensureBirthDetailsMessage(conversationId: string): Promise<{
+    available: boolean;
+    created?: typeof schema.conversationMessages.$inferSelect;
+  }> {
     const [conv] = await this.db.select()
       .from(schema.conversations)
       .where(eq(schema.conversations.id, conversationId))
       .limit(1);
-    if (!conv) return;
+    if (!conv) return { available: false };
 
     const userId =
       conv.participantOneRole === 'user'
@@ -74,40 +94,75 @@ export class ConversationsService {
         : conv.participantTwoRole === 'user'
           ? conv.participantTwoId
           : null;
-    if (!userId) return;
-
-    const [countRow] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(schema.conversationMessages)
-      .where(eq(schema.conversationMessages.conversationId, conversationId));
-    if (Number(countRow?.count || 0) > 0) return;
+    if (!userId) return { available: false };
 
     const kundli = await this.db.query.kundliRecords.findFirst({
       where: eq(schema.kundliRecords.userId, userId),
       orderBy: [desc(schema.kundliRecords.createdAt)],
     });
 
-    const lines: string[] = [];
-    const dob = kundli?.dateOfBirth;
-    const tob = kundli?.timeOfBirth;
-    const pob = kundli?.placeOfBirth;
-    if (dob) lines.push(`• Date of Birth: ${dob}`);
-    if (tob) lines.push(`• Time of Birth: ${String(tob).slice(0, 5)}`);
-    if (pob) lines.push(`• Place of Birth: ${pob}`);
+    let dob = kundli?.dateOfBirth ? String(kundli.dateOfBirth) : null;
+    const tob = kundli?.timeOfBirth ? String(kundli.timeOfBirth).slice(0, 5) : null;
+    const pob = kundli?.placeOfBirth || null;
 
-    if (lines.length === 0) {
+    if (!dob) {
       const profile = await this.db.query.users.findFirst({
         where: eq(schema.users.id, userId),
         columns: { dateOfBirth: true },
       });
-      if (profile?.dateOfBirth) {
-        lines.push(`• Date of Birth: ${profile.dateOfBirth}`);
-      }
+      dob = profile?.dateOfBirth ? String(profile.dateOfBirth) : null;
     }
-    if (lines.length === 0) return;
 
-    const content = `📋 Birth Details\n${lines.join('\n')}`;
-    await this.createMessage(conversationId, userId, 'user', content, 'text');
+    const available = Boolean(dob && tob && pob);
+    const lines = [
+      `• Date of Birth: ${dob || 'Not provided'}`,
+      `• Time of Birth: ${tob || 'Not provided'}`,
+      `• Place of Birth: ${pob || 'Not provided'}`,
+    ];
+    const content = `${ConversationsService.BIRTH_DETAILS_PREFIX}\n${lines.join('\n')}${
+      available
+        ? ''
+        : '\n\nPlease share the missing birth details or attach your Kundli to start the consultation.'
+    }`;
+
+    const existing = await this.db.query.conversationMessages.findFirst({
+      where: and(
+        eq(schema.conversationMessages.conversationId, conversationId),
+        sql`${schema.conversationMessages.content} LIKE ${ConversationsService.BIRTH_DETAILS_PREFIX + '%'}`,
+      ),
+    });
+
+    if (existing) {
+      if (existing.content === content) return { available };
+      const [updated] = await this.db
+        .update(schema.conversationMessages)
+        .set({ content })
+        .where(eq(schema.conversationMessages.id, existing.id))
+        .returning();
+      return { available, created: updated };
+    }
+
+    const created = await this.createMessage(
+      conversationId,
+      userId,
+      'user',
+      content,
+      'text',
+    );
+    return { available, created };
+  }
+
+  /** True when the user attached a kundli/document in this conversation. */
+  async hasKundliAttachment(conversationId: string): Promise<boolean> {
+    const attachment = await this.db.query.conversationMessages.findFirst({
+      where: and(
+        eq(schema.conversationMessages.conversationId, conversationId),
+        eq(schema.conversationMessages.senderRole, 'user'),
+        eq(schema.conversationMessages.type, 'file'),
+        sql`${schema.conversationMessages.mediaUrl} IS NOT NULL`,
+      ),
+    });
+    return !!attachment;
   }
 
   async findByUser(userId: string) {
@@ -160,18 +215,30 @@ export class ConversationsService {
     };
   }
 
-  async createMessage(conversationId: string, senderId: string, senderRole: string, content: string, type = 'text') {
+  async createMessage(
+    conversationId: string,
+    senderId: string,
+    senderRole: string,
+    content: string,
+    type = 'text',
+    mediaUrl?: string,
+  ) {
     const [message] = await this.db.insert(schema.conversationMessages).values({
       conversationId: conversationId as any,
       senderId: senderId as any,
       senderRole: senderRole as any,
       content,
       type: type as any,
+      mediaUrl: mediaUrl || null,
     }).returning();
 
+    const preview =
+      type === 'file'
+        ? `📎 ${content || 'Attachment'}`
+        : content;
     await this.db.update(schema.conversations).set({
       lastMessageAt: new Date(),
-      lastMessagePreview: content.substring(0, 200),
+      lastMessagePreview: preview.substring(0, 200),
       updatedAt: new Date(),
     }).where(eq(schema.conversations.id, conversationId));
 

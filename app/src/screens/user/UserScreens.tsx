@@ -128,6 +128,8 @@ function AstrologerRowCard({
   isFav,
   onToggleFav,
   onAction,
+  actionLabel,
+  actionIcon,
   bottom,
   style,
 }: {
@@ -137,6 +139,8 @@ function AstrologerRowCard({
   isFav: boolean;
   onToggleFav: () => void;
   onAction?: () => void;
+  actionLabel?: string;
+  actionIcon?: string;
   bottom?: React.ReactNode;
   style?: any;
 }) {
@@ -574,11 +578,12 @@ function AstrologerRowCard({
           >
             <Ionicons
               name={
-                type === "chat"
+                (actionIcon as any) ||
+                (type === "chat"
                   ? "chatbubble-ellipses"
                   : type === "audio"
                   ? "call"
-                  : "videocam"
+                  : "videocam")
               }
               size={13}
               color="#FFFFFF"
@@ -590,11 +595,12 @@ function AstrologerRowCard({
                 fontWeight: "800",
               }}
             >
-              {type === "chat"
-                ? "Chat Now ›"
-                : type === "audio"
-                ? "Call Now ›"
-                : "Video Call ›"}
+              {actionLabel ||
+                (type === "chat"
+                  ? "Chat Now ›"
+                  : type === "audio"
+                  ? "Call Now ›"
+                  : "Video Call ›")}
             </Text>
           </TouchableOpacity>
         </View>
@@ -915,6 +921,50 @@ export function UserHomeScreen({ navigation }: any) {
     />
   );
 
+  const renderMiniAstroCard = (item: Astrologer, keyPrefix: string) => {
+    const isFav = favoriteAstrologers.some((f) => f.userId === item.userId);
+    return (
+      <TouchableOpacity
+        key={`${keyPrefix}-${item.userId}`}
+        onPress={() => navigation.navigate("AstrologerDetail", { id: item.userId })}
+        style={styles.astroCard}
+      >
+        <GlassCard style={styles.astroInner}>
+          <TouchableOpacity
+            onPress={() => handleToggleFavorite(item.userId)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={{ position: "absolute", top: 6, right: 8, zIndex: 5, padding: 2 }}
+          >
+            <Ionicons
+              name={isFav ? "heart" : "heart-outline"}
+              size={18}
+              color={isFav ? "#DC2626" : isDark ? "#9CA3AF" : "#DC2626"}
+            />
+          </TouchableOpacity>
+          <Avatar
+            size={56}
+            online={getAstrologerOnlineStatus(item, astrologerStatuses, onlineUsers)}
+            uri={item.avatar}
+            name={item.name}
+          />
+          <Text style={typography.cardTitle} numberOfLines={2}>
+            {item.name}
+          </Text>
+          <StarRating
+            rating={typeof item.rating === "string" ? parseFloat(item.rating) : item.rating}
+            size={12}
+          />
+          <Text style={typography.caption} numberOfLines={1}>
+            {item.specialization?.[0] || "Astrologer"}
+          </Text>
+          <Text style={typography.price}>
+            ₹{item.chatPricePerMin || item.pricePerMin}/min
+          </Text>
+        </GlassCard>
+      </TouchableOpacity>
+    );
+  };
+
   if (loading)
     return (
       <ScreenWrapper scroll>
@@ -988,15 +1038,17 @@ export function UserHomeScreen({ navigation }: any) {
                 fontSize: 8,
                 fontWeight: "800",
                 color: isDark ? "#FBBF24" : "#D97706",
-                letterSpacing: 1,
-                marginTop: 1,
+                letterSpacing: 1.4,
+                marginTop: 2,
                 textAlign: "center",
+                alignSelf: "center",
+                width: "100%",
               }}
               numberOfLines={1}
               adjustsFontSizeToFit
               minimumFontScale={0.7}
             >
-              YOUR DESTINY, OUR GUIDANCE
+              YOUR DESTINY, YOUR GUIDANCE
             </Text>
           </View>
 
@@ -1011,10 +1063,10 @@ export function UserHomeScreen({ navigation }: any) {
             }}
           >
             <TouchableOpacity
-              onPress={() => navigation.navigate("Astrologers")}
+              onPress={() => navigation.navigate("FavouriteAstrologers")}
               style={{ padding: 4 }}
             >
-              <Ionicons name="search-outline" size={22} color={iconColor} />
+              <Ionicons name="heart-outline" size={22} color={iconColor} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -1891,12 +1943,12 @@ export function UserHomeScreen({ navigation }: any) {
             >
               Quick Actions
             </Text>
-            <TouchableOpacity onPress={() => navigation.navigate("Kundli")}>
+            <TouchableOpacity onPress={() => navigation.navigate("QuickActions")}>
               <Text
                 style={{
                   fontSize: 13,
                   fontWeight: "700",
-                  color: isDark ? "#FBBF24" : "#DC2626",
+                  color: goldTextColor,
                 }}
               >
                 See All ›
@@ -2086,6 +2138,28 @@ export function UserHomeScreen({ navigation }: any) {
                 Videos
               </Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Gifts", { mode: "send" })}
+              style={[
+                styles.pastelCard,
+                {
+                  backgroundColor: isDark ? "rgba(245, 158, 11, 0.15)" : "#FEF3C7",
+                  borderColor: isDark ? "rgba(245, 158, 11, 0.3)" : "#FDE68A",
+                },
+              ]}
+            >
+              <Ionicons name="gift" size={24} color={isDark ? "#FBBF24" : "#D97706"} />
+              <Text
+                style={[
+                  styles.pastelCardText,
+                  { color: isDark ? "#FDE68A" : "#78350F" },
+                ]}
+                numberOfLines={1}
+              >
+                Send Gift
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -2250,50 +2324,14 @@ export function UserHomeScreen({ navigation }: any) {
           <>
             <SectionHeader
               title="Favorite Astrologers"
-              onSeeAll={() => navigation.navigate("AstrologerList", { onlyFavorites: true })}
+              onSeeAll={() => navigation.navigate("FavouriteAstrologers")}
             />
             <FlatList
               horizontal
               showsHorizontalScrollIndicator={false}
               data={favoriteAstrologers}
               keyExtractor={(a) => `fav-${a.userId}`}
-              renderItem={({ item }) => {
-                const isOnline = getAstrologerOnlineStatus(item, astrologerStatuses, onlineUsers);
-                return (
-                  <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate("AstrologerDetail", { id: item.userId })
-                    }
-                    style={styles.astroCard}
-                  >
-                    <GlassCard style={styles.astroInner}>
-                      <Avatar
-                        size={56}
-                        online={isOnline}
-                        uri={item.avatar}
-                        name={item.name}
-                      />
-                      <Text style={typography.cardTitle} numberOfLines={2}>
-                        {item.name}
-                      </Text>
-                      <StarRating
-                        rating={
-                          typeof item.rating === "string"
-                            ? parseFloat(item.rating)
-                            : item.rating
-                        }
-                        size={12}
-                      />
-                      <Text style={typography.caption}>
-                        {item.specialization?.[0] || "Astrologer"}
-                      </Text>
-                      <Text style={typography.price}>
-                        ₹{item.chatPricePerMin || item.pricePerMin}/min
-                      </Text>
-                    </GlassCard>
-                  </TouchableOpacity>
-                );
-              }}
+              renderItem={({ item }) => renderMiniAstroCard(item, "fav")}
               style={{ marginLeft: 8 }}
             />
             <View style={{ height: 16 }} />
@@ -2317,41 +2355,8 @@ export function UserHomeScreen({ navigation }: any) {
             data={astrologers
               .filter((a) => getAstrologerOnlineStatus(a, astrologerStatuses, onlineUsers))
               .slice(0, 6)}
-            keyExtractor={(a) => a.userId}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                onPress={() =>
-                  navigation.navigate("AstrologerDetail", { id: item.userId })
-                }
-                style={styles.astroCard}
-              >
-                <GlassCard style={styles.astroInner}>
-                  <Avatar
-                    size={56}
-                    online={getAstrologerOnlineStatus(item, astrologerStatuses, onlineUsers)}
-                    uri={item.avatar}
-                    name={item.name}
-                  />
-                  <Text style={typography.cardTitle} numberOfLines={2}>
-                    {item.name}
-                  </Text>
-                  <StarRating
-                    rating={
-                      typeof item.rating === "string"
-                        ? parseFloat(item.rating)
-                        : item.rating
-                    }
-                    size={12}
-                  />
-                  <Text style={typography.caption}>
-                    {item.specialization?.[0] || "Astrologer"}
-                  </Text>
-                  <Text style={typography.price}>
-                    ₹{item.chatPricePerMin || item.pricePerMin}/min
-                  </Text>
-                </GlassCard>
-              </TouchableOpacity>
-            )}
+            keyExtractor={(a) => `live-${a.userId}`}
+            renderItem={({ item }) => renderMiniAstroCard(item, "live")}
             style={{ marginLeft: 8 }}
           />
         ) : (
@@ -4230,26 +4235,142 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
 }
 
 // Wallet
-type WalletTxnFilter = "wallet_recharge" | "donation" | "pooja_booking";
+type WalletTxnFilter =
+  | "all"
+  | "add_funds"
+  | "donation"
+  | "audio_call"
+  | "video_call"
+  | "chat"
+  | "gift"
+  | "pooja_booking";
+
+type WalletTxnDateRange = "all" | "today" | "7d" | "30d";
 
 const WALLET_TXN_FILTERS: { key: WalletTxnFilter; label: string }[] = [
-  { key: "wallet_recharge", label: "Wallet Recharge" },
+  { key: "all", label: "All Transactions" },
+  { key: "audio_call", label: "Audio Call" },
+  { key: "video_call", label: "Video Call" },
+  { key: "chat", label: "Chat" },
+  { key: "gift", label: "Gift" },
+  { key: "add_funds", label: "Add Fund" },
   { key: "donation", label: "Donation" },
   { key: "pooja_booking", label: "Pooja Booking" },
 ];
 
-const matchesWalletTxnType = (t: Transaction, filter: WalletTxnFilter): boolean => {
+const WALLET_DATE_FILTERS: { key: WalletTxnDateRange; label: string }[] = [
+  { key: "all", label: "All Dates" },
+  { key: "today", label: "Today" },
+  { key: "7d", label: "Last 7 Days" },
+  { key: "30d", label: "Last 30 Days" },
+];
+
+const walletTxnKind = (t: Transaction): WalletTxnFilter => {
   const desc = (t.description || "").toLowerCase();
-  const metaType = String(t.metadata?.paymentType || "").toLowerCase();
-  switch (filter) {
-    case "wallet_recharge":
-      return t.category === "add_funds" || desc.includes("wallet_recharge") || metaType === "wallet_recharge";
+  const meta = t.metadata || {};
+  if (t.category === "call_charge") {
+    const callType = String(meta.callType || "").toLowerCase();
+    return callType === "video" || desc.includes("video call")
+      ? "video_call"
+      : "audio_call";
+  }
+  if (t.category === "chat_charge" || desc.includes("chat with astrologer")) return "chat";
+  if (t.category === "gift") return "gift";
+  if (t.category === "add_funds") return "add_funds";
+  if (t.category === "donation") return "donation";
+  if (t.category === "pooja_booking") return "pooja_booking";
+  return "all";
+};
+
+const matchesWalletTxnType = (t: Transaction, filter: WalletTxnFilter): boolean => {
+  if (filter === "all") return true;
+  const kind = walletTxnKind(t);
+  if (kind === "all") {
+    if (filter === "add_funds") return t.type === "credit";
+    return false;
+  }
+  return kind === filter;
+};
+
+const matchesWalletTxnDate = (t: Transaction, range: WalletTxnDateRange): boolean => {
+  if (range === "all") return true;
+  const created = new Date(t.createdAt).getTime();
+  const now = new Date();
+  if (range === "today") {
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    return created >= start;
+  }
+  const days = range === "7d" ? 7 : 30;
+  return created >= now.getTime() - days * 24 * 60 * 60 * 1000;
+};
+
+const walletTxnTitle = (t: Transaction): string => {
+  const kind = walletTxnKind(t);
+  const meta = t.metadata || {};
+  switch (kind) {
+    case "audio_call":
+      return "Audio Call";
+    case "video_call":
+      return "Video Call";
+    case "chat":
+      return "Chat Consultation";
+    case "gift":
+      return meta.giftName ? `Gift: ${meta.giftName}` : "Gift Sent";
+    case "add_funds":
+      return "Add Fund";
     case "donation":
-      return t.category === "donation" || desc.includes("donation payment") || metaType === "donation";
+      return "Donation";
     case "pooja_booking":
-      return t.category === "pooja_booking" || desc.includes("pooja") || desc.includes("puja") || metaType === "pooja_booking";
+      return meta.poojaName ? `Puja: ${meta.poojaName}` : "Pooja Booking";
     default:
-      return false;
+      return t.category
+        ? t.category.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+        : "Transaction";
+  }
+};
+
+const walletTxnDuration = (t: Transaction): string | null => {
+  const meta = t.metadata || {};
+  const minutes = Number(meta.minutesCharged || meta.minutes || 0);
+  if (minutes > 0) return `${minutes} min`;
+  const seconds = Number(meta.durationSeconds || 0);
+  if (seconds > 0) {
+    if (seconds >= 60) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return s > 0 ? `${m}m ${s}s` : `${m} min`;
+    }
+    return `${seconds}s`;
+  }
+  const desc = t.description || "";
+  const secMatch = desc.match(/\((\d+)s\)/);
+  if (secMatch) {
+    const sec = Number(secMatch[1]);
+    return sec >= 60 ? `${Math.floor(sec / 60)}m ${sec % 60}s` : `${sec}s`;
+  }
+  const minMatch = desc.match(/\((\d+)\s*min\)/i);
+  if (minMatch) return `${minMatch[1]} min`;
+  return null;
+};
+
+const walletTxnIcon = (t: Transaction): { name: string; color: string } => {
+  switch (walletTxnKind(t)) {
+    case "audio_call":
+      return { name: "call", color: "#0284C7" };
+    case "video_call":
+      return { name: "videocam", color: "#7C3AED" };
+    case "chat":
+      return { name: "chatbubble-ellipses", color: "#0D9488" };
+    case "gift":
+      return { name: "gift", color: "#D97706" };
+    case "donation":
+      return { name: "heart", color: "#DC2626" };
+    case "pooja_booking":
+      return { name: "flame", color: "#EA580C" };
+    case "add_funds":
+      return { name: "wallet", color: "#16A34A" };
+    default:
+      return { name: "receipt", color: colors.textMuted };
   }
 };
 
@@ -4258,23 +4379,26 @@ export function WalletScreen() {
   const isFocused = useIsFocused();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [txns, setTxns] = useState<Transaction[]>([]);
-  const [txnFilter, setTxnFilter] = useState<WalletTxnFilter>("wallet_recharge");
+  const [txnFilter, setTxnFilter] = useState<WalletTxnFilter>("all");
+  const [dateRange, setDateRange] = useState<WalletTxnDateRange>("all");
   const [showTxnFilter, setShowTxnFilter] = useState(false);
+  const [showDateFilter, setShowDateFilter] = useState(false);
   const [amount, setAmount] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [loadingPayment, setLoadingPayment] = useState(false);
 
   const filteredTxns = useMemo(() => {
-    return txns
-      .filter((t) => matchesWalletTxnType(t, txnFilter))
-      .slice(0, 10);
-  }, [txns, txnFilter]);
+    return txns.filter(
+      (t) => matchesWalletTxnType(t, txnFilter) && matchesWalletTxnDate(t, dateRange),
+    );
+  }, [txns, txnFilter, dateRange]);
 
   const load = useCallback(async () => {
-    const w = await api.wallet.get();
-    setWallet(w);
-    const t = await api.transactions.listMy();
-    setTxns(t);
+    try {
+      const [w, t] = await Promise.all([api.wallet.get(), api.transactions.listMy()]);
+      setWallet(w);
+      setTxns(t);
+    } catch {}
   }, []);
   useEffect(() => {
     if (isFocused) load();
@@ -4315,224 +4439,333 @@ export function WalletScreen() {
     navigation.navigate("Donation");
   };
 
+  const activeTypeLabel =
+    WALLET_TXN_FILTERS.find((f) => f.key === txnFilter)?.label || "All Transactions";
+  const activeDateLabel =
+    WALLET_DATE_FILTERS.find((f) => f.key === dateRange)?.label || "All Dates";
+
   return (
     <ScreenWrapper scroll noPadding>
       <Navbar title="My Wallet" showBack={false} />
       <View style={{ width: "100%", maxWidth: 600, alignSelf: "center", padding: 16 }}>
         <GlassCard style={styles.balanceCard}>
-        <Text style={typography.caption}>Available Balance</Text>
-        <Text style={styles.balance}>₹{formatAmount(wallet?.balance)}</Text>
-        <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}>
-          <View style={{ flex: 1 }}>
-            <GradientButton
-              title="Add Funds"
-              onPress={() => setShowAdd(true)}
-              small
-            />
-          </View>
-          <View style={{ flex: 1 }}>
-            <GradientButton
-              title="Donate"
-              variant="gold"
-              onPress={handleDonate}
-              small
-            />
-          </View>
-        </View>
-      </GlassCard>
-
-      {showAdd && (
-        <GlassCard style={{ padding: 20, marginTop: 12 }}>
-          <Text style={[typography.cardTitle, { marginBottom: 12 }]}>
-            Enter Amount
-          </Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: colors.surfaceLight,
-                borderColor: colors.cardBorder,
-                color: colors.textPrimary,
-              },
-            ]}
-            value={amount}
-            onChangeText={setAmount}
-            placeholder="Amount in ₹"
-            placeholderTextColor={colors.textMuted}
-            keyboardType="decimal-pad"
-          />
-          <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
-            <TouchableOpacity
-              onPress={() => setShowAdd(false)}
-              style={{
-                flex: 1,
-                height: 48,
-                borderRadius: radii.button,
-                borderWidth: 1,
-                borderColor: colors.cardBorder,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <Text style={{ color: colors.textSecondary, fontWeight: "600" }}>
-                Cancel
-              </Text>
-            </TouchableOpacity>
+          <Text style={typography.caption}>Available Balance</Text>
+          <Text style={styles.balance}>₹{formatAmount(wallet?.balance)}</Text>
+          <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}>
             <View style={{ flex: 1 }}>
-              <GradientButton
-                title={loadingPayment ? "Processing..." : "Pay Now"}
-                onPress={handleAddFunds}
-                disabled={loadingPayment}
-              />
+              <GradientButton title="Add Funds" onPress={() => setShowAdd((v) => !v)} small />
+            </View>
+            <View style={{ flex: 1 }}>
+              <GradientButton title="Donate" variant="gold" onPress={handleDonate} small />
             </View>
           </View>
         </GlassCard>
-      )}
 
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginTop: 16,
-        }}
-      >
-        <Text style={[typography.sectionTitle, { color: colors.textPrimary }]}>
-          Transactions
-        </Text>
-        <TouchableOpacity
-          onPress={() => setShowTxnFilter(true)}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 6,
-            backgroundColor: colors.surfaceLight,
-            borderColor: colors.cardBorder,
-            borderWidth: 1,
-            borderRadius: radii.input,
-            paddingHorizontal: 12,
-            height: 40,
-          }}
-        >
-          <Text style={{ fontSize: 13, fontWeight: "600", color: colors.textPrimary }}>
-            {WALLET_TXN_FILTERS.find((f) => f.key === txnFilter)?.label}
+        {showAdd && (
+          <GlassCard style={{ padding: 20, marginTop: 12 }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <Text style={[typography.cardTitle, { color: colors.textPrimary }]}>Add Fund</Text>
+              <Ionicons name="shield-checkmark" size={18} color={colors.success} />
+            </View>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+              {["100", "500", "1000", "2000"].map((quick) => (
+                <Chip
+                  key={quick}
+                  label={`₹${quick}`}
+                  selected={amount === quick}
+                  onPress={() => setAmount(quick)}
+                />
+              ))}
+            </View>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colors.surfaceLight,
+                  borderColor: colors.cardBorder,
+                  color: colors.textPrimary,
+                },
+              ]}
+              value={amount}
+              onChangeText={setAmount}
+              placeholder="Enter amount in ₹"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="decimal-pad"
+            />
+            <Text style={[typography.caption, { color: colors.textMuted, marginTop: 8 }]}>
+              Secure payment powered by Razorpay. Funds are added instantly.
+            </Text>
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowAdd(false);
+                  setAmount("");
+                }}
+                style={{
+                  flex: 1,
+                  height: 48,
+                  borderRadius: radii.button,
+                  borderWidth: 1,
+                  borderColor: colors.cardBorder,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ color: colors.textSecondary, fontWeight: "600" }}>Cancel</Text>
+              </TouchableOpacity>
+              <View style={{ flex: 1 }}>
+                <GradientButton
+                  title={loadingPayment ? "Processing..." : `Pay ₹${amount || "0"}`}
+                  onPress={handleAddFunds}
+                  disabled={loadingPayment}
+                />
+              </View>
+            </View>
+          </GlassCard>
+        )}
+
+        <View style={{ marginTop: 18, marginBottom: 10 }}>
+          <Text style={[typography.sectionTitle, { color: colors.textPrimary }]}>
+            Transactions
           </Text>
-          <Ionicons name="chevron-down" size={16} color={colors.textMuted} />
-        </TouchableOpacity>
-      </View>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+            <TouchableOpacity
+              onPress={() => setShowTxnFilter(true)}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+                backgroundColor: colors.surfaceLight,
+                borderColor: txnFilter === "all" ? colors.cardBorder : colors.accentGold,
+                borderWidth: 1,
+                borderRadius: radii.input,
+                paddingHorizontal: 12,
+                height: 38,
+              }}
+            >
+              <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textPrimary }}>
+                {activeTypeLabel}
+              </Text>
+              <Ionicons name="chevron-down" size={14} color={colors.textMuted} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowDateFilter(true)}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+                backgroundColor: colors.surfaceLight,
+                borderColor: dateRange === "all" ? colors.cardBorder : colors.accentGold,
+                borderWidth: 1,
+                borderRadius: radii.input,
+                paddingHorizontal: 12,
+                height: 38,
+              }}
+            >
+              <Ionicons name="calendar-outline" size={14} color={colors.textMuted} />
+              <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textPrimary }}>
+                {activeDateLabel}
+              </Text>
+              <Ionicons name="chevron-down" size={14} color={colors.textMuted} />
+            </TouchableOpacity>
+          </View>
+        </View>
 
-      <Modal
-        visible={showTxnFilter}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowTxnFilter(false)}
-      >
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={() => setShowTxnFilter(false)}
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(0,0,0,0.6)",
-            justifyContent: "center",
-            alignItems: "center",
-            padding: 24,
-          }}
+        <Modal
+          visible={showTxnFilter}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowTxnFilter(false)}
         >
           <TouchableOpacity
             activeOpacity={1}
+            onPress={() => setShowTxnFilter(false)}
             style={{
-              width: "100%",
-              maxWidth: 340,
-              backgroundColor: colors.surface,
-              borderRadius: radii.card,
-              borderWidth: 1,
-              borderColor: colors.cardBorder,
-              padding: 16,
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.6)",
+              justifyContent: "center",
+              alignItems: "center",
+              padding: 24,
             }}
           >
-            <Text style={[typography.sectionTitle, { marginBottom: 12, color: colors.textPrimary }]}>
-              Filter by Type
-            </Text>
-            {WALLET_TXN_FILTERS.map((f) => {
-              const active = txnFilter === f.key;
-              return (
-                <TouchableOpacity
-                  key={f.key}
-                  onPress={() => {
-                    setTxnFilter(f.key);
-                    setShowTxnFilter(false);
-                  }}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    paddingVertical: 14,
-                    borderBottomWidth: 1,
-                    borderBottomColor: colors.divider,
-                  }}
-                >
-                  <Text style={{ fontSize: 15, fontWeight: "600", color: colors.textPrimary }}>
-                    {f.label}
-                  </Text>
-                  {active && (
-                    <Ionicons name="checkmark-circle" size={20} color={colors.accentGold} />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
+            <TouchableOpacity
+              activeOpacity={1}
+              style={{
+                width: "100%",
+                maxWidth: 340,
+                backgroundColor: colors.surface,
+                borderRadius: radii.card,
+                borderWidth: 1,
+                borderColor: colors.cardBorder,
+                padding: 16,
+              }}
+            >
+              <Text style={[typography.sectionTitle, { marginBottom: 12, color: colors.textPrimary }]}>
+                Filter by Type
+              </Text>
+              {WALLET_TXN_FILTERS.map((f) => {
+                const active = txnFilter === f.key;
+                return (
+                  <TouchableOpacity
+                    key={f.key}
+                    onPress={() => {
+                      setTxnFilter(f.key);
+                      setShowTxnFilter(false);
+                    }}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      paddingVertical: 13,
+                      borderBottomWidth: 1,
+                      borderBottomColor: colors.divider,
+                    }}
+                  >
+                    <Text style={{ fontSize: 15, fontWeight: "600", color: colors.textPrimary }}>
+                      {f.label}
+                    </Text>
+                    {active && <Ionicons name="checkmark-circle" size={20} color={colors.accentGold} />}
+                  </TouchableOpacity>
+                );
+              })}
+            </TouchableOpacity>
           </TouchableOpacity>
-        </TouchableOpacity>
-      </Modal>
+        </Modal>
 
-      {filteredTxns.length === 0 ? (
-        <View style={{ marginTop: 24, alignItems: "center", paddingVertical: 24 }}>
-          <Ionicons name="receipt-outline" size={44} color={colors.textMuted} />
-          <Text style={[typography.body, { color: colors.textMuted, marginTop: 10 }]}>
-            No {WALLET_TXN_FILTERS.find((f) => f.key === txnFilter)?.label} transactions yet
-          </Text>
-        </View>
-      ) : (
-        filteredTxns.map((t) => {
-          const isPooja = t.category === "pooja_booking" || t.description?.toLowerCase().includes("pooja") || t.description?.toLowerCase().includes("puja");
-          const title = isPooja
-            ? (t.metadata?.poojaName ? `Puja: ${t.metadata.poojaName}` : (t.description || 'Puja Booking'))
-            : t.category === "donation"
-            ? "Temple Donation"
-            : t.category === "add_funds"
-            ? "Wallet Recharge"
-            : t.category
-                ?.replace(/_/g, " ")
-                .replace(/\b\w/g, (c) => c.toUpperCase());
+        <Modal
+          visible={showDateFilter}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowDateFilter(false)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => setShowDateFilter(false)}
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.6)",
+              justifyContent: "center",
+              alignItems: "center",
+              padding: 24,
+            }}
+          >
+            <TouchableOpacity
+              activeOpacity={1}
+              style={{
+                width: "100%",
+                maxWidth: 340,
+                backgroundColor: colors.surface,
+                borderRadius: radii.card,
+                borderWidth: 1,
+                borderColor: colors.cardBorder,
+                padding: 16,
+              }}
+            >
+              <Text style={[typography.sectionTitle, { marginBottom: 12, color: colors.textPrimary }]}>
+                Filter by Date
+              </Text>
+              {WALLET_DATE_FILTERS.map((f) => {
+                const active = dateRange === f.key;
+                return (
+                  <TouchableOpacity
+                    key={f.key}
+                    onPress={() => {
+                      setDateRange(f.key);
+                      setShowDateFilter(false);
+                    }}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      paddingVertical: 14,
+                      borderBottomWidth: 1,
+                      borderBottomColor: colors.divider,
+                    }}
+                  >
+                    <Text style={{ fontSize: 15, fontWeight: "600", color: colors.textPrimary }}>
+                      {f.label}
+                    </Text>
+                    {active && <Ionicons name="checkmark-circle" size={20} color={colors.accentGold} />}
+                  </TouchableOpacity>
+                );
+              })}
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
 
-          const isCredit = t.type === "credit" && !isPooja;
-
-          return (
-            <GlassCard key={t.id} style={{ marginTop: 8, padding: 12 }}>
-              <View
-                style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}
-              >
-                <View style={{ flex: 1, marginRight: 12 }}>
-                  <Text style={typography.cardTitle} numberOfLines={2}>
-                    {title}
-                  </Text>
-                  <Text style={typography.caption}>
-                    {new Date(t.createdAt).toLocaleDateString()} · {new Date(t.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </Text>
+        {filteredTxns.length === 0 ? (
+          <View style={{ marginTop: 24, alignItems: "center", paddingVertical: 24 }}>
+            <Ionicons name="receipt-outline" size={44} color={colors.textMuted} />
+            <Text style={[typography.body, { color: colors.textMuted, marginTop: 10 }]}>
+              No {txnFilter === "all" ? "" : activeTypeLabel.toLowerCase() + " "}transactions found
+            </Text>
+          </View>
+        ) : (
+          filteredTxns.map((t) => {
+            const isCredit = t.type === "credit";
+            const icon = walletTxnIcon(t);
+            const duration = walletTxnDuration(t);
+            const statusKey = (t.status || "").toLowerCase();
+            const statusColor =
+              statusKey === "success" ? colors.success :
+              statusKey === "pending" ? colors.warning : colors.danger;
+            return (
+              <GlassCard key={t.id} style={{ marginTop: 8, padding: 12 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <View
+                    style={{
+                      width: 38,
+                      height: 38,
+                      borderRadius: 19,
+                      backgroundColor: icon.color + "18",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Ionicons name={icon.name as any} size={18} color={icon.color} />
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={typography.cardTitle} numberOfLines={1}>
+                      {walletTxnTitle(t)}
+                    </Text>
+                    {duration ? (
+                      <Text style={[typography.caption, { color: colors.textSecondary }]}>
+                        Duration: {duration}
+                      </Text>
+                    ) : null}
+                    <Text style={typography.caption}>
+                      {new Date(t.createdAt).toLocaleDateString()} ·{" "}
+                      {new Date(t.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </Text>
+                  </View>
+                  <View style={{ alignItems: "flex-end", gap: 4 }}>
+                    <Text
+                      style={{
+                        fontWeight: "800",
+                        fontSize: 15,
+                        color: isCredit ? colors.success : colors.danger,
+                      }}
+                    >
+                      {isCredit ? "+" : "-"}₹{formatAmount(t.amount)}
+                    </Text>
+                    <View
+                      style={{
+                        backgroundColor: statusColor + "18",
+                        borderRadius: 8,
+                        paddingHorizontal: 7,
+                        paddingVertical: 2,
+                      }}
+                    >
+                      <Text style={{ fontSize: 9, fontWeight: "800", color: statusColor }}>
+                        {(statusKey || "success").toUpperCase()}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
-                <Text
-                  style={{
-                    fontWeight: "700",
-                    fontSize: 15,
-                    color: isCredit ? colors.success : colors.danger,
-                  }}
-                >
-                  {isCredit ? "+" : "-"}₹{t.amount}
-                </Text>
-              </View>
-            </GlassCard>
-          );
-        })
-      )}
+              </GlassCard>
+            );
+          })
+        )}
       </View>
     </ScreenWrapper>
   );
@@ -5389,16 +5622,25 @@ export function ShopScreen({ navigation }: any) {
           totalPrice: String(Number(item.product.price) * item.qty),
         });
       }
+      const payment = await api.payments.createOrder({
+        amount: cartTotal,
+        purpose: "order_payment",
+        metadata: {
+          orderId: order.id,
+          itemCount: cart.reduce((sum, item) => sum + item.qty, 0),
+        },
+      });
       setCart([]);
       setShowCart(false);
-      Alert.alert(
-        "Order Placed",
-        `Order #${order.id.slice(0, 8).toUpperCase()} created successfully! You can track it in Order History.`,
-        [
-          { text: "View Order History", onPress: () => navigation?.navigate("OrderHistory") },
-          { text: "OK", style: "cancel" },
-        ],
-      );
+      navigation?.navigate("Payment", {
+        razorpayOrderId: payment.razorpayOrderId,
+        key: payment.key,
+        amount: payment.amount,
+        currency: payment.currency,
+        purpose: "order_payment",
+        paymentOrderId: payment.id,
+        orderId: order.id,
+      });
     } catch (e: any) {
       Alert.alert(
         "Error",
@@ -5589,27 +5831,52 @@ export function ShopScreen({ navigation }: any) {
       >
         {selectedProduct && (
           <View style={{ padding: 16, gap: 12 }}>
-            <View
-              style={{
-                height: 200,
-                backgroundColor: colors.surfaceLight,
-                borderRadius: 12,
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-              }}
-            >
-              {selectedProduct.images?.[0] ? (
-                <Image
-                  source={{ uri: resolveMediaUrl(selectedProduct.images[0]) }}
-                  style={{ width: "100%", height: "100%" }}
-                  resizeMode="cover"
-                />
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+              {selectedProduct.images?.length ? (
+                selectedProduct.images.map((image, index) => (
+                  <Image
+                    key={`${image}-${index}`}
+                    source={{ uri: resolveMediaUrl(image) }}
+                    style={{
+                      width: selectedProduct.images.length > 1 ? 220 : 300,
+                      height: 200,
+                      borderRadius: 12,
+                      backgroundColor: colors.surfaceLight,
+                    }}
+                    resizeMode="cover"
+                  />
+                ))
               ) : (
-                <Ionicons name="diamond-outline" size={64} color={colors.primaryLight} />
+                <View
+                  style={{
+                    width: 300,
+                    height: 200,
+                    backgroundColor: colors.surfaceLight,
+                    borderRadius: 12,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Ionicons name="diamond-outline" size={64} color={colors.primaryLight} />
+                </View>
               )}
-            </View>
+            </ScrollView>
             <Text style={[typography.sectionTitle]}>{selectedProduct.name}</Text>
+            {selectedProduct.category ? (
+              <View
+                style={{
+                  alignSelf: "flex-start",
+                  backgroundColor: colors.accentGold + "18",
+                  borderRadius: 10,
+                  paddingHorizontal: 10,
+                  paddingVertical: 4,
+                }}
+              >
+                <Text style={{ fontSize: 11, fontWeight: "700", color: colors.accentGold }}>
+                  {selectedProduct.category}
+                </Text>
+              </View>
+            ) : null}
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
               <Text style={[typography.price, { fontSize: 22 }]}>
                 ₹{selectedProduct.price}
@@ -5803,9 +6070,10 @@ export function ProfileScreen({ navigation }: any) {
     },
     {
       icon: "gift-outline",
-      label: "Gifts",
+      label: "Gift History",
       route: "Gifts",
       category: "Account",
+      params: { mode: "history" },
     },
     {
       icon: "receipt-outline",
@@ -5845,8 +6113,14 @@ export function ProfileScreen({ navigation }: any) {
     },
     {
       icon: "flag-outline",
-      label: "My Reports",
+      label: "Reports Filed by Me",
       route: "MyReports",
+      category: "Preferences",
+    },
+    {
+      icon: "shield-outline",
+      label: "Reports Against Me",
+      route: "AstrologerReports",
       category: "Preferences",
     },
   ];
@@ -6446,7 +6720,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: 1,
   },
-  astroCard: { width: 140, marginRight: 12 },
+  astroCard: { width: 128, marginRight: 12 },
   astroInner: { alignItems: "center", paddingVertical: 16, gap: 6 },
   quickActions: {
     flexDirection: "row",
@@ -6858,7 +7132,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   astroRowCard: {
-    width: 338,
+    width: 320,
     maxWidth: "100%",
     marginRight: 14,
     borderRadius: 22,
@@ -6919,6 +7193,175 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
+
+
+// All quick actions
+export function QuickActionsScreen({ navigation }: any) {
+  const { theme } = useAuth();
+  const isDark = theme === "dark";
+  const cardBg = isDark ? "#111827" : "#FFFFFF";
+  const borderColor = isDark ? "rgba(245,158,11,0.25)" : "#FDE68A";
+  const titleColor = isDark ? "#F9FAFB" : "#7F1D1D";
+  const mutedColor = isDark ? "#9CA3AF" : "#6B7280";
+
+  const actions = [
+    { label: "Kundli", icon: "grid-outline", color: "#D97706", route: "Kundli" },
+    { label: "Matchmaking", icon: "heart", color: "#E11D48", route: "Matchmaking" },
+    { label: "Panchang", icon: "calendar", color: "#EA580C", route: "Panchang" },
+    { label: "Pooja", icon: "flame", color: "#7C3AED", route: "MandirPooja" },
+    { label: "Astrologers", icon: "people", color: "#0284C7", route: "Astrologers" },
+    { label: "Shop", icon: "bag-handle", color: "#16A34A", route: "Shop" },
+    { label: "Send Gift", icon: "gift", color: "#D97706", route: "Gifts", params: { mode: "send" } },
+    { label: "Favourites", icon: "heart-circle", color: "#DC2626", route: "FavouriteAstrologers" },
+    { label: "Wallet", icon: "wallet", color: "#0D9488", route: "Wallet" },
+    { label: "Orders", icon: "receipt", color: "#9333EA", route: "OrderHistory" },
+    { label: "News", icon: "newspaper", color: "#0D9488", route: "News" },
+    { label: "Videos", icon: "play-circle", color: "#FB7185", route: "Videos" },
+  ] as const;
+
+  return (
+    <ScreenWrapper scroll>
+      <View style={{ width: "100%", maxWidth: 600, alignSelf: "center", padding: 16 }}>
+        <Text style={[typography.pageTitle, { color: titleColor, marginBottom: 4 }]}>
+          Quick Actions
+        </Text>
+        <Text style={[typography.caption, { color: mutedColor, marginBottom: 16 }]}>
+          Everything you need, in one place
+        </Text>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}>
+          {actions.map((action) => (
+            <TouchableOpacity
+              key={action.label}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate(action.route, (action as any).params)}
+              style={{
+                width: "31%",
+                backgroundColor: cardBg,
+                borderColor,
+                borderWidth: 1,
+                borderRadius: 18,
+                paddingVertical: 18,
+                paddingHorizontal: 8,
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 12,
+              }}
+            >
+              <View
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 22,
+                  backgroundColor: action.color + "18",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons name={action.icon as any} size={24} color={action.color} />
+              </View>
+              <Text
+                style={{ fontSize: 12, fontWeight: "700", color: titleColor, textAlign: "center" }}
+                numberOfLines={2}
+              >
+                {action.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    </ScreenWrapper>
+  );
+}
+
+// Favourite astrologers
+export function FavouriteAstrologersScreen({ navigation }: any) {
+  const isFocused = useIsFocused();
+  const [favourites, setFavourites] = useState<Astrologer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadFavourites = useCallback(async () => {
+    try {
+      const data = await api.favorites.list();
+      setFavourites(data);
+    } catch {
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isFocused) loadFavourites();
+  }, [isFocused, loadFavourites]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadFavourites().finally(() => setRefreshing(false));
+  };
+
+  const removeFavourite = async (astrologerId: string) => {
+    setFavourites((prev) => prev.filter((item) => item.userId !== astrologerId));
+    try {
+      await api.favorites.toggle(astrologerId);
+    } catch {
+      loadFavourites();
+    }
+  };
+
+  return (
+    <ScreenWrapper noPadding>
+      <View style={{ width: "100%", maxWidth: 600, alignSelf: "center", flex: 1 }}>
+        {loading ? (
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : (
+          <FlatList
+            data={favourites}
+            keyExtractor={(item) => item.userId}
+            contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            renderItem={({ item }) => (
+              <AstrologerRowCard
+                item={item}
+                type="chat"
+                navigation={navigation}
+                isFav
+                onToggleFav={() => removeFavourite(item.userId)}
+                onAction={() => navigation.navigate("AstrologerDetail", { id: item.userId })}
+                actionLabel="View Profile ›"
+                actionIcon="person-outline"
+              />
+            )}
+            ListEmptyComponent={
+              <View style={{ alignItems: "center", paddingVertical: 60 }}>
+                <Ionicons name="heart-outline" size={56} color={colors.textMuted} />
+                <Text style={[typography.sectionTitle, { marginTop: 12, color: colors.textPrimary }]}>
+                  No favourite astrologers yet
+                </Text>
+                <Text style={[typography.body, { color: colors.textMuted, textAlign: "center", marginTop: 4 }]}>
+                  Tap the heart icon on an astrologer profile to save them here.
+                </Text>
+                <GradientButton
+                  title="Browse Astrologers"
+                  onPress={() => navigation.navigate("Astrologers")}
+                  style={{ marginTop: 16, minWidth: 200 }}
+                />
+              </View>
+            }
+            ListHeaderComponent={
+              favourites.length > 0 ? (
+                <Text style={[typography.caption, { color: colors.textMuted, marginBottom: 10 }]}>
+                  {favourites.length} saved astrologer{favourites.length === 1 ? "" : "s"}
+                </Text>
+              ) : null
+            }
+          />
+        )}
+      </View>
+    </ScreenWrapper>
+  );
+}
 
 export { MuhuratScreen } from "./MuhuratScreen";
 export { GiftScreen } from "./GiftScreen";

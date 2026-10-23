@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
 import { eq, and } from 'drizzle-orm';
@@ -14,7 +14,20 @@ export class ScheduleService {
     });
   }
 
+  private validateSlot(dayOfWeek: number, startTime: string, endTime: string) {
+    if (!Number.isInteger(dayOfWeek) || dayOfWeek < 0 || dayOfWeek > 6) {
+      throw new BadRequestException('dayOfWeek must be between 0 and 6');
+    }
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(startTime) || !/^([01]\d|2[0-3]):[0-5]\d$/.test(endTime)) {
+      throw new BadRequestException('Times must use HH:mm format');
+    }
+    if (startTime >= endTime) {
+      throw new BadRequestException('Start time must be before end time');
+    }
+  }
+
   async upsert(astrologerId: string, dayOfWeek: number, startTime: string, endTime: string, isAvailable: boolean) {
+    this.validateSlot(dayOfWeek, startTime, endTime);
     const existing = await this.db.query.astrologerSchedules.findFirst({
       where: and(
         eq(schema.astrologerSchedules.astrologerId, astrologerId),

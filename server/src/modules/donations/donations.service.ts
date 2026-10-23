@@ -141,6 +141,34 @@ export class DonationsService {
     return r;
   }
 
+  async createFromWallet(userId: string, amount: number, message?: string) {
+    const parsed = Number(amount);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      throw new BadRequestException('Invalid donation amount');
+    }
+
+    const referenceId = `donation-wallet-${userId}-${Date.now()}`;
+    const transactionId = await this.walletService.deductFundsAtomic({
+      userId,
+      amount: parsed,
+      description: 'Temple Donation',
+      category: 'donation',
+      referenceId,
+      metadata: { source: 'wallet', purpose: 'donation' },
+    });
+
+    if (!transactionId) {
+      throw new BadRequestException('Donation could not be processed');
+    }
+
+    return this.create({
+      userId,
+      amount: parsed.toFixed(2),
+      transactionId,
+      message: message || 'Donation via wallet',
+    });
+  }
+
   async createReceived(data: { amount: number; userId?: string; note?: string }) {
     const [r] = await this.db.insert(schema.donationLogs).values({
       userId: data.userId || null,

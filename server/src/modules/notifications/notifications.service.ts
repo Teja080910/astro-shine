@@ -1,7 +1,8 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger, OnModuleInit } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
-import { eq, desc, sql, or, and, isNull, inArray } from 'drizzle-orm';
+import { eq, desc, sql, or, and, isNull, inArray, lt } from 'drizzle-orm';
 import { RealtimeService } from '../../common/realtime.service';
 import { PushService } from './push.service';
 import {
@@ -9,8 +10,10 @@ import {
   Pagination,
 } from '../../common/utils/pagination';
 
+const NOTIFICATION_RETENTION_DAYS = 30;
+
 @Injectable()
-export class NotificationsService {
+export class NotificationsService implements OnModuleInit {
   private readonly logger = new Logger(NotificationsService.name);
 
   constructor(
@@ -18,6 +21,29 @@ export class NotificationsService {
     private readonly realtime: RealtimeService,
     private readonly push: PushService,
   ) {}
+
+  async onModuleInit() {
+    await this.cleanupExpiredNotifications().catch((e: any) =>
+      this.logger.warn(`Notification cleanup failed: ${e?.message || e}`),
+    );
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async cleanupExpiredNotifications() {
+    const cutoff = new Date(
+      Date.now() - NOTIFICATION_RETENTION_DAYS * 24 * 60 * 60 * 1000,
+    );
+    const deleted = await this.db
+      .delete(schema.notifications)
+      .where(lt(schema.notifications.createdAt, cutoff))
+      .returning({ id: schema.notifications.id });
+    if (deleted.length > 0) {
+      this.logger.log(
+        `Deleted ${deleted.length} notifications older than ${NOTIFICATION_RETENTION_DAYS} days`,
+      );
+    }
+    return { deleted: deleted.length };
+  }
 
   async findByUserId(userId: string) {
     return this.db.query.notifications.findMany({

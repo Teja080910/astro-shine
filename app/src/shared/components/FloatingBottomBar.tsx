@@ -17,7 +17,7 @@ export function FloatingBottomBar({ tabs, activeTab, onTabPress }: Props) {
   const totalUnread = Object.values(unreadCounts).reduce((s, c) => s + c, 0);
   const badgeCount = totalUnread > 99 ? 99 : totalUnread;
 
-  const activeColor = isDark ? '#F59E0B' : '#EA580C';
+  const activeColor = isDark ? '#F59E0B' : '#D97706';
   const inactiveColor = isDark ? '#9CA3AF' : '#786C6A';
   const barBg = isDark ? '#111827' : '#FFFFFF';
   const borderColor = isDark ? '#374151' : '#FDE68A';

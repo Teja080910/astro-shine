@@ -32,6 +32,25 @@ export class UsersController {
   @UseGuards(AuthGuard)
   async updateProfile(@CurrentUser() userId: string, @Body() body: any) {
     const { id, password, role, createdAt, updatedAt, deletedAt, ...allowedFields } = body;
+
+    if (allowedFields.name !== undefined) {
+      allowedFields.name = String(allowedFields.name).trim();
+      if (!allowedFields.name) {
+        throw new BadRequestException('Name cannot be empty');
+      }
+    }
+
+    if (allowedFields.email !== undefined) {
+      allowedFields.email = String(allowedFields.email).trim().toLowerCase();
+      if (!allowedFields.email) {
+        throw new BadRequestException('Email cannot be empty');
+      }
+      const existing = await this.usersService.findByEmail(allowedFields.email);
+      if (existing && existing.id !== userId) {
+        throw new BadRequestException('Email is already in use');
+      }
+    }
+
     const user = await this.usersService.update(userId, allowedFields);
     return stripPassword(user);
   }

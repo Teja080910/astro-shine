@@ -140,6 +140,7 @@ export class GiftsService {
           createdAt: schema.giftTransactions.createdAt,
           giftName: schema.gifts.name,
           giftImage: schema.gifts.image,
+          giftPrice: schema.gifts.price,
           senderName: senderUser.name,
           receiverName: receiverUser.name,
         })
@@ -271,6 +272,11 @@ export class GiftsService {
           status: 'success',
           description: `Gift sent: ${gift.name}`,
           referenceId: giftId,
+          metadata: {
+            giftName: gift.name,
+            giftId,
+            receiverId,
+          },
         })
         .returning({ id: schema.transactions.id });
 

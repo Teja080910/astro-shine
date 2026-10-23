@@ -37,7 +37,7 @@ export function BrandSplash() {
         <Text style={styles.wordmark}>ASTROSHINE</Text>
         <Animated.View style={[styles.taglineRow, { opacity: taglineOpacity }]}>
           <View style={styles.taglineLine} />
-          <Text style={styles.tagline}>YOUR DESTINY, OUR GUIDANCE</Text>
+          <Text style={styles.tagline}>YOUR DESTINY, YOUR GUIDANCE</Text>
           <View style={styles.taglineLine} />
         </Animated.View>
       </Animated.View>

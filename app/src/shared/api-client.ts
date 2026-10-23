@@ -220,6 +220,8 @@ class ApiClient {
   donations = {
     list: (userId?: string) => this.get<Donation[]>('/donations', { userId }),
     create: (d: any) => this.post<Donation>('/donations', d),
+    payWithWallet: (d: { amount: number; message?: string }) =>
+      this.post<Donation>('/donations/wallet', d),
   };
 
   // Shop
@@ -384,8 +386,8 @@ class ApiClient {
       this.post<Conversation>('/conversations', { participantId, participantRole }),
     getMessages: (id: string, cursor?: string, limit = 20) =>
       this.get<PaginatedMessages>(`/conversations/${id}/messages`, { cursor, limit }),
-    sendMessage: (id: string, content: string, type = 'text') =>
-      this.post<ConversationMessage>(`/conversations/${id}/messages`, { content, type }),
+    sendMessage: (id: string, content: string, type = 'text', mediaUrl?: string) =>
+      this.post<ConversationMessage>(`/conversations/${id}/messages`, { content, type, mediaUrl }),
     markAsRead: (id: string) => this.put<{ unreadCount: number }>(`/conversations/${id}/read`),
     delete: (id: string) => this.del(`/conversations/${id}`),
   };

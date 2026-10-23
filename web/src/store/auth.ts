@@ -2,8 +2,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { api } from '@/lib/api';
 
-interface AdminUser {
+export interface AdminUser {
   id: string; name: string; email: string; role: string;
+  phone?: string | null; avatar?: string | null;
 }
 
 interface AuthStore {
@@ -13,6 +14,7 @@ interface AuthStore {
   hydrated: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  updateAdmin: (patch: Partial<AdminUser>) => void;
   setHydrated: () => void;
 }
 
@@ -48,6 +50,10 @@ export const useAuthStore = create<AuthStore>()(
           window.location.replace('/login');
         }
       },
+
+      updateAdmin: (patch) => set((state) => ({
+        admin: state.admin ? { ...state.admin, ...patch } : state.admin,
+      })),
 
       setHydrated: () => set({ hydrated: true, loading: false }),
     }),

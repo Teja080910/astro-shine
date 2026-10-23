@@ -258,6 +258,10 @@ export class PaymentsService {
       case 'order_payment': {
         if (metadata.orderId) {
           await this.ordersService.updateStatus(metadata.orderId, 'confirmed');
+          await this.db
+            .update(schema.orders)
+            .set({ transactionId: transaction.id, updatedAt: new Date() })
+            .where(eq(schema.orders.id, metadata.orderId));
         }
         break;
       }
