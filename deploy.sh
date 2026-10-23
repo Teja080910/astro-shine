@@ -19,11 +19,19 @@ log()  { printf '[deploy] %s\n' "$*"; }
 warn() { printf '[deploy] WARNING: %s\n' "$*" >&2; }
 die()  { printf '[deploy] ERROR: %s\n' "$*" >&2; exit 1; }
 
-for bin in git node npm psql pm2 curl; do
+for bin in git node npm psql pm2 curl flock; do
   command -v "$bin" >/dev/null 2>&1 || die "missing required tool: $bin"
 done
 cd "$REPO"
 [ -f server/.env ] || die "server/.env not found (needed for DATABASE_URL)"
+
+# ---- 0. serialize deploys ----------------------------------------------------
+# Prevents a manual run and the auto-deploy timer from deploying at the same
+# time (both use this lock; the second one fails fast instead of racing).
+LOCK_FILE="${DEPLOY_LOCK_FILE:-/var/lock/astro-shine-deploy.lock}"
+mkdir -p "$(dirname "$LOCK_FILE")"
+exec 8>"$LOCK_FILE"
+flock -n 8 || die "another deploy is already running (lock: $LOCK_FILE)"
 
 # ---- 1. update code --------------------------------------------------------
 if git status --porcelain | grep -v '^?? deploy.sh$' | grep -q .; then
@@ -109,6 +117,7 @@ wait_http "http://localhost:5322/login" 90
 # ---- 6. summary -------------------------------------------------------------
 log "deploy complete ✓"
 echo "  branch : $BRANCH @ $(git rev-parse --short HEAD)"
-echo "  server : http://31.97.222.250:3067/api/v1  (pm2: astro-shine-server)"
-echo "  admin  : http://31.97.222.250:5322/login   (pm2: astro-shine-web)"
+echo "  server : https://api.astro-shine.31.97.222.250.nip.io/api/v1  (pm2: astro-shine-server)"
+echo "  admin  : https://admin.astro-shine.31.97.222.250.nip.io/login  (pm2: astro-shine-web)"
+echo "  files  : https://files.astro-shine.31.97.222.250.nip.io"
 pm2 ls 2>/dev/null | grep -E 'astro-shine' || true
