@@ -2,6 +2,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import React from 'react';
 import { View, Text } from 'react-native';
 import { GradientButton, ScreenWrapper, colors, typography, GlassCard } from '../../shared';
+import { useAuth } from '../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
 const categoryConfig: Record<string, { icon: string; iconColor: string; title: string }> = {
@@ -42,6 +43,10 @@ const defaultConfig = { icon: 'close-circle', iconColor: colors.danger, title: '
 export function PaymentFailureScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const { theme } = useAuth();
+  const isDark = theme === 'dark';
+  const titleColor = isDark ? '#F9FAFB' : '#7F1D1D';
+  const bodyColor = isDark ? '#E5E7EB' : '#374151';
   const { category, message, purpose, paymentOrderId } = route.params || {};
   const cfg = categoryConfig[category as string] || defaultConfig;
 
@@ -52,8 +57,8 @@ export function PaymentFailureScreen() {
           <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: cfg.iconColor + '20', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
             <Ionicons name={cfg.icon as any} size={48} color={cfg.iconColor} />
           </View>
-          <Text style={[typography.pageTitle, { color: colors.textPrimary, textAlign: 'center' }]}>{cfg.title}</Text>
-          <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: 8 }]}>
+          <Text style={[typography.pageTitle, { color: titleColor, textAlign: 'center' }]}>{cfg.title}</Text>
+          <Text style={[typography.body, { color: bodyColor, textAlign: 'center', marginTop: 8 }]}>
             {message || 'Something went wrong. Please try again.'}
           </Text>
         </GlassCard>

@@ -1347,11 +1347,8 @@ function reportStatusMeta(status?: string) {
   };
 }
 
-function ReportsStatusScreen({ navigation, mode }: any) {
+function ReportsStatusScreen({ mode }: any) {
   const isFocused = useIsFocused();
-  const pageTitle = mode === 'received'
-    ? 'Reports Against Me'
-    : 'Reports Filed by Me';
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
@@ -1375,7 +1372,6 @@ function ReportsStatusScreen({ navigation, mode }: any) {
 
   return (
     <ScreenWrapper scroll noPadding>
-      <Navbar title={pageTitle} navigation={navigation} />
       <View style={{ padding: 16, paddingBottom: 100 }}>
         {loading ? (
           <GlassCard><Text style={typography.body}>Loading...</Text></GlassCard>

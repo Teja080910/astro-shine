@@ -52,6 +52,7 @@ import type {
   Astrologer,
   Blog,
   CallLog,
+  GiftTransaction,
   HoroscopeRecord,
   MandirPooja,
   Notification,
@@ -6022,6 +6023,9 @@ export function ProfileScreen({ navigation }: any) {
   const rowBorderColor = isDark ? "rgba(255, 255, 255, 0.08)" : "#F3F4F6";
 
   const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [giftHistoryOpen, setGiftHistoryOpen] = useState(true);
+  const [giftHistory, setGiftHistory] = useState<GiftTransaction[]>([]);
+  const [giftHistoryLoading, setGiftHistoryLoading] = useState(false);
   const [pwOpen, setPwOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [currentPw, setCurrentPw] = useState("");
@@ -6048,6 +6052,29 @@ export function ProfileScreen({ navigation }: any) {
     } catch {}
   };
 
+  const loadGiftHistory = async () => {
+    if (!user?.id) return;
+    setGiftHistoryLoading(true);
+    try {
+      const txns = await api.gifts.transactions(user.id);
+      setGiftHistory(txns || []);
+    } catch {
+    } finally {
+      setGiftHistoryLoading(false);
+    }
+  };
+
+  const toggleGiftHistory = () => {
+    setGiftHistoryOpen((open) => !open);
+  };
+
+  useEffect(() => {
+    if (isFocused && giftHistoryOpen) {
+      loadGiftHistory();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFocused, giftHistoryOpen]);
+
   useEffect(() => {
     if (isFocused) {
       loadProfile();
@@ -6057,6 +6084,7 @@ export function ProfileScreen({ navigation }: any) {
   const onRefresh = async () => {
     setRefreshing(true);
     await loadProfile();
+    if (giftHistoryOpen) await loadGiftHistory();
     setRefreshing(false);
   };
 
@@ -6071,9 +6099,8 @@ export function ProfileScreen({ navigation }: any) {
     {
       icon: "gift-outline",
       label: "Gift History",
-      route: "Gifts",
+      route: "GiftHistory",
       category: "Account",
-      params: { mode: "history" },
     },
     {
       icon: "receipt-outline",
@@ -6364,36 +6391,154 @@ export function ProfileScreen({ navigation }: any) {
             </Text>
             {items
               .filter((it) => it.category === "Account")
-              .map((item, i, arr) => (
-                <TouchableOpacity
-                  key={item.label}
-                  onPress={() => navigation.navigate(item.route, (item as any).params)}
-                  style={[
-                    styles.menuRowItem,
-                    { borderBottomColor: rowBorderColor },
-                    i < arr.length - 1 && styles.menuRowBorder,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.menuItemIconBg,
-                      { backgroundColor: iconBgColor },
-                    ]}
-                  >
-                    <Ionicons
-                      name={item.icon as any}
-                      size={20}
-                      color={goldTextColor}
-                    />
-                  </View>
-                  <Text
-                    style={[styles.menuRowLabel, { color: textSecondaryColor }]}
-                  >
-                    {item.label}
-                  </Text>
-                  <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
-                </TouchableOpacity>
-              ))}
+              .map((item, i, arr) => {
+                const isGiftHistory = item.route === "GiftHistory";
+                return (
+                  <React.Fragment key={item.label}>
+                    <TouchableOpacity
+                      onPress={() =>
+                        isGiftHistory
+                          ? toggleGiftHistory()
+                          : navigation.navigate(item.route, (item as any).params)
+                      }
+                      style={[
+                        styles.menuRowItem,
+                        { borderBottomColor: rowBorderColor },
+                        i < arr.length - 1 && styles.menuRowBorder,
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.menuItemIconBg,
+                          { backgroundColor: iconBgColor },
+                        ]}
+                      >
+                        <Ionicons
+                          name={item.icon as any}
+                          size={20}
+                          color={goldTextColor}
+                        />
+                      </View>
+                      <Text
+                        style={[styles.menuRowLabel, { color: textSecondaryColor }]}
+                      >
+                        {item.label}
+                      </Text>
+                      <Ionicons
+                        name={isGiftHistory && giftHistoryOpen ? "chevron-up" : "chevron-forward"}
+                        size={18}
+                        color="#9CA3AF"
+                      />
+                    </TouchableOpacity>
+                    {isGiftHistory && giftHistoryOpen && (
+                      <View
+                        style={{
+                          paddingHorizontal: 14,
+                          paddingBottom: 10,
+                          borderBottomWidth: i < arr.length - 1 ? 1 : 0,
+                          borderBottomColor: rowBorderColor,
+                        }}
+                      >
+                        {giftHistoryLoading ? (
+                          <ActivityIndicator
+                            size="small"
+                            color={goldTextColor}
+                            style={{ marginVertical: 12 }}
+                          />
+                        ) : giftHistory.length === 0 ? (
+                          <Text
+                            style={{
+                              color: mutedTextColor,
+                              fontSize: 12,
+                              paddingVertical: 10,
+                            }}
+                          >
+                            No gifts sent yet.
+                          </Text>
+                        ) : (
+                          <>
+                            {giftHistory.slice(0, 5).map((txn) => (
+                              <View
+                                key={txn.id}
+                                style={{
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                  gap: 10,
+                                  paddingVertical: 8,
+                                  borderTopWidth: StyleSheet.hairlineWidth,
+                                  borderTopColor: rowBorderColor,
+                                }}
+                              >
+                                <View
+                                  style={{
+                                    width: 30,
+                                    height: 30,
+                                    borderRadius: 15,
+                                    backgroundColor: iconBgColor,
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                  }}
+                                >
+                                  <Ionicons name="gift" size={15} color={goldTextColor} />
+                                </View>
+                                <View style={{ flex: 1, minWidth: 0 }}>
+                                  <Text
+                                    style={{
+                                      color: textSecondaryColor,
+                                      fontSize: 13,
+                                      fontWeight: "600",
+                                    }}
+                                    numberOfLines={1}
+                                  >
+                                    {txn.giftName || "Gift"}
+                                  </Text>
+                                  <Text style={{ color: mutedTextColor, fontSize: 11 }} numberOfLines={1}>
+                                    To {txn.receiverName || "Astrologer"} · {new Date(txn.createdAt).toLocaleDateString()}
+                                  </Text>
+                                </View>
+                                <View style={{ alignItems: "flex-end" }}>
+                                  <Text
+                                    style={{
+                                      color: goldTextColor,
+                                      fontSize: 13,
+                                      fontWeight: "700",
+                                    }}
+                                  >
+                                    ₹{Number(txn.giftPrice || 0).toFixed(2)}
+                                  </Text>
+                                  <Text
+                                    style={{
+                                      color: txn.isRedeemed ? colors.success : mutedTextColor,
+                                      fontSize: 9,
+                                      fontWeight: "800",
+                                    }}
+                                  >
+                                    {txn.isRedeemed ? "REDEEMED" : "SENT"}
+                                  </Text>
+                                </View>
+                              </View>
+                            ))}
+                            <TouchableOpacity
+                              onPress={() => navigation.navigate("GiftHistory")}
+                              style={{ paddingTop: 10, paddingBottom: 2 }}
+                            >
+                              <Text
+                                style={{
+                                  color: goldTextColor,
+                                  fontSize: 12,
+                                  fontWeight: "700",
+                                }}
+                              >
+                                View all gift history →
+                              </Text>
+                            </TouchableOpacity>
+                          </>
+                        )}
+                      </View>
+                    )}
+                  </React.Fragment>
+                );
+              })}
           </View>
 
           {/* Preferences & Security Group */}
@@ -6720,8 +6865,14 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: 1,
   },
-  astroCard: { width: 128, marginRight: 12 },
-  astroInner: { alignItems: "center", paddingVertical: 16, gap: 6 },
+  astroCard: { width: 128, height: 210, marginRight: 12 },
+  astroInner: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 16,
+    gap: 6,
+  },
   quickActions: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -7222,9 +7373,6 @@ export function QuickActionsScreen({ navigation }: any) {
   return (
     <ScreenWrapper scroll>
       <View style={{ width: "100%", maxWidth: 600, alignSelf: "center", padding: 16 }}>
-        <Text style={[typography.pageTitle, { color: titleColor, marginBottom: 4 }]}>
-          Quick Actions
-        </Text>
         <Text style={[typography.caption, { color: mutedColor, marginBottom: 16 }]}>
           Everything you need, in one place
         </Text>

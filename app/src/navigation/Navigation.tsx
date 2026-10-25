@@ -290,6 +290,12 @@ export function Navigation() {
             <Stack.Screen name="MandirPoojaDetail" component={MandirPoojaDetailScreen} options={headerOpts('Pooja Details')} />
             <Stack.Screen name="Donation" component={DonationScreen} options={headerOpts('Donation')} />
             <Stack.Screen name="Gifts" component={GiftScreen} options={headerOpts('Gifts')} />
+            <Stack.Screen
+              name="GiftHistory"
+              component={GiftScreen}
+              initialParams={{ mode: 'history' }}
+              options={headerOpts('Gift History')}
+            />
             <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} options={headerOpts('Privacy Policy')} />
             <Stack.Screen name="TermsConditions" component={TermsConditionsScreen} options={headerOpts('Terms & Conditions')} />
             <Stack.Screen name="AboutApp" component={AboutAppScreen} options={headerOpts('About App')} />

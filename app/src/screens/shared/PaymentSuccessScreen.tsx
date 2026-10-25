@@ -2,11 +2,18 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import React from 'react';
 import { View, Text } from 'react-native';
 import { GradientButton, ScreenWrapper, colors, typography, GlassCard } from '../../shared';
+import { useAuth } from '../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 
 export function PaymentSuccessScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const { theme } = useAuth();
+  const isDark = theme === 'dark';
+  const titleColor = isDark ? '#F9FAFB' : '#7F1D1D';
+  const bodyColor = isDark ? '#E5E7EB' : '#374151';
+  const mutedColor = isDark ? '#9CA3AF' : '#786C6A';
+  const amountColor = isDark ? '#FBBF24' : '#B45309';
   const { transaction, wallet, purpose, amount } = route.params || {};
 
   const getTitle = () => {
@@ -36,14 +43,14 @@ export function PaymentSuccessScreen() {
           <View style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: colors.success + '20', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
             <Ionicons name="checkmark-circle" size={48} color={colors.success} />
           </View>
-          <Text style={[typography.pageTitle, { color: colors.textPrimary, textAlign: 'center' }]}>{getTitle()}</Text>
-          <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: 8 }]}>{getDescription()}</Text>
-          <Text style={[typography.price, { color: colors.accentGold, marginTop: 16, fontSize: 36 }]}>₹{amount}</Text>
+          <Text style={[typography.pageTitle, { color: titleColor, textAlign: 'center' }]}>{getTitle()}</Text>
+          <Text style={[typography.body, { color: bodyColor, textAlign: 'center', marginTop: 8 }]}>{getDescription()}</Text>
+          <Text style={[typography.price, { color: amountColor, marginTop: 16, fontSize: 36 }]}>₹{amount}</Text>
           {transaction?.id && (
-            <Text style={[typography.caption, { color: colors.textMuted, marginTop: 8 }]}>Transaction ID: {transaction.id.slice(0, 8).toUpperCase()}</Text>
+            <Text style={[typography.caption, { color: mutedColor, marginTop: 8 }]}>Transaction ID: {transaction.id.slice(0, 8).toUpperCase()}</Text>
           )}
           {wallet?.balance && (
-            <Text style={[typography.body, { color: colors.textSecondary, marginTop: 8 }]}>Wallet Balance: ₹{wallet.balance}</Text>
+            <Text style={[typography.body, { color: bodyColor, marginTop: 8 }]}>Wallet Balance: ₹{wallet.balance}</Text>
           )}
         </GlassCard>
         <GradientButton

@@ -153,6 +153,7 @@ export interface GiftTransaction {
   id: string; giftId: string; senderId: string; receiverId: string;
   transactionId?: string; isRedeemed: boolean; redeemedAt?: string;
   giftName?: string; giftImage?: string; giftPrice?: string;
+  senderName?: string; receiverName?: string;
   createdAt: string;
 }
 

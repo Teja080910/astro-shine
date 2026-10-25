@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, View, Text } from 'react-native';
 import { api } from '../../shared/api-client';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../../context/AuthContext';
 import { GlassCard, ScreenWrapper, colors, typography } from '../../shared';
 
 type PaymentErrorCategory = 'cancelled' | 'failed' | 'auth_failed' | 'network' | 'timeout' | 'gateway' | 'unknown';
@@ -74,6 +75,12 @@ function categorizeRazorpayError(error: any): { category: PaymentErrorCategory; 
 export function PaymentScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const { theme } = useAuth();
+  const isDark = theme === 'dark';
+  const titleColor = isDark ? '#F9FAFB' : '#7F1D1D';
+  const bodyColor = isDark ? '#E5E7EB' : '#374151';
+  const mutedColor = isDark ? '#9CA3AF' : '#786C6A';
+  const amountColor = isDark ? '#FBBF24' : '#B45309';
   const { razorpayOrderId, key, amount, currency, purpose, paymentOrderId } = route.params || {};
   const processedRef = useRef(false);
   const [status, setStatus] = useState<'loading' | 'processing' | 'success' | 'failed'>('loading');
@@ -178,21 +185,21 @@ export function PaymentScreen() {
           >
             <Ionicons name={statusIcon as any} size={44} color={statusColor} />
           </View>
-          <Text style={[typography.pageTitle, { color: colors.textPrimary, textAlign: 'center' }]}>
+          <Text style={[typography.pageTitle, { color: titleColor, textAlign: 'center' }]}>
             {statusLabel}
           </Text>
-          <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: 4 }]}>
+          <Text style={[typography.body, { color: bodyColor, textAlign: 'center', marginTop: 4 }]}>
             {purposeLabel}
           </Text>
           {Number(amount) > 0 ? (
-            <Text style={[typography.price, { color: colors.accentGold, fontSize: 32, marginTop: 12 }]}>
+            <Text style={[typography.price, { color: amountColor, fontSize: 32, marginTop: 12 }]}>
               ₹{(Number(amount) / 100).toFixed(2)}
             </Text>
           ) : null}
           {status === 'loading' || status === 'processing' ? (
             <ActivityIndicator size="small" color={colors.accentGold} style={{ marginTop: 16 }} />
           ) : null}
-          <Text style={[typography.caption, { color: colors.textMuted, marginTop: 14, textAlign: 'center' }]}>
+          <Text style={[typography.caption, { color: mutedColor, marginTop: 14, textAlign: 'center' }]}>
             {status === 'failed'
               ? 'No amount has been deducted. You can retry safely.'
               : 'Secured by Razorpay. Please do not close this screen.'}

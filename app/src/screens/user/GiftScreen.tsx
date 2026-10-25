@@ -29,7 +29,9 @@ export function GiftScreen({ route, navigation }: any) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
   const initialMode = route?.params?.mode;
-  const historyOnly = initialMode === 'history';
+  // The Profile menu opens the dedicated GiftHistory route; treat it exactly
+  // like history mode so the Send Gift catalogue can never show up there.
+  const historyOnly = initialMode === 'history' || route?.name === 'GiftHistory';
   const [activeTab, setActiveTab] = useState<'send' | 'history'>(historyOnly ? 'history' : 'send');
 
   useEffect(() => {
@@ -50,8 +52,8 @@ export function GiftScreen({ route, navigation }: any) {
     };
   }, []);
 
-  const preSelectedAstrologerId = route?.params?.astrologerId;
-  const preSelectedAstrologerName = route?.params?.astrologerName;
+  const preSelectedAstrologerId = historyOnly ? undefined : route?.params?.astrologerId;
+  const preSelectedAstrologerName = historyOnly ? undefined : route?.params?.astrologerName;
 
   const filteredAstrologers = useMemo(() => {
     if (!searchQuery.trim()) return astrologers;
@@ -140,7 +142,6 @@ export function GiftScreen({ route, navigation }: any) {
 
   if (loading) return (
     <ScreenWrapper scroll>
-      <View style={{ padding: 16 }}><Text style={typography.pageTitle}>{historyOnly ? 'Gift History' : 'Gifts'}</Text></View>
       <View style={{ padding: 16 }}><GlassCard style={{ height: 100 }} /><View style={{ height: 12 }} /><GlassCard style={{ height: 100 }} /></View>
     </ScreenWrapper>
   );
@@ -257,6 +258,7 @@ export function GiftScreen({ route, navigation }: any) {
       <View style={{ flex: 1, width: '100%', maxWidth: 600, alignSelf: 'center' }}>
         {activeTab === 'history' ? (
           <FlatList
+            key="gift-history"
             data={transactions}
             keyExtractor={(t) => t.id}
             contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
@@ -285,9 +287,6 @@ export function GiftScreen({ route, navigation }: any) {
                     </TouchableOpacity>
                   </View>
                 )}
-                <Text style={[typography.pageTitle, { color: colors.textPrimary, marginBottom: 4 }]}>
-                  Gift History
-                </Text>
                 <Text style={[typography.caption, { color: colors.textMuted, marginBottom: 14 }]}>
                   Gifts you have sent to astrologers
                 </Text>
@@ -363,6 +362,7 @@ export function GiftScreen({ route, navigation }: any) {
           />
         ) : (
           <FlatList
+            key="gift-send"
             data={gifts}
             keyExtractor={(g) => g.id}
             numColumns={2}
