@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { api } from '@/lib/api';
+import { isValidAdminToken } from '@/lib/auth-token';
 
 export interface AdminUser {
   id: string; name: string; email: string; role: string;
@@ -62,11 +63,14 @@ export const useAuthStore = create<AuthStore>()(
       partialize: (state) => ({ token: state.token, admin: state.admin }),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          if (state.token) {
+          if (isValidAdminToken(state.token)) {
             api.setToken(state.token);
-            setCookie(state.token);
+            setCookie(state.token!);
           } else {
+            api.setToken(null);
             setCookie(null);
+            state.token = null;
+            state.admin = null;
           }
           state.setHydrated();
         }

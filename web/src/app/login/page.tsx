@@ -2,6 +2,7 @@
 
 import { useState, FormEvent, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth';
+import { isValidAdminToken } from '@/lib/auth-token';
 import { Sun, Moon, Eye, EyeOff, Lock, Mail, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 import logoImg from '../../assets/logo.png';
@@ -31,7 +32,7 @@ function LoginForm() {
   };
 
   useEffect(() => {
-    if (hydrated && token) {
+    if (hydrated && isValidAdminToken(token)) {
       window.location.replace('/dashboard');
     }
   }, [hydrated, token]);
