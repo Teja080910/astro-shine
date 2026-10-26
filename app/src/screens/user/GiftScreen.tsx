@@ -537,9 +537,12 @@ export function GiftScreen({ route, navigation }: any) {
             </View>
           )}
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
-            <TouchableOpacity onPress={() => { Keyboard.dismiss(); setShowSendModal(false); }} style={{ flex: 1, height: 48, borderRadius: radii.button, borderWidth: 1, borderColor: colors.cardBorder, justifyContent: 'center', alignItems: 'center' }}>
-              <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
-            </TouchableOpacity>
+            <View style={{ flex: 1 }}>
+              <GradientButton
+                title="Cancel"
+                onPress={() => { Keyboard.dismiss(); setShowSendModal(false); }}
+              />
+            </View>
             <View style={{ flex: 1 }}>
               <GradientButton title={sending ? 'Sending...' : `Send ₹${selectedGift?.price || '0'}`} onPress={() => { Keyboard.dismiss(); handleSendGift(); }} disabled={sending || !selectedAstrologer} />
             </View>
