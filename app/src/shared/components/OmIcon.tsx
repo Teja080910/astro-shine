@@ -1,9 +1,14 @@
 import React from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 
-export function BrandLogo({ isDark }: { isDark?: boolean }) {
+interface Props {
+  isDark?: boolean;
+  size?: number;
+}
+
+export function BrandLogo({ isDark, size = 38 }: Props) {
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { width: size, height: size }]}>
       <Image
         source={require('../../../assets/logo_clean.png')}
         style={styles.image}
@@ -17,8 +22,6 @@ export const OmIcon = BrandLogo;
 
 const styles = StyleSheet.create({
   container: {
-    width: 38,
-    height: 38,
     alignItems: 'center',
     justifyContent: 'center',
   },

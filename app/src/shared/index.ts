@@ -21,6 +21,8 @@ export { GlobalAlert } from './components/GlobalAlert';
 export { InsufficientBalanceDialog } from './components/InsufficientBalanceDialog';
 export { OmIcon } from './components/OmIcon';
 export { Navbar } from './components/Navbar';
+export { BrandHeader } from './components/BrandHeader';
+export { FilterTabs } from './components/FilterTabs';
 export { BrandSplash } from './components/BrandSplash';
 export { resolveMediaUrl } from './media';
 export { formatAmount } from './format';

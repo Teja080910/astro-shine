@@ -567,19 +567,31 @@ export function NotificationsScreen({ route }: any) {
   const navigation = useNavigation<any>();
   const isFocused = useIsFocused();
   const { user, astrologer, role } = useAuth();
-  const { notificationVersion } = useChat();
+  const { notificationVersion, markAllNotificationsRead, refreshNotificationUnreadCount } = useChat();
   const [notifs, setNotifs] = useState<Notification[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [markingAll, setMarkingAll] = useState(false);
+
+  const notificationFilter = useCallback(() => {
+    const explicitUser = route?.params?.userId;
+    if (explicitUser) return { userId: explicitUser };
+    if (role === 'astrologer') {
+      const astrologerId = astrologer?.userId;
+      return astrologerId ? { astrologerId } : undefined;
+    }
+    const userId = user?.id;
+    return userId ? { userId } : undefined;
+  }, [route?.params?.userId, role, astrologer?.userId, user?.id]);
 
   const loadNotifs = useCallback(async () => {
-    const uid = route?.params?.userId || user?.id || astrologer?.userId;
-    if (uid) {
+    const filter = notificationFilter();
+    if (filter) {
       try {
-        const data = await api.notifications.list({ userId: uid });
+        const data = await api.notifications.list(filter);
         setNotifs(data);
       } catch {}
     }
-  }, [route?.params?.userId, user?.id, astrologer?.userId]);
+  }, [notificationFilter]);
 
   useEffect(() => {
     if (isFocused) {
@@ -594,7 +606,21 @@ export function NotificationsScreen({ route }: any) {
   };
 
   const markRead = async (id: string) => {
-    try { await api.notifications.markRead(id); setNotifs(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n)); } catch {}
+    try {
+      await api.notifications.markRead(id);
+      setNotifs(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+      refreshNotificationUnreadCount();
+    } catch {}
+  };
+
+  const handleMarkAllRead = async () => {
+    setMarkingAll(true);
+    setNotifs(prev => prev.map(n => ({ ...n, isRead: true })));
+    try {
+      await markAllNotificationsRead();
+    } finally {
+      setMarkingAll(false);
+    }
   };
 
   const handlePress = (n: Notification) => {
@@ -603,12 +629,26 @@ export function NotificationsScreen({ route }: any) {
     if (target) navigation.navigate(target.screen, target.params);
   };
 
+  const unread = notifs.filter(n => !n.isRead).length;
+
   return (
     <ScreenWrapper>
       <ScrollView
         contentContainerStyle={{ padding: 16 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accentGold} />}
       >
+        {notifs.length > 0 && unread > 0 && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <Text style={[typography.caption, { color: colors.textMuted }]}>
+              {unread} unread
+            </Text>
+            <TouchableOpacity onPress={handleMarkAllRead} disabled={markingAll}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primaryLight }}>
+                {markingAll ? 'Marking...' : 'Mark all as read'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
         {notifs.length === 0 ? (
           <EmptyState icon={<Ionicons name="notifications-outline" size={48} color={colors.textMuted} />} title="No notifications" subtitle="You're all caught up!" />
         ) : (

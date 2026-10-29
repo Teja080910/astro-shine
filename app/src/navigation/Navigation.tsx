@@ -77,6 +77,7 @@ function UserTabs() {
   const { theme } = useAuth();
   const tabs = [
     { key: 'Home', icon: 'home-outline', label: 'Home' },
+    { key: 'Horoscope', icon: 'moon-outline', label: 'Horoscope' },
     { key: 'Astrologers', icon: 'people-outline', label: 'Astrologers' },
     { key: 'Muhurat', icon: 'time-outline', label: 'Muhurat' },
     { key: 'Wallet', icon: 'wallet-outline', label: 'Wallet' },

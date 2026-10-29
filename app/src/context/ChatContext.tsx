@@ -43,6 +43,9 @@ interface ChatState {
   statsVersion: number;
   supportVersion: number;
   notificationVersion: number;
+  notificationUnreadCount: number;
+  refreshNotificationUnreadCount: () => Promise<void>;
+  markAllNotificationsRead: () => Promise<void>;
   blogVersion: number;
   newsVersion: number;
   walletVersion: number;
@@ -87,6 +90,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [statsVersion, setStatsVersion] = useState(0);
   const [supportVersion, setSupportVersion] = useState(0);
   const [notificationVersion, setNotificationVersion] = useState(0);
+  const [notificationUnreadCount, setNotificationUnreadCount] = useState(0);
   const [blogVersion, setBlogVersion] = useState(0);
   const [newsVersion, setNewsVersion] = useState(0);
   const [walletVersion, setWalletVersion] = useState(0);
@@ -412,6 +416,38 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     loadConversationsRef.current = loadConversations;
   }, [loadConversations]);
 
+  const notificationFilter = useCallback(() => {
+    if (currentRole === 'astrologer') {
+      return { astrologerId: currentUserId };
+    }
+    return { userId: currentUserId };
+  }, [currentRole, currentUserId]);
+
+  const refreshNotificationUnreadCount = useCallback(async () => {
+    if (!currentUserId) {
+      setNotificationUnreadCount(0);
+      return;
+    }
+    try {
+      const list = await api.notifications.list(notificationFilter());
+      setNotificationUnreadCount(list.filter((n) => !n.isRead).length);
+    } catch {}
+  }, [currentUserId, notificationFilter]);
+
+  const markAllNotificationsRead = useCallback(async () => {
+    if (!currentUserId) return;
+    setNotificationUnreadCount(0);
+    try {
+      await api.notifications.markAllRead(notificationFilter());
+    } catch {
+      refreshNotificationUnreadCount();
+    }
+  }, [currentUserId, notificationFilter, refreshNotificationUnreadCount]);
+
+  useEffect(() => {
+    if (token) refreshNotificationUnreadCount();
+  }, [token, refreshNotificationUnreadCount, notificationVersion]);
+
   const openConversation = useCallback(async (participantId: string, participantRole: string) => {
     try {
       const conv = await api.conversations.create(participantId, participantRole);
@@ -561,6 +597,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         statsVersion,
         supportVersion,
         notificationVersion,
+        notificationUnreadCount,
+        refreshNotificationUnreadCount,
+        markAllNotificationsRead,
         blogVersion,
         newsVersion,
         walletVersion,

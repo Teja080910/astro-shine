@@ -9,7 +9,7 @@ interface Props {
   style?: ViewStyle;
   disabled?: boolean;
   small?: boolean;
-  variant?: 'primary' | 'secondary' | 'danger' | 'gold';
+  variant?: 'primary' | 'secondary' | 'danger' | 'gold' | 'outline';
 }
 
 export function GradientButton({ title, onPress, style, disabled, small, variant = 'primary' }: Props) {
@@ -18,7 +18,30 @@ export function GradientButton({ title, onPress, style, disabled, small, variant
     secondary: [colors.surfaceLight, colors.surface],
     danger: [colors.danger, '#DC2626'],
     gold: [colors.accentGold, '#D97706'],
+    outline: ['transparent', 'transparent'],
   };
+
+  if (variant === 'outline') {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        disabled={disabled}
+        activeOpacity={0.8}
+        style={[
+          styles.wrapper,
+          small && styles.small,
+          styles.outlineButton,
+          { borderColor: colors.inputBorder },
+          disabled && styles.disabled,
+          style,
+        ]}
+      >
+        <Text style={[styles.outlineText, small && styles.smallText]} numberOfLines={1}>
+          {title}
+        </Text>
+      </TouchableOpacity>
+    );
+  }
 
   return (
     <TouchableOpacity onPress={onPress} disabled={disabled} activeOpacity={0.8} style={[styles.wrapper, small && styles.small, style]}>
@@ -28,7 +51,7 @@ export function GradientButton({ title, onPress, style, disabled, small, variant
         end={{ x: 1, y: 0 }}
         style={[styles.button, small && styles.smallButton, shadows.button, disabled && styles.disabled]}
       >
-        <Text style={[styles.text, small && styles.smallText]}>{title}</Text>
+        <Text style={[styles.text, small && styles.smallText]} numberOfLines={1}>{title}</Text>
       </LinearGradient>
     </TouchableOpacity>
   );
@@ -48,4 +71,18 @@ const styles = StyleSheet.create({
   text: { color: colors.white, fontSize: 16, fontWeight: '700' },
   smallText: { fontSize: 14 },
   disabled: { opacity: 0.5 },
+  outlineButton: {
+    flex: 1,
+    borderRadius: radii.button,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    backgroundColor: 'transparent',
+  },
+  outlineText: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '700',
+  },
 });

@@ -32,11 +32,9 @@ export function GiftScreen({ route, navigation }: any) {
   // The Profile menu opens the dedicated GiftHistory route; treat it exactly
   // like history mode so the Send Gift catalogue can never show up there.
   const historyOnly = initialMode === 'history' || route?.name === 'GiftHistory';
-  const [activeTab, setActiveTab] = useState<'send' | 'history'>(historyOnly ? 'history' : 'send');
 
   useEffect(() => {
     navigation.setOptions({ title: historyOnly ? 'Gift History' : 'Gifts' });
-    setActiveTab(historyOnly ? 'history' : 'send');
   }, [navigation, historyOnly]);
 
   useEffect(() => {
@@ -256,7 +254,7 @@ export function GiftScreen({ route, navigation }: any) {
   return (
     <ScreenWrapper noPadding>
       <View style={{ flex: 1, width: '100%', maxWidth: 600, alignSelf: 'center' }}>
-        {activeTab === 'history' ? (
+        {historyOnly ? (
           <FlatList
             key="gift-history"
             data={transactions}
@@ -265,28 +263,6 @@ export function GiftScreen({ route, navigation }: any) {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             ListHeaderComponent={
               <>
-                {!historyOnly && (
-                  <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-                    <TouchableOpacity
-                      onPress={() => setActiveTab('send')}
-                      style={{
-                        flex: 1, paddingVertical: 10, borderRadius: 20, alignItems: 'center',
-                        backgroundColor: colors.surfaceLight, borderWidth: 1, borderColor: colors.cardBorder,
-                      }}
-                    >
-                      <Text style={{ fontWeight: '700', color: colors.textSecondary }}>Send Gift</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => setActiveTab('history')}
-                      style={{
-                        flex: 1, paddingVertical: 10, borderRadius: 20, alignItems: 'center',
-                        backgroundColor: colors.accentGold, borderWidth: 1, borderColor: colors.accentGold,
-                      }}
-                    >
-                      <Text style={{ fontWeight: '700', color: '#FFFFFF' }}>Gift History</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
                 <Text style={[typography.caption, { color: colors.textMuted, marginBottom: 14 }]}>
                   Gifts you have sent to astrologers
                 </Text>
@@ -371,29 +347,16 @@ export function GiftScreen({ route, navigation }: any) {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             ListHeaderComponent={
               <>
-                {!historyOnly && (
-                  <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-                    <TouchableOpacity
-                      onPress={() => setActiveTab('send')}
-                      style={{
-                        flex: 1, paddingVertical: 10, borderRadius: 20, alignItems: 'center',
-                        backgroundColor: colors.accentGold, borderWidth: 1, borderColor: colors.accentGold,
-                      }}
-                    >
-                      <Text style={{ fontWeight: '700', color: '#FFFFFF' }}>Send Gift</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => setActiveTab('history')}
-                      style={{
-                        flex: 1, paddingVertical: 10, borderRadius: 20, alignItems: 'center',
-                        backgroundColor: colors.surfaceLight, borderWidth: 1, borderColor: colors.cardBorder,
-                      }}
-                    >
-                      <Text style={{ fontWeight: '700', color: colors.textSecondary }}>Gift History</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-                <Text style={[typography.pageTitle, { color: colors.textPrimary, marginBottom: 4 }]}>Send a Gift</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>Send a Gift</Text>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('GiftHistory')}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                  >
+                    <Ionicons name="time-outline" size={15} color={colors.accentGold} />
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: colors.accentGold }}>History</Text>
+                  </TouchableOpacity>
+                </View>
                 <Text style={[typography.body, { color: colors.textSecondary, marginBottom: 14 }]}>
                   Show appreciation to your astrologer with a thoughtful gift.
                 </Text>
@@ -540,6 +503,7 @@ export function GiftScreen({ route, navigation }: any) {
             <View style={{ flex: 1 }}>
               <GradientButton
                 title="Cancel"
+                variant="outline"
                 onPress={() => { Keyboard.dismiss(); setShowSendModal(false); }}
               />
             </View>

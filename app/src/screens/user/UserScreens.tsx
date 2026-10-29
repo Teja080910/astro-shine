@@ -41,7 +41,8 @@ import {
   colors,
   radii,
   typography,
-  OmIcon,
+  BrandHeader,
+  FilterTabs,
   Navbar,
   resolveMediaUrl,
   formatAmount,
@@ -52,7 +53,6 @@ import type {
   Astrologer,
   Blog,
   CallLog,
-  GiftTransaction,
   HoroscopeRecord,
   MandirPooja,
   Notification,
@@ -93,6 +93,9 @@ const zodiacImages: { [key: string]: any } = {
   aquarius: require("../../../assets/aquarius_bearer.png"),
   pisces: require("../../../assets/pisces_fish.png"),
 };
+
+const ASTROLOGER_CARD_WIDTH = 304;
+const ASTROLOGER_LIST_MAX_WIDTH = 380;
 
 const ASTRO_CATEGORIES = [
   "All",
@@ -784,7 +787,7 @@ function AstrologerRowCard({
 
 export function UserHomeScreen({ navigation }: any) {
   const { user, theme } = useAuth();
-  const { conversations, openConversation, astrologerStatuses, onlineUsers, horoscopeVersion, blogVersion, notificationVersion, walletVersion, panchangVersion } = useChat();
+  const { conversations, openConversation, astrologerStatuses, onlineUsers, horoscopeVersion, blogVersion, notificationVersion, walletVersion, panchangVersion, notificationUnreadCount } = useChat();
   const { initiateCall } = useCall();
   const isFocused = useIsFocused();
   const isDark = theme === "dark";
@@ -792,7 +795,6 @@ export function UserHomeScreen({ navigation }: any) {
   const isCompact = screenWidth < 380;
 
   const titleColor = isDark ? "#FBBF24" : "#7F1D1D";
-  const iconColor = isDark ? "#F59E0B" : "#7F1D1D";
   const cardBg = isDark ? "#111827" : "#FFFFFF";
   const cardLightBg = isDark ? "#1F2937" : "#FFFBEB";
   const cardBorderColor = isDark ? "rgba(245, 158, 11, 0.25)" : "#FDE68A";
@@ -820,7 +822,6 @@ export function UserHomeScreen({ navigation }: any) {
   const [activeHoroscopeTab, setActiveHoroscopeTab] = useState<
     "love" | "career" | "finance" | "health"
   >("career");
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
   const [weather, setWeather] = useState<{
     temp: string;
     condition: string;
@@ -1132,106 +1133,13 @@ export function UserHomeScreen({ navigation }: any) {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Top Header Bar */}
-        <View style={styles.topHeader}>
-          <View style={{ flex: 1, alignItems: "flex-start" }}>
-            <TouchableOpacity
-              onPress={() => setMenuOpen(true)}
-              style={{ padding: 4, width: 40 }}
-            >
-              <Ionicons name="menu-outline" size={28} color={iconColor} />
-            </TouchableOpacity>
-          </View>
-
-          <View
-            style={{
-              alignItems: "center",
-              flexShrink: 1,
-              minWidth: 0,
-              paddingHorizontal: 4,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                maxWidth: "100%",
-              }}
-            >
-              <OmIcon isDark={isDark} />
-              <Text
-                style={{
-                  fontSize: isCompact ? 16 : 20,
-                  fontWeight: "900",
-                  color: isDark ? "#FBBF24" : "#8B1E1E",
-                  letterSpacing: 0.5,
-                  flexShrink: 1,
-                }}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                ASTROSHINE
-              </Text>
-            </View>
-            <Text
-              style={{
-                fontSize: 8,
-                fontWeight: "800",
-                color: isDark ? "#FBBF24" : "#D97706",
-                letterSpacing: 1.4,
-                marginTop: 2,
-                textAlign: "center",
-                alignSelf: "center",
-                width: "100%",
-              }}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.7}
-            >
-              YOUR DESTINY, YOUR GUIDANCE
-            </Text>
-          </View>
-
-          <View
-            style={{
-              flex: 1,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "flex-end",
-              gap: 6,
-              flexShrink: 0,
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => navigation.navigate("FavouriteAstrologers")}
-              style={{ padding: 4 }}
-            >
-              <Ionicons name="heart-outline" size={22} color={iconColor} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => navigation.navigate("Notifications")}
-              style={{ padding: 4, position: "relative" }}
-            >
-              <Ionicons
-                name="notifications-outline"
-                size={24}
-                color={iconColor}
-              />
-              {unreadCount > 0 && (
-                <View style={styles.headerBadge}>
-                  <Text
-                    style={{ color: "#fff", fontSize: 10, fontWeight: "800" }}
-                  >
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
+        <BrandHeader
+          onLeftPress={() => setMenuOpen(true)}
+          showFavorites
+          onFavoritesPress={() => navigation.navigate("FavouriteAstrologers")}
+          notificationCount={notificationUnreadCount}
+          onNotificationsPress={() => navigation.navigate("Notifications")}
+        />
 
         {/* Greeting & Ganesha Banner */}
         <View
@@ -2937,11 +2845,11 @@ export function UserHomeScreen({ navigation }: any) {
 export function AstrologerListScreen({ route, navigation }: any) {
   const { theme } = useAuth();
   const isDark = theme === "dark";
-  const { openConversation, astrologerStatuses, onlineUsers } = useChat();
+  const { openConversation, astrologerStatuses, onlineUsers, notificationUnreadCount } = useChat();
   const { initiateCall } = useCall();
   const isFocused = useIsFocused();
   const { width: windowWidth } = useWindowDimensions();
-  const cardWidth = Math.min(Math.max(240, windowWidth - 32), 600);
+  const cardWidth = Math.min(windowWidth - 48, ASTROLOGER_LIST_MAX_WIDTH);
   const [data, setData] = useState<Astrologer[]>([]);
   const [search, setSearch] = useState("");
   const [selectedCat, setSelectedCat] = useState("All");
@@ -3035,89 +2943,17 @@ export function AstrologerListScreen({ route, navigation }: any) {
   return (
     <ScreenWrapper noPadding>
       {/* Brand Header Bar matching Home screen */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingHorizontal: 16,
-          paddingTop: 8,
-          paddingBottom: 4,
-          backgroundColor: colors.background,
+      <BrandHeader
+        leftIcon="arrow-back"
+        onLeftPress={() => {
+          if (navigation.canGoBack()) navigation.goBack();
+          else navigation.navigate("Home");
         }}
-      >
-        <TouchableOpacity
-          onPress={() => {
-            if (navigation.canGoBack()) navigation.goBack();
-            else navigation.navigate("Home");
-          }}
-          style={{ padding: 4, width: 40 }}
-        >
-          <Ionicons name="menu-outline" size={28} color={isDark ? "#F59E0B" : "#7F1D1D"} />
-        </TouchableOpacity>
-
-        <View style={{ alignItems: "center", flexShrink: 1 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 }}>
-            <OmIcon isDark={isDark} />
-            <Text
-              style={{
-                fontSize: 19,
-                fontWeight: "900",
-                color: isDark ? "#FBBF24" : "#8B1E1E",
-                letterSpacing: 0.5,
-              }}
-              numberOfLines={1}
-            >
-              ASTROSHINE
-            </Text>
-          </View>
-          <Text
-            style={{
-              fontSize: 8,
-              fontWeight: "800",
-              color: isDark ? "#FBBF24" : "#D97706",
-              letterSpacing: 1.4,
-              marginTop: 1,
-              textAlign: "center",
-            }}
-            numberOfLines={1}
-          >
-            YOUR DESTINY, YOUR GUIDANCE
-          </Text>
-        </View>
-
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, width: 60, justifyContent: "flex-end" }}>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("FavouriteAstrologers")}
-            style={{ padding: 4 }}
-          >
-            <Ionicons name="heart-outline" size={22} color={isDark ? "#F59E0B" : "#7F1D1D"} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => navigation.navigate("Notifications")}
-            style={{ padding: 4, position: "relative" }}
-          >
-            <Ionicons name="notifications-outline" size={24} color={isDark ? "#F59E0B" : "#7F1D1D"} />
-            <View
-              style={{
-                position: "absolute",
-                top: 0,
-                right: 0,
-                backgroundColor: "#DC2626",
-                borderRadius: 9,
-                minWidth: 16,
-                height: 16,
-                justifyContent: "center",
-                alignItems: "center",
-                paddingHorizontal: 3,
-              }}
-            >
-              <Text style={{ color: "#FFF", fontSize: 9, fontWeight: "800" }}>9+</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-      </View>
+        showFavorites
+        onFavoritesPress={() => navigation.navigate("FavouriteAstrologers")}
+        notificationCount={notificationUnreadCount}
+        onNotificationsPress={() => navigation.navigate("Notifications")}
+      />
 
       {/* Screen Title */}
       <View style={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 6 }}>
@@ -3180,55 +3016,18 @@ export function AstrologerListScreen({ route, navigation }: any) {
       </View>
 
       {/* Styled Filter Chips */}
-      <FlatList
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        data={cats}
-        style={{ height: 44, flexGrow: 0, marginBottom: 8 }}
-        contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
-        renderItem={({ item }) => {
-          const selected = item === selectedCat;
-          return (
-            <TouchableOpacity
-              onPress={() => setSelectedCat(item)}
-              activeOpacity={0.7}
-              style={{
-                backgroundColor: selected
-                  ? (isDark ? "rgba(217, 119, 6, 0.2)" : "#FFFBEB")
-                  : (isDark ? "#1E293B" : "#EFF6FF"),
-                borderColor: selected
-                  ? "#EA580C"
-                  : (isDark ? "rgba(255,255,255,0.08)" : "#E2E8F0"),
-                borderWidth: selected ? 1.5 : 1,
-                borderRadius: 20,
-                paddingHorizontal: 16,
-                paddingVertical: 7,
-                justifyContent: "center",
-                alignItems: "center",
-                height: 36,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: selected ? "700" : "500",
-                  color: selected
-                    ? "#EA580C"
-                    : (isDark ? "#D1D5DB" : "#374151"),
-                }}
-              >
-                {item}
-              </Text>
-            </TouchableOpacity>
-          );
-        }}
-        keyExtractor={(c) => c}
+      <FilterTabs
+        options={cats}
+        value={selectedCat}
+        onChange={setSelectedCat}
+        style={{ marginBottom: 8 }}
       />
 
       <FlatList
         data={filtered}
         keyExtractor={(a) => a.userId}
         showsVerticalScrollIndicator={false}
+        style={{ flex: 1 }}
         contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -4438,20 +4237,33 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
               <Text style={{ fontSize: 14, fontWeight: '800', color: isDark ? '#FFF' : '#0F172A' }}>Your Balance: ₹{walletBalance}</Text>
               <Text style={{ fontSize: 11, color: isDark ? '#9CA3AF' : '#64748B', textAlign: 'center' }}>Entire amount will be provided to expert</Text>
             </View>
-            <TouchableOpacity onPress={async () => {
-              if (!selectedGift) { Alert.alert('Select a Gift', 'Please choose a gift first.'); return; }
-              setGiftSending(true);
-              try {
-                await api.gifts.send({ giftId: selectedGift.id, receiverId: id });
-                setGiftModalVisible(false);
-                setSelectedGift(null);
-                Alert.alert('Gift Sent', `You sent ${selectedGift.name} to ${astro?.name}!`);
-              } catch (e: any) {
-                Alert.alert('Error', e?.response?.data?.message || 'Failed to send gift');
-              } finally { setGiftSending(false); }
-            }} disabled={giftSending} style={{ backgroundColor: isDark ? colors.accentGold : '#5C3214', borderRadius: 24, height: 48, alignItems: 'center', justifyContent: 'center', opacity: giftSending ? 0.7 : 1 }}>
-              <Text style={{ color: isDark ? '#000' : '#FFF', fontSize: 15, fontWeight: '700' }}>{giftSending ? 'Sending...' : 'Send Gift'}</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <GradientButton
+                  title="Cancel"
+                  variant="outline"
+                  onPress={() => { setGiftModalVisible(false); setSelectedGift(null); }}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <GradientButton
+                  title={giftSending ? 'Sending...' : 'Send Gift'}
+                  onPress={async () => {
+                    if (!selectedGift) { Alert.alert('Select a Gift', 'Please choose a gift first.'); return; }
+                    setGiftSending(true);
+                    try {
+                      await api.gifts.send({ giftId: selectedGift.id, receiverId: id });
+                      setGiftModalVisible(false);
+                      setSelectedGift(null);
+                      Alert.alert('Gift Sent', `You sent ${selectedGift.name} to ${astro?.name}!`);
+                    } catch (e: any) {
+                      Alert.alert('Error', e?.response?.data?.message || 'Failed to send gift');
+                    } finally { setGiftSending(false); }
+                  }}
+                  disabled={giftSending}
+                />
+              </View>
+            </View>
           </View>
         </View>
       </Modal>
@@ -4721,23 +4533,16 @@ export function WalletScreen() {
               Secure payment powered by Razorpay. Funds are added instantly.
             </Text>
             <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
-              <TouchableOpacity
-                onPress={() => {
-                  setShowAdd(false);
-                  setAmount("");
-                }}
-                style={{
-                  flex: 1,
-                  height: 48,
-                  borderRadius: radii.button,
-                  borderWidth: 1,
-                  borderColor: colors.cardBorder,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Text style={{ color: colors.textSecondary, fontWeight: "600" }}>Cancel</Text>
-              </TouchableOpacity>
+              <View style={{ flex: 1 }}>
+                <GradientButton
+                  title="Cancel"
+                  variant="outline"
+                  onPress={() => {
+                    setShowAdd(false);
+                    setAmount("");
+                  }}
+                />
+              </View>
               <View style={{ flex: 1 }}>
                 <GradientButton
                   title={loadingPayment ? "Processing..." : `Pay ₹${amount || "0"}`}
@@ -6247,9 +6052,6 @@ export function ProfileScreen({ navigation }: any) {
   const rowBorderColor = isDark ? "rgba(255, 255, 255, 0.08)" : "#F3F4F6";
 
   const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [giftHistoryOpen, setGiftHistoryOpen] = useState(true);
-  const [giftHistory, setGiftHistory] = useState<GiftTransaction[]>([]);
-  const [giftHistoryLoading, setGiftHistoryLoading] = useState(false);
   const [pwOpen, setPwOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [currentPw, setCurrentPw] = useState("");
@@ -6591,154 +6393,40 @@ export function ProfileScreen({ navigation }: any) {
             </Text>
             {items
               .filter((it) => it.category === "Account")
-              .map((item, i, arr) => {
-                const isGiftHistory = item.route === "GiftHistory";
-                return (
-                  <React.Fragment key={item.label}>
-                    <TouchableOpacity
-                      onPress={() =>
-                        isGiftHistory
-                          ? toggleGiftHistory()
-                          : navigation.navigate(item.route, (item as any).params)
-                      }
-                      style={[
-                        styles.menuRowItem,
-                        { borderBottomColor: rowBorderColor },
-                        i < arr.length - 1 && styles.menuRowBorder,
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.menuItemIconBg,
-                          { backgroundColor: iconBgColor },
-                        ]}
-                      >
-                        <Ionicons
-                          name={item.icon as any}
-                          size={20}
-                          color={goldTextColor}
-                        />
-                      </View>
-                      <Text
-                        style={[styles.menuRowLabel, { color: textSecondaryColor }]}
-                      >
-                        {item.label}
-                      </Text>
-                      <Ionicons
-                        name={isGiftHistory && giftHistoryOpen ? "chevron-up" : "chevron-forward"}
-                        size={18}
-                        color="#9CA3AF"
-                      />
-                    </TouchableOpacity>
-                    {isGiftHistory && giftHistoryOpen && (
-                      <View
-                        style={{
-                          paddingHorizontal: 14,
-                          paddingBottom: 10,
-                          borderBottomWidth: i < arr.length - 1 ? 1 : 0,
-                          borderBottomColor: rowBorderColor,
-                        }}
-                      >
-                        {giftHistoryLoading ? (
-                          <ActivityIndicator
-                            size="small"
-                            color={goldTextColor}
-                            style={{ marginVertical: 12 }}
-                          />
-                        ) : giftHistory.length === 0 ? (
-                          <Text
-                            style={{
-                              color: mutedTextColor,
-                              fontSize: 12,
-                              paddingVertical: 10,
-                            }}
-                          >
-                            No gifts sent yet.
-                          </Text>
-                        ) : (
-                          <>
-                            {giftHistory.slice(0, 5).map((txn) => (
-                              <View
-                                key={txn.id}
-                                style={{
-                                  flexDirection: "row",
-                                  alignItems: "center",
-                                  gap: 10,
-                                  paddingVertical: 8,
-                                  borderTopWidth: StyleSheet.hairlineWidth,
-                                  borderTopColor: rowBorderColor,
-                                }}
-                              >
-                                <View
-                                  style={{
-                                    width: 30,
-                                    height: 30,
-                                    borderRadius: 15,
-                                    backgroundColor: iconBgColor,
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                  }}
-                                >
-                                  <Ionicons name="gift" size={15} color={goldTextColor} />
-                                </View>
-                                <View style={{ flex: 1, minWidth: 0 }}>
-                                  <Text
-                                    style={{
-                                      color: textSecondaryColor,
-                                      fontSize: 13,
-                                      fontWeight: "600",
-                                    }}
-                                    numberOfLines={1}
-                                  >
-                                    {txn.giftName || "Gift"}
-                                  </Text>
-                                  <Text style={{ color: mutedTextColor, fontSize: 11 }} numberOfLines={1}>
-                                    To {txn.receiverName || "Astrologer"} · {new Date(txn.createdAt).toLocaleDateString()}
-                                  </Text>
-                                </View>
-                                <View style={{ alignItems: "flex-end" }}>
-                                  <Text
-                                    style={{
-                                      color: goldTextColor,
-                                      fontSize: 13,
-                                      fontWeight: "700",
-                                    }}
-                                  >
-                                    ₹{Number(txn.giftPrice || 0).toFixed(2)}
-                                  </Text>
-                                  <Text
-                                    style={{
-                                      color: txn.isRedeemed ? colors.success : mutedTextColor,
-                                      fontSize: 9,
-                                      fontWeight: "800",
-                                    }}
-                                  >
-                                    {txn.isRedeemed ? "REDEEMED" : "SENT"}
-                                  </Text>
-                                </View>
-                              </View>
-                            ))}
-                            <TouchableOpacity
-                              onPress={() => navigation.navigate("GiftHistory")}
-                              style={{ paddingTop: 10, paddingBottom: 2 }}
-                            >
-                              <Text
-                                style={{
-                                  color: goldTextColor,
-                                  fontSize: 12,
-                                  fontWeight: "700",
-                                }}
-                              >
-                                View all gift history →
-                              </Text>
-                            </TouchableOpacity>
-                          </>
-                        )}
-                      </View>
-                    )}
-                  </React.Fragment>
-                );
-              })}
+              .map((item, i, arr) => (
+                <TouchableOpacity
+                  key={item.label}
+                  onPress={() => navigation.navigate(item.route, (item as any).params)}
+                  style={[
+                    styles.menuRowItem,
+                    { borderBottomColor: rowBorderColor },
+                    i < arr.length - 1 && styles.menuRowBorder,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.menuItemIconBg,
+                      { backgroundColor: iconBgColor },
+                    ]}
+                  >
+                    <Ionicons
+                      name={item.icon as any}
+                      size={20}
+                      color={goldTextColor}
+                    />
+                  </View>
+                  <Text
+                    style={[styles.menuRowLabel, { color: textSecondaryColor }]}
+                  >
+                    {item.label}
+                  </Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={18}
+                    color="#9CA3AF"
+                  />
+                </TouchableOpacity>
+              ))}
           </View>
 
           {/* Preferences & Security Group */}
@@ -7139,26 +6827,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 4,
   },
-  topHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  headerBadge: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    backgroundColor: "#DC2626",
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 3,
-  },
+
+
   greetingRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -7483,10 +7153,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   astroRowCard: {
-    width: 326,
+    width: ASTROLOGER_CARD_WIDTH,
     maxWidth: "100%",
     marginRight: 14,
-    borderRadius: 24,
+    borderRadius: 20,
     borderWidth: 1.5,
     padding: 14,
     shadowColor: "#D97706",
@@ -7682,6 +7352,7 @@ export function FavouriteAstrologersScreen({ navigation }: any) {
                 onAction={() => navigation.navigate("AstrologerDetail", { id: item.userId })}
                 actionLabel="View Profile ›"
                 actionIcon="person-outline"
+                style={{ width: '100%', marginRight: 0, marginBottom: 12 }}
               />
             )}
             ListEmptyComponent={

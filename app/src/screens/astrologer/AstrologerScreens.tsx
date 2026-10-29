@@ -34,7 +34,7 @@ import {
   colors,
   radii,
   typography,
-  OmIcon,
+  BrandHeader,
   Navbar,
   formatAmount,
 } from "../../shared";
@@ -53,7 +53,7 @@ import * as Location from "expo-location";
 
 export function AstrologerHomeScreen({ navigation }: any) {
   const { astrologer, theme, updateUser } = useAuth();
-  const { astrologerStatuses, onlineUsers, statsVersion, blogVersion, notificationVersion } = useChat();
+  const { astrologerStatuses, onlineUsers, statsVersion, blogVersion, notificationVersion, notificationUnreadCount } = useChat();
   const isFocused = useIsFocused();
   const isDark = theme === "dark";
   const { width: screenWidth } = useWindowDimensions();
@@ -145,14 +145,11 @@ export function AstrologerHomeScreen({ navigation }: any) {
   } | null>(null);
 
   const titleColor = isDark ? "#FBBF24" : "#7F1D1D";
-  const iconColor = isDark ? "#F59E0B" : "#7F1D1D";
   const cardLightBg = isDark ? "#1F2937" : "#FFFBEB";
   const cardBorderColor = isDark ? "rgba(245, 158, 11, 0.25)" : "#FDE68A";
   const bodyTextColor = isDark ? "#E5E7EB" : "#374151";
   const mutedTextColor = isDark ? "#9CA3AF" : "#6B7280";
   const goldTextColor = isDark ? "#FBBF24" : "#D97706";
-
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const greeting = (() => {
     const hour = new Date().getHours();
@@ -342,94 +339,11 @@ export function AstrologerHomeScreen({ navigation }: any) {
       >
         <View style={{ width: "100%", maxWidth: 600, alignSelf: "center" }}>
           {/* Top Header Bar */}
-          <View style={styles.topHeader}>
-            <View style={{ flex: 1, alignItems: "flex-start" }}>
-              <TouchableOpacity
-                onPress={() => setMenuOpen(true)}
-                style={{ padding: 4, width: 40 }}
-              >
-                <Ionicons name="menu-outline" size={28} color={iconColor} />
-              </TouchableOpacity>
-            </View>
-
-            <View
-              style={{
-                alignItems: "center",
-                flexShrink: 1,
-                minWidth: 0,
-                paddingHorizontal: 4,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                  maxWidth: "100%",
-                }}
-              >
-                <OmIcon isDark={isDark} />
-                <Text
-                  style={{
-                    fontSize: isCompact ? 16 : 20,
-                    fontWeight: "900",
-                    color: isDark ? "#FBBF24" : "#D97706",
-                    letterSpacing: 0.5,
-                    flexShrink: 1,
-                  }}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  ASTROSHINE
-                </Text>
-              </View>
-              <Text
-                style={{
-                  fontSize: 8,
-                  fontWeight: "800",
-                  color: isDark ? "#FBBF24" : "#D97706",
-                  letterSpacing: 1,
-                  marginTop: 1,
-                  textAlign: "center",
-                }}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.7}
-              >
-                YOUR DESTINY, YOUR GUIDANCE
-              </Text>
-            </View>
-
-            <View
-              style={{
-                flex: 1,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "flex-end",
-                gap: 6,
-                flexShrink: 0,
-              }}
-            >
-              <TouchableOpacity
-                onPress={() => navigation.navigate("Notifications")}
-                style={{ padding: 4, position: "relative" }}
-              >
-                <Ionicons
-                  name="notifications-outline"
-                  size={24}
-                  color={iconColor}
-                />
-                {unreadCount > 0 && (
-                  <View style={styles.headerBadge}>
-                    <Text style={{ color: "#fff", fontSize: 10, fontWeight: "800" }}>
-                      {unreadCount > 9 ? "9+" : unreadCount}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
+          <BrandHeader
+            onLeftPress={() => setMenuOpen(true)}
+            notificationCount={notificationUnreadCount}
+            onNotificationsPress={() => navigation.navigate("Notifications")}
+          />
 
           {/* Greeting & Online Toggle Card */}
           <View
@@ -1894,9 +1808,10 @@ export function AstrologerReviewsScreen() {
 export function AstrologerNotificationsScreen() {
   const navigation = useNavigation<any>();
   const { astrologer } = useAuth();
-  const { notificationVersion } = useChat();
+  const { notificationVersion, markAllNotificationsRead, refreshNotificationUnreadCount } = useChat();
   const [notifs, setNotifs] = useState<Notification[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [markingAll, setMarkingAll] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -1923,7 +1838,18 @@ export function AstrologerNotificationsScreen() {
       setNotifs((prev) =>
         prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
       );
+      refreshNotificationUnreadCount();
     } catch {}
+  };
+
+  const handleMarkAllRead = async () => {
+    setMarkingAll(true);
+    setNotifs((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    try {
+      await markAllNotificationsRead();
+    } finally {
+      setMarkingAll(false);
+    }
   };
 
   const handlePress = (n: Notification) => {
@@ -1931,6 +1857,8 @@ export function AstrologerNotificationsScreen() {
     const target = resolveNotificationTarget(n, 'astrologer');
     if (target) navigation.navigate(target.screen, target.params);
   };
+
+  const unread = notifs.filter((n) => !n.isRead).length;
 
   return (
     <ScreenWrapper>
@@ -1940,6 +1868,18 @@ export function AstrologerNotificationsScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
+        {notifs.length > 0 && unread > 0 && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <Text style={[typography.caption, { color: colors.textMuted }]}>
+              {unread} unread
+            </Text>
+            <TouchableOpacity onPress={handleMarkAllRead} disabled={markingAll}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primaryLight }}>
+                {markingAll ? 'Marking...' : 'Mark all as read'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
         {notifs.length === 0 ? (
           <EmptyState
             icon={
@@ -3309,14 +3249,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 15,
   },
-  topHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
+
   greetingRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -3350,18 +3283,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
   },
-  headerBadge: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    backgroundColor: "#DC2626",
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 3,
-  },
+
 });
 
 export { AstrologerMuhuratScreen } from "./AstrologerMuhuratScreen";
