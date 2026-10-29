@@ -96,6 +96,9 @@ const zodiacImages: { [key: string]: any } = {
 
 const ASTROLOGER_CARD_WIDTH = 304;
 const ASTROLOGER_LIST_MAX_WIDTH = 380;
+const CAROUSEL_GAP = 16;
+const ZODIAC_ITEM_WIDTH = 62;
+const ZODIAC_ITEM_GAP = 10;
 
 const ASTRO_CATEGORIES = [
   "All",
@@ -1090,6 +1093,38 @@ export function UserHomeScreen({ navigation }: any) {
     }
   };
 
+  // The Home screen is wrapped in a padded ScreenWrapper (16px each side), and
+  // the carousel adds its own 16px content padding. Subtract both so a single
+  // card fits exactly inside the visible area without being clipped and the
+  // next card starts exactly at the viewport edge (no partial peek).
+  const carouselHorizontalPadding = 16;
+  const carouselCardWidth = Math.max(
+    screenWidth - carouselHorizontalPadding * 4,
+    220,
+  );
+  const carouselSnapInterval = carouselCardWidth + CAROUSEL_GAP;
+
+  // The zodiac row uses per-item snapping. snapToInterval alone cannot reach the
+  // end because the content width is not an exact multiple of (item + gap), which
+  // leaves the last signs clipped. Build explicit offsets that include the real
+  // final scroll offset so the row can always scroll fully.
+  const zodiacStride = ZODIAC_ITEM_WIDTH + ZODIAC_ITEM_GAP;
+  const zodiacContentPadding = 16;
+  const zodiacContentWidth =
+    zodiacContentPadding * 2 +
+    ZODIAC_ITEM_WIDTH * ZODIAC_SIGNS.length +
+    ZODIAC_ITEM_GAP * (ZODIAC_SIGNS.length - 1);
+  const zodiacViewportWidth = screenWidth - 32;
+  const zodiacMaxOffset = Math.max(0, zodiacContentWidth - zodiacViewportWidth);
+  const zodiacSnapOffsets = Array.from(
+    new Set([
+      ...ZODIAC_SIGNS.map((_, i) => i * zodiacStride).filter(
+        (o) => o <= zodiacMaxOffset,
+      ),
+      zodiacMaxOffset,
+    ]),
+  ).sort((a, b) => a - b);
+
   const renderAstroRowCard = (item: Astrologer, type: "chat" | "audio" | "video") => (
     <AstrologerRowCard
       item={item}
@@ -1101,8 +1136,19 @@ export function UserHomeScreen({ navigation }: any) {
       onChatPress={() => handleAstroAction(item, "chat")}
       onAudioPress={() => handleAstroAction(item, "audio")}
       onVideoPress={() => handleAstroAction(item, "video")}
+      style={{ width: carouselCardWidth, marginRight: CAROUSEL_GAP }}
     />
   );
+
+  const carouselProps = {
+    horizontal: true as const,
+    showsHorizontalScrollIndicator: false,
+    decelerationRate: "fast" as const,
+    snapToInterval: carouselSnapInterval,
+    snapToAlignment: "start" as const,
+    disableIntervalMomentum: true,
+    contentContainerStyle: { paddingHorizontal: 16 },
+  };
 
   const renderMiniAstroCard = (item: Astrologer, _keyPrefix: string) => {
     return renderAstroRowCard(item, "chat");
@@ -1396,19 +1442,26 @@ export function UserHomeScreen({ navigation }: any) {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          decelerationRate="fast"
+          snapToOffsets={zodiacSnapOffsets}
+          snapToAlignment="start"
+          disableIntervalMomentum
           contentContainerStyle={{
-            gap: 12,
             paddingHorizontal: 16,
             paddingVertical: 8,
           }}
         >
-          {ZODIAC_SIGNS.map((z) => {
+          {ZODIAC_SIGNS.map((z, index) => {
             const active = selectedSign === z.sign;
             return (
               <TouchableOpacity
                 key={z.sign}
                 onPress={() => handleSignSelect(z.sign)}
-                style={{ alignItems: "center", width: 62 }}
+                style={{
+                  alignItems: "center",
+                  width: ZODIAC_ITEM_WIDTH,
+                  marginRight: index === ZODIAC_SIGNS.length - 1 ? 0 : ZODIAC_ITEM_GAP,
+                }}
               >
                 <View
                   style={[
@@ -1455,17 +1508,15 @@ export function UserHomeScreen({ navigation }: any) {
                 >
                   {z.label}
                 </Text>
-                {active && (
-                  <View
-                    style={{
-                      width: 22,
-                      height: 2.5,
-                      backgroundColor: "#DC2626",
-                      borderRadius: 2,
-                      marginTop: 2,
-                    }}
-                  />
-                )}
+                <View
+                  style={{
+                    width: 22,
+                    height: 2.5,
+                    backgroundColor: active ? "#DC2626" : "transparent",
+                    borderRadius: 2,
+                    marginTop: 2,
+                  }}
+                />
               </TouchableOpacity>
             );
           })}
@@ -2295,12 +2346,10 @@ export function UserHomeScreen({ navigation }: any) {
           </View>
         ) : chatAstrologers.length > 0 ? (
           <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
+            {...carouselProps}
             data={chatAstrologers.slice(0, 8)}
             keyExtractor={(a) => `chat-${a.userId}`}
             renderItem={({ item }) => renderAstroRowCard(item, "chat")}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           />
         ) : (
           <GlassCard style={{ marginHorizontal: 16, padding: 12 }}>
@@ -2324,12 +2373,10 @@ export function UserHomeScreen({ navigation }: any) {
           </View>
         ) : audioCallAstrologers.length > 0 ? (
           <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
+            {...carouselProps}
             data={audioCallAstrologers.slice(0, 8)}
             keyExtractor={(a) => `audio-${a.userId}`}
             renderItem={({ item }) => renderAstroRowCard(item, "audio")}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           />
         ) : (
           <GlassCard style={{ marginHorizontal: 16, padding: 12 }}>
@@ -2353,12 +2400,10 @@ export function UserHomeScreen({ navigation }: any) {
           </View>
         ) : videoCallAstrologers.length > 0 ? (
           <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
+            {...carouselProps}
             data={videoCallAstrologers.slice(0, 8)}
             keyExtractor={(a) => `video-${a.userId}`}
             renderItem={({ item }) => renderAstroRowCard(item, "video")}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           />
         ) : (
           <GlassCard style={{ marginHorizontal: 16, padding: 12 }}>
@@ -2378,12 +2423,10 @@ export function UserHomeScreen({ navigation }: any) {
               onSeeAll={() => navigation.navigate("FavouriteAstrologers")}
             />
             <FlatList
-              horizontal
-              showsHorizontalScrollIndicator={false}
+              {...carouselProps}
               data={favoriteAstrologers}
               keyExtractor={(a) => `fav-${a.userId}`}
               renderItem={({ item }) => renderAstroRowCard(item, "chat")}
-              contentContainerStyle={{ paddingHorizontal: 16 }}
             />
             <View style={{ height: 20 }} />
           </>
@@ -2402,12 +2445,10 @@ export function UserHomeScreen({ navigation }: any) {
           </View>
         ) : liveAstrologers.length > 0 ? (
           <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
+            {...carouselProps}
             data={liveAstrologers.slice(0, 8)}
             keyExtractor={(a) => `live-${a.userId}`}
             renderItem={({ item }) => renderAstroRowCard(item, "chat")}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           />
         ) : (
           <GlassCard style={{ marginHorizontal: 16, padding: 12 }}>
@@ -2496,14 +2537,13 @@ export function UserHomeScreen({ navigation }: any) {
               onSeeAll={() => navigation.navigate("MandirPooja")}
             />
             <FlatList
-              horizontal
-              showsHorizontalScrollIndicator={false}
+              {...carouselProps}
               data={poojas.slice(0, 4)}
               keyExtractor={(p) => p.id}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => navigation.navigate("MandirPoojaDetail", { poojaId: item.id })}
-                  style={{ width: 180, marginRight: 12 }}
+                  style={{ width: carouselCardWidth, marginRight: CAROUSEL_GAP }}
                 >
                   <GlassCard
                     style={{
@@ -2544,7 +2584,6 @@ export function UserHomeScreen({ navigation }: any) {
                   </GlassCard>
                 </TouchableOpacity>
               )}
-              style={{ marginLeft: 0 }}
             />
           </>
         )}
@@ -2557,15 +2596,14 @@ export function UserHomeScreen({ navigation }: any) {
               onSeeAll={() => navigation.navigate("Videos")}
             />
             <FlatList
-              horizontal
-              showsHorizontalScrollIndicator={false}
+              {...carouselProps}
               data={videos.slice(0, 5)}
               keyExtractor={(v) => v.id}
               renderItem={({ item }) => {
                 const ytMatch = (item.url || "").match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
                 const thumbUrl = ytMatch ? `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg` : item.thumbnail;
                 return (
-                <TouchableOpacity style={{ width: 220, marginRight: 12 }} onPress={() => navigation.navigate("Videos", { videoId: item.id })}>
+                <TouchableOpacity style={{ width: carouselCardWidth, marginRight: CAROUSEL_GAP }} onPress={() => navigation.navigate("Videos", { videoId: item.id })}>
                   <GlassCard style={{ padding: 0, overflow: "hidden", height: 175 }}>
                     <View
                       style={{
@@ -2614,7 +2652,6 @@ export function UserHomeScreen({ navigation }: any) {
                 </TouchableOpacity>
                 );
               }}
-              style={{ marginLeft: 0 }}
             />
           </>
         )}
@@ -2627,14 +2664,13 @@ export function UserHomeScreen({ navigation }: any) {
               onSeeAll={() => navigation.navigate("Blogs")}
             />
             <FlatList
-              horizontal
-              showsHorizontalScrollIndicator={false}
+              {...carouselProps}
               data={blogs.slice(0, 5)}
               keyExtractor={(b) => b.id}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => navigation.navigate("BlogDetail", { blogId: item.id })}
-                  style={{ width: 240, marginRight: 12 }}
+                  style={{ width: carouselCardWidth, marginRight: CAROUSEL_GAP }}
                 >
                   <GlassCard style={{ padding: 14, height: 155 }}>
                     <Text style={typography.cardTitle} numberOfLines={2}>
@@ -2662,7 +2698,6 @@ export function UserHomeScreen({ navigation }: any) {
                   </GlassCard>
                 </TouchableOpacity>
               )}
-              style={{ marginLeft: 0 }}
             />
           </>
         )}
