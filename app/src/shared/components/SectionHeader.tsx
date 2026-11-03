@@ -14,8 +14,8 @@ interface Props {
 export function SectionHeader({ title, onSeeAll, style, icon, showUnderline }: Props) {
   const { theme } = useAuth();
   const isDark = theme === 'dark';
-  const titleColor = isDark ? '#FBBF24' : '#7F1D1D';
-  const seeAllColor = isDark ? '#FBBF24' : '#D97706';
+  const titleColor = isDark ? '#FBBF24' : '#8D0B0C';
+  const seeAllColor = isDark ? '#FBBF24' : '#EE7B10';
   const shouldUnderline = showUnderline ?? !!icon;
 
   return (
@@ -32,7 +32,7 @@ export function SectionHeader({ title, onSeeAll, style, icon, showUnderline }: P
               justifyContent: 'center',
             }}
           >
-            <Ionicons name={icon as any} size={18} color={isDark ? '#F87171' : '#7F1D1D'} />
+            <Ionicons name={icon as any} size={18} color={isDark ? '#F87171' : '#8D0B0C'} />
           </View>
         )}
         <View style={{ flexShrink: 1, minWidth: 0 }}>
@@ -48,7 +48,7 @@ export function SectionHeader({ title, onSeeAll, style, icon, showUnderline }: P
               style={{
                 width: 48,
                 height: 2.5,
-                backgroundColor: '#DC2626',
+                backgroundColor: '#C21415',
                 borderRadius: 2,
                 marginTop: 3,
               }}

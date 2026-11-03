@@ -16,8 +16,8 @@ export function GradientButton({ title, onPress, style, disabled, small, variant
   const gradients: Record<string, string[]> = {
     primary: [colors.gradientStart, colors.gradientMid, colors.gradientEnd],
     secondary: [colors.surfaceLight, colors.surface],
-    danger: [colors.danger, '#DC2626'],
-    gold: [colors.accentGold, '#D97706'],
+    danger: [colors.danger, '#C21415'],
+    gold: [colors.accentGold, '#EE7B10'],
   };
 
   return (

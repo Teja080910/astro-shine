@@ -222,7 +222,7 @@ export function AstrologerMuhuratScreen() {
             <Ionicons name="pencil" size={16} color={colors.primary} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => deleteItem(item.id)} style={[styles.actionBtn, { marginLeft: 8, borderColor: colors.cardBorder }]}>
-            <Ionicons name="trash" size={16} color="#EF4444" />
+            <Ionicons name="trash" size={16} color="#C21415" />
           </TouchableOpacity>
         </View>
       </View>

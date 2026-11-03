@@ -25,7 +25,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: '#0F172A' }}>
           <Text style={{ color: '#fff', fontSize: 20, fontWeight: '700', marginBottom: 8 }}>Something went wrong</Text>
           <Text style={{ color: '#94a3b8', fontSize: 14, textAlign: 'center', marginBottom: 16 }}>{this.state.error?.message || 'An unexpected error occurred'}</Text>
-          <TouchableOpacity onPress={this.handleReset} style={{ backgroundColor: '#D97706', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 }}>
+          <TouchableOpacity onPress={this.handleReset} style={{ backgroundColor: '#EE7B10', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 }}>
             <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Try Again</Text>
           </TouchableOpacity>
         </View>

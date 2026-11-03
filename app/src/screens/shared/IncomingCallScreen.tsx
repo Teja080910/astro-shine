@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', justifyContent: 'center', gap: 60, paddingBottom: 40 },
   rejectButton: { alignItems: 'center' },
   acceptButton: { alignItems: 'center' },
-  rejectIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#EF4444', justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+  rejectIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#C21415', justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
   acceptIcon: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#22C55E', justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
   actionLabel: { color: colors.white, fontSize: 14, fontWeight: '500' },
 });

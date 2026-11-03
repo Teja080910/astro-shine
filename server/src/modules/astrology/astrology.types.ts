@@ -54,6 +54,17 @@ export interface PanchangResult {
   abhijitMuhurta?: { start: string; end: string };
 }
 
+export interface FestivalResult {
+  name: string;
+  category: string;
+  date: string;
+  description?: string;
+  isFastingDay: boolean;
+  paksha?: string;
+  tithi?: number;
+  masa?: string;
+}
+
 export interface HoroscopeResult {
   prediction: string;
   lovePrediction: string;

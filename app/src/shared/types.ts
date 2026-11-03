@@ -92,6 +92,17 @@ export interface PanchangRecord {
   moonrise?: string; moonset?: string; rahuKaal?: any; data?: any; createdAt: string;
 }
 
+export interface FestivalItem {
+  name: string;
+  category: 'major' | 'minor' | 'ekadashi' | 'pradosham' | 'vrat' | 'jayanti' | 'solar';
+  date: string;
+  description?: string;
+  isFastingDay: boolean;
+  paksha?: string;
+  tithi?: number;
+  masa?: string;
+}
+
 // ============ Wallet ============
 export interface Wallet {
   id: string; userId?: string; astrologerId?: string;

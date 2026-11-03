@@ -1533,7 +1533,7 @@ export function MandirPoojaScreen({ route, navigation }: any) {
         icon: 'time' as const,
         color: '#F59E0B',
         bg: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7',
-        border: isDark ? 'rgba(245, 158, 11, 0.3)' : '#FDE68A',
+        border: isDark ? 'rgba(245, 158, 11, 0.3)' : '#F6EDC4',
         desc: 'Puja is confirmed. Priests will perform the rituals on the scheduled date.',
       };
     }
@@ -1541,7 +1541,7 @@ export function MandirPoojaScreen({ route, navigation }: any) {
       return {
         label: 'Cancelled',
         icon: 'close-circle' as const,
-        color: '#EF4444',
+        color: '#C21415',
         bg: isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEE2E2',
         border: isDark ? 'rgba(239, 68, 68, 0.3)' : '#FECACA',
         desc: 'This puja booking has been cancelled.',
@@ -1550,7 +1550,7 @@ export function MandirPoojaScreen({ route, navigation }: any) {
     return {
       label: 'Pending',
       icon: 'hourglass-outline' as const,
-      color: isDark ? '#9CA3AF' : '#6B7280',
+      color: isDark ? '#9CA3AF' : '#8B8B8D',
       bg: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F3F4F6',
       border: isDark ? 'rgba(255, 255, 255, 0.15)' : '#E5E7EB',
       desc: 'Awaiting confirmation from temple management.',
@@ -2298,7 +2298,7 @@ export function AstrologerDocumentsScreen() {
     updateUser({ ...astrologer!, verificationDoc: newDocs });
   };
 
-  const statusBadge = { pending: { color: '#F59E0B', label: 'Pending Review' }, approved: { color: '#22C55E', label: 'Approved' }, rejected: { color: '#EF4444', label: 'Rejected' } } as const;
+  const statusBadge = { pending: { color: '#F59E0B', label: 'Pending Review' }, approved: { color: '#22C55E', label: 'Approved' }, rejected: { color: '#C21415', label: 'Rejected' } } as const;
   const badge = statusBadge[status as keyof typeof statusBadge] || statusBadge.pending;
 
   return (

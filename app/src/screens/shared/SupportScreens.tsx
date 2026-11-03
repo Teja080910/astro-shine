@@ -9,11 +9,11 @@ import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
 
 const CATEGORIES = ['Billing', 'Technical', 'Account', 'General'];
-const STATUS_COLORS: Record<string, string> = { open: '#F59E0B', in_progress: '#3B82F6', resolved: '#10B981' };
-const PRIORITY_COLORS: Record<string, string> = { low: '#6B7280', normal: '#F59E0B', high: '#EF4444', urgent: '#DC2626' };
+const STATUS_COLORS: Record<string, string> = { open: '#F59E0B', in_progress: '#3188FB', resolved: '#10B981' };
+const PRIORITY_COLORS: Record<string, string> = { low: '#8B8B8D', normal: '#F59E0B', high: '#C21415', urgent: '#C21415' };
 
 function StatusBadge({ status }: { status: string }) {
-  const color = STATUS_COLORS[status] || '#6B7280';
+  const color = STATUS_COLORS[status] || '#8B8B8D';
   const label = status === 'in_progress' ? 'In Progress' : status.charAt(0).toUpperCase() + status.slice(1);
   return (
     <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, backgroundColor: color + '20', borderWidth: 1, borderColor: color }}>
@@ -115,8 +115,8 @@ export function SupportScreen() {
                 <StatusBadge status={item.status} />
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: (PRIORITY_COLORS[item.priority] || '#6B7280') + '15' }}>
-                  <Text style={{ fontSize: 9, fontWeight: '600', color: PRIORITY_COLORS[item.priority] || '#6B7280' }}>{item.priority.toUpperCase()}</Text>
+                <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: (PRIORITY_COLORS[item.priority] || '#8B8B8D') + '15' }}>
+                  <Text style={{ fontSize: 9, fontWeight: '600', color: PRIORITY_COLORS[item.priority] || '#8B8B8D' }}>{item.priority.toUpperCase()}</Text>
                 </View>
                 <Text style={[typography.caption, { fontSize: 10 }]}>{new Date(item.createdAt).toLocaleDateString()}</Text>
               </View>
@@ -190,8 +190,8 @@ export function TicketDetailScreen({ route }: any) {
               </View>
               <Text style={[typography.body, { marginBottom: 8 }]}>{ticket.message}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: (PRIORITY_COLORS[ticket.priority] || '#6B7280') + '15' }}>
-                  <Text style={{ fontSize: 9, fontWeight: '600', color: PRIORITY_COLORS[ticket.priority] || '#6B7280' }}>{ticket.priority.toUpperCase()}</Text>
+                <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: (PRIORITY_COLORS[ticket.priority] || '#8B8B8D') + '15' }}>
+                  <Text style={{ fontSize: 9, fontWeight: '600', color: PRIORITY_COLORS[ticket.priority] || '#8B8B8D' }}>{ticket.priority.toUpperCase()}</Text>
                 </View>
                 <Text style={[typography.caption, { fontSize: 10 }]}>{new Date(ticket.createdAt).toLocaleDateString()}</Text>
               </View>
@@ -298,8 +298,8 @@ export function AdminSupportScreen() {
                 <StatusBadge status={item.status} />
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: (PRIORITY_COLORS[item.priority] || '#6B7280') + '15' }}>
-                  <Text style={{ fontSize: 9, fontWeight: '600', color: PRIORITY_COLORS[item.priority] || '#6B7280' }}>{item.priority.toUpperCase()}</Text>
+                <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: (PRIORITY_COLORS[item.priority] || '#8B8B8D') + '15' }}>
+                  <Text style={{ fontSize: 9, fontWeight: '600', color: PRIORITY_COLORS[item.priority] || '#8B8B8D' }}>{item.priority.toUpperCase()}</Text>
                 </View>
                 <Text style={[typography.caption, { fontSize: 10 }]}>{new Date(item.createdAt).toLocaleDateString()}</Text>
                 {item.assignedTo && <Text style={[typography.caption, { fontSize: 10, color: colors.accentGold }]}>Assigned</Text>}
@@ -388,8 +388,8 @@ export function AdminTicketDetailScreen({ route }: any) {
               </View>
               <Text style={[typography.body, { marginBottom: 8 }]}>{ticket.message}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: (PRIORITY_COLORS[ticket.priority] || '#6B7280') + '15' }}>
-                  <Text style={{ fontSize: 9, fontWeight: '600', color: PRIORITY_COLORS[ticket.priority] || '#6B7280' }}>{ticket.priority.toUpperCase()}</Text>
+                <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: (PRIORITY_COLORS[ticket.priority] || '#8B8B8D') + '15' }}>
+                  <Text style={{ fontSize: 9, fontWeight: '600', color: PRIORITY_COLORS[ticket.priority] || '#8B8B8D' }}>{ticket.priority.toUpperCase()}</Text>
                 </View>
                 <Text style={[typography.caption, { fontSize: 10 }]}>{new Date(ticket.createdAt).toLocaleDateString()}</Text>
               </View>
@@ -409,8 +409,8 @@ export function AdminTicketDetailScreen({ route }: any) {
                 {/* Status */}
                 <View style={{ flexDirection: 'row', gap: 6, marginBottom: 8 }}>
                   {['open', 'in_progress', 'resolved'].map(s => (
-                    <TouchableOpacity key={s} onPress={() => handleStatus(s)} style={{ flex: 1, paddingVertical: 6, borderRadius: 8, backgroundColor: (STATUS_COLORS[s] || '#6B7280') + '20', alignItems: 'center', borderWidth: ticket.status === s ? 2 : 0, borderColor: STATUS_COLORS[s] }}>
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: STATUS_COLORS[s] || '#6B7280' }}>{s === 'in_progress' ? 'In Progress' : s.charAt(0).toUpperCase() + s.slice(1)}</Text>
+                    <TouchableOpacity key={s} onPress={() => handleStatus(s)} style={{ flex: 1, paddingVertical: 6, borderRadius: 8, backgroundColor: (STATUS_COLORS[s] || '#8B8B8D') + '20', alignItems: 'center', borderWidth: ticket.status === s ? 2 : 0, borderColor: STATUS_COLORS[s] }}>
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: STATUS_COLORS[s] || '#8B8B8D' }}>{s === 'in_progress' ? 'In Progress' : s.charAt(0).toUpperCase() + s.slice(1)}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -418,8 +418,8 @@ export function AdminTicketDetailScreen({ route }: any) {
                 {/* Priority */}
                 <View style={{ flexDirection: 'row', gap: 6 }}>
                   {['low', 'normal', 'high', 'urgent'].map(p => (
-                    <TouchableOpacity key={p} onPress={() => handlePriority(p)} style={{ flex: 1, paddingVertical: 6, borderRadius: 8, backgroundColor: (PRIORITY_COLORS[p] || '#6B7280') + '15', alignItems: 'center', borderWidth: ticket.priority === p ? 1 : 0, borderColor: PRIORITY_COLORS[p] }}>
-                      <Text style={{ fontSize: 9, fontWeight: '600', color: PRIORITY_COLORS[p] || '#6B7280' }}>{p.toUpperCase()}</Text>
+                    <TouchableOpacity key={p} onPress={() => handlePriority(p)} style={{ flex: 1, paddingVertical: 6, borderRadius: 8, backgroundColor: (PRIORITY_COLORS[p] || '#8B8B8D') + '15', alignItems: 'center', borderWidth: ticket.priority === p ? 1 : 0, borderColor: PRIORITY_COLORS[p] }}>
+                      <Text style={{ fontSize: 9, fontWeight: '600', color: PRIORITY_COLORS[p] || '#8B8B8D' }}>{p.toUpperCase()}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
