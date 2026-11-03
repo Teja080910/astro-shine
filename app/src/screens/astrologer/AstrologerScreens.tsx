@@ -1,3 +1,4 @@
+
 import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused, useNavigation } from "@react-navigation/native";
 import React, { useCallback, useEffect, useState, useMemo } from "react";
@@ -144,12 +145,12 @@ export function AstrologerHomeScreen({ navigation }: any) {
     region: string;
   } | null>(null);
 
-  const titleColor = isDark ? "#FBBF24" : "#7F1D1D";
-  const cardLightBg = isDark ? "#1F2937" : "#FFFBEB";
-  const cardBorderColor = isDark ? "rgba(245, 158, 11, 0.25)" : "#FDE68A";
+  const titleColor = isDark ? "#FBBF24" : "#8D0B0C";
+  const cardLightBg = isDark ? "#1F2937" : "#FEF8EA";
+  const cardBorderColor = isDark ? "rgba(245, 158, 11, 0.25)" : "#F6EDC4";
   const bodyTextColor = isDark ? "#E5E7EB" : "#374151";
-  const mutedTextColor = isDark ? "#9CA3AF" : "#6B7280";
-  const goldTextColor = isDark ? "#FBBF24" : "#D97706";
+  const mutedTextColor = isDark ? "#9CA3AF" : "#8B8B8D";
+  const goldTextColor = isDark ? "#FBBF24" : "#EE7B10";
 
   const greeting = (() => {
     const hour = new Date().getHours();
@@ -517,7 +518,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
                     backgroundColor: isDark
                       ? "rgba(245, 158, 11, 0.15)"
                       : "#FEF3C7",
-                    borderColor: isDark ? "rgba(245, 158, 11, 0.3)" : "#FCD34D",
+                    borderColor: isDark ? "rgba(245, 158, 11, 0.3)" : "#F2DFAE",
                   },
                 ]}
               >
@@ -731,7 +732,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
                 <Ionicons
                   name="call"
                   size={20}
-                  color={isAudioCallEnabled ? "#3B82F6" : mutedTextColor}
+                  color={isAudioCallEnabled ? "#3188FB" : mutedTextColor}
                 />
               </View>
               <View style={{ flex: 1 }}>
@@ -751,7 +752,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
               <Toggle
                 value={isAudioCallEnabled}
                 onValueChange={toggleAudioCall}
-                trackColor={{ false: "#D1D5DB", true: "#3B82F6" }}
+                trackColor={{ false: "#D1D5DB", true: "#3188FB" }}
               />
             </View>
 
@@ -898,12 +899,12 @@ export function AstrologerHomeScreen({ navigation }: any) {
                     borderRadius: 26,
                     backgroundColor: isDark ? "rgba(59, 130, 246, 0.15)" : "rgba(59, 130, 246, 0.08)",
                     borderWidth: 1.5,
-                    borderColor: "#3B82F6",
+                    borderColor: "#3188FB",
                     alignItems: "center",
                     justifyContent: "center",
                   }}
                 >
-                  <Ionicons name="call" size={22} color="#3B82F6" />
+                  <Ionicons name="call" size={22} color="#3188FB" />
                 </View>
                 <Text style={{ fontSize: 11, fontWeight: "700", color: colors.textPrimary, marginTop: 6, textAlign: "center" }}>
                   Call
@@ -3028,14 +3029,14 @@ export function AstrologerProfileScreen({ navigation }: any) {
                   marginRight: 12,
                 }}
               >
-                <Ionicons name="trash-outline" size={20} color="#DC2626" />
+                <Ionicons name="trash-outline" size={20} color="#C21415" />
               </View>
               <Text
                 style={{
                   flex: 1,
                   fontSize: 14,
                   fontWeight: "600",
-                  color: "#DC2626",
+                  color: "#C21415",
                 }}
               >
                 Delete Account
@@ -3061,10 +3062,10 @@ export function AstrologerProfileScreen({ navigation }: any) {
           }}
           onPress={logout}
         >
-          <Ionicons name="log-out-outline" size={20} color="#DC2626" />
+          <Ionicons name="log-out-outline" size={20} color="#C21415" />
           <Text
             style={{
-              color: "#DC2626",
+              color: "#C21415",
               fontSize: 15,
               fontWeight: "700",
               marginLeft: 8,

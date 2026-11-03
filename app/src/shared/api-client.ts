@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import type { AuthResponse, LoginRequest, RegisterRequest, User, Astrologer, Admin, KundliRecord, MatchmakingRecord, HoroscopeRecord, PanchangRecord, Wallet, Transaction, WithdrawalRequest, Commission, CommissionLog, CallLog, ChatMessage, Gift, GiftTransaction, Donation, ShopProduct, Order, OrderItem, Blog, NewsItem, Review, Report, Notification, AppSetting, ApiKey, DynamicLink, WebsiteContent, LiveSession, MandirPooja, PoojaBooking, SupportTicket, TicketReply, AppRelease, Video, Conversation, ConversationMessage, PaginatedMessages, PaymentOrderRequest, PaymentOrderResponse, PaymentVerifyRequest, PaymentVerifyResponse, PaymentStatusResponse, PaymentRefundRequest, PaymentRefundResponse, MuhuratCategory, MuhuratItem, FileUploadResponse, ScheduleSlot } from '../shared/types';
+import type { AuthResponse, LoginRequest, RegisterRequest, User, Astrologer, Admin, KundliRecord, MatchmakingRecord, HoroscopeRecord, PanchangRecord, FestivalItem, Wallet, Transaction, WithdrawalRequest, Commission, CommissionLog, CallLog, ChatMessage, Gift, GiftTransaction, Donation, ShopProduct, Order, OrderItem, Blog, NewsItem, Review, Report, Notification, AppSetting, ApiKey, DynamicLink, WebsiteContent, LiveSession, MandirPooja, PoojaBooking, SupportTicket, TicketReply, AppRelease, Video, Conversation, ConversationMessage, PaginatedMessages, PaymentOrderRequest, PaymentOrderResponse, PaymentVerifyRequest, PaymentVerifyResponse, PaymentStatusResponse, PaymentRefundRequest, PaymentRefundResponse, MuhuratCategory, MuhuratItem, FileUploadResponse, ScheduleSlot } from '../shared/types';
 import { config } from '../config';
 
 const BASE_URL = config.apiBaseUrl;
@@ -155,6 +155,8 @@ class ApiClient {
   // Panchang
   panchang = {
     byDate: (date: string) => this.get<PanchangRecord>(`/panchang?date=${date}`),
+    festivals: (startDate?: string, days?: number, fastingOnly?: boolean) =>
+      this.get<FestivalItem[]>('/panchang/festivals', { startDate, days, fastingOnly: fastingOnly ? 'true' : undefined }),
     create: (d: any) => this.post<PanchangRecord>('/panchang', d),
   };
 

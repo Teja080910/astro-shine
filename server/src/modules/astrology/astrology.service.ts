@@ -8,6 +8,7 @@ import { LocalAstrologyService } from './local-astrology.service';
 import { parseDateStr, parseTimeStr } from './astro-utils';
 import {
   BirthDetails,
+  FestivalResult,
   HoroscopeResult,
   KOOTA_DETAILS,
   KOOTA_KEYS,
@@ -331,6 +332,24 @@ export class AstrologyService {
       this.logger.warn(`Panchang falling back to local engine: ${e.message}`);
       return this.local.panchang(dateStr, lat, lng, timezone);
     }
+  }
+
+  calculateFestivals(
+    dateStr: string,
+    lat: number,
+    lng: number,
+    timezone: number,
+    days: number,
+    fastingOnly: boolean,
+  ): FestivalResult[] {
+    return this.local.festivals(
+      dateStr,
+      lat,
+      lng,
+      timezone,
+      days,
+      fastingOnly,
+    );
   }
 
   async calculateHoroscope(
