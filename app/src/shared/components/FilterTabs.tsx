@@ -1,6 +1,5 @@
 import React from 'react';
 import { ScrollView, Text, TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
-import { useAuth } from '../../context/AuthContext';
 import { colors, radii } from '../theme';
 
 interface Props {
@@ -13,9 +12,6 @@ interface Props {
 }
 
 export function FilterTabs({ options, value, onChange, style, contentContainerStyle }: Props) {
-  const { theme } = useAuth();
-  const isDark = theme === 'dark';
-
   return (
     <ScrollView
       horizontal
@@ -37,14 +33,8 @@ export function FilterTabs({ options, value, onChange, style, contentContainerSt
               {
                 backgroundColor: selected
                   ? colors.primary + '20'
-                  : isDark
-                    ? '#1E293B'
-                    : colors.surfaceLight,
-                borderColor: selected
-                  ? colors.primary
-                  : isDark
-                    ? 'rgba(255,255,255,0.08)'
-                    : colors.cardBorder,
+                  : colors.chipBg,
+                borderColor: selected ? colors.primary : colors.chipBorder,
               },
             ]}
           >
@@ -52,11 +42,7 @@ export function FilterTabs({ options, value, onChange, style, contentContainerSt
               style={[
                 styles.label,
                 {
-                  color: selected
-                    ? colors.primaryLight
-                    : isDark
-                      ? '#D1D5DB'
-                      : colors.textSecondary,
+                  color: selected ? colors.accentGold : colors.textBody,
                   fontWeight: selected ? '700' : '500',
                 },
               ]}

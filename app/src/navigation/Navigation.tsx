@@ -277,7 +277,7 @@ export function Navigation() {
             <Stack.Screen name="Festivals" component={FestivalsScreen} options={headerOpts('Festivals')} />
             <Stack.Screen name="Vrats" component={VratsScreen} options={headerOpts('Vrats')} />
             <Stack.Screen name="HoroscopeDetail" component={HoroscopeDetailScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="MyReports" component={MyReportsScreen} options={headerOpts('Reports Filed by Me')} />
+            <Stack.Screen name="MyReports" component={MyReportsScreen} options={headerOpts('Reports by Me')} />
             <Stack.Screen name="AstrologerReports" component={AstrologerReportsScreen} options={headerOpts('Reports Against Me')} />
             <Stack.Screen name="Shop" component={ShopScreen} options={headerOpts('Shop')} />
             <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} options={headerOpts('Orders')} />
@@ -333,7 +333,7 @@ export function Navigation() {
             <Stack.Screen name="Consultations" component={AstrologerConsultationScreen} options={headerOpts('Consultation History')} />
             <Stack.Screen name="Gifts" component={AstrologerGiftScreen} options={headerOpts('Gifts')} />
             <Stack.Screen name="AstrologerReports" component={AstrologerReportsScreen} options={headerOpts('Reports Against Me')} />
-            <Stack.Screen name="MyReports" component={MyReportsScreen} options={headerOpts('Reports Filed by Me')} />
+            <Stack.Screen name="MyReports" component={MyReportsScreen} options={headerOpts('Reports by Me')} />
             <Stack.Screen name="Payment" component={PaymentScreen} options={{ headerShown: false }} />
             <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} options={{ headerShown: false }} />
             <Stack.Screen name="PaymentFailure" component={PaymentFailureScreen} options={{ headerShown: false }} />

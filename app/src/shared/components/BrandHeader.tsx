@@ -58,28 +58,30 @@ export function BrandHeader({
       <View style={styles.center} pointerEvents="box-none">
         <View style={styles.brandRow}>
           <OmIcon isDark={isDark} size={isCompact ? 30 : 34} />
-          <Text
-            style={[
-              styles.wordmark,
-              { color: wordmarkColor, fontSize: isCompact ? 16 : 20 },
-            ]}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            ASTROSHINE
-          </Text>
+          <View style={styles.wordmarkColumn}>
+            <Text
+              style={[
+                styles.wordmark,
+                { color: wordmarkColor, fontSize: isCompact ? 16 : 20 },
+              ]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              ASTROSHINE
+            </Text>
+            <Text
+              style={[
+                styles.tagline,
+                { color: taglineColor, fontSize: isCompact ? 7 : 8 },
+              ]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              YOUR DESTINY, YOUR GUIDANCE
+            </Text>
+          </View>
         </View>
-        <Text
-          style={[
-            styles.tagline,
-            { color: taglineColor, fontSize: isCompact ? 7 : 8 },
-          ]}
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={0.7}
-        >
-          YOUR DESTINY, YOUR GUIDANCE
-        </Text>
       </View>
 
       {/* Right group anchored to the right edge */}
@@ -150,7 +152,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 84,
+    paddingHorizontal: 68,
   },
   brandRow: {
     flexDirection: 'row',
@@ -158,6 +160,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     maxWidth: '100%',
+  },
+  wordmarkColumn: {
+    alignItems: 'center',
+    minWidth: 0,
+    flexShrink: 1,
   },
   wordmark: {
     fontWeight: '900',
@@ -169,7 +176,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.4,
     marginTop: 2,
     textAlign: 'center',
-    width: '100%',
+    flexShrink: 1,
   },
   badge: {
     position: 'absolute',

@@ -59,7 +59,7 @@ export function ChatListScreen({ navigation }: any) {
   return (
     <ScreenWrapper>
       <View style={styles.header}>
-        <Text style={typography.pageTitle}>Messages</Text>
+        <Text style={[typography.pageTitle, { color: colors.heading }]}>Messages</Text>
       </View>
       <FlatList
         data={[...conversations].sort((a, b) => new Date(b.lastMessageAt || b.createdAt).getTime() - new Date(a.lastMessageAt || a.createdAt).getTime())}

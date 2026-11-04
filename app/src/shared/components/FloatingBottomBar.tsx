@@ -2,25 +2,23 @@ import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
+import { colors } from '../theme';
 
 interface Tab { key: string; icon: string; label: string; }
 
 interface Props { tabs: Tab[]; activeTab: string; onTabPress: (key: string) => void; }
 
 export function FloatingBottomBar({ tabs, activeTab, onTabPress }: Props) {
-  const { theme } = useAuth();
   const { unreadCounts } = useChat();
-  const isDark = theme === 'dark';
   const insets = useSafeAreaInsets();
   const totalUnread = Object.values(unreadCounts).reduce((s, c) => s + c, 0);
   const badgeCount = totalUnread > 99 ? 99 : totalUnread;
 
-  const activeColor = isDark ? '#F59E0B' : '#EE7B10';
-  const inactiveColor = isDark ? '#9CA3AF' : '#8B8B8D';
-  const barBg = isDark ? '#111827' : '#FFFCF5';
-  const borderColor = isDark ? '#374151' : '#F6EDC4';
+  const activeColor = colors.tabActive;
+  const inactiveColor = colors.tabInactive;
+  const barBg = colors.tabBarBg;
+  const borderColor = colors.tabBarBorder;
 
   return (
     <View style={[styles.tabBarRoot, { paddingBottom: Math.max(insets.bottom, 8) }]}>

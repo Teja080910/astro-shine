@@ -797,14 +797,14 @@ export function UserHomeScreen({ navigation }: any) {
   const { width: screenWidth } = useWindowDimensions();
   const isCompact = screenWidth < 380;
 
-  const titleColor = isDark ? "#FBBF24" : "#8D0B0C";
-  const cardBg = isDark ? "#111827" : "#FFFCF5";
-  const cardLightBg = isDark ? "#1F2937" : "#FEF8EA";
-  const cardBorderColor = isDark ? "rgba(245, 158, 11, 0.25)" : "#F6EDC4";
-  const textPrimaryColor = isDark ? "#F9FAFB" : "#1F2937";
-  const bodyTextColor = isDark ? "#E5E7EB" : "#45484F";
-  const mutedTextColor = isDark ? "#9CA3AF" : "#8B8B8D";
-  const goldTextColor = isDark ? "#FBBF24" : "#EE7B10";
+  const titleColor = colors.heading;
+  const cardBg = colors.card;
+  const cardLightBg = colors.cardAlt;
+  const cardBorderColor = colors.cardBorder;
+  const textPrimaryColor = colors.textStrong;
+  const bodyTextColor = colors.textBody;
+  const mutedTextColor = colors.textMuted;
+  const goldTextColor = colors.accentText;
   const [astrologers, setAstrologers] = useState<Astrologer[]>([]);
   const [favoriteAstrologers, setFavoriteAstrologers] = useState<Astrologer[]>([]);
   const [callLogs, setCallLogs] = useState<CallLog[]>([]);
@@ -1192,8 +1192,8 @@ export function UserHomeScreen({ navigation }: any) {
           style={[
             styles.greetingRow,
             {
-              backgroundColor: isDark ? cardBg : "#FFF8ED",
-              borderColor: isDark ? cardBorderColor : "#F6EDC4",
+              backgroundColor: colors.surfaceElevated,
+              borderColor: cardBorderColor,
               borderRadius: 20,
               paddingHorizontal: 14,
               paddingTop: 10,
@@ -1527,8 +1527,8 @@ export function UserHomeScreen({ navigation }: any) {
           style={[
             styles.horoscopeCard,
             {
-              backgroundColor: isDark ? cardBg : "#FFF8ED",
-              borderColor: isDark ? cardBorderColor : "#F6EDC4",
+              backgroundColor: colors.surfaceElevated,
+              borderColor: cardBorderColor,
               borderRadius: 22,
               padding: 16,
               overflow: "hidden",
@@ -3062,7 +3062,7 @@ export function AstrologerListScreen({ route, navigation }: any) {
           style={{
             fontSize: 28,
             fontWeight: "900",
-            color: isDark ? "#FBBF24" : "#8D0B0C",
+            color: colors.heading,
             letterSpacing: -0.5,
           }}
         >
@@ -3075,8 +3075,8 @@ export function AstrologerListScreen({ route, navigation }: any) {
         style={{
           flexDirection: "row",
           alignItems: "center",
-          backgroundColor: isDark ? "#1F2937" : "#FEF8EA",
-          borderColor: isDark ? "rgba(245, 158, 11, 0.25)" : "#F6EDC4",
+          backgroundColor: colors.chipBg,
+          borderColor: colors.cardBorder,
           borderWidth: 1.5,
           borderRadius: 24,
           paddingHorizontal: 14,
@@ -3090,29 +3090,29 @@ export function AstrologerListScreen({ route, navigation }: any) {
           elevation: 1,
         }}
       >
-        <Ionicons name="search-outline" size={20} color="#8B8B8D" />
+        <Ionicons name="search-outline" size={20} color={colors.textMuted} />
         <TextInput
           style={{
             flex: 1,
             fontSize: 14,
             marginLeft: 10,
-            color: isDark ? "#F9FAFB" : "#1F2937",
+            color: colors.textStrong,
           }}
           value={search}
           onChangeText={setSearch}
           placeholder="Search astrologers, skills, language..."
-          placeholderTextColor="#8B8B8D"
+          placeholderTextColor={colors.textMuted}
         />
         {search.length > 0 && (
           <TouchableOpacity onPress={() => setSearch("")} style={{ padding: 4 }}>
-            <Ionicons name="close-circle" size={18} color="#8B8B8D" />
+            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
           </TouchableOpacity>
         )}
         <TouchableOpacity
           onPress={() => {}}
           style={{ padding: 4, marginLeft: 4 }}
         >
-          <Ionicons name="options-outline" size={20} color="#8D0B0C" />
+          <Ionicons name="options-outline" size={20} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
@@ -3282,13 +3282,13 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
   const { user, theme } = useAuth();
   const isDark = theme === "dark";
 
-  const titleColor = isDark ? "#F9FAFB" : "#1F2937";
-  const bodyTextColor = isDark ? "#D1D5DB" : "#4B5563";
-  const mutedTextColor = isDark ? "#9CA3AF" : "#8B8B8D";
-  const goldTextColor = isDark ? "#F59E0B" : "#EE7B10";
-  const cardBg = isDark ? "#1F2937" : "#FFFCF5";
-  const cardBorderColor = isDark ? "rgba(245, 158, 11, 0.3)" : "#F6EDC4";
-  const cardLightBg = isDark ? "rgba(255, 255, 255, 0.04)" : "#FEF8EA";
+  const titleColor = colors.textStrong;
+  const bodyTextColor = colors.textBody;
+  const mutedTextColor = colors.textMuted;
+  const goldTextColor = colors.accentText;
+  const cardBg = colors.card;
+  const cardBorderColor = colors.cardBorder;
+  const cardLightBg = colors.cardAlt;
 
   const getAbsoluteImageUrl = (path?: string) => {
     if (!path) return undefined;
@@ -6142,15 +6142,15 @@ export function ProfileScreen({ navigation }: any) {
   const isFocused = useIsFocused();
   const isDark = theme === "dark";
 
-  const cardBg = isDark ? "#111827" : "#FFFCF5";
-  const cardLightBg = isDark ? "#1F2937" : "#FEF8EA";
-  const cardBorderColor = isDark ? "rgba(245, 158, 11, 0.25)" : "#F6EDC4";
-  const textPrimaryColor = isDark ? "#F9FAFB" : "#8D0B0C";
-  const textSecondaryColor = isDark ? "#E5E7EB" : "#1F2937";
-  const mutedTextColor = isDark ? "#9CA3AF" : "#8B8B8D";
-  const goldTextColor = isDark ? "#FBBF24" : "#EE7B10";
-  const iconBgColor = isDark ? "rgba(245, 158, 11, 0.15)" : "#FEF3C7";
-  const rowBorderColor = isDark ? "rgba(255, 255, 255, 0.08)" : "#F3F4F6";
+  const cardBg = colors.card;
+  const cardLightBg = colors.cardAlt;
+  const cardBorderColor = colors.cardBorder;
+  const textPrimaryColor = colors.heading;
+  const textSecondaryColor = colors.textBody;
+  const mutedTextColor = colors.textMuted;
+  const goldTextColor = colors.accentText;
+  const iconBgColor = colors.iconBg;
+  const rowBorderColor = colors.rowBorder;
 
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [pwOpen, setPwOpen] = useState(false);
@@ -6243,14 +6243,8 @@ export function ProfileScreen({ navigation }: any) {
     },
     {
       icon: "flag-outline",
-      label: "Reports Filed by Me",
+      label: "Reports by Me",
       route: "MyReports",
-      category: "Preferences",
-    },
-    {
-      icon: "shield-outline",
-      label: "Reports Against Me",
-      route: "AstrologerReports",
       category: "Preferences",
     },
   ];
@@ -6434,7 +6428,7 @@ export function ProfileScreen({ navigation }: any) {
               <Ionicons name="person-outline" size={18} color={goldTextColor} style={{ marginRight: 10 }} />
               <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Name</Text>
               <Text
-                style={{ color: user?.name ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: user?.name ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
+                style={{ color: user?.name ? colors.textStrong : mutedTextColor, fontSize: 13, fontWeight: user?.name ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
                 numberOfLines={2}
               >
                 {user?.name || "Not set"}
@@ -6444,7 +6438,7 @@ export function ProfileScreen({ navigation }: any) {
               <Ionicons name="mail-outline" size={18} color={goldTextColor} style={{ marginRight: 10 }} />
               <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Email</Text>
               <Text
-                style={{ color: user?.email ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: user?.email ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
+                style={{ color: user?.email ? colors.textStrong : mutedTextColor, fontSize: 13, fontWeight: user?.email ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
                 numberOfLines={2}
               >
                 {user?.email || "Not set"}
@@ -6454,7 +6448,7 @@ export function ProfileScreen({ navigation }: any) {
               <Ionicons name="call-outline" size={18} color={goldTextColor} style={{ marginRight: 10 }} />
               <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Phone</Text>
               <Text
-                style={{ color: user?.phone ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: user?.phone ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
+                style={{ color: user?.phone ? colors.textStrong : mutedTextColor, fontSize: 13, fontWeight: user?.phone ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
                 numberOfLines={2}
               >
                 {user?.phone || "Not set"}
@@ -6464,7 +6458,7 @@ export function ProfileScreen({ navigation }: any) {
               <Ionicons name="male-female-outline" size={18} color={goldTextColor} style={{ marginRight: 10 }} />
               <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Gender</Text>
               <Text
-                style={{ color: (user as any)?.gender ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: (user as any)?.gender ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
+                style={{ color: (user as any)?.gender ? colors.textStrong : mutedTextColor, fontSize: 13, fontWeight: (user as any)?.gender ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
                 numberOfLines={2}
               >
                 {(user as any)?.gender ? String((user as any).gender).charAt(0).toUpperCase() + String((user as any).gender).slice(1) : "Not set"}
@@ -6474,7 +6468,7 @@ export function ProfileScreen({ navigation }: any) {
               <Ionicons name="calendar-outline" size={18} color={goldTextColor} style={{ marginRight: 10 }} />
               <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Date of Birth</Text>
               <Text
-                style={{ color: (user as any)?.dateOfBirth ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: (user as any)?.dateOfBirth ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
+                style={{ color: (user as any)?.dateOfBirth ? colors.textStrong : mutedTextColor, fontSize: 13, fontWeight: (user as any)?.dateOfBirth ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
                 numberOfLines={2}
               >
                 {formatDisplayDate((user as any)?.dateOfBirth)}
@@ -6521,7 +6515,7 @@ export function ProfileScreen({ navigation }: any) {
                   >
                     {item.label}
                   </Text>
-                  <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+                  <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
                 </TouchableOpacity>
               ))}
           </View>
@@ -6561,7 +6555,7 @@ export function ProfileScreen({ navigation }: any) {
               <Toggle
                 value={theme === "dark"}
                 onValueChange={toggleTheme}
-                trackColor={{ false: "#D1D5DB", true: "#8D0B0C" }}
+                trackColor={{ false: colors.switchOff, true: colors.switchOn }}
               />
             </View>
 
@@ -6619,7 +6613,7 @@ export function ProfileScreen({ navigation }: any) {
                   >
                     {item.label}
                   </Text>
-                  <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+                  <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
                 </TouchableOpacity>
               ))}
           </View>
@@ -7318,12 +7312,10 @@ const styles = StyleSheet.create({
 
 // All quick actions
 export function QuickActionsScreen({ navigation }: any) {
-  const { theme } = useAuth();
-  const isDark = theme === "dark";
-  const cardBg = isDark ? "#111827" : "#FFFCF5";
-  const borderColor = isDark ? "rgba(245,158,11,0.25)" : "#F6EDC4";
-  const titleColor = isDark ? "#F9FAFB" : "#8D0B0C";
-  const mutedColor = isDark ? "#9CA3AF" : "#8B8B8D";
+  const cardBg = colors.card;
+  const borderColor = colors.cardBorder;
+  const titleColor = colors.heading;
+  const mutedColor = colors.textMuted;
 
   const actions = [
     { label: "Kundli", icon: "grid-outline", color: "#EE7B10", route: "Kundli" },

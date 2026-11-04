@@ -47,7 +47,7 @@ export function HoroscopeScreen({ navigation }: any) {
     <ScreenWrapper scroll noPadding>
       <Navbar title="Horoscope" navigation={navigation} />
       <View style={{ padding: 16 }}>
-        <Text style={[typography.sectionTitle, { color: colors.accentGold, fontSize: 24 }]}>
+        <Text style={[typography.sectionTitle, { color: colors.heading, fontSize: 24 }]}>
           Horoscope
         </Text>
         <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4, marginBottom: 16 }]}>
@@ -289,7 +289,7 @@ export function PanchangScreen() {
   return (
     <ScreenWrapper scroll>
       <View style={{ paddingBottom: 100 }}>
-        <Text style={[typography.sectionTitle, { color: colors.accentGold, fontSize: 24 }]}>Panchang</Text>
+        <Text style={[typography.sectionTitle, { color: colors.heading, fontSize: 24 }]}>Panchang</Text>
         {data ? (
           <>
             <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4, marginBottom: 16 }]}>
@@ -1361,29 +1361,37 @@ export function ReportScreen({ route, navigation }: any) {
   );
 }
 
-const REPORT_FINAL_STATUSES = ['reviewed', 'resolved', 'closed', 'dismissed', 'approved'];
-const REPORT_REVIEW_STATUSES = ['in_review', 'under_review', 'processing'];
+/** Reports only ever move between these states; the API stores them as free text. */
+const REPORT_STATUS_META: Record<string, { label: string; color: string; backgroundColor: string }> = {
+  pending: { label: 'Pending', color: colors.warning, backgroundColor: 'rgba(245,158,11,0.15)' },
+  in_review: { label: 'In Review', color: colors.accentGold, backgroundColor: 'rgba(245,158,11,0.15)' },
+  under_review: { label: 'In Review', color: colors.accentGold, backgroundColor: 'rgba(245,158,11,0.15)' },
+  processing: { label: 'In Review', color: colors.accentGold, backgroundColor: 'rgba(245,158,11,0.15)' },
+  reviewed: { label: 'Reviewed', color: colors.success, backgroundColor: 'rgba(16,185,129,0.15)' },
+  approved: { label: 'Reviewed', color: colors.success, backgroundColor: 'rgba(16,185,129,0.15)' },
+  resolved: { label: 'Resolved', color: colors.success, backgroundColor: 'rgba(16,185,129,0.15)' },
+  closed: { label: 'Closed', color: colors.success, backgroundColor: 'rgba(16,185,129,0.15)' },
+  dismissed: { label: 'Dismissed', color: colors.danger, backgroundColor: 'rgba(194,20,21,0.12)' },
+  rejected: { label: 'Dismissed', color: colors.danger, backgroundColor: 'rgba(194,20,21,0.12)' },
+};
 
-function reportStatusMeta(status?: string) {
-  const key = String(status || 'pending').toLowerCase().trim();
-  if (REPORT_FINAL_STATUSES.includes(key)) {
-    return {
-      label: key === 'dismissed' ? 'Dismissed' : 'Reviewed',
-      color: colors.success,
-      backgroundColor: 'rgba(16,185,129,0.15)',
-    };
+function reportStatusMeta(status?: string, resolvedAt?: string | null) {
+  const key = String(status ?? '').toLowerCase().trim();
+  if (!key) {
+    return resolvedAt
+      ? REPORT_STATUS_META.reviewed
+      : { label: 'Pending', color: colors.warning, backgroundColor: 'rgba(245,158,11,0.15)' };
   }
-  if (REPORT_REVIEW_STATUSES.includes(key)) {
-    return {
-      label: 'In Review',
-      color: colors.accentGold,
-      backgroundColor: 'rgba(245,158,11,0.15)',
-    };
-  }
+  const known = REPORT_STATUS_META[key];
+  // A report the admin already acted on must never read "Pending", even when the
+  // stored status still says so (legacy rows where only resolved_at was written).
+  if (known && key === 'pending' && resolvedAt) return REPORT_STATUS_META.reviewed;
+  if (known) return known;
+  // Never invent a status: show whatever the backend actually returned.
   return {
-    label: 'Pending',
-    color: colors.warning,
-    backgroundColor: 'rgba(245,158,11,0.15)',
+    label: key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+    color: colors.textMuted,
+    backgroundColor: 'rgba(139,139,141,0.15)',
   };
 }
 
@@ -1423,7 +1431,7 @@ function ReportsStatusScreen({ mode }: any) {
           />
         ) : (
           reports.map((r) => {
-            const meta = reportStatusMeta(r.status);
+            const meta = reportStatusMeta(r.status, r.resolvedAt);
             return (
               <TouchableOpacity key={r.id} activeOpacity={0.8} onPress={() => setSelectedReport(r)}>
                 <GlassCard style={{ padding: 14, marginBottom: 10 }}>
@@ -1478,17 +1486,17 @@ function ReportsStatusScreen({ mode }: any) {
                   paddingHorizontal: 10,
                   paddingVertical: 4,
                   borderRadius: 12,
-                  backgroundColor: reportStatusMeta(selectedReport.status).backgroundColor,
+                  backgroundColor: reportStatusMeta(selectedReport.status, selectedReport.resolvedAt).backgroundColor,
                 }}
               >
                 <Text
                   style={{
                     fontSize: 11,
                     fontWeight: '700',
-                    color: reportStatusMeta(selectedReport.status).color,
+                    color: reportStatusMeta(selectedReport.status, selectedReport.resolvedAt).color,
                   }}
                 >
-                  {reportStatusMeta(selectedReport.status).label}
+                  {reportStatusMeta(selectedReport.status, selectedReport.resolvedAt).label}
                 </Text>
               </View>
             </View>

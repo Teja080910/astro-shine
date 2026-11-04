@@ -145,12 +145,12 @@ export function AstrologerHomeScreen({ navigation }: any) {
     region: string;
   } | null>(null);
 
-  const titleColor = isDark ? "#FBBF24" : "#8D0B0C";
-  const cardLightBg = isDark ? "#1F2937" : "#FEF8EA";
-  const cardBorderColor = isDark ? "rgba(245, 158, 11, 0.25)" : "#F6EDC4";
-  const bodyTextColor = isDark ? "#E5E7EB" : "#374151";
-  const mutedTextColor = isDark ? "#9CA3AF" : "#8B8B8D";
-  const goldTextColor = isDark ? "#FBBF24" : "#EE7B10";
+  const titleColor = colors.heading;
+  const cardLightBg = colors.cardAlt;
+  const cardBorderColor = colors.cardBorder;
+  const bodyTextColor = colors.textBody;
+  const mutedTextColor = colors.textMuted;
+  const goldTextColor = colors.accentText;
 
   const greeting = (() => {
     const hour = new Date().getHours();
@@ -2407,7 +2407,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
       route: "Notifications",
     },
     { icon: "help-circle-outline", label: "Help & Support", route: "Support" },
-    { icon: "flag-outline", label: "Reports Filed by Me", route: "MyReports" },
+    { icon: "flag-outline", label: "Reports by Me", route: "MyReports" },
     { icon: "shield-outline", label: "Reports Against Me", route: "AstrologerReports" },
   ];
 
