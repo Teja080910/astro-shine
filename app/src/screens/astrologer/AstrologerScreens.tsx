@@ -2408,7 +2408,6 @@ export function AstrologerProfileScreen({ navigation }: any) {
     },
     { icon: "help-circle-outline", label: "Help & Support", route: "Support" },
     { icon: "flag-outline", label: "Reports by Me", route: "MyReports" },
-    { icon: "shield-outline", label: "Reports Against Me", route: "AstrologerReports" },
   ];
 
   if (role === "admin") {

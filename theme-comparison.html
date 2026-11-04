@@ -735,6 +735,9 @@
   <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/></symbol>
   <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.4-3 8-7 9.5-4-1.5-7-5.1-7-9.5V6z"/></symbol>
   <symbol id="i-flag" viewBox="0 0 24 24"><path d="M6 21V4"/><path d="M6 5h11l-1.8 3.7L17 13H6z"/></symbol>
+  <symbol id="i-document" viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12 20 4l-8 16-2-6z"/></symbol>
+  <symbol id="i-attach" viewBox="0 0 24 24"><path d="M20 11.5 12 19.5a5 5 0 0 1-7-7l8-8a3.5 3.5 0 0 1 5 5l-8 8a2 2 0 0 1-3-3l7-7"/></symbol>
 </svg>
 
 <header class="top">
@@ -742,9 +745,10 @@
     <p class="eyebrow">Astro Shine · mobile app</p>
     <h1>User screen fixes</h1>
     <p class="sub">
-      Before / after for the user-screen fixes: the theme-unification pass plus the three
-      Reports issues. Every pair renders in the same mode — switch modes to see how the old
-      hardcoded colors and the new shared tokens behave in light and dark.
+      Before / after for the user- and astrologer-screen fixes: the theme-unification pass,
+      the Reports issues, the service schedule, and Kundli sharing in chat. Both apps now read
+      the same tokens, so a screen looks identical whichever role is signed in. Every pair
+      renders in the same mode — switch modes to see light and dark.
     </p>
   </div>
   <div class="mode-switch" role="group" aria-label="Color mode">
@@ -1277,7 +1281,7 @@
   <!-- 07 ─ report status -->
   <section class="cmp">
     <div class="cmp-head">
-      <div class="num">07</div>
+      <div class="num">06</div>
       <div>
         <h2>Reports → My Reports: correct status</h2>
         <p>
@@ -1397,14 +1401,15 @@
   <!-- 08 ─ menu label -->
   <section class="cmp">
     <div class="cmp-head">
-      <div class="num">08</div>
+      <div class="num">07</div>
       <div>
         <h2>Profile menu: "Reports by Me"</h2>
         <p>
           The user profile listed <strong>"Reports Filed by Me"</strong> while the screen it opened was titled
           differently again. Both now use the wording from the ticket, and the duplicate
-          <strong>"Reports Against Me"</strong> entry is removed from the user menu — a normal user cannot
-          receive reports, so it only ever showed an empty list.
+          The <strong>"Reports Against Me"</strong> entry is removed from <em>both</em> apps. Neither a user
+          nor an astrologer ever sees who reported them, so the list could only ever be unactionable —
+          and it invited the question of who filed it.
         </p>
       </div>
     </div>
@@ -1473,22 +1478,21 @@
     </div>
     <ul class="notes">
       <li>Menu label, nav header and empty state now all say <strong>Reports by Me</strong> — previously the menu said "Filed by Me" and the header said the same, while the ticket wording differs.</li>
-      <li><strong>Reports Against Me</strong> is gone from the user menu. The route still exists for the astrologer app, where reports genuinely can be filed against the account.</li>
-      <li>The astrologer profile keeps both entries, since astrologers do receive reports.</li>
+      <li><strong>Reports Against Me</strong> is removed from both the user and astrologer menus, along with its screen, route and notification target.</li>
+      <li>Both apps now show a single entry, <strong>Reports by Me</strong>, listing only reports the current account created.</li>
     </ul>
   </section>
 
   <!-- 09 ─ against me -->
+    <!-- report detail -->
   <section class="cmp">
     <div class="cmp-head">
-      <div class="num">09</div>
+      <div class="num">08</div>
       <div>
-        <h2>Reports Against Me: separated, with real statuses</h2>
+        <h2>Report detail: what action was taken</h2>
         <p>
-          The received list already queries a different endpoint (<code>/reports/received</code>), so the
-          separation was correct in the API — the visible defect was the same status collapse, which showed
-          every ongoing case as "Pending" and every closed case as "Reviewed". Both lists now share the
-          corrected mapping.
+          A status chip alone does not tell the user what happened. The detail sheet now explains the
+          outcome, so "what action should be taken on that" is answerable from the list.
         </p>
       </div>
     </div>
@@ -1501,31 +1505,216 @@
             <div class="screen-body">
               <div class="navbar">
                 <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
-                <span class="nav-title">Reports Against Me</span>
+                <span class="nav-title">Report Details</span>
                 <span class="spacer"></span>
               </div>
-              <p class="page-sub">Reports other people filed about you</p>
-              <div class="card" style="margin-bottom:8px">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-                  <span class="report-reason">harassment</span>
-                  <span class="status pending">Pending</span>
-                </div>
-                    <p class="report-desc">Claimed I was rude on a call.</p>
-                <div class="report-meta">
-                  <span class="filed">Filed 11 Oct 2026</span>
-                  <span class="view">View details</span>
-                </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <span class="report-reason">harassment</span>
+                <span class="status reviewed">Reviewed</span>
               </div>
-              <div class="card" style="margin-bottom:8px">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-                  <span class="report-reason">other</span>
-                  <span class="status reviewed">Reviewed</span>
+              <p class="report-desc">Sent repeated abusive messages.</p>
+              <p style="font-size:8.5px;color:var(--muted);margin-top:6px">Filed 12 Oct 2026 · Reviewed 20 Oct 2026</p>
+              <div style="margin-top:auto;height:36px;border-radius:18px;border:1px solid var(--border);display:grid;place-items:center;font-size:10.5px;font-weight:700;color:var(--body)">Close</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-wrap">
+        <span class="tag tag-after">After</span>
+        <div class="phone">
+          <div class="screen after tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Report Details</span>
+                <span class="spacer"></span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <span class="report-reason">harassment</span>
+                <span class="status reviewed">Reviewed</span>
+              </div>
+              <div class="card" style="padding:9px 11px">
+                <p style="font-size:8px;font-weight:800;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">ACTION TAKEN</p>
+                <p style="font-size:9px;line-height:1.5;color:var(--body)">This report has been reviewed by our team.</p>
+              </div>
+              <p class="report-desc">Sent repeated abusive messages.</p>
+              <p style="font-size:8.5px;color:var(--muted);margin-top:6px">Filed 12 Oct 2026 · Reviewed 20 Oct 2026</p>
+              <div style="margin-top:auto;height:36px;border-radius:18px;border:1px solid var(--border);display:grid;place-items:center;font-size:10.5px;font-weight:700;color:var(--body)">Close</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>Each status gets one plain sentence: pending, in review, reviewed, resolved, closed, dismissed.</li>
+      <li>A dismissed report now says <em>no action was taken</em>, which is the outcome the user cares about.</li>
+      <li>The list, the chip and the detail sheet all read from the same helper, so they cannot disagree.</li>
+    </ul>
+  </section>
+
+  <!-- schedule -->
+  <section class="cmp">
+    <div class="cmp-head">
+      <div class="num">09</div>
+      <div>
+        <h2>Service schedule (AA-015 / AA-016)</h2>
+        <p>
+          The weekly schedule screen had three concrete faults: the save loop skipped days toggled
+          off while still validating them, the bulk endpoint wrote day-by-day with no transaction
+          and no uniqueness, and a failed save showed a bare “Failed to save schedule”. A toggled-off
+          day could also keep an invalid time range that blocked the whole save.
+        </p>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before</span>
+        <div class="phone">
+          <div class="screen before tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Schedule</span>
+                <span class="spacer"></span>
+              </div>
+              <p class="page-sub">Set your weekly availability for consultations</p>
+                <div class="card" style="padding:9px 11px;margin-bottom:7px">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-size:11.5px;font-weight:600;color:var(--heading);opacity:1">Sun</span>
+                    <span class="switch on" style="width:30px;height:18px"><i style="width:14px;height:14px"></i></span>
+                  </div>
+                  <div style="display:flex;gap:6px;align-items:center;margin-top:6px">                  <div class="field-box" style="flex:1;"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>9:00 AM</div>
+                  <span style="font-size:9px;color:var(--muted)">to</span>
+                  <div class="field-box" style="flex:1"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>6:00 PM</div></div>
                 </div>
-                    <p class="report-desc">Reported the wrong astrologer.</p>
-                <div class="report-meta">
-                  <span class="filed">Filed 02 Oct 2026 · Reviewed 06 Oct 2026</span>
-                  <span class="view">View details</span>
+                <div class="card" style="padding:9px 11px;margin-bottom:7px">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-size:11.5px;font-weight:600;color:var(--heading);opacity:1">Mon</span>
+                    <span class="switch on" style="width:30px;height:18px"><i style="width:14px;height:14px"></i></span>
+                  </div>
+                  <div style="display:flex;gap:6px;align-items:center;margin-top:6px">                  <div class="field-box" style="flex:1;"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>9:00 AM</div>
+                  <span style="font-size:9px;color:var(--muted)">to</span>
+                  <div class="field-box" style="flex:1"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>6:00 PM</div></div>
                 </div>
+                <div class="card" style="padding:9px 11px;margin-bottom:7px">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-size:11.5px;font-weight:600;color:var(--heading);opacity:1">Tue</span>
+                    <span class="switch on" style="width:30px;height:18px"><i style="width:14px;height:14px"></i></span>
+                  </div>
+                  <div style="display:flex;gap:6px;align-items:center;margin-top:6px">                  <div class="field-box" style="flex:1;"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>9:00 AM</div>
+                  <span style="font-size:9px;color:var(--muted)">to</span>
+                  <div class="field-box" style="flex:1"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>6:00 PM</div></div>
+                </div>
+                <div class="card" style="padding:9px 11px;margin-bottom:7px">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-size:11.5px;font-weight:600;color:var(--heading);opacity:1">Wed</span>
+                    <span class="switch on" style="width:30px;height:18px"><i style="width:14px;height:14px"></i></span>
+                  </div>
+                  <div style="display:flex;gap:6px;align-items:center;margin-top:6px">                  <div class="field-box" style="flex:1;"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>9:00 AM</div>
+                  <span style="font-size:9px;color:var(--muted)">to</span>
+                  <div class="field-box" style="flex:1"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>6:00 PM</div></div>
+                </div>                <div style="margin-top:8px;height:36px;border-radius:18px;background:#EE7B10;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700">Save Schedule</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-wrap">
+        <span class="tag tag-after">After</span>
+        <div class="phone">
+          <div class="screen after tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Schedule</span>
+                <span class="spacer"></span>
+              </div>
+              <p class="page-sub">Set your weekly availability for consultations</p>
+                <div class="card" style="padding:9px 11px;margin-bottom:7px">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-size:11.5px;font-weight:600;color:var(--heading);opacity:.4">Sun</span>
+                    <span class="switch " style="width:30px;height:18px"><i style="width:14px;height:14px"></i></span>
+                  </div>
+                  
+                </div>
+                <div class="card" style="padding:9px 11px;margin-bottom:7px">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-size:11.5px;font-weight:600;color:var(--heading);opacity:1">Mon</span>
+                    <span class="switch on" style="width:30px;height:18px"><i style="width:14px;height:14px"></i></span>
+                  </div>
+                  <div style="display:flex;gap:6px;align-items:center;margin-top:6px">                  <div class="field-box" style="flex:1;"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>10:00 AM</div>
+                  <span style="font-size:9px;color:var(--muted)">to</span>
+                  <div class="field-box" style="flex:1"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>7:00 PM</div></div>
+                </div>
+                <div class="card" style="padding:9px 11px;margin-bottom:7px">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-size:11.5px;font-weight:600;color:var(--heading);opacity:1">Tue</span>
+                    <span class="switch on" style="width:30px;height:18px"><i style="width:14px;height:14px"></i></span>
+                  </div>
+                  <div style="display:flex;gap:6px;align-items:center;margin-top:6px">                  <div class="field-box" style="flex:1;"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>10:00 AM</div>
+                  <span style="font-size:9px;color:var(--muted)">to</span>
+                  <div class="field-box" style="flex:1"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>7:00 PM</div></div>
+                </div>
+                <div class="card" style="padding:9px 11px;margin-bottom:7px">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-size:11.5px;font-weight:600;color:var(--heading);opacity:1">Wed</span>
+                    <span class="switch on" style="width:30px;height:18px"><i style="width:14px;height:14px"></i></span>
+                  </div>
+                  <div style="display:flex;gap:6px;align-items:center;margin-top:6px">                  <div class="field-box" style="flex:1;"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>10:00 AM</div>
+                  <span style="font-size:9px;color:var(--muted)">to</span>
+                  <div class="field-box" style="flex:1"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>7:00 PM</div></div>
+                </div>                <div style="margin-top:8px;height:36px;border-radius:18px;background:#EE7B10;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700">Save Schedule</div>
+                <p style="font-size:8.5px;color:var(--muted);text-align:center;margin-top:6px">You have unsaved changes.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li><strong>Backend:</strong> <code>bulkUpsert</code> now validates the whole week up front, rejects duplicate days, and writes inside a single transaction — so a bad slot can no longer leave the week half-saved.</li>
+      <li><strong>Database:</strong> new unique index on <code>(astrologer_id, day_of_week)</code>, with a migration that de-duplicates existing rows by keeping the most recently updated one.</li>
+      <li><strong>Screen:</strong> days turned off keep their last times, disabled days no longer fail validation, the button shows <em>Saved</em> when there are no changes, and errors surface the real server message.</li>
+      <li><strong>Loading:</strong> a proper loading state replaces the old silent jump from defaults to saved values, and Postgres <code>HH:MM:SS</code> times are normalised to the picker's <code>HH:MM</code>.</li>
+    </ul>
+  </section>
+
+  <!-- chat kundli -->
+  <section class="cmp">
+    <div class="cmp-head">
+      <div class="num">10</div>
+      <div>
+        <h2>Attach Kundli in chat (AA-017)</h2>
+        <p>
+          The user chat had no way to share a Kundli at all — the composer only had a text field
+          and send button. There is now an attach action that offers the user's saved charts
+          <em>and</em> a file upload.
+        </p>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before</span>
+        <div class="phone">
+          <div class="screen before tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Chat</span>
+                <span class="spacer"></span>
+              </div>
+              <div class="card" style="padding:8px 10px;display:flex;align-items:center;justify-content:space-between">
+                <span style="font-size:8.5px;color:var(--muted)">⏱ 04:12</span>
+                <span style="font-size:8.5px;font-weight:700;color:var(--accent)">Spent ₹35.00</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:7px">
+                <div style="align-self:flex-end;max-width:80%;background:#EE7B10;color:#fff;padding:7px 10px;border-radius:12px 12px 3px 12px;font-size:9.5px;line-height:1.45">Meri kundli dekh lo please</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;padding-top:8px;border-top:1px solid var(--border)">
+                <div style="flex:1;height:32px;border-radius:16px;background:var(--surface-light,#FEF8EA);display:flex;align-items:center;padding:0 10px;font-size:9px;color:var(--muted)">Type a message...</div>
+                <div style="width:32px;height:32px;border-radius:16px;background:#EE7B10;display:grid;place-items:center"><svg style="width:14px;height:14px;color:#fff"><use href="#i-send"/></svg></div>
               </div>
             </div>
           </div>
@@ -1539,31 +1728,24 @@
             <div class="screen-body">
               <div class="navbar">
                 <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
-                <span class="nav-title">Reports Against Me</span>
+                <span class="nav-title">Chat</span>
                 <span class="spacer"></span>
               </div>
-              <p class="page-sub">Reports other people filed about you</p>
-              <div class="card" style="margin-bottom:8px">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-                  <span class="report-reason">harassment</span>
-                  <span class="status review">In Review</span>
-                </div>
-                    <p class="report-desc">Claimed I was rude on a call.</p>
-                <div class="report-meta">
-                  <span class="filed">Filed 11 Oct 2026</span>
-                  <span class="view">View details</span>
-                </div>
+              <div class="card" style="padding:8px 10px;display:flex;align-items:center;justify-content:space-between">
+                <span style="font-size:8.5px;color:var(--muted)">⏱ 04:12</span>
+                <span style="font-size:8.5px;font-weight:700;color:var(--accent)">Spent ₹35.00</span>
               </div>
-              <div class="card" style="margin-bottom:8px">
-                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-                  <span class="report-reason">other</span>
-                  <span class="status reviewed">Reviewed</span>
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:7px">
+                <div style="align-self:flex-end;display:flex;align-items:center;gap:7px;background:#EE7B10;padding:8px 10px;border-radius:12px 12px 3px 12px;max-width:85%">
+                  <div style="width:24px;height:24px;border-radius:7px;background:rgba(255,255,255,.2);display:grid;place-items:center"><svg style="width:13px;height:13px;color:#fff"><use href="#i-document"/></svg></div>
+                  <div><div style="font-size:9px;font-weight:700;color:#fff">Kundli – Praveen.pdf</div><div style="font-size:7.5px;color:rgba(255,255,255,.8)">Tap to view</div></div>
                 </div>
-                    <p class="report-desc">Reported the wrong astrologer.</p>
-                <div class="report-meta">
-                  <span class="filed">Filed 02 Oct 2026 · Reviewed 06 Oct 2026</span>
-                  <span class="view">View details</span>
-                </div>
+                <div style="align-self:flex-end;max-width:80%;background:#EE7B10;color:#fff;padding:7px 10px;border-radius:12px 12px 3px 12px;font-size:9.5px;line-height:1.45">Meri kundli dekh lo please</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;padding-top:8px;border-top:1px solid var(--border)">
+                <svg style="width:19px;height:19px;color:#EE7B10"><use href="#i-attach"/></svg>
+                <div style="flex:1;height:32px;border-radius:16px;background:var(--surface-light,#FEF8EA);display:flex;align-items:center;padding:0 10px;font-size:9px;color:var(--muted)">Type a message...</div>
+                <div style="width:32px;height:32px;border-radius:16px;background:#EE7B10;display:grid;place-items:center"><svg style="width:14px;height:14px;color:#fff"><use href="#i-send"/></svg></div>
               </div>
             </div>
           </div>
@@ -1571,16 +1753,98 @@
       </div>
     </div>
     <ul class="notes">
-      <li><code>in_review</code> / <code>under_review</code> / <code>processing</code> now surface as <strong>In Review</strong> rather than "Pending".</li>
-      <li>Both lists are driven by one shared helper, so "by me" and "against me" can never drift apart again.</li>
-      <li>The screen only reads these values — no new API fields were added.</li>
+      <li>New attach button in the composer, user side only — astrologers receive, they do not send their own chart.</li>
+      <li>A sheet offers two paths: <strong>Upload a file</strong> (PDF/image up to 20 MB) or <strong>attach a saved Kundli</strong> from <code>/kundli?userId=…</code>.</li>
+      <li>A saved Kundli is computed data rather than a file, so it is shared as a readable message with name, DOB, time and place — not as a link that would 404.</li>
+      <li>Empty state points the user to the Kundli section when they have not generated one yet.</li>
+    </ul>
+  </section>
+
+  <!-- astrologer receives kundli -->
+  <section class="cmp">
+    <div class="cmp-head">
+      <div class="num">11</div>
+      <div>
+        <h2>Astrologer can open the Kundli (AA-018)</h2>
+        <p>
+          The attachment bubble rendered, but it called <code>Linking.openURL(item.mediaUrl)</code> on
+          whatever the server stored. Local uploads return a relative path
+          (<code>/uploads/…</code>), which is not a valid absolute URL, so tapping it failed silently
+          on device.
+        </p>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before</span>
+        <div class="phone">
+          <div class="screen before tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Chat</span>
+                <span class="spacer"></span>
+              </div>
+              <div class="card" style="padding:8px 10px;display:flex;align-items:center;justify-content:space-between">
+                <span style="font-size:8.5px;color:var(--muted)">⏱ 04:12</span>
+                <span style="font-size:8.5px;font-weight:700;color:var(--accent)">Spent ₹35.00</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:7px">
+                <div style="align-self:flex-start;display:flex;align-items:center;gap:7px;background:#FEF8EA;border:1px solid #F6EDC4;padding:8px 10px;border-radius:12px 12px 12px 3px;max-width:85%">
+                  <div style="width:24px;height:24px;border-radius:7px;background:#FEF3C7;display:grid;place-items:center"><svg style="width:13px;height:13px;color:#EE7B10"><use href="#i-document"/></svg></div>
+                  <div><div style="font-size:9px;font-weight:700;color:#8D0B0C">Kundli – Praveen.pdf</div><div style="font-size:7.5px;color:#8B8B8D">Tap to view</div></div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;padding-top:8px;border-top:1px solid var(--border)">
+                <div style="flex:1;height:32px;border-radius:16px;background:var(--surface-light,#FEF8EA);display:flex;align-items:center;padding:0 10px;font-size:9px;color:var(--muted)">Type a message...</div>
+                <div style="width:32px;height:32px;border-radius:16px;background:#EE7B10;display:grid;place-items:center"><svg style="width:14px;height:14px;color:#fff"><use href="#i-send"/></svg></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-wrap">
+        <span class="tag tag-after">After</span>
+        <div class="phone">
+          <div class="screen after tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Chat</span>
+                <span class="spacer"></span>
+              </div>
+              <div class="card" style="padding:8px 10px;display:flex;align-items:center;justify-content:space-between">
+                <span style="font-size:8.5px;color:var(--muted)">⏱ 04:12</span>
+                <span style="font-size:8.5px;font-weight:700;color:var(--accent)">Spent ₹35.00</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:7px">
+                <div style="align-self:flex-start;display:flex;align-items:center;gap:7px;background:#FEF8EA;border:1px solid #F6EDC4;padding:8px 10px;border-radius:12px 12px 12px 3px;max-width:85%">
+                  <div style="width:24px;height:24px;border-radius:7px;background:#FEF3C7;display:grid;place-items:center"><svg style="width:13px;height:13px;color:#EE7B10"><use href="#i-document"/></svg></div>
+                  <div><div style="font-size:9px;font-weight:700;color:#8D0B0C">Kundli – Praveen.pdf</div><div style="font-size:7.5px;color:#8B8B8D">Tap to view</div></div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;padding-top:8px;border-top:1px solid var(--border)">
+                <div style="flex:1;height:32px;border-radius:16px;background:var(--surface-light,#FEF8EA);display:flex;align-items:center;padding:0 10px;font-size:9px;color:var(--muted)">Type a message...</div>
+                <div style="width:32px;height:32px;border-radius:16px;background:#EE7B10;display:grid;place-items:center"><svg style="width:14px;height:14px;color:#fff"><use href="#i-send"/></svg></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>Taps now go through <code>resolveMediaUrl()</code>, which prefixes relative paths with the API origin — the same helper already used for avatars and blog images.</li>
+      <li>Failures report a real message instead of doing nothing, so a broken attachment is visible.</li>
+      <li>Both parties see the same bubble; only the URL resolution changed.</li>
     </ul>
   </section>
 
   <!-- recap -->
   <section class="cmp">
     <div class="cmp-head">
-      <div class="num">10</div>
+      <div class="num">12</div>
       <div>
         <h2>Token recap</h2>
         <p>What replaced the per-screen hex values. Everything below lives in <code>app/src/shared/theme.ts</code>.</p>
@@ -1601,6 +1865,8 @@
         <tr><td><code>chipBg</code> / <code>chipBorder</code></td><td>#FEF8EA / #F2DFAE</td><td>#1F2937 / white 8%</td><td>#E2E8F0 / #1E293B slate</td></tr>
         <tr><td><code>tabBarBorder</code></td><td>#F6EDC4</td><td>rgba(245,158,11,.25)</td><td>#374151 dark grey</td></tr>
         <tr><td><code>switchOn</code> / <code>switchOff</code></td><td>#EE7B10 / #D1D5DB</td><td>#F59E0B / #4B5563</td><td>hardcoded #8D0B0C / #D1D5DB</td></tr>
+        <tr><td><code>primaryLight</code> (group headers, menu icons)</td><td>#F59E0B</td><td>#F59E0B</td><td>per-screen gold/maroon mixes</td></tr>
+        <tr><td><code>rowBorder</code> in gift &amp; wallet</td><td>#F3EAD6</td><td>rgba(255,255,255,.08)</td><td>#E2E8F0 / #F1F5F9 slate</td></tr>
       </tbody>
     </table>
   </section>

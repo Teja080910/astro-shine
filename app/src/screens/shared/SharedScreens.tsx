@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl, KeyboardAvoidingView, Platform, Keyboard, Dimensions, Image } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl, KeyboardAvoidingView, Platform, Keyboard, Dimensions, Image, ActivityIndicator } from 'react-native';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, CustomModal, colors, typography, radii, shadows, Navbar, resolveMediaUrl } from '../../shared';
 import { api } from '../../shared/api-client';
@@ -1375,6 +1375,22 @@ const REPORT_STATUS_META: Record<string, { label: string; color: string; backgro
   rejected: { label: 'Dismissed', color: colors.danger, backgroundColor: 'rgba(194,20,21,0.12)' },
 };
 
+const REPORT_STATUS_HINT: Record<string, string> = {
+  pending: 'Our team has received your report and will review it shortly.',
+  in_review: 'Our team is currently reviewing this report.',
+  reviewed: 'This report has been reviewed by our team.',
+  resolved: 'This report has been resolved by our team.',
+  closed: 'This case has been closed by our team.',
+  dismissed: 'After review, no action was taken on this report.',
+};
+
+function reportStatusHint(status?: string, resolvedAt?: string | null) {
+  const key = String(status ?? '').toLowerCase().trim();
+  if (!key) return resolvedAt ? REPORT_STATUS_HINT.reviewed : REPORT_STATUS_HINT.pending;
+  if (key === 'pending' && resolvedAt) return REPORT_STATUS_HINT.reviewed;
+  return REPORT_STATUS_HINT[key] || '';
+}
+
 function reportStatusMeta(status?: string, resolvedAt?: string | null) {
   const key = String(status ?? '').toLowerCase().trim();
   if (!key) {
@@ -1395,7 +1411,7 @@ function reportStatusMeta(status?: string, resolvedAt?: string | null) {
   };
 }
 
-function ReportsStatusScreen({ mode }: any) {
+function ReportsStatusScreen() {
   const isFocused = useIsFocused();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1405,7 +1421,7 @@ function ReportsStatusScreen({ mode }: any) {
     if (!isFocused) return;
     let cancelled = false;
     setLoading(true);
-    (mode === 'received' ? api.reports.received() : api.reports.my())
+    api.reports.my()
       .then((r) => {
         if (!cancelled) setReports(r);
       })
@@ -1416,18 +1432,22 @@ function ReportsStatusScreen({ mode }: any) {
     return () => {
       cancelled = true;
     };
-  }, [mode, isFocused]);
+  }, [isFocused]);
 
   return (
     <ScreenWrapper scroll noPadding>
       <View style={{ padding: 16, paddingBottom: 100 }}>
+        <Text style={[typography.pageTitle, { color: colors.heading, marginBottom: 4 }]}>Reports by Me</Text>
+        <Text style={[typography.caption, { color: colors.textMuted, marginBottom: 14 }]}>
+          Reports you have filed, and what action was taken on each.
+        </Text>
         {loading ? (
           <GlassCard><Text style={typography.body}>Loading...</Text></GlassCard>
         ) : reports.length === 0 ? (
           <EmptyState
             icon={<Ionicons name="shield-checkmark-outline" size={48} color={colors.textMuted} />}
             title="No reports"
-            subtitle={mode === 'received' ? 'No reports have been filed against you.' : 'You have not filed any reports yet.'}
+            subtitle="You have not filed any reports yet."
           />
         ) : (
           reports.map((r) => {
@@ -1500,6 +1520,24 @@ function ReportsStatusScreen({ mode }: any) {
                 </Text>
               </View>
             </View>
+            {reportStatusHint(selectedReport.status, selectedReport.resolvedAt) ? (
+              <View
+                style={{
+                  padding: 10,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: colors.cardBorder,
+                  backgroundColor: colors.surfaceLight,
+                }}
+              >
+                <Text style={[typography.caption, { color: colors.textMuted, fontWeight: '700', marginBottom: 2 }]}>
+                  ACTION TAKEN
+                </Text>
+                <Text style={[typography.body, { color: colors.textSecondary }]}>
+                  {reportStatusHint(selectedReport.status, selectedReport.resolvedAt)}
+                </Text>
+              </View>
+            ) : null}
             <Text style={[typography.body, { color: colors.textSecondary }]}>
               {selectedReport.description || 'No additional details were provided.'}
             </Text>
@@ -1517,12 +1555,8 @@ function ReportsStatusScreen({ mode }: any) {
   );
 }
 
-export function MyReportsScreen(props: any) {
-  return <ReportsStatusScreen {...props} mode="mine" />;
-}
-
-export function AstrologerReportsScreen(props: any) {
-  return <ReportsStatusScreen {...props} mode="received" />;
+export function MyReportsScreen() {
+  return <ReportsStatusScreen />;
 }
 
 // Mandir Pooja
@@ -2198,35 +2232,83 @@ export function AstrologerRequestsScreen() {
 export function AstrologerScheduleScreen() {
   const { astrologer } = useAuth();
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const DEFAULT_SLOT = { startTime: '09:00', endTime: '18:00', isAvailable: true };
   const defaultSchedules = () => {
     const map: Record<number, { startTime: string; endTime: string; isAvailable: boolean }> = {};
     for (let i = 0; i < 7; i++) {
-      map[i] = { startTime: '09:00', endTime: '18:00', isAvailable: true };
+      map[i] = { ...DEFAULT_SLOT };
     }
     return map;
   };
   const [schedules, setSchedules] = useState<Record<number, { startTime: string; endTime: string; isAvailable: boolean }>>(defaultSchedules);
   const [loading, setLoading] = useState(false);
+  const [savedSnapshot, setSavedSnapshot] = useState<string>('');
+  const [loadingSaved, setLoadingSaved] = useState(true);
 
-  useEffect(() => {
-    if (!astrologer?.userId) return;
-    api.schedule.byAstrologer(astrologer.userId).then((data: any[]) => {
-      const map = defaultSchedules();
-      data.forEach(s => { map[s.dayOfWeek] = { startTime: s.startTime.slice(0, 5), endTime: s.endTime.slice(0, 5), isAvailable: s.isAvailable }; });
-      setSchedules(map);
-    }).catch(() => {});
-  }, [astrologer?.userId]);
-
-  const updateDay = (day: number, field: string, value: string | boolean) => {
-    setSchedules(prev => ({ ...prev, [day]: { ...prev[day] || { startTime: '09:00', endTime: '18:00', isAvailable: true }, [field]: value } }));
+  /** Postgres `time` comes back as "HH:MM:SS"; the picker only understands "HH:MM". */
+  const toPickerTime = (value?: string | null, fallback = '09:00') => {
+    if (!value) return fallback;
+    const match = /^(\d{2}):(\d{2})/.exec(String(value));
+    return match ? `${match[1]}:${match[2]}` : fallback;
   };
 
+  const serialize = (map: Record<number, { startTime: string; endTime: string; isAvailable: boolean }>) =>
+    Array.from({ length: 7 }, (_, day) => {
+      const s = map[day] || DEFAULT_SLOT;
+      return `${day}|${s.startTime}|${s.endTime}|${s.isAvailable ? 1 : 0}`;
+    }).join(';');
+
+  const loadSchedule = useCallback(async () => {
+    if (!astrologer?.userId) {
+      setLoadingSaved(false);
+      return;
+    }
+    setLoadingSaved(true);
+    try {
+      const data: any[] = (await api.schedule.byAstrologer(astrologer.userId)) || [];
+      const map = defaultSchedules();
+      data.forEach((s) => {
+        const day = Number(s.dayOfWeek);
+        if (!Number.isInteger(day) || day < 0 || day > 6) return;
+        map[day] = {
+          startTime: toPickerTime(s.startTime, DEFAULT_SLOT.startTime),
+          endTime: toPickerTime(s.endTime, DEFAULT_SLOT.endTime),
+          isAvailable: s.isAvailable !== false,
+        };
+      });
+      setSchedules(map);
+      setSavedSnapshot(serialize(map));
+    } catch {
+      // Keep the sensible defaults so the astrologer can still fill the week in.
+      setSavedSnapshot('');
+    } finally {
+      setLoadingSaved(false);
+    }
+  }, [astrologer?.userId]);
+
+  useEffect(() => {
+    loadSchedule();
+  }, [loadSchedule]);
+
+  const updateDay = (day: number, field: string, value: string | boolean) => {
+    setSchedules(prev => ({ ...prev, [day]: { ...prev[day] || { ...DEFAULT_SLOT }, [field]: value } }));
+  };
+
+  const isDirty = serialize(schedules) !== savedSnapshot;
+
+  /** Toggling a day off should keep its last times, not silently drop the row. */
   const saveAll = async () => {
     if (!astrologer?.userId) return;
     for (let day = 0; day < 7; day++) {
       const slot = schedules[day];
-      if (!slot?.isAvailable) continue;
-      if (!slot.startTime || !slot.endTime || slot.startTime >= slot.endTime) {
+      if (!slot) continue;
+      // Only validate days that are actually offered.
+      if (!slot.isAvailable) continue;
+      if (!slot.startTime || !slot.endTime) {
+        Alert.alert('Invalid Schedule', `${days[day]} needs both a start and an end time.`);
+        return;
+      }
+      if (slot.startTime >= slot.endTime) {
         Alert.alert('Invalid Schedule', `${days[day]} start time must be before end time.`);
         return;
       }
@@ -2234,17 +2316,31 @@ export function AstrologerScheduleScreen() {
     setLoading(true);
     try {
       // Always submit all seven days so untouched days are persisted with
-      // their defaults instead of being silently skipped.
+      // their defaults instead of being silently skipped. A day that is turned
+      // off keeps a valid placeholder range so it never blocks the save.
       const bulk = Array.from({ length: 7 }, (_, day) => {
-        const s = schedules[day] || { startTime: '09:00', endTime: '18:00', isAvailable: true };
+        const s = schedules[day] || DEFAULT_SLOT;
+        const validRange = !!s.startTime && !!s.endTime && s.startTime < s.endTime;
         return {
-          dayOfWeek: day, startTime: s.startTime, endTime: s.endTime, isAvailable: s.isAvailable,
+          dayOfWeek: day,
+          startTime: validRange ? s.startTime : DEFAULT_SLOT.startTime,
+          endTime: validRange ? s.endTime : DEFAULT_SLOT.endTime,
+          isAvailable: s.isAvailable,
         };
       });
       await api.schedule.bulkUpsert(astrologer.userId, bulk);
+      setSavedSnapshot(serialize(schedules));
       Alert.alert('Saved', 'Schedule updated successfully');
-    } catch { Alert.alert('Error', 'Failed to save schedule'); }
-    finally { setLoading(false); }
+    } catch (e: any) {
+      Alert.alert(
+        'Error',
+        e?.response?.data?.message || 'Failed to save schedule. Please try again.',
+      );
+      // Re-read so the screen reflects whatever actually persisted.
+      loadSchedule();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -2252,6 +2348,13 @@ export function AstrologerScheduleScreen() {
       <View style={{ width: '100%', maxWidth: 600, alignSelf: 'center', padding: 16 }}>
         <SectionTitle title="Availability Schedule" />
         <Text style={[typography.body, { marginBottom: 16, paddingHorizontal: 4 }]}>Set your weekly availability for consultations</Text>
+        {loadingSaved ? (
+          <GlassCard style={{ padding: 20, alignItems: 'center' }}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={[typography.caption, { color: colors.textMuted, marginTop: 8 }]}>Loading your schedule…</Text>
+          </GlassCard>
+        ) : (
+          <>
         {days.map((d, i) => {
           const s = schedules[i];
           const isAvail = s?.isAvailable ?? true;
@@ -2292,7 +2395,19 @@ export function AstrologerScheduleScreen() {
             </GlassCard>
           );
         })}
-        <GradientButton title={loading ? 'Saving...' : 'Save Schedule'} onPress={saveAll} disabled={loading} style={{ marginTop: 16 }} />
+        <GradientButton
+          title={loading ? 'Saving...' : isDirty ? 'Save Schedule' : 'Saved'}
+          onPress={saveAll}
+          disabled={loading || !isDirty}
+          style={{ marginTop: 16 }}
+        />
+        {isDirty && !loading && (
+          <Text style={[typography.caption, { color: colors.textMuted, textAlign: 'center', marginTop: 8 }]}>
+            You have unsaved changes.
+          </Text>
+        )}
+          </>
+        )}
       </View>
     </ScreenWrapper>
   );

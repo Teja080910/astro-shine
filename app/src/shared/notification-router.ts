@@ -55,7 +55,6 @@ const ASTROLOGER_ROUTES = [
   'Reviews',
   'Consultations',
   'Gifts',
-  'AstrologerReports',
   'ChatRoom',
 ];
 
@@ -122,7 +121,11 @@ export function resolveNotificationTarget(
 
   switch (data.type) {
     case 'report_status':
-      return build(role === 'astrologer' ? 'AstrologerReports' : 'MyReports');
+      // Only the reporter has a "Reports by Me" list to open.
+      return build('MyReports');
+    case 'report_against_status':
+      // The reported party no longer has a screen for reports about them.
+      return build('Notifications');
     case 'gift_received':
     case 'gift_redeemed':
     case 'gift_initiated':

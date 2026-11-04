@@ -168,6 +168,15 @@ export class ReportsService {
 
   private async notifyReportStatusChange(r: any, previousStatus: string) {
     const reason = String(r.reason || '').replace(/_/g, ' ');
+    // The reporter owns a "Reports by Me" list they can open. The reported party
+    // does not — so their notification deliberately carries a different type and
+    // must not deep-link to that list.
+    const reportedData = {
+      type: 'report_against_status',
+      reportId: r.id,
+      status: r.status,
+      previousStatus,
+    };
     const data = {
       type: 'report_status',
       reportId: r.id,
@@ -189,7 +198,7 @@ export class ReportsService {
         type: 'transactional',
         title: 'Report status updated',
         body: `A report filed against you changed status from ${previousStatus} to ${r.status}.`,
-        data,
+        data: reportedData,
       });
     }
     if (r.reportedUserId) {
@@ -198,7 +207,7 @@ export class ReportsService {
         type: 'transactional',
         title: 'Report status updated',
         body: `A report filed against you changed status from ${previousStatus} to ${r.status}.`,
-        data,
+        data: reportedData,
       });
     }
   }
@@ -226,6 +235,12 @@ export class ReportsService {
       status: r.status,
       reason: r.reason,
     };
+    const reportedData = {
+      type: 'report_against_status',
+      reportId: r.id,
+      status: r.status,
+      reason: r.reason,
+    };
     if (r.reporterId) {
       this.notifications
         .create({
@@ -246,7 +261,7 @@ export class ReportsService {
           type: 'transactional',
           title: 'Report resolved',
           body: 'A report filed against you has been reviewed and resolved by our team.',
-          data,
+          data: reportedData,
         })
         .catch((e) =>
           this.logger.warn(`Report astrologer notification failed: ${e.message}`),
@@ -259,7 +274,7 @@ export class ReportsService {
           type: 'transactional',
           title: 'Report resolved',
           body: 'A report filed against you has been reviewed and resolved by our team.',
-          data,
+          data: reportedData,
         })
         .catch((e) =>
           this.logger.warn(`Report user notification failed: ${e.message}`),

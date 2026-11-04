@@ -12,9 +12,7 @@ import type { Astrologer, Gift, GiftTransaction } from '../../shared/types';
 
 export function GiftScreen({ route, navigation }: any) {
   const { user } = useAuth();
-  const { theme } = useAuth();
   const { giftVersion } = useChat();
-  const isDark = theme === 'dark';
   const isFocused = useIsFocused();
   const [gifts, setGifts] = useState<Gift[]>([]);
   const [astrologers, setAstrologers] = useState<Astrologer[]>([]);
@@ -150,31 +148,31 @@ export function GiftScreen({ route, navigation }: any) {
       <ScreenWrapper style={{ backgroundColor: 'transparent' }} edges={[]}>
         <View style={[styles.directSendContainer, { backgroundColor: 'rgba(0, 0, 0, 0.6)' }]}>
           <View style={[styles.modalCard, {
-            backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
-            borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0',
-            borderWidth: isDark ? 1 : 0
+            backgroundColor: colors.surface,
+            borderColor: colors.chipBorder,
+            borderWidth: 1
           }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: isDark ? '#FFFFFF' : '#1E293B' }]}>Gift for your expert</Text>
+              <Text style={[styles.modalTitle, { color: colors.textStrong }]}>Gift for your expert</Text>
               <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeBtn}>
-                <Ionicons name="close" size={24} color={isDark ? '#9CA3AF' : '#8B8B8D'} />
+                <Ionicons name="close" size={24} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
 
             <View style={[styles.expertRow, {
-              backgroundColor: isDark ? '#111827' : '#F8FAFC',
-              borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0'
+              backgroundColor: colors.surface,
+              borderColor: colors.chipBorder
             }]}>
               <Avatar size={48} uri={selectedAstrologer.avatar} />
               <View style={{ flex: 1 }}>
-                <Text style={[styles.expertName, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>{selectedAstrologer.name}</Text>
-                <Text style={[styles.expertSub, { color: isDark ? '#9CA3AF' : '#8B8B8D' }]}>
+                <Text style={[styles.expertName, { color: colors.textStrong }]}>{selectedAstrologer.name}</Text>
+                <Text style={[styles.expertSub, { color: colors.textMuted }]}>
                   {selectedAstrologer.specialization?.join(', ') || 'Vedic Astrology Expert'}
                 </Text>
               </View>
             </View>
 
-            <Text style={[styles.chooseTitle, { color: isDark ? '#FFFFFF' : '#1E293B' }]}>Choose gift</Text>
+            <Text style={[styles.chooseTitle, { color: colors.textStrong }]}>Choose gift</Text>
 
             <View style={styles.gridContainer}>
               {gifts.map((item) => {
@@ -186,19 +184,19 @@ export function GiftScreen({ route, navigation }: any) {
                     style={[
                       styles.giftCardCompact,
                       {
-                        backgroundColor: isDark ? '#111827' : '#FFFFFF',
+                        backgroundColor: colors.surface,
                         borderColor: isSelected 
                           ? colors.accentGold 
-                          : isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0',
+                          : colors.chipBorder,
                       },
                       isSelected && {
-                        backgroundColor: isDark ? 'rgba(217, 119, 6, 0.15)' : '#FEF8EA',
+                        backgroundColor: colors.chipBg,
                       }
                     ]}
                   >
                     <View style={[styles.giftIconCircle, {
-                      backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
-                      borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9',
+                      backgroundColor: colors.surface,
+                      borderColor: colors.rowBorder,
                       overflow: 'hidden',
                     }]}>
                       {item.image ? (
@@ -207,10 +205,10 @@ export function GiftScreen({ route, navigation }: any) {
                         <Ionicons name="gift" size={24} color={colors.accentGold} />
                       )}
                     </View>
-                    <Text style={[styles.giftNameCompact, { color: isDark ? '#9CA3AF' : '#8B8B8D' }]} numberOfLines={1}>
+                    <Text style={[styles.giftNameCompact, { color: colors.textMuted }]} numberOfLines={1}>
                       {item.name}
                     </Text>
-                    <Text style={[styles.giftPriceCompact, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                    <Text style={[styles.giftPriceCompact, { color: colors.textStrong }]}>
                       ₹ {item.price}
                     </Text>
                   </TouchableOpacity>
@@ -219,10 +217,10 @@ export function GiftScreen({ route, navigation }: any) {
             </View>
 
             <View style={styles.balanceRow}>
-              <Text style={[styles.balanceLabel, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+              <Text style={[styles.balanceLabel, { color: colors.textStrong }]}>
                 Your Balance: ₹{wallet?.balance || '0'}
               </Text>
-              <Text style={[styles.balanceDesc, { color: isDark ? '#9CA3AF' : '#8B8B8D' }]}>
+              <Text style={[styles.balanceDesc, { color: colors.textMuted }]}>
                 Entire amount of the gift will be provided to expert
               </Text>
             </View>
@@ -232,11 +230,11 @@ export function GiftScreen({ route, navigation }: any) {
               disabled={sending}
               style={[
                 styles.sendBtnLarge, 
-                { backgroundColor: isDark ? colors.accentGold : '#5C3214' },
+                { backgroundColor: colors.accentGold },
                 sending && { opacity: 0.7 }
               ]}
             >
-              <Text style={[styles.sendBtnText, { color: isDark ? '#000000' : '#FFFFFF' }]}>
+              <Text style={[styles.sendBtnText, { color: colors.white }]}>
                 {sending ? 'Sending...' : 'Send Gift'}
               </Text>
             </TouchableOpacity>
@@ -428,32 +426,32 @@ export function GiftScreen({ route, navigation }: any) {
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  backgroundColor: isDark ? '#111827' : '#F1F5F9',
+                  backgroundColor: colors.surface,
                   borderRadius: 12,
                   paddingHorizontal: 12,
                   height: 42,
                   borderWidth: 1,
-                  borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0',
+                  borderColor: colors.chipBorder,
                 }}
               >
-                <Ionicons name="search" size={16} color={isDark ? '#9CA3AF' : '#8B8B8D'} style={{ marginRight: 8 }} />
+                <Ionicons name="search" size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
                 <TextInput
                   placeholder="Search astrologer name..."
-                  placeholderTextColor={isDark ? '#8B8B8D' : '#94A3B8'}
+                  placeholderTextColor={colors.textMuted}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                   returnKeyType="done"
                   onSubmitEditing={() => Keyboard.dismiss()}
                   style={{
                     flex: 1,
-                    color: isDark ? '#FFFFFF' : '#0F172A',
+                    color: colors.textStrong,
                     fontSize: 13,
                     padding: 0,
                   }}
                 />
                 {searchQuery.length > 0 && (
                   <TouchableOpacity onPress={() => setSearchQuery("")} style={{ padding: 4 }}>
-                    <Ionicons name="close-circle" size={16} color={isDark ? '#9CA3AF' : '#8B8B8D'} />
+                    <Ionicons name="close-circle" size={16} color={colors.textMuted} />
                   </TouchableOpacity>
                 )}
                 {isKeyboardOpen && (
@@ -462,7 +460,7 @@ export function GiftScreen({ route, navigation }: any) {
                     style={{
                       paddingHorizontal: 8,
                       paddingVertical: 4,
-                      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+                      backgroundColor: colors.divider,
                       borderRadius: 8,
                       marginLeft: 6,
                     }}
@@ -486,8 +484,8 @@ export function GiftScreen({ route, navigation }: any) {
                     >
                       <Avatar size={36} uri={item.avatar} />
                       <View style={{ flex: 1 }}>
-                        <Text style={[typography.body, { fontWeight: '600', color: isDark ? '#FFFFFF' : '#0F172A' }]}>{item.name}</Text>
-                        <Text style={[typography.caption, { color: isDark ? '#9CA3AF' : '#8B8B8D' }]}>{item.specialization?.[0] || 'Astrologer'}</Text>
+                        <Text style={[typography.body, { fontWeight: '600', color: colors.textStrong }]}>{item.name}</Text>
+                        <Text style={[typography.caption, { color: colors.textMuted }]}>{item.specialization?.[0] || 'Astrologer'}</Text>
                       </View>
                       <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
                     </TouchableOpacity>
