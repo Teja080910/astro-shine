@@ -46,6 +46,9 @@ import {
   Navbar,
   resolveMediaUrl,
   formatAmount,
+  sumAmounts,
+  transactionLabel,
+  transactionIcon,
 } from "../../shared";
 import { api } from "../../shared/api-client";
 import { config } from "../../config";
@@ -4335,7 +4338,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
               })}
             </ScrollView>
             <View style={{ alignItems: 'center', gap: 4, marginBottom: 12 }}>
-              <Text style={{ fontSize: 14, fontWeight: '800', color: colors.textStrong }}>Your Balance: ₹{walletBalance}</Text>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: colors.textStrong }}>Your Balance: ₹{formatAmount(walletBalance)}</Text>
               <Text style={{ fontSize: 11, color: colors.textMuted, textAlign: 'center' }}>Entire amount will be provided to expert</Text>
             </View>
             <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -4442,31 +4445,6 @@ const matchesWalletTxnDate = (t: Transaction, range: WalletTxnDateRange): boolea
   return created >= now.getTime() - days * 24 * 60 * 60 * 1000;
 };
 
-const walletTxnTitle = (t: Transaction): string => {
-  const kind = walletTxnKind(t);
-  const meta = t.metadata || {};
-  switch (kind) {
-    case "audio_call":
-      return "Audio Call";
-    case "video_call":
-      return "Video Call";
-    case "chat":
-      return "Chat Consultation";
-    case "gift":
-      return meta.giftName ? `Gift: ${meta.giftName}` : "Gift Sent";
-    case "add_funds":
-      return "Add Fund";
-    case "donation":
-      return "Donation";
-    case "pooja_booking":
-      return meta.poojaName ? `Puja: ${meta.poojaName}` : "Pooja Booking";
-    default:
-      return t.category
-        ? t.category.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-        : "Transaction";
-  }
-};
-
 const walletTxnDuration = (t: Transaction): string | null => {
   const meta = t.metadata || {};
   const minutes = Number(meta.minutesCharged || meta.minutes || 0);
@@ -4489,27 +4467,6 @@ const walletTxnDuration = (t: Transaction): string | null => {
   const minMatch = desc.match(/\((\d+)\s*min\)/i);
   if (minMatch) return `${minMatch[1]} min`;
   return null;
-};
-
-const walletTxnIcon = (t: Transaction): { name: string; color: string } => {
-  switch (walletTxnKind(t)) {
-    case "audio_call":
-      return { name: "call", color: "#0284C7" };
-    case "video_call":
-      return { name: "videocam", color: "#7C3AED" };
-    case "chat":
-      return { name: "chatbubble-ellipses", color: "#0D9488" };
-    case "gift":
-      return { name: "gift", color: "#EE7B10" };
-    case "donation":
-      return { name: "heart", color: "#C21415" };
-    case "pooja_booking":
-      return { name: "flame", color: "#EE7B10" };
-    case "add_funds":
-      return { name: "wallet", color: "#16A34A" };
-    default:
-      return { name: "receipt", color: colors.textMuted };
-  }
 };
 
 export function WalletScreen() {
@@ -4834,7 +4791,7 @@ export function WalletScreen() {
         ) : (
           filteredTxns.map((t) => {
             const isCredit = t.type === "credit";
-            const icon = walletTxnIcon(t);
+            const icon = transactionIcon(t);
             const duration = walletTxnDuration(t);
             const statusKey = (t.status || "").toLowerCase();
             const statusColor =
@@ -4857,7 +4814,7 @@ export function WalletScreen() {
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={typography.cardTitle} numberOfLines={1}>
-                      {walletTxnTitle(t)}
+                      {transactionLabel(t)}
                     </Text>
                     {duration ? (
                       <Text style={[typography.caption, { color: colors.textSecondary }]}>
@@ -5732,9 +5689,11 @@ export function ShopScreen({ navigation }: any) {
     setCart((prev) => prev.filter((c) => c.product.id !== productId));
   };
 
-  const cartTotal = cart.reduce(
-    (s, c) => s + Number(c.product.price) * c.qty,
-    0,
+  const cartTotal = sumAmounts(
+    cart.flatMap((c) =>
+      // multiply in paise so qty never reintroduces float drift
+      Array.from({ length: Math.max(0, Number(c.qty) || 0) }, () => c.product.price),
+    ),
   );
 
   const handlePlaceOrder = async () => {
@@ -5922,7 +5881,7 @@ export function ShopScreen({ navigation }: any) {
                     {c.product.name} x{c.qty}
                   </Text>
                   <Text style={typography.caption}>
-                    ₹{Number(c.product.price) * c.qty}
+                    ₹{formatAmount(Number(c.product.price) * (Number(c.qty) || 0))}
                   </Text>
                 </View>
                 <TouchableOpacity onPress={() => removeFromCart(c.product.id)}>
@@ -5944,7 +5903,7 @@ export function ShopScreen({ navigation }: any) {
                   paddingTop: 8,
                 }}
               >
-                <Text style={[typography.cardTitle]}>Total: ₹{cartTotal}</Text>
+                <Text style={[typography.cardTitle]}>Total: ₹{formatAmount(cartTotal)}</Text>
               </View>
               <GradientButton
                 title={ordering ? "Placing Order..." : "Place Order"}

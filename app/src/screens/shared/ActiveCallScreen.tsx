@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { colors } from '../../shared';
+import { colors, formatAmount } from '../../shared';
 import { Ionicons } from '@expo/vector-icons';
 import { useCall } from '../../context/CallContext';
 import { useChat } from '../../context/ChatContext';
@@ -188,7 +188,7 @@ export function ActiveCallScreen() {
               <View style={styles.balanceBadge}>
                 <Ionicons name="wallet-outline" size={14} color={colors.accentGold} />
                 <Text style={[styles.balanceText, walletBalance < 50 && { color: colors.danger }]}>
-                  ₹{walletBalance}
+                  ₹{formatAmount(walletBalance)}
                 </Text>
               </View>
             )}

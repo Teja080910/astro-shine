@@ -25,4 +25,6 @@ export { BrandHeader } from './components/BrandHeader';
 export { FilterTabs } from './components/FilterTabs';
 export { BrandSplash } from './components/BrandSplash';
 export { resolveMediaUrl } from './media';
-export { formatAmount } from './format';
+export { formatAmount, sumAmounts, formatCurrency } from './format';
+export { transactionLabel, transactionIcon, transactionService } from './transaction-labels';
+export type { TransactionService } from './transaction-labels';

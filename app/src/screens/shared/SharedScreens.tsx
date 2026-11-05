@@ -653,9 +653,13 @@ export function NotificationsScreen({ route }: any) {
           <EmptyState icon={<Ionicons name="notifications-outline" size={48} color={colors.textMuted} />} title="No notifications" subtitle="You're all caught up!" />
         ) : (
           notifs.map(n => {
-            const isOrder = (n.data as any)?.screen === 'OrderHistory';
+            const data = (n.data as any) || {};
+            const isOrder = data.screen === 'OrderHistory';
+            const isTicket = data.screen === 'TicketDetail' || data.screen === 'AdminTicketDetail';
             const iconName = isOrder
               ? 'cube-outline'
+              : isTicket
+              ? 'help-buoy-outline'
               : n.type === 'system'
               ? 'settings-outline'
               : n.type === 'promotional'

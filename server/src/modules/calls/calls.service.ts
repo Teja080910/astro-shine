@@ -196,6 +196,7 @@ export class CallsService {
           call.astrologerId,
           call.id,
           costNum,
+          call.type === 'video' ? 'video' : 'audio',
         );
       } catch (e: any) {
         this.logger.error(`[CallsService] Failed to distribute earnings for call ${id}: ${e.message}`);

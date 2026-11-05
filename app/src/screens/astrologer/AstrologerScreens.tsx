@@ -38,6 +38,9 @@ import {
   BrandHeader,
   Navbar,
   formatAmount,
+  sumAmounts,
+  transactionLabel,
+  transactionService,
 } from "../../shared";
 import { api } from "../../shared/api-client";
 import { resolveNotificationTarget } from "../../shared/notification-router";
@@ -1002,9 +1005,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
                   >
                     <View style={{ flex: 1 }}>
                       <Text style={[typography.cardTitle, { fontSize: 14 }]}>
-                        {t.category
-                          ?.replace(/_/g, " ")
-                          .replace(/\b\w/g, (c: string) => c.toUpperCase())}
+                        {transactionLabel(t as any)}
                       </Text>
                       <Text style={typography.caption}>
                         {new Date(t.createdAt).toLocaleDateString()}
@@ -1017,7 +1018,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
                           t.type === "credit" ? colors.success : colors.danger,
                       }}
                     >
-                      {t.type === "credit" ? "+" : "-"}₹{t.amount}
+                      {t.type === "credit" ? "+" : "-"}₹{formatAmount(t.amount)}
                     </Text>
                   </View>
                 </GlassCard>
@@ -1150,7 +1151,9 @@ export function AstrologerWalletScreen({ navigation }: any) {
   const isFocused = useIsFocused();
   const [balance, setBalance] = useState("0");
   const [txns, setTxns] = useState<Transaction[]>([]);
-  const [filter, setFilter] = useState<"all" | "credit" | "debit">("all");
+  const [filter, setFilter] = useState<
+    "all" | "credit" | "debit" | "chat" | "audio_call" | "video_call"
+  >("all");
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -1174,14 +1177,20 @@ export function AstrologerWalletScreen({ navigation }: any) {
     setRefreshing(false);
   };
 
-  const filtered =
-    filter === "all" ? txns : txns.filter((t) => t.type === filter);
-  const totalCredits = txns
-    .filter((t) => t.type === "credit")
-    .reduce((s, t) => s + Number(t.amount), 0);
-  const totalDebits = txns
-    .filter((t) => t.type === "debit")
-    .reduce((s, t) => s + Number(t.amount), 0);
+  const filtered = useMemo(() => {
+    if (filter === "all") return txns;
+    if (filter === "credit" || filter === "debit") {
+      return txns.filter((t) => t.type === filter);
+    }
+    // service filters: only rows whose money came from that service
+    return txns.filter((t) => transactionService(t as any) === filter);
+  }, [txns, filter]);
+  const totalCredits = sumAmounts(
+    txns.filter((t) => t.type === "credit").map((t) => t.amount),
+  );
+  const totalDebits = sumAmounts(
+    txns.filter((t) => t.type === "debit").map((t) => t.amount),
+  );
 
   return (
     <ScreenWrapper noPadding>
@@ -1202,7 +1211,7 @@ export function AstrologerWalletScreen({ navigation }: any) {
               marginTop: 4,
             }}
           >
-            ₹{balance}
+            ₹{formatAmount(balance)}
           </Text>
           <View
             style={{
@@ -1226,13 +1235,13 @@ export function AstrologerWalletScreen({ navigation }: any) {
         <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
           <GlassCard style={{ flex: 1, alignItems: "center", padding: 14 }}>
             <Text style={[typography.cardTitle, { color: colors.success }]}>
-              +₹{totalCredits}
+              +₹{formatAmount(totalCredits)}
             </Text>
             <Text style={typography.caption}>Total Credits</Text>
           </GlassCard>
           <GlassCard style={{ flex: 1, alignItems: "center", padding: 14 }}>
             <Text style={[typography.cardTitle, { color: colors.danger }]}>
-              -₹{totalDebits}
+              -₹{formatAmount(totalDebits)}
             </Text>
             <Text style={typography.caption}>Total Debits</Text>
           </GlassCard>
@@ -1247,12 +1256,19 @@ export function AstrologerWalletScreen({ navigation }: any) {
             paddingHorizontal: 4,
           }}
         >
-          {(["all", "credit", "debit"] as const).map((f) => (
+          {([
+            { key: "all", label: "All" },
+            { key: "credit", label: "Credit" },
+            { key: "debit", label: "Debit" },
+            { key: "chat", label: "Chat" },
+            { key: "audio_call", label: "Audio Call" },
+            { key: "video_call", label: "Video Call" },
+          ] as const).map((f) => (
             <Chip
-              key={f}
-              label={f.charAt(0).toUpperCase() + f.slice(1)}
-              selected={filter === f}
-              onPress={() => setFilter(f)}
+              key={f.key}
+              label={f.label}
+              selected={filter === f.key}
+              onPress={() => setFilter(f.key)}
             />
           ))}
         </View>
@@ -1280,9 +1296,7 @@ export function AstrologerWalletScreen({ navigation }: any) {
               >
                 <View style={{ flex: 1 }}>
                   <Text style={[typography.cardTitle, { fontSize: 14 }]}>
-                    {t.category
-                      ?.replace(/_/g, " ")
-                      .replace(/\b\w/g, (c) => c.toUpperCase())}
+                    {transactionLabel(t as any)}
                   </Text>
                   <Text style={typography.caption}>
                     {new Date(t.createdAt).toLocaleDateString()}
@@ -1294,7 +1308,7 @@ export function AstrologerWalletScreen({ navigation }: any) {
                     color: t.type === "credit" ? colors.success : colors.danger,
                   }}
                 >
-                  {t.type === "credit" ? "+" : "-"}₹{t.amount}
+                  {t.type === "credit" ? "+" : "-"}₹{formatAmount(t.amount)}
                 </Text>
               </View>
             </GlassCard>
@@ -1645,7 +1659,7 @@ export function AstrologerWithdrawalScreen() {
               >
                 <View>
                   <Text style={[typography.cardTitle, { fontSize: 15 }]}>
-                    ₹{r.amount}
+                    ₹{formatAmount(r.amount)}
                   </Text>
                   <Text style={typography.caption}>
                     {new Date(r.createdAt).toLocaleDateString()}

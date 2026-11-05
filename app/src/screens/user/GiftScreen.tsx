@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Image, Keyboard, Platform, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
-import { Avatar, CustomModal, EmptyState, GlassCard, GradientButton, ScreenWrapper, colors, radii, resolveMediaUrl, typography } from '../../shared';
+import { Avatar, CustomModal, EmptyState, GlassCard, GradientButton, ScreenWrapper, colors, radii, resolveMediaUrl, typography, formatAmount, sumAmounts } from '../../shared';
 import { api } from '../../shared/api-client';
 import type { Astrologer, Gift, GiftTransaction } from '../../shared/types';
 
@@ -244,10 +244,9 @@ export function GiftScreen({ route, navigation }: any) {
     );
   }
 
-  const totalGiftValue = transactions.reduce((sum, t) => {
-    const gift = gifts.find((g) => g.id === t.giftId);
-    return sum + Number(t.giftPrice || gift?.price || 0);
-  }, 0);
+  const totalGiftValue = sumAmounts(
+    transactions.map((t) => t.giftPrice || gifts.find((g) => g.id === t.giftId)?.price || 0),
+  );
 
   return (
     <ScreenWrapper noPadding>
@@ -273,7 +272,7 @@ export function GiftScreen({ route, navigation }: any) {
                       </View>
                       <View style={{ alignItems: 'flex-end' }}>
                         <Text style={[typography.caption, { color: colors.textMuted }]}>Total Value</Text>
-                        <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>₹{totalGiftValue.toFixed(2)}</Text>
+                        <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>₹{formatAmount(totalGiftValue)}</Text>
                       </View>
                     </View>
                   </GlassCard>

@@ -67,7 +67,6 @@ export function ChatRoomScreen({ route, navigation }: any) {
   const prevMsgCount = useRef(0);
   const insets = useSafeAreaInsets();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [chatPrice, setChatPrice] = useState(5);
   const [audioCallPrice, setAudioCallPrice] = useState(10);
   const [videoCallPrice, setVideoCallPrice] = useState(20);
@@ -130,12 +129,10 @@ export function ChatRoomScreen({ route, navigation }: any) {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
     
-    const showSubscription = Keyboard.addListener(showEvent, (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
+    const showSubscription = Keyboard.addListener(showEvent, () => {
       setKeyboardVisible(true);
     });
     const hideSubscription = Keyboard.addListener(hideEvent, () => {
-      setKeyboardHeight(0);
       setKeyboardVisible(false);
     });
 
@@ -425,7 +422,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
   }, [currentUserId, messages, openAttachment]);
 
   return (
-    <ScreenWrapper noPadding>
+    <ScreenWrapper noPadding edges={keyboardVisible ? ['top'] : ['top', 'bottom']}>
       <View style={{ flex: 1 }}>
         <View style={[styles.sessionBar, { backgroundColor: colors.surfaceLight, borderBottomColor: colors.divider }]}>
           <View style={styles.sessionTimerWrap}>
@@ -480,8 +477,11 @@ export function ChatRoomScreen({ route, navigation }: any) {
               { 
                 borderTopColor: colors.divider, 
                 backgroundColor: colors.background,
-                paddingBottom: keyboardVisible 
-                  ? (Platform.OS === 'android' ? keyboardHeight + insets.bottom + 12 : 10) 
+                paddingBottom: keyboardVisible
+                  // Android resizes the window itself (adjustResize), so the bar is
+                  // already sitting on top of the keyboard. Only iOS needs manual
+                  // spacing because it overlays the window instead of resizing it.
+                  ? (Platform.OS === 'ios' ? 10 : 8)
                   : Math.max(insets.bottom, 20)
               }
             ]}>

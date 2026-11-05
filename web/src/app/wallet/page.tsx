@@ -6,6 +6,7 @@ import { SearchInput } from '@/components/SearchInput';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { Table, GradientButton, CustomModal } from '@/components/UIComponents';
 import { api } from '@/lib/api';
+import { formatAmount, sumAmounts } from '@/lib/utils';
 
 export default function WalletPage() {
   const [data, setData] = useState<any[]>([]);
@@ -61,9 +62,9 @@ export default function WalletPage() {
     }
   };
 
-  const totalBalance = summary ? summary.balance : data.reduce((s: number, w: any) => s + Number(w.balance), 0);
-  const totalAdded = summary ? summary.totalAdded : data.reduce((s: number, w: any) => s + Number(w.totalAdded), 0);
-  const totalDeducted = summary ? summary.totalDeducted : data.reduce((s: number, w: any) => s + Number(w.totalDeducted), 0);
+  const totalBalance = summary ? summary.balance : sumAmounts(data.map((w: any) => w.balance));
+  const totalAdded = summary ? summary.totalAdded : sumAmounts(data.map((w: any) => w.totalAdded));
+  const totalDeducted = summary ? summary.totalDeducted : sumAmounts(data.map((w: any) => w.totalDeducted));
 
   return (
     <AdminLayout>
@@ -95,15 +96,15 @@ export default function WalletPage() {
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-surface-light rounded-2xl p-4 border border-divider">
           <p className="text-text-muted text-sm">Total Balance</p>
-          <p className="text-2xl font-bold text-text-primary">₹{totalBalance.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-text-primary">₹{formatAmount(totalBalance)}</p>
         </div>
         <div className="bg-surface-light rounded-2xl p-4 border border-divider">
           <p className="text-text-muted text-sm">Total Added</p>
-          <p className="text-2xl font-bold text-success">+₹{totalAdded.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-success">+₹{formatAmount(totalAdded)}</p>
         </div>
         <div className="bg-surface-light rounded-2xl p-4 border border-divider">
           <p className="text-text-muted text-sm">Total Deducted</p>
-          <p className="text-2xl font-bold text-danger">-₹{totalDeducted.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-danger">-₹{formatAmount(totalDeducted)}</p>
         </div>
       </div>
 
@@ -112,9 +113,9 @@ export default function WalletPage() {
           <tr key={w.id} className="border-b border-divider hover:bg-surface-light/50">
             <td className="px-4 py-3 text-text-primary font-medium">{w.ownerName}</td>
             <td className="px-4 py-3 text-text-secondary">{w.ownerType}</td>
-            <td className="px-4 py-3 text-text-primary font-medium">₹{w.balance}</td>
-            <td className="px-4 py-3 text-success">+₹{w.totalAdded}</td>
-            <td className="px-4 py-3 text-danger">-₹{w.totalDeducted}</td>
+            <td className="px-4 py-3 text-text-primary font-medium">₹{formatAmount(w.balance)}</td>
+            <td className="px-4 py-3 text-success">+₹{formatAmount(w.totalAdded)}</td>
+            <td className="px-4 py-3 text-danger">-₹{formatAmount(w.totalDeducted)}</td>
           </tr>
         ))}
       </Table>
@@ -135,7 +136,7 @@ export default function WalletPage() {
           {withdrawError && (
             <div className="bg-danger/10 border border-danger/30 text-danger text-sm rounded-lg px-4 py-2">{withdrawError}</div>
           )}
-          <p>Available balance: <span className="font-bold text-text-primary">₹{adminWallet?.balance || '0'}</span></p>
+          <p>Available balance: <span className="font-bold text-text-primary">₹{formatAmount(adminWallet?.balance)}</span></p>
           <div>
             <label className="block text-text-primary text-sm font-medium mb-1">Amount (₹)</label>
             <input type="number" value={withdrawAmount} onChange={e => { setWithdrawAmount(e.target.value); setWithdrawError(''); }}
