@@ -77,9 +77,9 @@ export function PaymentScreen() {
   const route = useRoute<any>();
   const { theme } = useAuth();
   const isDark = theme === 'dark';
-  const titleColor = isDark ? '#F9FAFB' : '#7F1D1D';
+  const titleColor = isDark ? '#F9FAFB' : '#8D0B0C';
   const bodyColor = isDark ? '#E5E7EB' : '#374151';
-  const mutedColor = isDark ? '#9CA3AF' : '#786C6A';
+  const mutedColor = isDark ? '#9CA3AF' : '#8B8B8D';
   const amountColor = isDark ? '#FBBF24' : '#B45309';
   const { razorpayOrderId, key, amount, currency, purpose, paymentOrderId } = route.params || {};
   const processedRef = useRef(false);

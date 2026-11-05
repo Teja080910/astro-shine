@@ -2,15 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
 import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../context/AuthContext';
 import { api } from '../../shared/api-client';
 import { ScreenWrapper, GlassCard, Chip, SkeletonLoader, EmptyState, DatePicker, colors, typography, radii, Navbar } from '../../shared';
 import type { MuhuratItem, MuhuratCategory } from '../../shared/types';
 
 export function MuhuratScreen() {
-  const { theme } = useAuth();
   const isFocused = useIsFocused();
-  const isDark = theme === 'dark';
 
   const [categories, setCategories] = useState<MuhuratCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -131,10 +128,10 @@ export function MuhuratScreen() {
         </View>
 
       {/* Date Filters */}
-      <View style={[styles.filterContainer, { borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }]}>
+      <View style={[styles.filterContainer, { borderColor: colors.cardBorder }]}>
         <View style={styles.datePickerContainer}>
           <Text style={[typography.caption, { color: colors.textMuted, marginBottom: 4 }]}>From</Text>
-          <TouchableOpacity onPress={() => setShowStartPicker(true)} style={[styles.dateButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+          <TouchableOpacity onPress={() => setShowStartPicker(true)} style={[styles.dateButton, { backgroundColor: colors.chipBg }]}>
             <Ionicons name="calendar" size={16} color={colors.primary} style={{ marginRight: 6 }} />
             <Text style={[typography.body, { color: colors.textPrimary }]}>{formatDateString(startDate)}</Text>
           </TouchableOpacity>
@@ -142,7 +139,7 @@ export function MuhuratScreen() {
 
         <View style={styles.datePickerContainer}>
           <Text style={[typography.caption, { color: colors.textMuted, marginBottom: 4 }]}>To</Text>
-          <TouchableOpacity onPress={() => setShowEndPicker(true)} style={[styles.dateButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+          <TouchableOpacity onPress={() => setShowEndPicker(true)} style={[styles.dateButton, { backgroundColor: colors.chipBg }]}>
             <Ionicons name="calendar" size={16} color={colors.primary} style={{ marginRight: 6 }} />
             <Text style={[typography.body, { color: colors.textPrimary }]}>{formatDateString(endDate)}</Text>
           </TouchableOpacity>

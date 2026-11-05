@@ -22,6 +22,25 @@ export class PanchangController {
     return this.service.findAll();
   }
 
+  @Get('festivals')
+  festivals(
+    @Query('startDate') startDate?: string,
+    @Query('days') days?: string,
+    @Query('fastingOnly') fastingOnly?: string,
+    @Query('lat') lat?: string,
+    @Query('lng') lng?: string,
+    @Query('timezone') timezone?: string,
+  ) {
+    return this.service.festivals(
+      startDate || '',
+      Number(days) || 30,
+      fastingOnly === 'true',
+      Number(lat) || 28.6139,
+      Number(lng) || 77.209,
+      Number(timezone) || 5.5,
+    );
+  }
+
   @Post()
   async create(@Body() body: any) {
     return this.service.create(body);

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, Pressable, KeyboardAvoidingView, Platform, StyleSheet, Keyboard, Alert, Linking } from 'react-native';
+import { View, Text, FlatList, TextInput, TouchableOpacity, Pressable, KeyboardAvoidingView, Platform, StyleSheet, Keyboard, Alert, Linking, ActivityIndicator } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
-import { ScreenWrapper, colors, radii, typography, GradientButton, ConfirmDialog, InsufficientBalanceDialog, CustomModal, Chip } from '../../shared';
+import { ScreenWrapper, colors, radii, typography, GradientButton, ConfirmDialog, InsufficientBalanceDialog, CustomModal, Chip, resolveMediaUrl } from '../../shared';
 import { ChatBubble } from '../../shared/components/ChatBubble';
 import { TypingIndicator } from '../../shared/components/TypingIndicator';
 import { Avatar } from '../../shared/components/Avatar';
@@ -11,6 +11,7 @@ import { useCall } from '../../context/CallContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api } from '../../shared/api-client';
+import type { KundliRecord } from '../../shared/types';
 
 function formatDateHeader(dateStr: string): string {
   const d = new Date(dateStr);
@@ -66,7 +67,6 @@ export function ChatRoomScreen({ route, navigation }: any) {
   const prevMsgCount = useRef(0);
   const insets = useSafeAreaInsets();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [chatPrice, setChatPrice] = useState(5);
   const [audioCallPrice, setAudioCallPrice] = useState(10);
   const [videoCallPrice, setVideoCallPrice] = useState(20);
@@ -78,6 +78,9 @@ export function ChatRoomScreen({ route, navigation }: any) {
   const [reportDesc, setReportDesc] = useState('');
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [uploadingKundli, setUploadingKundli] = useState(false);
+  const [attachSheetOpen, setAttachSheetOpen] = useState(false);
+  const [savedKundlis, setSavedKundlis] = useState<KundliRecord[]>([]);
+  const [kundliLoading, setKundliLoading] = useState(false);
 
   const billing = chatBilling[conversationId];
   const kundliRequiredMessage = kundliRequiredMessages[conversationId];
@@ -126,12 +129,10 @@ export function ChatRoomScreen({ route, navigation }: any) {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
     
-    const showSubscription = Keyboard.addListener(showEvent, (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
+    const showSubscription = Keyboard.addListener(showEvent, () => {
       setKeyboardVisible(true);
     });
     const hideSubscription = Keyboard.addListener(hideEvent, () => {
-      setKeyboardHeight(0);
       setKeyboardVisible(false);
     });
 
@@ -264,8 +265,49 @@ export function ChatRoomScreen({ route, navigation }: any) {
     stopTyping(conversationId);
   }, [input, conversationId]);
 
+  const loadSavedKundlis = useCallback(async () => {
+    if (!currentUserId) return;
+    setKundliLoading(true);
+    try {
+      const records = await api.kundli.byUser(currentUserId);
+      setSavedKundlis(Array.isArray(records) ? records : []);
+    } catch {
+      setSavedKundlis([]);
+    } finally {
+      setKundliLoading(false);
+    }
+  }, [currentUserId]);
+
   const handleAttachKundli = useCallback(async () => {
     if (uploadingKundli || !isUser) return;
+    setAttachSheetOpen(true);
+    loadSavedKundlis();
+  }, [uploadingKundli, isUser, loadSavedKundlis]);
+
+  const handleSendSavedKundli = useCallback(async (record: KundliRecord) => {
+    if (!record || uploadingKundli) return;
+    setUploadingKundli(true);
+    try {
+      // A saved Kundli is computed data, not a file, so share the birth details
+      // the astrologer needs as a normal message they can read immediately.
+      const lines = [
+        `Kundli – ${record.name || 'Birth chart'}`,
+        record.dateOfBirth ? `DOB: ${record.dateOfBirth}` : null,
+        record.timeOfBirth ? `Time: ${record.timeOfBirth}` : null,
+        record.placeOfBirth ? `Place: ${record.placeOfBirth}` : null,
+      ].filter(Boolean);
+      await sendMessage(conversationId, lines.join('\n'), 'text');
+      setAttachSheetOpen(false);
+    } catch (e: any) {
+      Alert.alert('Could not share Kundli', e?.response?.data?.message || e?.message || 'Please try again.');
+    } finally {
+      setUploadingKundli(false);
+    }
+  }, [uploadingKundli, conversationId, sendMessage]);
+
+  const handleUploadKundliFile = useCallback(async () => {
+    if (uploadingKundli) return;
+    setAttachSheetOpen(false);
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: ['application/pdf', 'image/*'],
@@ -300,7 +342,15 @@ export function ChatRoomScreen({ route, navigation }: any) {
     } finally {
       setUploadingKundli(false);
     }
-  }, [uploadingKundli, isUser, conversationId, sendMessage]);
+  }, [uploadingKundli, conversationId, sendMessage]);
+
+  const openAttachment = useCallback((url?: string) => {
+    const resolved = resolveMediaUrl(url);
+    if (!resolved) return;
+    Linking.openURL(resolved).catch(() => {
+      Alert.alert('Cannot open', 'This attachment could not be opened on your device.');
+    });
+  }, []);
 
   const handleChangeText = useCallback((text: string) => {
     setInput(text);
@@ -337,7 +387,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
           <View style={[styles.fileRow, { justifyContent: isOwn ? 'flex-end' : 'flex-start' }]}>
             <TouchableOpacity
               activeOpacity={0.8}
-              onPress={() => Linking.openURL(item.mediaUrl)}
+              onPress={() => openAttachment(item.mediaUrl)}
               style={[
                 styles.fileCard,
                 {
@@ -369,10 +419,10 @@ export function ChatRoomScreen({ route, navigation }: any) {
         )}
       </View>
     );
-  }, [currentUserId, messages]);
+  }, [currentUserId, messages, openAttachment]);
 
   return (
-    <ScreenWrapper noPadding>
+    <ScreenWrapper noPadding edges={keyboardVisible ? ['top'] : ['top', 'bottom']}>
       <View style={{ flex: 1 }}>
         <View style={[styles.sessionBar, { backgroundColor: colors.surfaceLight, borderBottomColor: colors.divider }]}>
           <View style={styles.sessionTimerWrap}>
@@ -427,8 +477,11 @@ export function ChatRoomScreen({ route, navigation }: any) {
               { 
                 borderTopColor: colors.divider, 
                 backgroundColor: colors.background,
-                paddingBottom: keyboardVisible 
-                  ? (Platform.OS === 'android' ? keyboardHeight + insets.bottom + 12 : 10) 
+                paddingBottom: keyboardVisible
+                  // Android resizes the window itself (adjustResize), so the bar is
+                  // already sitting on top of the keyboard. Only iOS needs manual
+                  // spacing because it overlays the window instead of resizing it.
+                  ? (Platform.OS === 'ios' ? 10 : 8)
                   : Math.max(insets.bottom, 20)
               }
             ]}>
@@ -466,6 +519,84 @@ export function ChatRoomScreen({ route, navigation }: any) {
           </KeyboardAvoidingView>
         )}
       </View>
+      <CustomModal
+        visible={attachSheetOpen}
+        onClose={() => setAttachSheetOpen(false)}
+        title="Attach Kundli"
+      >
+        <View style={{ paddingHorizontal: 20, paddingBottom: 20 }}>
+          <Text style={[typography.caption, { color: colors.textMuted, marginBottom: 12 }]}>
+            Share your birth chart so the astrologer can read it during this chat.
+          </Text>
+
+          <TouchableOpacity
+            disabled={uploadingKundli}
+            onPress={handleUploadKundliFile}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 12,
+              padding: 14,
+              borderRadius: radii.card,
+              borderWidth: 1,
+              borderColor: colors.cardBorder,
+              backgroundColor: colors.surfaceLight,
+              marginBottom: 10,
+            }}
+          >
+            <Ionicons name="cloud-upload-outline" size={22} color={colors.primary} />
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.cardTitle, { color: colors.textPrimary }]}>Upload a file</Text>
+              <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]}>PDF or image, up to 20 MB</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+
+          <Text style={[typography.caption, { color: colors.textMuted, marginVertical: 8, fontWeight: '700' }]}>
+            OR ATTACH A SAVED KUNDLI
+          </Text>
+
+          {kundliLoading ? (
+            <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+              <ActivityIndicator size="small" color={colors.primary} />
+            </View>
+          ) : savedKundlis.length === 0 ? (
+            <Text style={[typography.caption, { color: colors.textMuted, paddingVertical: 12 }]}>
+              You have not generated a Kundli yet. Create one from the Kundli section, or upload a file above.
+            </Text>
+          ) : (
+            savedKundlis.map((record) => (
+              <TouchableOpacity
+                key={record.id}
+                disabled={uploadingKundli}
+                onPress={() => handleSendSavedKundli(record)}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: 14,
+                  borderRadius: radii.card,
+                  borderWidth: 1,
+                  borderColor: colors.cardBorder,
+                  backgroundColor: colors.surface,
+                  marginBottom: 8,
+                }}
+              >
+                <Ionicons name="grid-outline" size={22} color={colors.accentGold} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.cardTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+                    {record.name || 'Birth chart'}
+                  </Text>
+                  <Text style={[typography.caption, { color: colors.textMuted, marginTop: 2 }]} numberOfLines={1}>
+                    {[record.dateOfBirth, record.timeOfBirth, record.placeOfBirth].filter(Boolean).join(' · ') || 'Birth details on file'}
+                  </Text>
+                </View>
+                <Ionicons name="send" size={16} color={colors.primary} />
+              </TouchableOpacity>
+            ))
+          )}
+        </View>
+      </CustomModal>
       <ConfirmDialog
         visible={!!chatBlockedMessage}
         title="Chat Blocked"

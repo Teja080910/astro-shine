@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl, KeyboardAvoidingView, Platform, Keyboard, Dimensions, Image } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, ScrollView, StyleSheet, Modal, Alert, RefreshControl, KeyboardAvoidingView, Platform, Keyboard, Dimensions, Image, ActivityIndicator } from 'react-native';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import { ScreenWrapper, GlassCard, SectionHeader, GradientButton, EmptyState, Chip, Toggle, TimePicker, DatePicker, CustomModal, colors, typography, radii, shadows, Navbar, resolveMediaUrl } from '../../shared';
 import { api } from '../../shared/api-client';
@@ -47,7 +47,7 @@ export function HoroscopeScreen({ navigation }: any) {
     <ScreenWrapper scroll noPadding>
       <Navbar title="Horoscope" navigation={navigation} />
       <View style={{ padding: 16 }}>
-        <Text style={[typography.sectionTitle, { color: colors.accentGold, fontSize: 24 }]}>
+        <Text style={[typography.sectionTitle, { color: colors.heading, fontSize: 24 }]}>
           Horoscope
         </Text>
         <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4, marginBottom: 16 }]}>
@@ -289,7 +289,7 @@ export function PanchangScreen() {
   return (
     <ScreenWrapper scroll>
       <View style={{ paddingBottom: 100 }}>
-        <Text style={[typography.sectionTitle, { color: colors.accentGold, fontSize: 24 }]}>Panchang</Text>
+        <Text style={[typography.sectionTitle, { color: colors.heading, fontSize: 24 }]}>Panchang</Text>
         {data ? (
           <>
             <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 4, marginBottom: 16 }]}>
@@ -567,19 +567,31 @@ export function NotificationsScreen({ route }: any) {
   const navigation = useNavigation<any>();
   const isFocused = useIsFocused();
   const { user, astrologer, role } = useAuth();
-  const { notificationVersion } = useChat();
+  const { notificationVersion, markAllNotificationsRead, refreshNotificationUnreadCount } = useChat();
   const [notifs, setNotifs] = useState<Notification[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [markingAll, setMarkingAll] = useState(false);
+
+  const notificationFilter = useCallback(() => {
+    const explicitUser = route?.params?.userId;
+    if (explicitUser) return { userId: explicitUser };
+    if (role === 'astrologer') {
+      const astrologerId = astrologer?.userId;
+      return astrologerId ? { astrologerId } : undefined;
+    }
+    const userId = user?.id;
+    return userId ? { userId } : undefined;
+  }, [route?.params?.userId, role, astrologer?.userId, user?.id]);
 
   const loadNotifs = useCallback(async () => {
-    const uid = route?.params?.userId || user?.id || astrologer?.userId;
-    if (uid) {
+    const filter = notificationFilter();
+    if (filter) {
       try {
-        const data = await api.notifications.list({ userId: uid });
+        const data = await api.notifications.list(filter);
         setNotifs(data);
       } catch {}
     }
-  }, [route?.params?.userId, user?.id, astrologer?.userId]);
+  }, [notificationFilter]);
 
   useEffect(() => {
     if (isFocused) {
@@ -594,7 +606,21 @@ export function NotificationsScreen({ route }: any) {
   };
 
   const markRead = async (id: string) => {
-    try { await api.notifications.markRead(id); setNotifs(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n)); } catch {}
+    try {
+      await api.notifications.markRead(id);
+      setNotifs(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+      refreshNotificationUnreadCount();
+    } catch {}
+  };
+
+  const handleMarkAllRead = async () => {
+    setMarkingAll(true);
+    setNotifs(prev => prev.map(n => ({ ...n, isRead: true })));
+    try {
+      await markAllNotificationsRead();
+    } finally {
+      setMarkingAll(false);
+    }
   };
 
   const handlePress = (n: Notification) => {
@@ -603,19 +629,37 @@ export function NotificationsScreen({ route }: any) {
     if (target) navigation.navigate(target.screen, target.params);
   };
 
+  const unread = notifs.filter(n => !n.isRead).length;
+
   return (
     <ScreenWrapper>
       <ScrollView
         contentContainerStyle={{ padding: 16 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accentGold} />}
       >
+        {notifs.length > 0 && unread > 0 && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <Text style={[typography.caption, { color: colors.textMuted }]}>
+              {unread} unread
+            </Text>
+            <TouchableOpacity onPress={handleMarkAllRead} disabled={markingAll}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primaryLight }}>
+                {markingAll ? 'Marking...' : 'Mark all as read'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
         {notifs.length === 0 ? (
           <EmptyState icon={<Ionicons name="notifications-outline" size={48} color={colors.textMuted} />} title="No notifications" subtitle="You're all caught up!" />
         ) : (
           notifs.map(n => {
-            const isOrder = (n.data as any)?.screen === 'OrderHistory';
+            const data = (n.data as any) || {};
+            const isOrder = data.screen === 'OrderHistory';
+            const isTicket = data.screen === 'TicketDetail' || data.screen === 'AdminTicketDetail';
             const iconName = isOrder
               ? 'cube-outline'
+              : isTicket
+              ? 'help-buoy-outline'
               : n.type === 'system'
               ? 'settings-outline'
               : n.type === 'promotional'
@@ -1321,33 +1365,57 @@ export function ReportScreen({ route, navigation }: any) {
   );
 }
 
-const REPORT_FINAL_STATUSES = ['reviewed', 'resolved', 'closed', 'dismissed', 'approved'];
-const REPORT_REVIEW_STATUSES = ['in_review', 'under_review', 'processing'];
+/** Reports only ever move between these states; the API stores them as free text. */
+const REPORT_STATUS_META: Record<string, { label: string; color: string; backgroundColor: string }> = {
+  pending: { label: 'Pending', color: colors.warning, backgroundColor: 'rgba(245,158,11,0.15)' },
+  in_review: { label: 'In Review', color: colors.accentGold, backgroundColor: 'rgba(245,158,11,0.15)' },
+  under_review: { label: 'In Review', color: colors.accentGold, backgroundColor: 'rgba(245,158,11,0.15)' },
+  processing: { label: 'In Review', color: colors.accentGold, backgroundColor: 'rgba(245,158,11,0.15)' },
+  reviewed: { label: 'Reviewed', color: colors.success, backgroundColor: 'rgba(16,185,129,0.15)' },
+  approved: { label: 'Reviewed', color: colors.success, backgroundColor: 'rgba(16,185,129,0.15)' },
+  resolved: { label: 'Resolved', color: colors.success, backgroundColor: 'rgba(16,185,129,0.15)' },
+  closed: { label: 'Closed', color: colors.success, backgroundColor: 'rgba(16,185,129,0.15)' },
+  dismissed: { label: 'Dismissed', color: colors.danger, backgroundColor: 'rgba(194,20,21,0.12)' },
+  rejected: { label: 'Dismissed', color: colors.danger, backgroundColor: 'rgba(194,20,21,0.12)' },
+};
 
-function reportStatusMeta(status?: string) {
-  const key = String(status || 'pending').toLowerCase().trim();
-  if (REPORT_FINAL_STATUSES.includes(key)) {
-    return {
-      label: key === 'dismissed' ? 'Dismissed' : 'Reviewed',
-      color: colors.success,
-      backgroundColor: 'rgba(16,185,129,0.15)',
-    };
+const REPORT_STATUS_HINT: Record<string, string> = {
+  pending: 'Our team has received your report and will review it shortly.',
+  in_review: 'Our team is currently reviewing this report.',
+  reviewed: 'This report has been reviewed by our team.',
+  resolved: 'This report has been resolved by our team.',
+  closed: 'This case has been closed by our team.',
+  dismissed: 'After review, no action was taken on this report.',
+};
+
+function reportStatusHint(status?: string, resolvedAt?: string | null) {
+  const key = String(status ?? '').toLowerCase().trim();
+  if (!key) return resolvedAt ? REPORT_STATUS_HINT.reviewed : REPORT_STATUS_HINT.pending;
+  if (key === 'pending' && resolvedAt) return REPORT_STATUS_HINT.reviewed;
+  return REPORT_STATUS_HINT[key] || '';
+}
+
+function reportStatusMeta(status?: string, resolvedAt?: string | null) {
+  const key = String(status ?? '').toLowerCase().trim();
+  if (!key) {
+    return resolvedAt
+      ? REPORT_STATUS_META.reviewed
+      : { label: 'Pending', color: colors.warning, backgroundColor: 'rgba(245,158,11,0.15)' };
   }
-  if (REPORT_REVIEW_STATUSES.includes(key)) {
-    return {
-      label: 'In Review',
-      color: colors.accentGold,
-      backgroundColor: 'rgba(245,158,11,0.15)',
-    };
-  }
+  const known = REPORT_STATUS_META[key];
+  // A report the admin already acted on must never read "Pending", even when the
+  // stored status still says so (legacy rows where only resolved_at was written).
+  if (known && key === 'pending' && resolvedAt) return REPORT_STATUS_META.reviewed;
+  if (known) return known;
+  // Never invent a status: show whatever the backend actually returned.
   return {
-    label: 'Pending',
-    color: colors.warning,
-    backgroundColor: 'rgba(245,158,11,0.15)',
+    label: key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+    color: colors.textMuted,
+    backgroundColor: 'rgba(139,139,141,0.15)',
   };
 }
 
-function ReportsStatusScreen({ mode }: any) {
+function ReportsStatusScreen() {
   const isFocused = useIsFocused();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1357,7 +1425,7 @@ function ReportsStatusScreen({ mode }: any) {
     if (!isFocused) return;
     let cancelled = false;
     setLoading(true);
-    (mode === 'received' ? api.reports.received() : api.reports.my())
+    api.reports.my()
       .then((r) => {
         if (!cancelled) setReports(r);
       })
@@ -1368,22 +1436,26 @@ function ReportsStatusScreen({ mode }: any) {
     return () => {
       cancelled = true;
     };
-  }, [mode, isFocused]);
+  }, [isFocused]);
 
   return (
     <ScreenWrapper scroll noPadding>
       <View style={{ padding: 16, paddingBottom: 100 }}>
+        <Text style={[typography.pageTitle, { color: colors.heading, marginBottom: 4 }]}>Reports by Me</Text>
+        <Text style={[typography.caption, { color: colors.textMuted, marginBottom: 14 }]}>
+          Reports you have filed, and what action was taken on each.
+        </Text>
         {loading ? (
           <GlassCard><Text style={typography.body}>Loading...</Text></GlassCard>
         ) : reports.length === 0 ? (
           <EmptyState
             icon={<Ionicons name="shield-checkmark-outline" size={48} color={colors.textMuted} />}
             title="No reports"
-            subtitle={mode === 'received' ? 'No reports have been filed against you.' : 'You have not filed any reports yet.'}
+            subtitle="You have not filed any reports yet."
           />
         ) : (
           reports.map((r) => {
-            const meta = reportStatusMeta(r.status);
+            const meta = reportStatusMeta(r.status, r.resolvedAt);
             return (
               <TouchableOpacity key={r.id} activeOpacity={0.8} onPress={() => setSelectedReport(r)}>
                 <GlassCard style={{ padding: 14, marginBottom: 10 }}>
@@ -1438,20 +1510,38 @@ function ReportsStatusScreen({ mode }: any) {
                   paddingHorizontal: 10,
                   paddingVertical: 4,
                   borderRadius: 12,
-                  backgroundColor: reportStatusMeta(selectedReport.status).backgroundColor,
+                  backgroundColor: reportStatusMeta(selectedReport.status, selectedReport.resolvedAt).backgroundColor,
                 }}
               >
                 <Text
                   style={{
                     fontSize: 11,
                     fontWeight: '700',
-                    color: reportStatusMeta(selectedReport.status).color,
+                    color: reportStatusMeta(selectedReport.status, selectedReport.resolvedAt).color,
                   }}
                 >
-                  {reportStatusMeta(selectedReport.status).label}
+                  {reportStatusMeta(selectedReport.status, selectedReport.resolvedAt).label}
                 </Text>
               </View>
             </View>
+            {reportStatusHint(selectedReport.status, selectedReport.resolvedAt) ? (
+              <View
+                style={{
+                  padding: 10,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: colors.cardBorder,
+                  backgroundColor: colors.surfaceLight,
+                }}
+              >
+                <Text style={[typography.caption, { color: colors.textMuted, fontWeight: '700', marginBottom: 2 }]}>
+                  ACTION TAKEN
+                </Text>
+                <Text style={[typography.body, { color: colors.textSecondary }]}>
+                  {reportStatusHint(selectedReport.status, selectedReport.resolvedAt)}
+                </Text>
+              </View>
+            ) : null}
             <Text style={[typography.body, { color: colors.textSecondary }]}>
               {selectedReport.description || 'No additional details were provided.'}
             </Text>
@@ -1469,12 +1559,8 @@ function ReportsStatusScreen({ mode }: any) {
   );
 }
 
-export function MyReportsScreen(props: any) {
-  return <ReportsStatusScreen {...props} mode="mine" />;
-}
-
-export function AstrologerReportsScreen(props: any) {
-  return <ReportsStatusScreen {...props} mode="received" />;
+export function MyReportsScreen() {
+  return <ReportsStatusScreen />;
 }
 
 // Mandir Pooja
@@ -1533,7 +1619,7 @@ export function MandirPoojaScreen({ route, navigation }: any) {
         icon: 'time' as const,
         color: '#F59E0B',
         bg: isDark ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7',
-        border: isDark ? 'rgba(245, 158, 11, 0.3)' : '#FDE68A',
+        border: isDark ? 'rgba(245, 158, 11, 0.3)' : '#F6EDC4',
         desc: 'Puja is confirmed. Priests will perform the rituals on the scheduled date.',
       };
     }
@@ -1541,7 +1627,7 @@ export function MandirPoojaScreen({ route, navigation }: any) {
       return {
         label: 'Cancelled',
         icon: 'close-circle' as const,
-        color: '#EF4444',
+        color: '#C21415',
         bg: isDark ? 'rgba(239, 68, 68, 0.15)' : '#FEE2E2',
         border: isDark ? 'rgba(239, 68, 68, 0.3)' : '#FECACA',
         desc: 'This puja booking has been cancelled.',
@@ -1550,7 +1636,7 @@ export function MandirPoojaScreen({ route, navigation }: any) {
     return {
       label: 'Pending',
       icon: 'hourglass-outline' as const,
-      color: isDark ? '#9CA3AF' : '#6B7280',
+      color: isDark ? '#9CA3AF' : '#8B8B8D',
       bg: isDark ? 'rgba(255, 255, 255, 0.08)' : '#F3F4F6',
       border: isDark ? 'rgba(255, 255, 255, 0.15)' : '#E5E7EB',
       desc: 'Awaiting confirmation from temple management.',
@@ -2150,35 +2236,83 @@ export function AstrologerRequestsScreen() {
 export function AstrologerScheduleScreen() {
   const { astrologer } = useAuth();
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const DEFAULT_SLOT = { startTime: '09:00', endTime: '18:00', isAvailable: true };
   const defaultSchedules = () => {
     const map: Record<number, { startTime: string; endTime: string; isAvailable: boolean }> = {};
     for (let i = 0; i < 7; i++) {
-      map[i] = { startTime: '09:00', endTime: '18:00', isAvailable: true };
+      map[i] = { ...DEFAULT_SLOT };
     }
     return map;
   };
   const [schedules, setSchedules] = useState<Record<number, { startTime: string; endTime: string; isAvailable: boolean }>>(defaultSchedules);
   const [loading, setLoading] = useState(false);
+  const [savedSnapshot, setSavedSnapshot] = useState<string>('');
+  const [loadingSaved, setLoadingSaved] = useState(true);
 
-  useEffect(() => {
-    if (!astrologer?.userId) return;
-    api.schedule.byAstrologer(astrologer.userId).then((data: any[]) => {
-      const map = defaultSchedules();
-      data.forEach(s => { map[s.dayOfWeek] = { startTime: s.startTime.slice(0, 5), endTime: s.endTime.slice(0, 5), isAvailable: s.isAvailable }; });
-      setSchedules(map);
-    }).catch(() => {});
-  }, [astrologer?.userId]);
-
-  const updateDay = (day: number, field: string, value: string | boolean) => {
-    setSchedules(prev => ({ ...prev, [day]: { ...prev[day] || { startTime: '09:00', endTime: '18:00', isAvailable: true }, [field]: value } }));
+  /** Postgres `time` comes back as "HH:MM:SS"; the picker only understands "HH:MM". */
+  const toPickerTime = (value?: string | null, fallback = '09:00') => {
+    if (!value) return fallback;
+    const match = /^(\d{2}):(\d{2})/.exec(String(value));
+    return match ? `${match[1]}:${match[2]}` : fallback;
   };
 
+  const serialize = (map: Record<number, { startTime: string; endTime: string; isAvailable: boolean }>) =>
+    Array.from({ length: 7 }, (_, day) => {
+      const s = map[day] || DEFAULT_SLOT;
+      return `${day}|${s.startTime}|${s.endTime}|${s.isAvailable ? 1 : 0}`;
+    }).join(';');
+
+  const loadSchedule = useCallback(async () => {
+    if (!astrologer?.userId) {
+      setLoadingSaved(false);
+      return;
+    }
+    setLoadingSaved(true);
+    try {
+      const data: any[] = (await api.schedule.byAstrologer(astrologer.userId)) || [];
+      const map = defaultSchedules();
+      data.forEach((s) => {
+        const day = Number(s.dayOfWeek);
+        if (!Number.isInteger(day) || day < 0 || day > 6) return;
+        map[day] = {
+          startTime: toPickerTime(s.startTime, DEFAULT_SLOT.startTime),
+          endTime: toPickerTime(s.endTime, DEFAULT_SLOT.endTime),
+          isAvailable: s.isAvailable !== false,
+        };
+      });
+      setSchedules(map);
+      setSavedSnapshot(serialize(map));
+    } catch {
+      // Keep the sensible defaults so the astrologer can still fill the week in.
+      setSavedSnapshot('');
+    } finally {
+      setLoadingSaved(false);
+    }
+  }, [astrologer?.userId]);
+
+  useEffect(() => {
+    loadSchedule();
+  }, [loadSchedule]);
+
+  const updateDay = (day: number, field: string, value: string | boolean) => {
+    setSchedules(prev => ({ ...prev, [day]: { ...prev[day] || { ...DEFAULT_SLOT }, [field]: value } }));
+  };
+
+  const isDirty = serialize(schedules) !== savedSnapshot;
+
+  /** Toggling a day off should keep its last times, not silently drop the row. */
   const saveAll = async () => {
     if (!astrologer?.userId) return;
     for (let day = 0; day < 7; day++) {
       const slot = schedules[day];
-      if (!slot?.isAvailable) continue;
-      if (!slot.startTime || !slot.endTime || slot.startTime >= slot.endTime) {
+      if (!slot) continue;
+      // Only validate days that are actually offered.
+      if (!slot.isAvailable) continue;
+      if (!slot.startTime || !slot.endTime) {
+        Alert.alert('Invalid Schedule', `${days[day]} needs both a start and an end time.`);
+        return;
+      }
+      if (slot.startTime >= slot.endTime) {
         Alert.alert('Invalid Schedule', `${days[day]} start time must be before end time.`);
         return;
       }
@@ -2186,17 +2320,31 @@ export function AstrologerScheduleScreen() {
     setLoading(true);
     try {
       // Always submit all seven days so untouched days are persisted with
-      // their defaults instead of being silently skipped.
+      // their defaults instead of being silently skipped. A day that is turned
+      // off keeps a valid placeholder range so it never blocks the save.
       const bulk = Array.from({ length: 7 }, (_, day) => {
-        const s = schedules[day] || { startTime: '09:00', endTime: '18:00', isAvailable: true };
+        const s = schedules[day] || DEFAULT_SLOT;
+        const validRange = !!s.startTime && !!s.endTime && s.startTime < s.endTime;
         return {
-          dayOfWeek: day, startTime: s.startTime, endTime: s.endTime, isAvailable: s.isAvailable,
+          dayOfWeek: day,
+          startTime: validRange ? s.startTime : DEFAULT_SLOT.startTime,
+          endTime: validRange ? s.endTime : DEFAULT_SLOT.endTime,
+          isAvailable: s.isAvailable,
         };
       });
       await api.schedule.bulkUpsert(astrologer.userId, bulk);
+      setSavedSnapshot(serialize(schedules));
       Alert.alert('Saved', 'Schedule updated successfully');
-    } catch { Alert.alert('Error', 'Failed to save schedule'); }
-    finally { setLoading(false); }
+    } catch (e: any) {
+      Alert.alert(
+        'Error',
+        e?.response?.data?.message || 'Failed to save schedule. Please try again.',
+      );
+      // Re-read so the screen reflects whatever actually persisted.
+      loadSchedule();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -2204,6 +2352,13 @@ export function AstrologerScheduleScreen() {
       <View style={{ width: '100%', maxWidth: 600, alignSelf: 'center', padding: 16 }}>
         <SectionTitle title="Availability Schedule" />
         <Text style={[typography.body, { marginBottom: 16, paddingHorizontal: 4 }]}>Set your weekly availability for consultations</Text>
+        {loadingSaved ? (
+          <GlassCard style={{ padding: 20, alignItems: 'center' }}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={[typography.caption, { color: colors.textMuted, marginTop: 8 }]}>Loading your schedule…</Text>
+          </GlassCard>
+        ) : (
+          <>
         {days.map((d, i) => {
           const s = schedules[i];
           const isAvail = s?.isAvailable ?? true;
@@ -2244,7 +2399,19 @@ export function AstrologerScheduleScreen() {
             </GlassCard>
           );
         })}
-        <GradientButton title={loading ? 'Saving...' : 'Save Schedule'} onPress={saveAll} disabled={loading} style={{ marginTop: 16 }} />
+        <GradientButton
+          title={loading ? 'Saving...' : isDirty ? 'Save Schedule' : 'Saved'}
+          onPress={saveAll}
+          disabled={loading || !isDirty}
+          style={{ marginTop: 16 }}
+        />
+        {isDirty && !loading && (
+          <Text style={[typography.caption, { color: colors.textMuted, textAlign: 'center', marginTop: 8 }]}>
+            You have unsaved changes.
+          </Text>
+        )}
+          </>
+        )}
       </View>
     </ScreenWrapper>
   );
@@ -2298,7 +2465,7 @@ export function AstrologerDocumentsScreen() {
     updateUser({ ...astrologer!, verificationDoc: newDocs });
   };
 
-  const statusBadge = { pending: { color: '#F59E0B', label: 'Pending Review' }, approved: { color: '#22C55E', label: 'Approved' }, rejected: { color: '#EF4444', label: 'Rejected' } } as const;
+  const statusBadge = { pending: { color: '#F59E0B', label: 'Pending Review' }, approved: { color: '#22C55E', label: 'Approved' }, rejected: { color: '#C21415', label: 'Rejected' } } as const;
   const badge = statusBadge[status as keyof typeof statusBadge] || statusBadge.pending;
 
   return (

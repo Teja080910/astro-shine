@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Image, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
-import { Avatar, Chip, ConfirmDialog, EmptyState, GlassCard, GradientButton, ScreenWrapper, colors, radii, typography } from '../../shared';
+import { Avatar, Chip, ConfirmDialog, EmptyState, GlassCard, GradientButton, ScreenWrapper, colors, radii, typography, formatAmount, sumAmounts } from '../../shared';
 import { api } from '../../shared/api-client';
 import type { Gift, GiftTransaction } from '../../shared/types';
 
@@ -45,10 +45,9 @@ export function AstrologerGiftScreen() {
   };
 
   const pendingCount = transactions.filter(t => !t.isRedeemed).length;
-  const totalValue = transactions.reduce((sum, t) => {
-    const gift = gifts.find(g => g.id === t.giftId);
-    return sum + (gift ? Number(gift.price) : 0);
-  }, 0);
+  const totalValue = sumAmounts(
+    transactions.map((t) => gifts.find((g) => g.id === t.giftId)?.price ?? 0),
+  );
 
   if (loading) return (
     <ScreenWrapper scroll>
@@ -96,7 +95,7 @@ export function AstrologerGiftScreen() {
                   adjustsFontSizeToFit
                   minimumFontScale={0.6}
                 >
-                  ₹{totalValue}
+                  ₹{formatAmount(totalValue)}
                 </Text>
                 <Text style={typography.caption}>Total Value</Text>
               </GlassCard>

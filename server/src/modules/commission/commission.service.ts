@@ -110,7 +110,14 @@ export class CommissionService {
     };
   }
 
-  async distributeEarnings(astrologerId: string, callId: string, totalCost: number): Promise<void> {
+  async distributeEarnings(
+    astrologerId: string,
+    callId: string,
+    totalCost: number,
+    // Which service produced this earning. Used to label the wallet row
+    // ("Chat consultation" instead of a bare "Commission").
+    source: 'audio' | 'video' | 'chat' = 'audio',
+  ): Promise<void> {
     const commission = await this.findByAstrologerId(astrologerId);
     const percentage = commission && commission.isActive ? parseFloat(commission.value) : 10;
     const effectivePercentage = Math.max(0, Math.min(100, percentage));
@@ -160,8 +167,14 @@ export class CommissionService {
         fee: '0',
         netAmount: amountStr,
         status: 'success',
-        description: `Earnings from call ${callId}`,
+        description: `Earnings from ${source === 'video' ? 'video call' : 'audio call'} ${callId}`,
         referenceId: callId,
+        metadata: {
+          serviceType: source === 'video' ? 'video_call' : 'audio_call',
+          callId,
+          grossAmount: totalCost.toFixed(2),
+          platformFee: platformFee.toFixed(2),
+        } as any,
       }).returning();
 
       await tx.insert(schema.commissionLogs).values({
@@ -217,7 +230,11 @@ export class CommissionService {
           fee: '0',
           netAmount: feeStr,
           status: 'success',
-          description: `Platform fee from call ${callId}`,
+          description: `Platform fee from ${source === 'video' ? 'video call' : 'audio call'} ${callId}`,
+          metadata: {
+            serviceType: source === 'video' ? 'video_call' : 'audio_call',
+            callId,
+          } as any,
           referenceId: callId,
         });
       }
@@ -293,6 +310,12 @@ export class CommissionService {
         status: 'success',
         description: `Earnings from chat in conversation ${conversationId}`,
         referenceId: messageId,
+        metadata: {
+          serviceType: 'chat',
+          conversationId,
+          grossAmount: chargeAmount.toFixed(2),
+          platformFee: platformFee.toFixed(2),
+        } as any,
       }).returning();
 
       // Insert commission_log for audit trail

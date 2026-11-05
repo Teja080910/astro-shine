@@ -1,0 +1,2464 @@
+<!doctype html>
+<html lang="en" data-mode="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Astro Shine — user screen fixes: before / after</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  /* ─────────────────────────────────────────────────────────────
+     Mode palettes.
+     b-* = how the old hardcoded values rendered
+     a-* = how the shared theme tokens render now
+     ───────────────────────────────────────────────────────────── */
+  :root[data-mode="light"] {
+    --page-bg: #f3efe4;
+    --page-fg: #2a2118;
+    --page-muted: #7a6d5c;
+    --page-card: #fffdf7;
+    --page-line: #e6dcc6;
+    --page-chip: #fef8ea;
+
+    /* BEFORE */
+    --b-app-bg: #FEFDF9;
+    --b-card: #FFFCF5;
+    --b-card-alt: #FEF8EA;
+    --b-border: #F6EDC4;
+    --b-row-border: #F3F4F6;
+    --b-heading: #8D0B0C;
+    --b-strong: #8D0B0C;
+    --b-body: #1F2937;
+    --b-muted: #8B8B8D;
+    --b-accent: #EE7B10;
+    --b-icon-bg: #FEF3C7;
+    --b-chip-bg: #E2E8F0;
+    --b-chip-border: rgba(0,0,0,0.10);
+    --b-chip-label: #45484F;
+    --b-chip-sel-label: #F59E0B;
+    --b-chip-weight: 500;
+    --b-tab-bg: #FFFCF5;
+    --b-tab-border: #F6EDC4;
+    --b-tab-active: #EE7B10;
+    --b-tab-inactive: #8B8B8D;
+    --b-switch-on: #8D0B0C;
+    --b-switch-off: #D1D5DB;
+    --b-field-bg: rgba(0,0,0,0.03);
+    --b-nav-title: #8D0B0C;
+    --b-hero-heading: #F59E0B;
+
+    /* AFTER */
+    --a-app-bg: #FEFDF9;
+    --a-card: #FFFCF5;
+    --a-card-alt: #FEF8EA;
+    --a-border: #F6EDC4;
+    --a-row-border: #F3EAD6;
+    --a-heading: #8D0B0C;
+    --a-strong: #1F2937;
+    --a-body: #45484F;
+    --a-muted: #8B8B8D;
+    --a-accent: #EE7B10;
+    --a-icon-bg: #FEF3C7;
+    --a-chip-bg: #FEF8EA;
+    --a-chip-border: #F2DFAE;
+    --a-chip-label: #45484F;
+    --a-chip-sel-label: #F59E0B;
+    --a-chip-weight: 700;
+    --a-tab-bg: #FFFCF5;
+    --a-tab-border: #F6EDC4;
+    --a-tab-active: #EE7B10;
+    --a-tab-inactive: #8B8B8D;
+    --a-switch-on: #EE7B10;
+    --a-switch-off: #D1D5DB;
+    --a-field-bg: #FEF8EA;
+    --a-nav-title: #8D0B0C;
+    --a-hero-heading: #8D0B0C;
+  }
+
+  :root[data-mode="dark"] {
+    --page-bg: #0b0b10;
+    --page-fg: #f1ebe0;
+    --page-muted: #a49a8b;
+    --page-card: #14141b;
+    --page-line: #26262f;
+    --page-chip: #1b1b24;
+
+    /* BEFORE */
+    --b-app-bg: #09090B;
+    --b-card: #111827;
+    --b-card-alt: #1F2937;
+    --b-border: rgba(245,158,11,0.25);
+    --b-row-border: rgba(255,255,255,0.08);
+    --b-heading: #FBBF24;
+    --b-strong: #F9FAFB;
+    --b-body: #E5E7EB;
+    --b-muted: #9CA3AF;
+    --b-accent: #FBBF24;
+    --b-icon-bg: rgba(245,158,11,0.15);
+    --b-chip-bg: #1E293B;
+    --b-chip-border: rgba(255,255,255,0.10);
+    --b-chip-label: #D1D5DB;
+    --b-chip-sel-label: #F59E0B;
+    --b-chip-weight: 500;
+    --b-tab-bg: #111827;
+    --b-tab-border: #374151;
+    --b-tab-active: #F59E0B;
+    --b-tab-inactive: #9CA3AF;
+    --b-switch-on: #8D0B0C;
+    --b-switch-off: #D1D5DB;
+    --b-field-bg: rgba(255,255,255,0.05);
+    --b-nav-title: #F9FAFB;
+    --b-hero-heading: #F59E0B;
+
+    /* AFTER */
+    --a-app-bg: #09090B;
+    --a-card: #111827;
+    --a-card-alt: #1F2937;
+    --a-border: rgba(245,158,11,0.25);
+    --a-row-border: rgba(255,255,255,0.08);
+    --a-heading: #FBBF24;
+    --a-strong: #F9FAFB;
+    --a-body: #E5E7EB;
+    --a-muted: #9CA3AF;
+    --a-accent: #FBBF24;
+    --a-icon-bg: rgba(245,158,11,0.15);
+    --a-chip-bg: #1F2937;
+    --a-chip-border: rgba(255,255,255,0.08);
+    --a-chip-label: #E5E7EB;
+    --a-chip-sel-label: #FBBF24;
+    --a-chip-weight: 700;
+    --a-tab-bg: #111827;
+    --a-tab-border: rgba(245,158,11,0.25);
+    --a-tab-active: #F59E0B;
+    --a-tab-inactive: #9CA3AF;
+    --a-switch-on: #F59E0B;
+    --a-switch-off: #4B5563;
+    --a-field-bg: #1F2937;
+    --a-nav-title: #FBBF24;
+    --a-hero-heading: #FBBF24;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--page-bg);
+    color: var(--page-fg);
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    transition: background .25s ease, color .25s ease;
+  }
+
+  /* ── page chrome ─────────────────────────────────────────── */
+  .top {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 56px 28px 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+  .eyebrow {
+    margin: 0 0 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--page-muted);
+  }
+  h1 {
+    margin: 0;
+    font-size: clamp(28px, 4vw, 44px);
+    font-weight: 900;
+    letter-spacing: -.03em;
+    line-height: 1.1;
+  }
+  .sub {
+    margin: 12px 0 0;
+    max-width: 620px;
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--page-muted);
+  }
+
+  .mode-switch {
+    display: inline-flex;
+    padding: 4px;
+    gap: 4px;
+    background: var(--page-card);
+    border: 1px solid var(--page-line);
+    border-radius: 999px;
+  }
+  .mode-switch button {
+    appearance: none;
+    border: 0;
+    cursor: pointer;
+    padding: 9px 18px;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--page-muted);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: background .18s ease, color .18s ease;
+  }
+  .mode-switch button.on {
+    background: #EE7B10;
+    color: #fff;
+  }
+  .mode-switch svg { width: 15px; height: 15px; }
+
+  main {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 26px 28px 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+  }
+
+  /* ── comparison sections ─────────────────────────────────── */
+  .cmp {
+    background: var(--page-card);
+    border: 1px solid var(--page-line);
+    border-radius: 26px;
+    padding: 26px;
+    transition: background .25s ease, border-color .25s ease;
+  }
+  .cmp-head {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding-bottom: 20px;
+    margin-bottom: 22px;
+    border-bottom: 1px dashed var(--page-line);
+  }
+  .num {
+    flex: none;
+    width: 34px; height: 34px;
+    border-radius: 11px;
+    display: grid; place-items: center;
+    background: rgba(238,123,16,.12);
+    color: #EE7B10;
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .cmp-head h2 {
+    margin: 2px 0 4px;
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -.01em;
+  }
+  .cmp-head p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--page-muted);
+    max-width: 760px;
+  }
+
+  .phones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
+  .tag {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 999px;
+  }
+  .tag-before { background: rgba(141,11,12,.10); color: #9b2b2c; }
+  .tag-after  { background: rgba(35,168,103,.14); color: #17794b; }
+  :root[data-mode="dark"] .tag-before { background: rgba(248,113,113,.14); color: #f0a0a0; }
+  :root[data-mode="dark"] .tag-after  { background: rgba(52,211,153,.14); color: #6ee7b7; }
+
+  .phone {
+    width: 300px;
+    padding: 9px;
+    border-radius: 38px;
+    background: #14141a;
+    box-shadow: 0 24px 50px -18px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.06);
+  }
+  .screen {
+    position: relative;
+    height: 512px;
+    border-radius: 30px;
+    overflow: hidden;
+    background: var(--app-bg);
+    display: flex;
+    flex-direction: column;
+    transition: background .25s ease;
+  }
+  .screen.tall { height: 600px; }
+
+  /* panel variable bindings */
+  .screen.before {
+    --app-bg: var(--b-app-bg);
+    --card: var(--b-card);
+    --card-alt: var(--b-card-alt);
+    --border: var(--b-border);
+    --row-border: var(--b-row-border);
+    --heading: var(--b-heading);
+    --strong: var(--b-strong);
+    --body: var(--b-body);
+    --muted: var(--b-muted);
+    --accent: var(--b-accent);
+    --icon-bg: var(--b-icon-bg);
+    --chip-bg: var(--b-chip-bg);
+    --chip-border: var(--b-chip-border);
+    --chip-label: var(--b-chip-label);
+    --chip-sel-label: var(--b-chip-sel-label);
+    --chip-weight: var(--b-chip-weight);
+    --tab-bg: var(--b-tab-bg);
+    --tab-border: var(--b-tab-border);
+    --tab-active: var(--b-tab-active);
+    --tab-inactive: var(--b-tab-inactive);
+    --switch-on: var(--b-switch-on);
+    --switch-off: var(--b-switch-off);
+    --field-bg: var(--b-field-bg);
+    --nav-title: var(--b-nav-title);
+    --hero-heading: var(--b-hero-heading);
+  }
+  .screen.after {
+    --app-bg: var(--a-app-bg);
+    --card: var(--a-card);
+    --card-alt: var(--a-card-alt);
+    --border: var(--a-border);
+    --row-border: var(--a-row-border);
+    --heading: var(--a-heading);
+    --strong: var(--a-strong);
+    --body: var(--a-body);
+    --muted: var(--a-muted);
+    --accent: var(--a-accent);
+    --icon-bg: var(--a-icon-bg);
+    --chip-bg: var(--a-chip-bg);
+    --chip-border: var(--a-chip-border);
+    --chip-label: var(--a-chip-label);
+    --chip-sel-label: var(--a-chip-sel-label);
+    --chip-weight: var(--a-chip-weight);
+    --tab-bg: var(--a-tab-bg);
+    --tab-border: var(--a-tab-border);
+    --tab-active: var(--a-tab-active);
+    --tab-inactive: var(--a-tab-inactive);
+    --switch-on: var(--a-switch-on);
+    --switch-off: var(--a-switch-off);
+    --field-bg: var(--a-field-bg);
+    --nav-title: var(--a-nav-title);
+    --hero-heading: var(--a-hero-heading);
+  }
+
+  /* phone internals */
+  .statusbar {
+    flex: none;
+    height: 26px;
+    padding: 0 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--heading);
+    opacity: .65;
+  }
+  .statusbar .dots { display: flex; gap: 3px; }
+  .statusbar .dots i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; }
+
+  .screen-body {
+    flex: 1;
+    padding: 6px 14px 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .navbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 2px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--nav-title);
+  }
+  .navbar .nav-title { flex: 1; text-align: center; font-size: 14px; font-weight: 700; }
+  .navbar .spacer { width: 18px; }
+
+  .page-title { font-size: 22px; font-weight: 900; letter-spacing: -.02em; color: var(--hero-heading); margin: 2px 0 0; }
+  .page-sub { font-size: 10px; color: var(--body); margin: 0; }
+
+  .section-head { display: flex; align-items: center; justify-content: space-between; margin-top: 2px; }
+  .section-title { font-size: 14px; font-weight: 800; color: var(--heading); }
+  .see-all { font-size: 10px; font-weight: 700; color: var(--accent); }
+
+  /* cards + rows */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 11px 12px;
+  }
+  .group-title {
+    margin: 0 0 4px 2px;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--row-border);
+  }
+  .row:last-child { border-bottom: 0; padding-bottom: 2px; }
+  .icon-tile {
+    flex: none;
+    width: 28px; height: 28px;
+    border-radius: 9px;
+    display: grid; place-items: center;
+    background: var(--icon-bg);
+    color: var(--accent);
+  }
+  .row-label { flex: 1; font-size: 11.5px; font-weight: 600; color: var(--body); }
+  .row-value { font-size: 11.5px; font-weight: 600; color: var(--strong); }
+  .chev { color: var(--muted); flex: none; }
+
+  /* profile hero */
+  .hero {
+    background: var(--card-alt);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 14px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+  }
+  .avatar-ring {
+    padding: 2.5px;
+    border-radius: 50%;
+    border: 2px solid #F59E0B;
+    background: var(--card);
+    position: relative;
+  }
+  .avatar {
+    width: 50px; height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #EE7B10, #FBBF24);
+    display: grid; place-items: center;
+    color: #fff; font-size: 17px; font-weight: 800;
+  }
+  .verified {
+    position: absolute; right: -1px; bottom: -1px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #16A34A; border: 1.5px solid #fff;
+    display: grid; place-items: center; color: #fff;
+  }
+  .profile-name { font-size: 15px; font-weight: 800; color: var(--heading); margin: 0; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    max-width: 92%;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    font-size: 9.5px; font-weight: 600;
+    color: var(--accent);
+  }
+  .stats {
+    width: 100%;
+    display: flex; align-items: center; justify-content: space-around;
+    margin-top: 4px; padding: 8px 0;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--card);
+  }
+  .stat { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+  .stat b { font-size: 11.5px; font-weight: 800; color: var(--accent); }
+  .stat span { font-size: 8px; color: var(--muted); }
+  .stat-sep { width: 1px; height: 18px; background: var(--row-border); }
+
+  /* switch */
+  .switch {
+    flex: none;
+    width: 34px; height: 20px;
+    border-radius: 999px;
+    background: var(--switch-off);
+    position: relative;
+  }
+  .switch.on { background: var(--switch-on); }
+  .switch i {
+    position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #fff;
+  }
+  .switch.on i { left: auto; right: 2px; }
+
+  /* chips */
+  .chip-row { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip {
+    display: inline-flex; align-items: center;
+    height: 30px; padding: 0 13px;
+    border-radius: 999px;
+    border: 1px solid var(--chip-border);
+    background: var(--chip-bg);
+    color: var(--chip-label);
+    font-size: 11px; font-weight: 500;
+  }
+  .chip.on {
+    border-color: #EE7B10;
+    background: rgba(238,123,16,.13);
+    color: var(--chip-sel-label);
+    font-weight: var(--chip-weight);
+  }
+
+  /* date fields */
+  .field-grid { display: flex; gap: 8px; }
+  .field { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .field-label { font-size: 8.5px; font-weight: 500; color: var(--muted); }
+  .field-box {
+    display: flex; align-items: center; gap: 5px;
+    height: 32px; padding: 0 10px;
+    border-radius: 14px;
+    background: var(--field-bg);
+    color: var(--heading);
+    font-size: 10.5px;
+    font-weight: 600;
+  }
+  .field-box svg { color: #EE7B10; }
+
+  /* bottom tab bar */
+  .tabbar {
+    position: absolute;
+    left: 12px; right: 12px; bottom: 12px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 7px 4px;
+    border-radius: 999px;
+    background: var(--tab-bg);
+    border: 1px solid var(--tab-border);
+  }
+  .tab {
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    color: var(--tab-inactive);
+    font-size: 7.5px; font-weight: 600;
+  }
+  .tab.on { color: var(--tab-active); font-weight: 700; }
+  .tab svg { width: 19px; height: 19px; }
+
+  /* content skeletons to give the tab screen a body */
+  .sk-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px;
+    display: flex; flex-direction: column; gap: 7px;
+  }
+  .sk {
+    height: 7px;
+    border-radius: 4px;
+    background: var(--row-border);
+  }
+  .sk.w60 { width: 60%; }
+  .sk.w80 { width: 80%; }
+  .sk.w40 { width: 40%; }
+  .sk.big { height: 46px; border-radius: 10px; }
+
+  /* notes */
+  .notes {
+    margin: 22px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 8px;
+  }
+  .notes li {
+    position: relative;
+    padding-left: 20px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--page-muted);
+  }
+  .notes li::before {
+    content: "";
+    position: absolute;
+    left: 4px; top: 8px;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #EE7B10;
+  }
+  .notes code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11.5px;
+    padding: 1px 5px;
+    border-radius: 5px;
+    background: var(--page-chip);
+    border: 1px solid var(--page-line);
+    color: var(--page-fg);
+  }
+
+  /* recap table */
+  .recap {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .recap th, .recap td {
+    text-align: left;
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--page-line);
+    vertical-align: top;
+  }
+  .recap th {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--page-muted);
+  }
+  .recap td:first-child { font-weight: 700; }
+  .recap code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11.5px;
+    padding: 1px 6px;
+    border-radius: 5px;
+    background: var(--page-chip);
+    border: 1px solid var(--page-line);
+  }
+  .recap tr:last-child td { border-bottom: 0; }
+
+  .icon { width: 100%; height: 100%; display: block; }
+
+  /* status pills — exact values from reportStatusMeta() */
+  .status {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    border-radius: 12px;
+    font-size: 9.5px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .status.pending   { color: #F97316; background: rgba(245,158,11,0.15); }
+  .status.review    { color: #F59E0B; background: rgba(245,158,11,0.15); }
+  .status.reviewed  { color: #23A867; background: rgba(16,185,129,0.15); }
+  .status.dismissed { color: #C21415; background: rgba(194,20,21,0.12); }
+  .status.unknown   { color: var(--muted); background: rgba(139,139,141,0.15); }
+
+  .report-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 7px;
+  }
+  .report-meta .filed { font-size: 8.5px; color: var(--muted); flex: 1; }
+  .report-meta .view { font-size: 8.5px; font-weight: 700; color: #EE7B10; }
+  .report-desc { font-size: 8.5px; color: var(--body); margin-top: 5px; }
+  .report-reason {
+    flex: 1;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--heading);
+    text-transform: capitalize;
+  }
+
+  /* the "wrong" side gets a subtle strike-through cue on the contradicted value */
+  .contradiction {
+    text-decoration: line-through;
+    text-decoration-color: rgba(194,20,21,.55);
+    text-decoration-thickness: 1.5px;
+  }
+
+  /* the sprite symbols are line-art, so render them as strokes that inherit color */
+  svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  svg.solid { fill: currentColor; stroke: none; }
+
+  footer {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 28px 60px;
+    font-size: 12px;
+    color: var(--page-muted);
+    text-align: center;
+  }
+
+  @media (max-width: 720px) {
+    .top { padding-top: 34px; }
+    .cmp { padding: 20px 16px; }
+    .phone { width: 290px; }
+    .recap { display: block; overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 10.5 12 3l8 7.5V20a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 13.4A8.5 8.5 0 1 1 10.6 3.5a6.8 6.8 0 0 0 9.9 9.9z"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16.5 6.2a3.2 3.2 0 0 1 0 6"/><path d="M17.5 14.6A6 6 0 0 1 21 20"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/><circle cx="17" cy="14.5" r="1.2"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M20 12a7.5 7.5 0 0 1-11 6.7L4 20l1.3-4.2A7.5 7.5 0 1 1 20 12z"/></symbol>
+  <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M5 20a7 7 0 0 1 14 0"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M20 12H4"/><path d="m10 6-6 6 6 6"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8" cy="8" r="4"/><path d="m11 11 8 8M16 16l2-2M19 19l2-2"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><rect x="3.5" y="8" width="17" height="12" rx="2"/><path d="M3.5 12.5h17M12 8v12"/><path d="M12 8S9.5 3.5 7.5 5.5 12 8 12 8zM12 8s2.5-4.5 4.5-2.5S12 8 12 8z"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v5.5c0 4.4-3 8-7 9.5-4-1.5-7-5.1-7-9.5V6z"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M6 21V4"/><path d="M6 5h11l-1.8 3.7L17 13H6z"/></symbol>
+  <symbol id="i-document" viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12 20 4l-8 16-2-6z"/></symbol>
+  <symbol id="i-attach" viewBox="0 0 24 24"><path d="M20 11.5 12 19.5a5 5 0 0 1-7-7l8-8a3.5 3.5 0 0 1 5 5l-8 8a2 2 0 0 1-3-3l7-7"/></symbol>
+  <symbol id="i-cash" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.5"/><path d="M6.5 9.5v5M17.5 9.5v5"/></symbol>
+  <symbol id="i-call" viewBox="0 0 24 24"><path d="M6.5 3.5 9 3l2 4.5-1.8 1.6a11 11 0 0 0 5.7 5.7L16.5 13l4.5 2-.5 2.5c-.3 1.4-1.6 2.3-3 2A16.5 16.5 0 0 1 4.5 6.5c-.3-1.4.6-2.7 2-3z"/></symbol>
+  <symbol id="i-videocam" viewBox="0 0 24 24"><rect x="2.5" y="6.5" width="12.5" height="11" rx="2.5"/><path d="m15 10.5 6-3v9l-6-3z"/></symbol>
+  <symbol id="i-buoy" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.5"/><path d="m6 6 3.5 3.5M18 6l-3.5 3.5M6 18l3.5-3.5M18 18l-3.5-3.5"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+</svg>
+
+<header class="top">
+  <div>
+    <p class="eyebrow">Astro Shine · mobile app</p>
+    <h1>User screen fixes</h1>
+    <p class="sub">
+      Before / after for the user- and astrologer-screen fixes: the theme-unification pass,
+      the Reports issues, the service schedule, and Kundli sharing in chat. Both apps now read
+      the same tokens, so a screen looks identical whichever role is signed in. Every pair
+      renders in the same mode — switch modes to see light and dark.
+    </p>
+  </div>
+  <div class="mode-switch" role="group" aria-label="Color mode">
+    <button type="button" data-set-mode="light" class="on">
+      <svg><use href="#i-sun"/></svg> Light
+    </button>
+    <button type="button" data-set-mode="dark">
+      <svg><use href="#i-moon"/></svg> Dark
+    </button>
+  </div>
+</header>
+
+<main>
+
+  <!-- 01 ─ tab bar -->
+  <section class="cmp">
+    <div class="cmp-head">
+      <div class="num">01</div>
+      <div>
+        <h2>Bottom tab bar</h2>
+        <p>
+          The floating bar had its own palette. In dark mode the border was a flat slate
+          grey while every card on screen used a gold-tinted border, so the bar read as a
+          separate, colder surface.
+        </p>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before</span>
+        <div class="phone">
+          <div class="screen before">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-home"/></svg>
+                <span class="nav-title" style="font-size:15px;font-weight:900;letter-spacing:.06em">ASTROSHINE</span>
+                <svg style="width:18px;height:18px"><use href="#i-mail"/></svg>
+              </div>
+              <div class="sk-card">
+                <div class="sk big"></div>
+                <div class="sk w80"></div>
+                <div class="sk w60"></div>
+              </div>
+              <div class="sk-card">
+                <div class="sk w40"></div>
+                <div class="sk big" style="height:38px"></div>
+              </div>
+            </div>
+            <div class="tabbar">
+              <div class="tab on"><svg><use href="#i-home"/></svg><span>Home</span></div>
+              <div class="tab"><svg><use href="#i-moon"/></svg><span>Horoscope</span></div>
+              <div class="tab"><svg><use href="#i-users"/></svg><span>Astrologers</span></div>
+              <div class="tab"><svg><use href="#i-clock"/></svg><span>Muhurat</span></div>
+              <div class="tab"><svg><use href="#i-person"/></svg><span>Profile</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-wrap">
+        <span class="tag tag-after">After</span>
+        <div class="phone">
+          <div class="screen after">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-home"/></svg>
+                <span class="nav-title" style="font-size:15px;font-weight:900;letter-spacing:.06em">ASTROSHINE</span>
+                <svg style="width:18px;height:18px"><use href="#i-mail"/></svg>
+              </div>
+              <div class="sk-card">
+                <div class="sk big"></div>
+                <div class="sk w80"></div>
+                <div class="sk w60"></div>
+              </div>
+              <div class="sk-card">
+                <div class="sk w40"></div>
+                <div class="sk big" style="height:38px"></div>
+              </div>
+            </div>
+            <div class="tabbar">
+              <div class="tab on"><svg><use href="#i-home"/></svg><span>Home</span></div>
+              <div class="tab"><svg><use href="#i-moon"/></svg><span>Horoscope</span></div>
+              <div class="tab"><svg><use href="#i-users"/></svg><span>Astrologers</span></div>
+              <div class="tab"><svg><use href="#i-clock"/></svg><span>Muhurat</span></div>
+              <div class="tab"><svg><use href="#i-person"/></svg><span>Profile</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>Bar border now uses the same token as every card: <code>tabBarBorder</code>, which is <code>#F6EDC4</code> in light and <code>rgba(245,158,11,0.25)</code> in dark.</li>
+      <li>Active and inactive icon colors moved into <code>tabActive</code> / <code>tabInactive</code> instead of a second local copy of the same hex values.</li>
+      <li>Light mode is visually unchanged here — this one is a dark-mode fix plus de-duplication.</li>
+    </ul>
+  </section>
+
+  <!-- 02 ─ profile cards -->
+  <section class="cmp">
+    <div class="cmp-head">
+      <div class="num">02</div>
+      <div>
+        <h2>Profile cards</h2>
+        <p>
+          Profile values were painted with the heading color, so the name, email and every
+          field read as another title. Row dividers also used cool grey <code>#F3F4F6</code>,
+          which looked dirty against the cream card, and the dark-mode toggle was maroon in
+          both themes.
+        </p>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before</span>
+        <div class="phone">
+          <div class="screen tall before">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body" style="gap:9px">
+              <div class="hero">
+                <div class="avatar-ring">
+                  <div class="avatar">P</div>
+                  <div class="verified"><svg style="width:9px;height:9px" class="solid"><use href="#i-check"/></svg></div>
+                </div>
+                <p class="profile-name">Praveen Kumar</p>
+                <span class="pill"><svg style="width:9px;height:9px"><use href="#i-mail"/></svg>praveen@astroshine.com</span>
+                <div class="stats">
+                  <div class="stat"><b>₹1,240</b><span>Wallet</span></div>
+                  <div class="stat-sep"></div>
+                  <div class="stat"><b>Active</b><span>Status</span></div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+                  <p class="group-title" style="margin:0">Profile details</p>
+                  <span class="see-all" style="font-size:9px">Edit</span>
+                </div>
+                <div class="row">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-person"/></svg></div>
+                  <span class="row-label">Name</span>
+                  <span class="row-value">Praveen Kumar</span>
+                </div>
+                <div class="row">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-mail"/></svg></div>
+                  <span class="row-label">Email</span>
+                  <span class="row-value" style="font-size:10.5px">praveen@astroshine.com</span>
+                </div>
+                <div class="row">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-clock"/></svg></div>
+                  <span class="row-label">Gender</span>
+                  <span class="row-value">Male</span>
+                </div>
+              </div>
+              <div class="card">
+                <p class="group-title">Preferences &amp; security</p>
+                <div class="row">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-moon"/></svg></div>
+                  <span class="row-label">Dark Mode</span>
+                  <span class="switch on"><i></i></span>
+                </div>
+                <div class="row">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-key"/></svg></div>
+                  <span class="row-label">Change Password</span>
+                  <svg class="chev" style="width:13px;height:13px"><use href="#i-chevron"/></svg>
+                </div>
+              </div>
+<div class="card">
+                <p class="group-title">My account</p>
+                <div class="row">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-gift"/></svg></div>
+                  <span class="row-label">Gift History</span>
+                  <svg class="chev" style="width:13px;height:13px"><use href="#i-chevron"/></svg>
+                </div>
+                <div class="row">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-receipt"/></svg></div>
+                  <span class="row-label">Order History</span>
+                  <svg class="chev" style="width:13px;height:13px"><use href="#i-chevron"/></svg>
+                </div>
+                <div class="row">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-wallet"/></svg></div>
+                  <span class="row-label">Transaction History</span>
+                  <svg class="chev" style="width:13px;height:13px"><use href="#i-chevron"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-wrap">
+        <span class="tag tag-after">After</span>
+        <div class="phone">
+          <div class="screen tall after">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body" style="gap:9px">
+              <div class="hero">
+                <div class="avatar-ring">
+                  <div class="avatar">P</div>
+                  <div class="verified"><svg style="width:9px;height:9px" class="solid"><use href="#i-check"/></svg></div>
+                </div>
+                <p class="profile-name">Praveen Kumar</p>
+                <span class="pill"><svg style="width:9px;height:9px"><use href="#i-mail"/></svg>praveen@astroshine.com</span>
+                <div class="stats">
+                  <div class="stat"><b>₹1,240</b><span>Wallet</span></div>
+                  <div class="stat-sep"></div>
+                  <div class="stat"><b>Active</b><span>Status</span></div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+                  <p class="group-title" style="margin:0">Profile details</p>
+                  <span class="see-all" style="font-size:9px">Edit</span>
+                </div>
+                <div class="row">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-person"/></svg></div>
+                  <span class="row-label">Name</span>
+                  <span class="row-value">Praveen Kumar</span>
+                </div>
+                <div class="row">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-mail"/></svg></div>
+                  <span class="row-label">Email</span>
+                  <span class="row-value" style="font-size:10.5px">praveen@astroshine.com</span>
+                </div>
+                <div class="row">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-clock"/></svg></div>
+                  <span class="row-label">Gender</span>
+                  <span class="row-value">Male</span>
+                </div>
+              </div>
+              <div class="card">
+                <p class="group-title">Preferences &amp; security</p>
+                <div class="row">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-moon"/></svg></div>
+                  <span class="row-label">Dark Mode</span>
+                  <span class="switch on"><i></i></span>
+                </div>
+                <div class="row">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-key"/></svg></div>
+                  <span class="row-label">Change Password</span>
+                  <svg class="chev" style="width:13px;height:13px"><use href="#i-chevron"/></svg>
+                </div>
+              </div>
+<div class="card">
+                <p class="group-title">My account</p>
+                <div class="row">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-gift"/></svg></div>
+                  <span class="row-label">Gift History</span>
+                  <svg class="chev" style="width:13px;height:13px"><use href="#i-chevron"/></svg>
+                </div>
+                <div class="row">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-receipt"/></svg></div>
+                  <span class="row-label">Order History</span>
+                  <svg class="chev" style="width:13px;height:13px"><use href="#i-chevron"/></svg>
+                </div>
+                <div class="row">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-wallet"/></svg></div>
+                  <span class="row-label">Transaction History</span>
+                  <svg class="chev" style="width:13px;height:13px"><use href="#i-chevron"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>Field values use <code>textStrong</code> (<code>#1F2937</code> light / <code>#F9FAFB</code> dark) so data is neutral, while the name and group titles keep the maroon/gold <code>heading</code>.</li>
+      <li>Dividers moved from hardcoded <code>#F3F4F6</code> to <code>rowBorder</code> (<code>#F3EAD6</code> light) — the grey line is gone.</li>
+      <li>Dark-mode switch was <code>#8D0B0C</code> in both themes; it is now <code>#EE7B10</code> light / <code>#F59E0B</code> dark via <code>switchOn</code>, with a proper <code>switchOff</code> in dark.</li>
+    </ul>
+  </section>
+
+  <!-- 03 ─ chips -->
+  <section class="cmp">
+    <div class="cmp-head">
+      <div class="num">03</div>
+      <div>
+        <h2>Filter chips</h2>
+        <p>
+          Unselected chips were slate grey — <code>#E2E8F0</code> in light, <code>#1E293B</code>
+          in dark — the only cool-toned controls left in an otherwise warm palette. The
+          selected label was also only medium weight.
+        </p>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before</span>
+        <div class="phone">
+          <div class="screen before">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Auspicious Muhurat</span>
+                <span class="spacer"></span>
+              </div>
+              <p class="page-sub">Browse auspicious dates and timings</p>
+              <div class="chip-row">
+                <span class="chip on">All Muhurat</span>
+                <span class="chip">Marriage</span>
+                <span class="chip">Housewarming</span>
+                <span class="chip">Bhoomi Pujan</span>
+                <span class="chip">Naming</span>
+                <span class="chip">Mundan</span>
+              </div>
+              <div class="card" style="margin-top:4px">
+                <p class="group-title" style="margin-bottom:8px">Sat · 08 Nov</p>
+                <div class="row" style="border-bottom:0">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-clock"/></svg></div>
+                  <span class="row-label">Vivah Muhurat</span>
+                  <span class="row-value" style="font-size:10px">9:15 AM</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-wrap">
+        <span class="tag tag-after">After</span>
+        <div class="phone">
+          <div class="screen after">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Auspicious Muhurat</span>
+                <span class="spacer"></span>
+              </div>
+              <p class="page-sub">Browse auspicious dates and timings</p>
+              <div class="chip-row">
+                <span class="chip on">All Muhurat</span>
+                <span class="chip">Marriage</span>
+                <span class="chip">Housewarming</span>
+                <span class="chip">Bhoomi Pujan</span>
+                <span class="chip">Naming</span>
+                <span class="chip">Mundan</span>
+              </div>
+              <div class="card" style="margin-top:4px">
+                <p class="group-title" style="margin-bottom:8px">Sat · 08 Nov</p>
+                <div class="row" style="border-bottom:0">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-clock"/></svg></div>
+                  <span class="row-label">Vivah Muhurat</span>
+                  <span class="row-value" style="font-size:10px">9:15 AM</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>Chip background/border now come from <code>chipBg</code> and <code>chipBorder</code>: <code>#FEF8EA</code> / <code>#F2DFAE</code> light, <code>#1F2937</code> / <code>rgba(255,255,255,0.08)</code> dark.</li>
+      <li>Selected label is now bold (700) in <code>accentGold</code>, so the active filter is readable without relying on the tint alone.</li>
+      <li>The same tokens drive <code>FilterTabs</code>, so the astrologer-list category row and Muhurat categories are identical.</li>
+    </ul>
+  </section>
+
+  <!-- 04 ─ date filters -->
+  <section class="cmp">
+    <div class="cmp-head">
+      <div class="num">04</div>
+      <div>
+        <h2>Muhurat date filters</h2>
+        <p>
+          The From / To buttons used a 3–5% black or white wash with no border. On the cream
+          background the fields effectively disappeared, so the date picker looked like plain
+          text instead of a control.
+        </p>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before</span>
+        <div class="phone">
+          <div class="screen before">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Auspicious Muhurat</span>
+                <span class="spacer"></span>
+              </div>
+              <div class="field-grid" style="padding:6px 0 10px;border-bottom:1px solid var(--border)">
+                <div class="field">
+                  <span class="field-label">From</span>
+                  <div class="field-box"><svg style="width:13px;height:13px"><use href="#i-calendar"/></svg>2026-11-04</div>
+                </div>
+                <div class="field">
+                  <span class="field-label">To</span>
+                  <div class="field-box"><svg style="width:13px;height:13px"><use href="#i-calendar"/></svg>2026-11-07</div>
+                </div>
+              </div>
+              <div class="card">
+                <p class="group-title" style="margin-bottom:8px">Wed · 05 Nov</p>
+                <div class="row" style="border-bottom:0">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-clock"/></svg></div>
+                  <span class="row-label">Griha Pravesh</span>
+                  <span class="row-value" style="font-size:10px">11:30 AM</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-wrap">
+        <span class="tag tag-after">After</span>
+        <div class="phone">
+          <div class="screen after">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Auspicious Muhurat</span>
+                <span class="spacer"></span>
+              </div>
+              <div class="field-grid" style="padding:6px 0 10px;border-bottom:1px solid var(--border)">
+                <div class="field">
+                  <span class="field-label">From</span>
+                  <div class="field-box"><svg style="width:13px;height:13px"><use href="#i-calendar"/></svg>2026-11-04</div>
+                </div>
+                <div class="field">
+                  <span class="field-label">To</span>
+                  <div class="field-box"><svg style="width:13px;height:13px"><use href="#i-calendar"/></svg>2026-11-07</div>
+                </div>
+              </div>
+              <div class="card">
+                <p class="group-title" style="margin-bottom:8px">Wed · 05 Nov</p>
+                <div class="row" style="border-bottom:0">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-clock"/></svg></div>
+                  <span class="row-label">Griha Pravesh</span>
+                  <span class="row-value" style="font-size:10px">11:30 AM</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>Buttons now sit on <code>chipBg</code> — <code>#FEF8EA</code> light / <code>#1F2937</code> dark — the same surface used by chips, so the control is visible on both backgrounds.</li>
+      <li>The filter strip separator switched from <code>rgba(0,0,0,0.08)</code> to <code>cardBorder</code>, matching the cards below it.</li>
+    </ul>
+  </section>
+
+  <!-- 05 ─ headings -->
+  <section class="cmp">
+    <div class="cmp-head">
+      <div class="num">05</div>
+      <div>
+        <h2>Screen headings &amp; navbar</h2>
+        <p>
+          Navbar titles and page headings each picked their own color. In dark mode the navbar
+          was near-white while section headings were gold, and the Horoscope/Panchang titles
+          used the amber accent in light mode — low contrast on cream.
+        </p>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before</span>
+        <div class="phone">
+          <div class="screen before">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">My Wallet</span>
+                <span class="spacer"></span>
+              </div>
+              <p class="page-title">Horoscope</p>
+              <p class="page-sub">Select your zodiac sign to read today's prediction</p>
+              <div class="section-head" style="margin-top:8px">
+                <span class="section-title">Live Astrologers</span>
+                <span class="see-all">See All ›</span>
+              </div>
+              <div class="card">
+                <div class="row" style="border-bottom:0">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-users"/></svg></div>
+                  <span class="row-label">Pandit Sharma</span>
+                  <span class="row-value" style="font-size:10px">₹35/min</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone-wrap">
+        <span class="tag tag-after">After</span>
+        <div class="phone">
+          <div class="screen after">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">My Wallet</span>
+                <span class="spacer"></span>
+              </div>
+              <p class="page-title">Horoscope</p>
+              <p class="page-sub">Select your zodiac sign to read today's prediction</p>
+              <div class="section-head" style="margin-top:8px">
+                <span class="section-title">Live Astrologers</span>
+                <span class="see-all">See All ›</span>
+              </div>
+              <div class="card">
+                <div class="row" style="border-bottom:0">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-users"/></svg></div>
+                  <span class="row-label">Pandit Sharma</span>
+                  <span class="row-value" style="font-size:10px">₹35/min</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>Navbar title and back arrow now use <code>heading</code>. Light mode is unchanged (<code>#8D0B0C</code>); dark mode moves from near-white <code>#F9FAFB</code> to gold <code>#FBBF24</code>, matching section headings.</li>
+      <li>Horoscope and Panchang page titles moved from <code>accentGold</code> (<code>#F59E0B</code>) to <code>heading</code> (<code>#8D0B0C</code> light / <code>#FBBF24</code> dark) — much stronger contrast on the cream background.</li>
+      <li>Chat list, wallet, astrologer list and quick-actions titles follow the same token, so all six tabs now share one heading color.</li>
+    </ul>
+  </section>
+
+  <!-- 07 ─ report status -->
+  <section class="cmp">
+    <div class="cmp-head">
+      <div class="num">06</div>
+      <div>
+        <h2>Reports → My Reports: correct status</h2>
+        <p>
+          The old helper only understood <code>reviewed</code> and <code>dismissed</code>. Anything else —
+          including <code>resolved</code>, <code>closed</code>, <code>approved</code>, <code>in_review</code>,
+          or a typo — silently fell through to "Pending", so reviewed reports looked untouched. Rows that
+          already carried a review date were still labelled Pending.
+        </p>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before</span>
+        <div class="phone">
+          <div class="screen before tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Reports by Me</span>
+                <span class="spacer"></span>
+              </div>
+              <p class="page-sub">Your submitted reports and their review status</p>
+              <div class="card" style="margin-bottom:8px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                  <span class="report-reason">harassment</span>
+                  <span class="status pending">Pending</span>
+                </div>
+                    <p class="report-desc">Sent repeated abusive messages.</p>
+                <div class="report-meta">
+                  <span class="filed">Filed 12 Oct 2026 · Reviewed 20 Oct 2026</span>
+                  <span class="view">View details</span>
+                </div>
+              </div>
+              <div class="card" style="margin-bottom:8px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                  <span class="report-reason">fake profile</span>
+                  <span class="status pending">Pending</span>
+                </div>
+                <div class="report-meta">
+                  <span class="filed">Filed 09 Oct 2026 · Reviewed 15 Oct 2026</span>
+                  <span class="view">View details</span>
+                </div>
+              </div>
+              <div class="card" style="margin-bottom:8px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                  <span class="report-reason">spam</span>
+                  <span class="status pending">Pending</span>
+                </div>
+                    <p class="report-desc">Advertising other services in chat.</p>
+                <div class="report-meta">
+                  <span class="filed">Filed 04 Oct 2026</span>
+                  <span class="view">View details</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-wrap">
+        <span class="tag tag-after">After</span>
+        <div class="phone">
+          <div class="screen after tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Reports by Me</span>
+                <span class="spacer"></span>
+              </div>
+              <p class="page-sub">Your submitted reports and their review status</p>
+              <div class="card" style="margin-bottom:8px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                  <span class="report-reason">harassment</span>
+                  <span class="status reviewed">Reviewed</span>
+                </div>
+                    <p class="report-desc">Sent repeated abusive messages.</p>
+                <div class="report-meta">
+                  <span class="filed">Filed 12 Oct 2026 · Reviewed 20 Oct 2026</span>
+                  <span class="view">View details</span>
+                </div>
+              </div>
+              <div class="card" style="margin-bottom:8px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                  <span class="report-reason">fake profile</span>
+                  <span class="status reviewed">Reviewed</span>
+                </div>
+                <div class="report-meta">
+                  <span class="filed">Filed 09 Oct 2026 · Reviewed 15 Oct 2026</span>
+                  <span class="view">View details</span>
+                </div>
+              </div>
+              <div class="card" style="margin-bottom:8px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                  <span class="report-reason">spam</span>
+                  <span class="status pending">Pending</span>
+                </div>
+                    <p class="report-desc">Advertising other services in chat.</p>
+                <div class="report-meta">
+                  <span class="filed">Filed 04 Oct 2026</span>
+                  <span class="view">View details</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>Every backend status now has an explicit label: <code>pending</code>, <code>in_review</code>, <code>reviewed</code>, <code>resolved</code>, <code>closed</code>, <code>dismissed</code>.</li>
+      <li><code>resolved</code>/<code>closed</code> show as themselves instead of being flattened to "Reviewed", and <code>dismissed</code> now uses the danger color instead of success green.</li>
+      <li>An unrecognised status renders its real value in muted grey — it is never relabelled "Pending".</li>
+      <li>A row with a <code>resolvedAt</code> date can no longer read "Pending", which covers legacy rows where only the timestamp was written.</li>
+    </ul>
+  </section>
+
+  <!-- 08 ─ menu label -->
+  <section class="cmp">
+    <div class="cmp-head">
+      <div class="num">07</div>
+      <div>
+        <h2>Profile menu: "Reports by Me"</h2>
+        <p>
+          The user profile listed <strong>"Reports Filed by Me"</strong> while the screen it opened was titled
+          differently again. Both now use the wording from the ticket, and the duplicate
+          The <strong>"Reports Against Me"</strong> entry is removed from <em>both</em> apps. Neither a user
+          nor an astrologer ever sees who reported them, so the list could only ever be unactionable —
+          and it invited the question of who filed it.
+        </p>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before</span>
+        <div class="phone">
+          <div class="screen before tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Profile</span>
+                <span class="spacer"></span>
+              </div>
+              <div class="card">
+                <p class="group-title">Preferences &amp; security</p>
+                <div class="row">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-flag"/></svg></div>
+                  <span class="row-label">Reports Filed by Me</span>
+                  <svg class="chev" style="width:13px;height:13px"><use href="#i-chevron"/></svg>
+                </div>
+                <div class="row">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-shield"/></svg></div>
+                  <span class="row-label">Reports Against Me</span>
+                  <svg class="chev" style="width:13px;height:13px"><use href="#i-chevron"/></svg>
+                </div>
+                <div class="row">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-key"/></svg></div>
+                  <span class="row-label">Change Password</span>
+                  <svg class="chev" style="width:13px;height:13px"><use href="#i-chevron"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-wrap">
+        <span class="tag tag-after">After</span>
+        <div class="phone">
+          <div class="screen after tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Profile</span>
+                <span class="spacer"></span>
+              </div>
+              <div class="card">
+                <p class="group-title">Preferences &amp; security</p>
+                <div class="row">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-flag"/></svg></div>
+                  <span class="row-label">Reports by Me</span>
+                  <svg class="chev" style="width:13px;height:13px"><use href="#i-chevron"/></svg>
+                </div>
+                <div class="row">
+                  <div class="icon-tile"><svg style="width:14px;height:14px"><use href="#i-key"/></svg></div>
+                  <span class="row-label">Change Password</span>
+                  <svg class="chev" style="width:13px;height:13px"><use href="#i-chevron"/></svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>Menu label, nav header and empty state now all say <strong>Reports by Me</strong> — previously the menu said "Filed by Me" and the header said the same, while the ticket wording differs.</li>
+      <li><strong>Reports Against Me</strong> is removed from both the user and astrologer menus, along with its screen, route and notification target.</li>
+      <li>Both apps now show a single entry, <strong>Reports by Me</strong>, listing only reports the current account created.</li>
+    </ul>
+  </section>
+
+  <!-- 09 ─ against me -->
+    <!-- report detail -->
+  <section class="cmp">
+    <div class="cmp-head">
+      <div class="num">08</div>
+      <div>
+        <h2>Report detail: what action was taken</h2>
+        <p>
+          A status chip alone does not tell the user what happened. The detail sheet now explains the
+          outcome, so "what action should be taken on that" is answerable from the list.
+        </p>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before</span>
+        <div class="phone">
+          <div class="screen before tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Report Details</span>
+                <span class="spacer"></span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <span class="report-reason">harassment</span>
+                <span class="status reviewed">Reviewed</span>
+              </div>
+              <p class="report-desc">Sent repeated abusive messages.</p>
+              <p style="font-size:8.5px;color:var(--muted);margin-top:6px">Filed 12 Oct 2026 · Reviewed 20 Oct 2026</p>
+              <div style="margin-top:auto;height:36px;border-radius:18px;border:1px solid var(--border);display:grid;place-items:center;font-size:10.5px;font-weight:700;color:var(--body)">Close</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-wrap">
+        <span class="tag tag-after">After</span>
+        <div class="phone">
+          <div class="screen after tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Report Details</span>
+                <span class="spacer"></span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <span class="report-reason">harassment</span>
+                <span class="status reviewed">Reviewed</span>
+              </div>
+              <div class="card" style="padding:9px 11px">
+                <p style="font-size:8px;font-weight:800;letter-spacing:.08em;color:var(--muted);margin-bottom:3px">ACTION TAKEN</p>
+                <p style="font-size:9px;line-height:1.5;color:var(--body)">This report has been reviewed by our team.</p>
+              </div>
+              <p class="report-desc">Sent repeated abusive messages.</p>
+              <p style="font-size:8.5px;color:var(--muted);margin-top:6px">Filed 12 Oct 2026 · Reviewed 20 Oct 2026</p>
+              <div style="margin-top:auto;height:36px;border-radius:18px;border:1px solid var(--border);display:grid;place-items:center;font-size:10.5px;font-weight:700;color:var(--body)">Close</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>Each status gets one plain sentence: pending, in review, reviewed, resolved, closed, dismissed.</li>
+      <li>A dismissed report now says <em>no action was taken</em>, which is the outcome the user cares about.</li>
+      <li>The list, the chip and the detail sheet all read from the same helper, so they cannot disagree.</li>
+    </ul>
+  </section>
+
+  <!-- schedule -->
+  <section class="cmp">
+    <div class="cmp-head">
+      <div class="num">09</div>
+      <div>
+        <h2>Service schedule (AA-015 / AA-016)</h2>
+        <p>
+          The weekly schedule screen had three concrete faults: the save loop skipped days toggled
+          off while still validating them, the bulk endpoint wrote day-by-day with no transaction
+          and no uniqueness, and a failed save showed a bare “Failed to save schedule”. A toggled-off
+          day could also keep an invalid time range that blocked the whole save.
+        </p>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before</span>
+        <div class="phone">
+          <div class="screen before tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Schedule</span>
+                <span class="spacer"></span>
+              </div>
+              <p class="page-sub">Set your weekly availability for consultations</p>
+                <div class="card" style="padding:9px 11px;margin-bottom:7px">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-size:11.5px;font-weight:600;color:var(--heading);opacity:1">Sun</span>
+                    <span class="switch on" style="width:30px;height:18px"><i style="width:14px;height:14px"></i></span>
+                  </div>
+                  <div style="display:flex;gap:6px;align-items:center;margin-top:6px">                  <div class="field-box" style="flex:1;"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>9:00 AM</div>
+                  <span style="font-size:9px;color:var(--muted)">to</span>
+                  <div class="field-box" style="flex:1"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>6:00 PM</div></div>
+                </div>
+                <div class="card" style="padding:9px 11px;margin-bottom:7px">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-size:11.5px;font-weight:600;color:var(--heading);opacity:1">Mon</span>
+                    <span class="switch on" style="width:30px;height:18px"><i style="width:14px;height:14px"></i></span>
+                  </div>
+                  <div style="display:flex;gap:6px;align-items:center;margin-top:6px">                  <div class="field-box" style="flex:1;"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>9:00 AM</div>
+                  <span style="font-size:9px;color:var(--muted)">to</span>
+                  <div class="field-box" style="flex:1"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>6:00 PM</div></div>
+                </div>
+                <div class="card" style="padding:9px 11px;margin-bottom:7px">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-size:11.5px;font-weight:600;color:var(--heading);opacity:1">Tue</span>
+                    <span class="switch on" style="width:30px;height:18px"><i style="width:14px;height:14px"></i></span>
+                  </div>
+                  <div style="display:flex;gap:6px;align-items:center;margin-top:6px">                  <div class="field-box" style="flex:1;"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>9:00 AM</div>
+                  <span style="font-size:9px;color:var(--muted)">to</span>
+                  <div class="field-box" style="flex:1"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>6:00 PM</div></div>
+                </div>
+                <div class="card" style="padding:9px 11px;margin-bottom:7px">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-size:11.5px;font-weight:600;color:var(--heading);opacity:1">Wed</span>
+                    <span class="switch on" style="width:30px;height:18px"><i style="width:14px;height:14px"></i></span>
+                  </div>
+                  <div style="display:flex;gap:6px;align-items:center;margin-top:6px">                  <div class="field-box" style="flex:1;"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>9:00 AM</div>
+                  <span style="font-size:9px;color:var(--muted)">to</span>
+                  <div class="field-box" style="flex:1"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>6:00 PM</div></div>
+                </div>                <div style="margin-top:8px;height:36px;border-radius:18px;background:#EE7B10;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700">Save Schedule</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-wrap">
+        <span class="tag tag-after">After</span>
+        <div class="phone">
+          <div class="screen after tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Schedule</span>
+                <span class="spacer"></span>
+              </div>
+              <p class="page-sub">Set your weekly availability for consultations</p>
+                <div class="card" style="padding:9px 11px;margin-bottom:7px">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-size:11.5px;font-weight:600;color:var(--heading);opacity:.4">Sun</span>
+                    <span class="switch " style="width:30px;height:18px"><i style="width:14px;height:14px"></i></span>
+                  </div>
+                  
+                </div>
+                <div class="card" style="padding:9px 11px;margin-bottom:7px">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-size:11.5px;font-weight:600;color:var(--heading);opacity:1">Mon</span>
+                    <span class="switch on" style="width:30px;height:18px"><i style="width:14px;height:14px"></i></span>
+                  </div>
+                  <div style="display:flex;gap:6px;align-items:center;margin-top:6px">                  <div class="field-box" style="flex:1;"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>10:00 AM</div>
+                  <span style="font-size:9px;color:var(--muted)">to</span>
+                  <div class="field-box" style="flex:1"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>7:00 PM</div></div>
+                </div>
+                <div class="card" style="padding:9px 11px;margin-bottom:7px">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-size:11.5px;font-weight:600;color:var(--heading);opacity:1">Tue</span>
+                    <span class="switch on" style="width:30px;height:18px"><i style="width:14px;height:14px"></i></span>
+                  </div>
+                  <div style="display:flex;gap:6px;align-items:center;margin-top:6px">                  <div class="field-box" style="flex:1;"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>10:00 AM</div>
+                  <span style="font-size:9px;color:var(--muted)">to</span>
+                  <div class="field-box" style="flex:1"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>7:00 PM</div></div>
+                </div>
+                <div class="card" style="padding:9px 11px;margin-bottom:7px">
+                  <div style="display:flex;align-items:center;justify-content:space-between">
+                    <span style="font-size:11.5px;font-weight:600;color:var(--heading);opacity:1">Wed</span>
+                    <span class="switch on" style="width:30px;height:18px"><i style="width:14px;height:14px"></i></span>
+                  </div>
+                  <div style="display:flex;gap:6px;align-items:center;margin-top:6px">                  <div class="field-box" style="flex:1;"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>10:00 AM</div>
+                  <span style="font-size:9px;color:var(--muted)">to</span>
+                  <div class="field-box" style="flex:1"><svg style="width:12px;height:12px"><use href="#i-clock"/></svg>7:00 PM</div></div>
+                </div>                <div style="margin-top:8px;height:36px;border-radius:18px;background:#EE7B10;display:grid;place-items:center;color:#fff;font-size:11px;font-weight:700">Save Schedule</div>
+                <p style="font-size:8.5px;color:var(--muted);text-align:center;margin-top:6px">You have unsaved changes.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li><strong>Backend:</strong> <code>bulkUpsert</code> now validates the whole week up front, rejects duplicate days, and writes inside a single transaction — so a bad slot can no longer leave the week half-saved.</li>
+      <li><strong>Database:</strong> new unique index on <code>(astrologer_id, day_of_week)</code>, with a migration that de-duplicates existing rows by keeping the most recently updated one.</li>
+      <li><strong>Screen:</strong> days turned off keep their last times, disabled days no longer fail validation, the button shows <em>Saved</em> when there are no changes, and errors surface the real server message.</li>
+      <li><strong>Loading:</strong> a proper loading state replaces the old silent jump from defaults to saved values, and Postgres <code>HH:MM:SS</code> times are normalised to the picker's <code>HH:MM</code>.</li>
+    </ul>
+  </section>
+
+  <!-- chat kundli -->
+  <section class="cmp">
+    <div class="cmp-head">
+      <div class="num">10</div>
+      <div>
+        <h2>Attach Kundli in chat (AA-017)</h2>
+        <p>
+          The user chat had no way to share a Kundli at all — the composer only had a text field
+          and send button. There is now an attach action that offers the user's saved charts
+          <em>and</em> a file upload.
+        </p>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before</span>
+        <div class="phone">
+          <div class="screen before tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Chat</span>
+                <span class="spacer"></span>
+              </div>
+              <div class="card" style="padding:8px 10px;display:flex;align-items:center;justify-content:space-between">
+                <span style="font-size:8.5px;color:var(--muted)">⏱ 04:12</span>
+                <span style="font-size:8.5px;font-weight:700;color:var(--accent)">Spent ₹35.00</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:7px">
+                <div style="align-self:flex-end;max-width:80%;background:#EE7B10;color:#fff;padding:7px 10px;border-radius:12px 12px 3px 12px;font-size:9.5px;line-height:1.45">Meri kundli dekh lo please</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;padding-top:8px;border-top:1px solid var(--border)">
+                <div style="flex:1;height:32px;border-radius:16px;background:var(--surface-light,#FEF8EA);display:flex;align-items:center;padding:0 10px;font-size:9px;color:var(--muted)">Type a message...</div>
+                <div style="width:32px;height:32px;border-radius:16px;background:#EE7B10;display:grid;place-items:center"><svg style="width:14px;height:14px;color:#fff"><use href="#i-send"/></svg></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-wrap">
+        <span class="tag tag-after">After</span>
+        <div class="phone">
+          <div class="screen after tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Chat</span>
+                <span class="spacer"></span>
+              </div>
+              <div class="card" style="padding:8px 10px;display:flex;align-items:center;justify-content:space-between">
+                <span style="font-size:8.5px;color:var(--muted)">⏱ 04:12</span>
+                <span style="font-size:8.5px;font-weight:700;color:var(--accent)">Spent ₹35.00</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:7px">
+                <div style="align-self:flex-end;display:flex;align-items:center;gap:7px;background:#EE7B10;padding:8px 10px;border-radius:12px 12px 3px 12px;max-width:85%">
+                  <div style="width:24px;height:24px;border-radius:7px;background:rgba(255,255,255,.2);display:grid;place-items:center"><svg style="width:13px;height:13px;color:#fff"><use href="#i-document"/></svg></div>
+                  <div><div style="font-size:9px;font-weight:700;color:#fff">Kundli – Praveen.pdf</div><div style="font-size:7.5px;color:rgba(255,255,255,.8)">Tap to view</div></div>
+                </div>
+                <div style="align-self:flex-end;max-width:80%;background:#EE7B10;color:#fff;padding:7px 10px;border-radius:12px 12px 3px 12px;font-size:9.5px;line-height:1.45">Meri kundli dekh lo please</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;padding-top:8px;border-top:1px solid var(--border)">
+                <svg style="width:19px;height:19px;color:#EE7B10"><use href="#i-attach"/></svg>
+                <div style="flex:1;height:32px;border-radius:16px;background:var(--surface-light,#FEF8EA);display:flex;align-items:center;padding:0 10px;font-size:9px;color:var(--muted)">Type a message...</div>
+                <div style="width:32px;height:32px;border-radius:16px;background:#EE7B10;display:grid;place-items:center"><svg style="width:14px;height:14px;color:#fff"><use href="#i-send"/></svg></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>New attach button in the composer, user side only — astrologers receive, they do not send their own chart.</li>
+      <li>A sheet offers two paths: <strong>Upload a file</strong> (PDF/image up to 20 MB) or <strong>attach a saved Kundli</strong> from <code>/kundli?userId=…</code>.</li>
+      <li>A saved Kundli is computed data rather than a file, so it is shared as a readable message with name, DOB, time and place — not as a link that would 404.</li>
+      <li>Empty state points the user to the Kundli section when they have not generated one yet.</li>
+    </ul>
+  </section>
+
+  <!-- astrologer receives kundli -->
+  <section class="cmp">
+    <div class="cmp-head">
+      <div class="num">11</div>
+      <div>
+        <h2>Astrologer can open the Kundli (AA-018)</h2>
+        <p>
+          The attachment bubble rendered, but it called <code>Linking.openURL(item.mediaUrl)</code> on
+          whatever the server stored. Local uploads return a relative path
+          (<code>/uploads/…</code>), which is not a valid absolute URL, so tapping it failed silently
+          on device.
+        </p>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before</span>
+        <div class="phone">
+          <div class="screen before tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Chat</span>
+                <span class="spacer"></span>
+              </div>
+              <div class="card" style="padding:8px 10px;display:flex;align-items:center;justify-content:space-between">
+                <span style="font-size:8.5px;color:var(--muted)">⏱ 04:12</span>
+                <span style="font-size:8.5px;font-weight:700;color:var(--accent)">Spent ₹35.00</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:7px">
+                <div style="align-self:flex-start;display:flex;align-items:center;gap:7px;background:#FEF8EA;border:1px solid #F6EDC4;padding:8px 10px;border-radius:12px 12px 12px 3px;max-width:85%">
+                  <div style="width:24px;height:24px;border-radius:7px;background:#FEF3C7;display:grid;place-items:center"><svg style="width:13px;height:13px;color:#EE7B10"><use href="#i-document"/></svg></div>
+                  <div><div style="font-size:9px;font-weight:700;color:#8D0B0C">Kundli – Praveen.pdf</div><div style="font-size:7.5px;color:#8B8B8D">Tap to view</div></div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;padding-top:8px;border-top:1px solid var(--border)">
+                <div style="flex:1;height:32px;border-radius:16px;background:var(--surface-light,#FEF8EA);display:flex;align-items:center;padding:0 10px;font-size:9px;color:var(--muted)">Type a message...</div>
+                <div style="width:32px;height:32px;border-radius:16px;background:#EE7B10;display:grid;place-items:center"><svg style="width:14px;height:14px;color:#fff"><use href="#i-send"/></svg></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-wrap">
+        <span class="tag tag-after">After</span>
+        <div class="phone">
+          <div class="screen after tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Chat</span>
+                <span class="spacer"></span>
+              </div>
+              <div class="card" style="padding:8px 10px;display:flex;align-items:center;justify-content:space-between">
+                <span style="font-size:8.5px;color:var(--muted)">⏱ 04:12</span>
+                <span style="font-size:8.5px;font-weight:700;color:var(--accent)">Spent ₹35.00</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:7px">
+                <div style="align-self:flex-start;display:flex;align-items:center;gap:7px;background:#FEF8EA;border:1px solid #F6EDC4;padding:8px 10px;border-radius:12px 12px 12px 3px;max-width:85%">
+                  <div style="width:24px;height:24px;border-radius:7px;background:#FEF3C7;display:grid;place-items:center"><svg style="width:13px;height:13px;color:#EE7B10"><use href="#i-document"/></svg></div>
+                  <div><div style="font-size:9px;font-weight:700;color:#8D0B0C">Kundli – Praveen.pdf</div><div style="font-size:7.5px;color:#8B8B8D">Tap to view</div></div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;padding-top:8px;border-top:1px solid var(--border)">
+                <div style="flex:1;height:32px;border-radius:16px;background:var(--surface-light,#FEF8EA);display:flex;align-items:center;padding:0 10px;font-size:9px;color:var(--muted)">Type a message...</div>
+                <div style="width:32px;height:32px;border-radius:16px;background:#EE7B10;display:grid;place-items:center"><svg style="width:14px;height:14px;color:#fff"><use href="#i-send"/></svg></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>Taps now go through <code>resolveMediaUrl()</code>, which prefixes relative paths with the API origin — the same helper already used for avatars and blog images.</li>
+      <li>Failures report a real message instead of doing nothing, so a broken attachment is visible.</li>
+      <li>Both parties see the same bubble; only the URL resolution changed.</li>
+    </ul>
+  </section>
+
+  <!-- support ticket notification -->
+  <section class="cmp">
+    <div class="cmp-head">
+      <div class="num">12</div>
+      <div>
+        <h2>Support ticket notification wording</h2>
+        <p>
+          Submitting a ticket already notified the user, but the copy was raw: the subject the server
+          stores is <code>[Category] Subject</code>, and that bracket prefix was printed straight into
+          the notification. Titles were also inconsistent (<em>Ticket received</em>, <em>New Reply</em>,
+          <em>Ticket Updated</em>) and gave no reference number to quote in follow-ups.
+        </p>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before</span>
+        <div class="phone">
+          <div class="screen before tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Notifications</span>
+                <span class="spacer"></span>
+              </div>
+<div style="flex:1;overflow:hidden">
+              <p class="page-title" style="font-size:19px">Notifications</p>
+              <div class="card" style="padding:10px;margin-bottom:8px;display:flex;gap:9px;">
+                <div style="width:30px;height:30px;border-radius:15px;flex:none;display:grid;place-items:center;background:rgba(238,123,16,.14)">
+                  <svg style="width:15px;height:15px;color:#EE7B10"><use href="#i-settings"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
+                    <span style="font-size:7px;font-weight:800;letter-spacing:.06em;padding:1px 4px;border-radius:3px;background:rgba(238,123,16,.16);color:#EE7B10">SYSTEM</span>
+                    <span style="font-size:10.5px;font-weight:700;color:var(--heading);flex:1">Ticket received</span>
+                  </div>
+                  <div style="font-size:9px;line-height:1.45;color:var(--body)">Your support ticket &quot;[Billing] Refund not received&quot; has been received. Our team will get back to you soon.</div>
+                  <div style="font-size:8px;color:var(--muted);margin-top:3px">11/05/2026</div>
+                </div>
+                <div style="width:6px;height:6px;border-radius:3px;background:#EE7B10;margin-top:3px;flex:none"></div>
+              </div>
+              <div class="card" style="padding:10px;margin-bottom:8px;display:flex;gap:9px;opacity:.85">
+                <div style="width:30px;height:30px;border-radius:15px;flex:none;display:grid;place-items:center;background:var(--card-alt)">
+                  <svg style="width:15px;height:15px;color:var(--muted)"><use href="#i-settings"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
+                    <span style="font-size:7px;font-weight:800;letter-spacing:.06em;padding:1px 4px;border-radius:3px;background:rgba(238,123,16,.16);color:#EE7B10">SYSTEM</span>
+                    <span style="font-size:10.5px;font-weight:700;color:var(--heading);flex:1">New Reply</span>
+                  </div>
+                  <div style="font-size:9px;line-height:1.45;color:var(--body)">Admin replied to your ticket &quot;[Billing] Refund not received&quot;.</div>
+                  <div style="font-size:8px;color:var(--muted);margin-top:3px">11/05/2026</div>
+                </div>
+                
+              </div>
+              <div class="card" style="padding:10px;margin-bottom:8px;display:flex;gap:9px;opacity:.85">
+                <div style="width:30px;height:30px;border-radius:15px;flex:none;display:grid;place-items:center;background:var(--card-alt)">
+                  <svg style="width:15px;height:15px;color:var(--muted)"><use href="#i-settings"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
+                    <span style="font-size:7px;font-weight:800;letter-spacing:.06em;padding:1px 4px;border-radius:3px;background:rgba(238,123,16,.16);color:#EE7B10">SYSTEM</span>
+                    <span style="font-size:10.5px;font-weight:700;color:var(--heading);flex:1">Ticket Updated</span>
+                  </div>
+                  <div style="font-size:9px;line-height:1.45;color:var(--body)">Your ticket &quot;[Billing] Refund not received&quot; status changed to in_progress.</div>
+                  <div style="font-size:8px;color:var(--muted);margin-top:3px">11/05/2026</div>
+                </div>
+                
+              </div>
+</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-wrap">
+        <span class="tag tag-after">After</span>
+        <div class="phone">
+          <div class="screen after tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Notifications</span>
+                <span class="spacer"></span>
+              </div>
+<div style="flex:1;overflow:hidden">
+              <p class="page-title" style="font-size:19px">Notifications</p>
+              <div class="card" style="padding:10px;margin-bottom:8px;display:flex;gap:9px;">
+                <div style="width:30px;height:30px;border-radius:15px;flex:none;display:grid;place-items:center;background:rgba(238,123,16,.14)">
+                  <svg style="width:15px;height:15px;color:#EE7B10"><use href="#i-buoy"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
+                    <span style="font-size:7px;font-weight:800;letter-spacing:.06em;padding:1px 4px;border-radius:3px;background:rgba(238,123,16,.16);color:#EE7B10">SYSTEM</span>
+                    <span style="font-size:10.5px;font-weight:700;color:var(--heading);flex:1">Support ticket received</span>
+                  </div>
+                  <div style="font-size:9px;line-height:1.45;color:var(--body)">We have received your support ticket &quot;Refund not received&quot; (Billing). Our team will reply shortly. Reference #A1B2C3D4.</div>
+                  <div style="font-size:8px;color:var(--muted);margin-top:3px">11/05/2026</div>
+                </div>
+                <div style="width:6px;height:6px;border-radius:3px;background:#EE7B10;margin-top:3px;flex:none"></div>
+              </div>
+              <div class="card" style="padding:10px;margin-bottom:8px;display:flex;gap:9px;opacity:.85">
+                <div style="width:30px;height:30px;border-radius:15px;flex:none;display:grid;place-items:center;background:var(--card-alt)">
+                  <svg style="width:15px;height:15px;color:var(--muted)"><use href="#i-buoy"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
+                    <span style="font-size:7px;font-weight:800;letter-spacing:.06em;padding:1px 4px;border-radius:3px;background:rgba(238,123,16,.16);color:#EE7B10">SYSTEM</span>
+                    <span style="font-size:10.5px;font-weight:700;color:var(--heading);flex:1">New reply on your support ticket</span>
+                  </div>
+                  <div style="font-size:9px;line-height:1.45;color:var(--body)">Our support team replied to &quot;Refund not received&quot;. Tap to read the reply.</div>
+                  <div style="font-size:8px;color:var(--muted);margin-top:3px">11/05/2026</div>
+                </div>
+                
+              </div>
+              <div class="card" style="padding:10px;margin-bottom:8px;display:flex;gap:9px;opacity:.85">
+                <div style="width:30px;height:30px;border-radius:15px;flex:none;display:grid;place-items:center;background:var(--card-alt)">
+                  <svg style="width:15px;height:15px;color:var(--muted)"><use href="#i-buoy"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
+                    <span style="font-size:7px;font-weight:800;letter-spacing:.06em;padding:1px 4px;border-radius:3px;background:rgba(238,123,16,.16);color:#EE7B10">SYSTEM</span>
+                    <span style="font-size:10.5px;font-weight:700;color:var(--heading);flex:1">Support ticket updated</span>
+                  </div>
+                  <div style="font-size:9px;line-height:1.45;color:var(--body)">Your ticket &quot;Refund not received&quot; is now marked as in progress.</div>
+                  <div style="font-size:8px;color:var(--muted);margin-top:3px">11/05/2026</div>
+                </div>
+                
+              </div>
+</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li>The category is parsed out of the subject and shown separately — <code>[Billing] Refund not received</code> becomes <em>"Refund not received" (Billing)</em>, so the bracket never reaches the user.</li>
+      <li>A short reference (<code>#A1B2C3D4</code>) is added to the receipt so the user can quote it when following up.</li>
+      <li>All six ticket notifications now share one naming scheme: <em>Support ticket received / assigned / updated / resolved</em> and <em>New reply on your support ticket</em>.</li>
+      <li>The resolved message now invites a reply instead of ending the conversation, and taps still deep-link to that exact ticket.</li>
+      <li>Ticket notifications use a support icon instead of the generic system gear, both in the inbox and the push.</li>
+      <li>Admin-facing copies use the same cleaned label, and the assigned-admin message no longer raw-prints the subject.</li>
+    </ul>
+  </section>
+
+  <!-- money formatting -->
+  <section class="cmp">
+    <div class="cmp-head">
+      <div class="num">13</div>
+      <div>
+        <h2>Wallet totals: two decimals only</h2>
+        <p>
+          Transactions are stored as Postgres <code>numeric(12,2)</code> but arrive in the app as
+          strings. The wallet screen summed them with <code>Number(t.amount)</code>, and binary
+          floating point drifts — <code>144.64000000000001</code> is the result of adding
+          values like 0.03, 1.03 and 100 together, not bad data in the database.
+        </p>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before</span>
+        <div class="phone">
+          <div class="screen before">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">My Wallet</span>
+                <span class="spacer"></span>
+              </div>
+              <div class="card" style="padding:14px;text-align:center">
+                <div style="font-size:8px;color:var(--muted)">Available Balance</div>
+                <div style="font-size:26px;font-weight:800;color:var(--accent);margin-top:2px">₹124.64</div>
+                <div style="margin-top:10px;height:30px;border-radius:15px;background:#EE7B10;display:grid;place-items:center;color:#fff;font-size:9.5px;font-weight:700">Withdraw</div>
+              </div>
+              <div style="display:flex;gap:9px;margin-top:10px">
+                <div class="card" style="flex:1;padding:11px;text-align:center;overflow:hidden">
+                  <div style="font-size:11px;font-weight:800;color:#23A867;word-break:break-all;">+₹144.64000000000001</div>
+                  <div style="font-size:8px;color:var(--muted);margin-top:2px">Total Credits</div>
+                </div>
+                <div class="card" style="flex:1;padding:11px;text-align:center;overflow:hidden">
+                  <div style="font-size:13px;font-weight:800;color:#C21415;">-₹20</div>
+                  <div style="font-size:8px;color:var(--muted);margin-top:2px">Total Debits</div>
+                </div>
+              </div>
+              <div class="card" style="margin-top:10px;padding:9px 11px">
+                <div style="font-size:8px;font-weight:800;letter-spacing:.08em;color:var(--accent);margin-bottom:5px">TRANSACTIONS</div>
+                <div class="row" style="border-bottom:1px solid var(--row-border);padding:6px 0">
+                  <span class="row-label" style="font-size:9px">Chat earnings</span>
+                  <span style="font-size:9px;font-weight:700;color:#23A867">+₹100.00</span>
+                </div>
+                <div class="row" style="border-bottom:1px solid var(--row-border);padding:6px 0">
+                  <span class="row-label" style="font-size:9px">Call earnings</span>
+                  <span style="font-size:9px;font-weight:700;color:#23A867">+₹44.64</span>
+                </div>
+                <div class="row" style="border:0;padding:6px 0">
+                  <span class="row-label" style="font-size:9px">Withdrawal</span>
+                  <span style="font-size:9px;font-weight:700;color:#C21415">-₹20.00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-wrap">
+        <span class="tag tag-after">After</span>
+        <div class="phone">
+          <div class="screen after">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">My Wallet</span>
+                <span class="spacer"></span>
+              </div>
+              <div class="card" style="padding:14px;text-align:center">
+                <div style="font-size:8px;color:var(--muted)">Available Balance</div>
+                <div style="font-size:26px;font-weight:800;color:var(--accent);margin-top:2px">₹124.64</div>
+                <div style="margin-top:10px;height:30px;border-radius:15px;background:#EE7B10;display:grid;place-items:center;color:#fff;font-size:9.5px;font-weight:700">Withdraw</div>
+              </div>
+              <div style="display:flex;gap:9px;margin-top:10px">
+                <div class="card" style="flex:1;padding:11px;text-align:center;overflow:hidden">
+                  <div style="font-size:13px;font-weight:800;color:var(--a-success,#23A867);">+₹144.64</div>
+                  <div style="font-size:8px;color:var(--muted);margin-top:2px">Total Credits</div>
+                </div>
+                <div class="card" style="flex:1;padding:11px;text-align:center;overflow:hidden">
+                  <div style="font-size:13px;font-weight:800;color:#C21415;">-₹20.00</div>
+                  <div style="font-size:8px;color:var(--muted);margin-top:2px">Total Debits</div>
+                </div>
+              </div>
+              <div class="card" style="margin-top:10px;padding:9px 11px">
+                <div style="font-size:8px;font-weight:800;letter-spacing:.08em;color:var(--accent);margin-bottom:5px">TRANSACTIONS</div>
+                <div class="row" style="border-bottom:1px solid var(--row-border);padding:6px 0">
+                  <span class="row-label" style="font-size:9px">Chat earnings</span>
+                  <span style="font-size:9px;font-weight:700;color:#23A867">+₹100.00</span>
+                </div>
+                <div class="row" style="border-bottom:1px solid var(--row-border);padding:6px 0">
+                  <span class="row-label" style="font-size:9px">Call earnings</span>
+                  <span style="font-size:9px;font-weight:700;color:#23A867">+₹44.64</span>
+                </div>
+                <div class="row" style="border:0;padding:6px 0">
+                  <span class="row-label" style="font-size:9px">Withdrawal</span>
+                  <span style="font-size:9px;font-weight:700;color:#C21415">-₹20.00</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li><strong>Root cause:</strong> newer files that already used <code>formatAmount()</code> looked correct, so the bug appeared in only "some places" — the wallet, gift and payment screens had raw sums.</li>
+      <li><strong>Fix:</strong> a shared <code>sumAmounts()</code> adds in integer paise and divides back once, so the sum is exact before it is formatted.</li>
+      <li>Every money render now passes through <code>formatAmount()</code> — totals, per-row amounts, balances and payment confirmations.</li>
+      <li><strong>Related fix:</strong> dividing Razorpay paise by 100 produced <code>₹0.5</code>, <code>₹1.2</code> and <code>₹4</code>; those now render as <code>₹0.50</code>, <code>₹1.20</code> and <code>₹4.00</code>.</li>
+      <li>The admin panel's wallet page got the same treatment in <code>web/src/lib/utils.ts</code>.</li>
+      <li>Verified against 20,000 generated ledgers: the old render drifted in 7,111 of them, the new one in none.</li>
+    </ul>
+  </section>
+
+  <!-- chat keyboard gap -->
+  <section class="cmp">
+    <div class="cmp-head">
+      <div class="num">14</div>
+      <div>
+        <h2>Chat input: gap above the keyboard</h2>
+        <p>
+          On Android the input bar floated well above the keyboard. Two things stacked up:
+          the app is configured with <code>softwareKeyboardLayoutMode: "resize"</code>, so Android
+          already shrinks the window when the keyboard opens — and the screen <em>also</em> added the
+          full keyboard height to the bar's <code>paddingBottom</code>.
+        </p>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before</span>
+        <div class="phone">
+          <div class="screen before tall" style="overflow:hidden">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body" style="padding-bottom:0">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Chat</span>
+                <span class="spacer"></span>
+              </div>
+              <div style="display:flex;gap:7px;align-items:center;padding:4px 2px">
+                <span style="font-size:8.5px;color:var(--muted)">⏱ 04:12</span>
+                <span style="flex:1"></span>
+                <span style="font-size:8.5px;font-weight:700;color:var(--accent)">Spent ₹35.00</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:7px;padding-bottom:8px">
+                <div style="align-self:flex-start;max-width:78%;background:var(--card-alt);border:1px solid var(--border);padding:7px 10px;border-radius:12px 12px 12px 3px;font-size:9px;line-height:1.45;color:var(--body)">Kundli dekh lo please</div>
+                <div style="align-self:flex-end;max-width:80%;background:#EE7B10;color:#fff;padding:7px 10px;border-radius:12px 12px 3px 12px;font-size:9px;line-height:1.45">Bhej diya, check karo</div>
+              </div>
+              <div style="height:92px;display:grid;place-items:center;background:repeating-linear-gradient(45deg,rgba(194,20,21,.10),rgba(194,20,21,.10) 5px,transparent 5px,transparent 10px);border-radius:6px;margin:6px 0">
+                <span style="font-size:7.5px;font-weight:800;letter-spacing:.06em;color:#C21415;background:rgba(255,255,255,.75);padding:1px 4px;border-radius:3px">DEAD SPACE ~92px</span>
+              </div>
+              <div style="border-top:1px solid var(--border);background:var(--app-bg);padding:8px 10px 70px;display:flex;align-items:center;gap:6px;margin:0 -14px -16px">
+                <svg style="width:17px;height:17px;color:#EE7B10;flex:none"><use href="#i-attach"/></svg>
+                <div style="flex:1;height:30px;border-radius:15px;background:var(--card-alt);display:flex;align-items:center;padding:0 10px;font-size:9px;color:var(--muted)">Type a message...</div>
+                <div style="width:30px;height:30px;border-radius:15px;background:#EE7B10;display:grid;place-items:center;flex:none"><svg style="width:13px;height:13px;color:#fff"><use href="#i-send"/></svg></div>
+              </div>
+              <div style="margin:0 -14px -16px;height:150px;background:#20202a;border-top:1px solid #34343f;display:flex;flex-direction:column;justify-content:center;gap:5px;padding:8px 10px">
+                <div style="display:flex;gap:3px;justify-content:center">
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                </div>
+                <div style="display:flex;gap:3px;justify-content:center">
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                </div>
+                <div style="text-align:center;font-size:6.5px;color:#8b8b96;margin-top:2px">keyboard</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-wrap">
+        <span class="tag tag-after">After</span>
+        <div class="phone">
+          <div class="screen after tall" style="overflow:hidden">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body" style="padding-bottom:0">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">Chat</span>
+                <span class="spacer"></span>
+              </div>
+              <div style="display:flex;gap:7px;align-items:center;padding:4px 2px">
+                <span style="font-size:8.5px;color:var(--muted)">⏱ 04:12</span>
+                <span style="flex:1"></span>
+                <span style="font-size:8.5px;font-weight:700;color:var(--accent)">Spent ₹35.00</span>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:7px;padding-bottom:8px">
+                <div style="align-self:flex-start;max-width:78%;background:var(--card-alt);border:1px solid var(--border);padding:7px 10px;border-radius:12px 12px 12px 3px;font-size:9px;line-height:1.45;color:var(--body)">Kundli dekh lo please</div>
+                <div style="align-self:flex-end;max-width:80%;background:#EE7B10;color:#fff;padding:7px 10px;border-radius:12px 12px 3px 12px;font-size:9px;line-height:1.45">Bhej diya, check karo</div>
+              </div>
+
+              <div style="border-top:1px solid var(--border);background:var(--app-bg);padding:8px 10px 8px;display:flex;align-items:center;gap:6px;margin:0 -14px -16px">
+                <svg style="width:17px;height:17px;color:#EE7B10;flex:none"><use href="#i-attach"/></svg>
+                <div style="flex:1;height:30px;border-radius:15px;background:var(--card-alt);display:flex;align-items:center;padding:0 10px;font-size:9px;color:var(--muted)">Type a message...</div>
+                <div style="width:30px;height:30px;border-radius:15px;background:#EE7B10;display:grid;place-items:center;flex:none"><svg style="width:13px;height:13px;color:#fff"><use href="#i-send"/></svg></div>
+              </div>
+              <div style="margin:0 -14px -16px;height:150px;background:#20202a;border-top:1px solid #34343f;display:flex;flex-direction:column;justify-content:center;gap:5px;padding:8px 10px">
+                <div style="display:flex;gap:3px;justify-content:center">
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                </div>
+                <div style="display:flex;gap:3px;justify-content:center">
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                </div>
+                <div style="text-align:center;font-size:6.5px;color:#8b8b96;margin-top:2px">keyboard</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li><strong>Cause 1:</strong> <code>paddingBottom: keyboardHeight + insets.bottom + 12</code> on Android. Since the window already resized, that pushed the bar up by a whole keyboard height — the visible dead space.</li>
+      <li><strong>Cause 2:</strong> the bottom safe-area inset kept being reserved while the keyboard was open, adding the navigation-bar inset a second time.</li>
+      <li><strong>Fix:</strong> Android now uses a flat 8px breathing space; only iOS pads manually, because it overlays the window instead of resizing it.</li>
+      <li>The bottom safe-area edge is dropped while the keyboard is visible and restored when it closes, so nothing is reserved twice.</li>
+      <li>Removed the now-unused <code>keyboardHeight</code> state — the listener only tracks visibility.</li>
+    </ul>
+  </section>
+
+  <!-- transaction labels -->
+  <section class="cmp">
+    <div class="cmp-head">
+      <div class="num">15</div>
+      <div>
+        <h2>Wallet transactions: show the service, not the accounting category</h2>
+        <p>
+          Both apps printed the raw database <code>category</code>. Every astrologer credit is stored
+          as <code>commission</code> — whether it came from a chat, an audio call or a video call —
+          so the wallet showed a wall of identical "Commission" rows. <code>refund</code> was shown
+          the same way, with no hint of what was refunded.
+        </p>
+      </div>
+    </div>
+    <div class="phones">
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before</span>
+        <div class="phone">
+          <div class="screen before tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">My Wallet</span>
+                <span class="spacer"></span>
+              </div>
+              <div class="card" style="padding:11px;text-align:center">
+                <div style="font-size:8px;color:var(--muted)">Available Balance</div>
+                <div style="font-size:24px;font-weight:800;color:var(--accent);margin-top:1px">₹124.64</div>
+              </div>
+              <div style="display:flex;gap:6px;margin:9px 0 4px">
+                <span class="chip on" style="height:24px;padding:0 9px;font-size:8.5px">All</span>
+                <span class="chip" style="height:24px;padding:0 9px;font-size:8.5px">Credit</span>
+                <span class="chip" style="height:24px;padding:0 9px;font-size:8.5px">Chat</span>
+                <span class="chip" style="height:24px;padding:0 9px;font-size:8.5px">Audio</span>
+                <span class="chip" style="height:24px;padding:0 9px;font-size:8.5px">Video</span>
+              </div>
+              <div class="card" style="padding:4px 10px">
+                <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--row-border)">
+                  <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#23A86722">
+                    <svg style="width:14px;height:14px;color:#23A867"><use href="#i-cash"/></svg>
+                  </div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:10px;font-weight:700;color:var(--heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Commission</div>
+                    <div style="font-size:8px;color:var(--muted)">05/11/2026</div>
+                  </div>
+                  <div style="font-size:10px;font-weight:800;color:#23A867;flex:none">+₹1.03</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--row-border)">
+                  <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#8B8B8D22">
+                    <svg style="width:14px;height:14px;color:#8B8B8D"><use href="#i-receipt"/></svg>
+                  </div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:10px;font-weight:700;color:var(--heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Commission</div>
+                    <div style="font-size:8px;color:var(--muted)">05/11/2026</div>
+                  </div>
+                  <div style="font-size:10px;font-weight:800;color:#23A867;flex:none">+₹0.12</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--row-border)">
+                  <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#23A86722">
+                    <svg style="width:14px;height:14px;color:#23A867"><use href="#i-cash"/></svg>
+                  </div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:10px;font-weight:700;color:var(--heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Commission</div>
+                    <div style="font-size:8px;color:var(--muted)">04/11/2026</div>
+                  </div>
+                  <div style="font-size:10px;font-weight:800;color:#23A867;flex:none">+₹0.83</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--row-border)">
+                  <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#8B8B8D22">
+                    <svg style="width:14px;height:14px;color:#8B8B8D"><use href="#i-receipt"/></svg>
+                  </div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:10px;font-weight:700;color:var(--heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Call Charge</div>
+                    <div style="font-size:8px;color:var(--muted)">04/11/2026</div>
+                  </div>
+                  <div style="font-size:10px;font-weight:800;color:#C21415;flex:none">-₹0.92</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-wrap">
+        <span class="tag tag-after">After</span>
+        <div class="phone">
+          <div class="screen after tall">
+            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body">
+              <div class="navbar">
+                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
+                <span class="nav-title">My Wallet</span>
+                <span class="spacer"></span>
+              </div>
+              <div class="card" style="padding:11px;text-align:center">
+                <div style="font-size:8px;color:var(--muted)">Available Balance</div>
+                <div style="font-size:24px;font-weight:800;color:var(--accent);margin-top:1px">₹124.64</div>
+              </div>
+              <div style="display:flex;gap:6px;margin:9px 0 4px">
+                <span class="chip on" style="height:24px;padding:0 9px;font-size:8.5px">All</span>
+                <span class="chip" style="height:24px;padding:0 9px;font-size:8.5px">Credit</span>
+                <span class="chip" style="height:24px;padding:0 9px;font-size:8.5px">Chat</span>
+                <span class="chip" style="height:24px;padding:0 9px;font-size:8.5px">Audio</span>
+                <span class="chip" style="height:24px;padding:0 9px;font-size:8.5px">Video</span>
+              </div>
+              <div class="card" style="padding:4px 10px">
+                <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--row-border)">
+                  <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#0284C722">
+                    <svg style="width:14px;height:14px;color:#0284C7"><use href="#i-call"/></svg>
+                  </div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:10px;font-weight:700;color:var(--heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Audio call earnings</div>
+                    <div style="font-size:8px;color:var(--muted)">05/11/2026 · 23s</div>
+                  </div>
+                  <div style="font-size:10px;font-weight:800;color:#23A867;flex:none">+₹1.03</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--row-border)">
+                  <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#23A86722">
+                    <svg style="width:14px;height:14px;color:#23A867"><use href="#i-cash"/></svg>
+                  </div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:10px;font-weight:700;color:var(--heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Platform fee — audio call</div>
+                    <div style="font-size:8px;color:var(--muted)">05/11/2026</div>
+                  </div>
+                  <div style="font-size:10px;font-weight:800;color:#23A867;flex:none">+₹0.12</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--row-border)">
+                  <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#7C3AED22">
+                    <svg style="width:14px;height:14px;color:#7C3AED"><use href="#i-videocam"/></svg>
+                  </div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:10px;font-weight:700;color:var(--heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Video call earnings</div>
+                    <div style="font-size:8px;color:var(--muted)">04/11/2026 · 11s</div>
+                  </div>
+                  <div style="font-size:10px;font-weight:800;color:#23A867;flex:none">+₹0.83</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--row-border)">
+                  <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#0284C722">
+                    <svg style="width:14px;height:14px;color:#0284C7"><use href="#i-call"/></svg>
+                  </div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:10px;font-weight:700;color:var(--heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Audio call</div>
+                    <div style="font-size:8px;color:var(--muted)">04/11/2026 · 23s</div>
+                  </div>
+                  <div style="font-size:10px;font-weight:800;color:#C21415;flex:none">-₹0.92</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <ul class="notes">
+      <li><strong>Root cause:</strong> the label was <code>t.category.replace('_',' ')</code>, and the category is an accounting bucket, not a description of the service.</li>
+      <li>Every row now resolves to a service: <em>Chat consultation / Chat earnings</em>, <em>Audio call / Audio call earnings</em>, <em>Video call / Video call earnings</em>.</li>
+      <li>Platform-fee rows are distinguished from the astrologer's own earnings instead of both reading "Commission".</li>
+      <li><code>refund</code> now reads <strong>Refund to wallet</strong>, and the other categories got plain names too — Wallet recharge, Temple donation, Store order, Puja booking.</li>
+      <li><strong>Backend:</strong> new credits record <code>metadata.serviceType</code>, and the real call type is passed through instead of defaulting to audio.</li>
+      <li><strong>Backfill:</strong> migration resolves historical rows by joining <code>call_logs.type</code> via <code>reference_id</code> — 12 rows corrected exactly, no guessing from text.</li>
+      <li>The astrologer wallet also gained Chat / Audio Call / Video Call filters, matching the user wallet.</li>
+    </ul>
+  </section>
+
+  <!-- recap -->
+  <section class="cmp">
+    <div class="cmp-head">
+      <div class="num">16</div>
+      <div>
+        <h2>Token recap</h2>
+        <p>What replaced the per-screen hex values. Everything below lives in <code>app/src/shared/theme.ts</code>.</p>
+      </div>
+    </div>
+    <table class="recap">
+      <thead>
+        <tr><th>Token</th><th>Light</th><th>Dark</th><th>Replaces</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>card</code></td><td>#FFFCF5</td><td>#111827</td><td><code>isDark ? "#111827" : "#FFFCF5"</code></td></tr>
+        <tr><td><code>cardAlt</code></td><td>#FEF8EA</td><td>#1F2937</td><td><code>isDark ? "#1F2937" : "#FEF8EA"</code></td></tr>
+        <tr><td><code>surfaceElevated</code></td><td>#FFF8ED</td><td>#111827</td><td><code>isDark ? cardBg : "#FFF8ED"</code></td></tr>
+        <tr><td><code>rowBorder</code></td><td>#F3EAD6</td><td>rgba(255,255,255,.08)</td><td>#F3F4F6 cool grey</td></tr>
+        <tr><td><code>heading</code></td><td>#8D0B0C</td><td>#FBBF24</td><td><code>isDark ? "#FBBF24" : "#8D0B0C"</code></td></tr>
+        <tr><td><code>textStrong</code></td><td>#1F2937</td><td>#F9FAFB</td><td>values painted with heading color</td></tr>
+        <tr><td><code>textBody</code></td><td>#45484F</td><td>#E5E7EB</td><td><code>textSecondary</code> duplicates</td></tr>
+        <tr><td><code>chipBg</code> / <code>chipBorder</code></td><td>#FEF8EA / #F2DFAE</td><td>#1F2937 / white 8%</td><td>#E2E8F0 / #1E293B slate</td></tr>
+        <tr><td><code>tabBarBorder</code></td><td>#F6EDC4</td><td>rgba(245,158,11,.25)</td><td>#374151 dark grey</td></tr>
+        <tr><td><code>switchOn</code> / <code>switchOff</code></td><td>#EE7B10 / #D1D5DB</td><td>#F59E0B / #4B5563</td><td>hardcoded #8D0B0C / #D1D5DB</td></tr>
+        <tr><td><code>primaryLight</code> (group headers, menu icons)</td><td>#F59E0B</td><td>#F59E0B</td><td>per-screen gold/maroon mixes</td></tr>
+        <tr><td><code>rowBorder</code> in gift &amp; wallet</td><td>#F3EAD6</td><td>rgba(255,255,255,.08)</td><td>#E2E8F0 / #F1F5F9 slate</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+</main>
+
+<footer>
+  Astro Shine · theme unification pass · mockup rendered from the actual token values in <code>app/src/shared/theme.ts</code>
+</footer>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var buttons = document.querySelectorAll('[data-set-mode]');
+
+    function apply(mode) {
+      root.setAttribute('data-mode', mode);
+      buttons.forEach(function (b) {
+        b.classList.toggle('on', b.getAttribute('data-set-mode') === mode);
+      });
+    }
+
+    buttons.forEach(function (b) {
+      b.addEventListener('click', function () {
+        apply(b.getAttribute('data-set-mode'));
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>

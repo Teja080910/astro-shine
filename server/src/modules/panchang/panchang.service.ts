@@ -44,6 +44,25 @@ export class PanchangService {
     return r;
   }
 
+  festivals(
+    startDate: string,
+    days: number,
+    fastingOnly: boolean,
+    lat: number,
+    lng: number,
+    timezone: number,
+  ) {
+    const date = startDate || new Date().toISOString().slice(0, 10);
+    return this.astrology.calculateFestivals(
+      date,
+      lat,
+      lng,
+      timezone,
+      days,
+      fastingOnly,
+    );
+  }
+
   async create(data: typeof schema.panchangRecords.$inferInsert) {
     const result = await this.astrology.calculatePanchang(
       data.date,

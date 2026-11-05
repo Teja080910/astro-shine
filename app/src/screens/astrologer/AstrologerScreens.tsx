@@ -1,3 +1,4 @@
+
 import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused, useNavigation } from "@react-navigation/native";
 import React, { useCallback, useEffect, useState, useMemo } from "react";
@@ -34,9 +35,12 @@ import {
   colors,
   radii,
   typography,
-  OmIcon,
+  BrandHeader,
   Navbar,
   formatAmount,
+  sumAmounts,
+  transactionLabel,
+  transactionService,
 } from "../../shared";
 import { api } from "../../shared/api-client";
 import { resolveNotificationTarget } from "../../shared/notification-router";
@@ -53,7 +57,7 @@ import * as Location from "expo-location";
 
 export function AstrologerHomeScreen({ navigation }: any) {
   const { astrologer, theme, updateUser } = useAuth();
-  const { astrologerStatuses, onlineUsers, statsVersion, blogVersion, notificationVersion } = useChat();
+  const { astrologerStatuses, onlineUsers, statsVersion, blogVersion, notificationVersion, notificationUnreadCount } = useChat();
   const isFocused = useIsFocused();
   const isDark = theme === "dark";
   const { width: screenWidth } = useWindowDimensions();
@@ -144,15 +148,12 @@ export function AstrologerHomeScreen({ navigation }: any) {
     region: string;
   } | null>(null);
 
-  const titleColor = isDark ? "#FBBF24" : "#7F1D1D";
-  const iconColor = isDark ? "#F59E0B" : "#7F1D1D";
-  const cardLightBg = isDark ? "#1F2937" : "#FFFBEB";
-  const cardBorderColor = isDark ? "rgba(245, 158, 11, 0.25)" : "#FDE68A";
-  const bodyTextColor = isDark ? "#E5E7EB" : "#374151";
-  const mutedTextColor = isDark ? "#9CA3AF" : "#6B7280";
-  const goldTextColor = isDark ? "#FBBF24" : "#D97706";
-
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const titleColor = colors.heading;
+  const cardLightBg = colors.cardAlt;
+  const cardBorderColor = colors.cardBorder;
+  const bodyTextColor = colors.textBody;
+  const mutedTextColor = colors.textMuted;
+  const goldTextColor = colors.accentText;
 
   const greeting = (() => {
     const hour = new Date().getHours();
@@ -342,94 +343,11 @@ export function AstrologerHomeScreen({ navigation }: any) {
       >
         <View style={{ width: "100%", maxWidth: 600, alignSelf: "center" }}>
           {/* Top Header Bar */}
-          <View style={styles.topHeader}>
-            <View style={{ flex: 1, alignItems: "flex-start" }}>
-              <TouchableOpacity
-                onPress={() => setMenuOpen(true)}
-                style={{ padding: 4, width: 40 }}
-              >
-                <Ionicons name="menu-outline" size={28} color={iconColor} />
-              </TouchableOpacity>
-            </View>
-
-            <View
-              style={{
-                alignItems: "center",
-                flexShrink: 1,
-                minWidth: 0,
-                paddingHorizontal: 4,
-              }}
-            >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 6,
-                  maxWidth: "100%",
-                }}
-              >
-                <OmIcon isDark={isDark} />
-                <Text
-                  style={{
-                    fontSize: isCompact ? 16 : 20,
-                    fontWeight: "900",
-                    color: isDark ? "#FBBF24" : "#D97706",
-                    letterSpacing: 0.5,
-                    flexShrink: 1,
-                  }}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  ASTROSHINE
-                </Text>
-              </View>
-              <Text
-                style={{
-                  fontSize: 8,
-                  fontWeight: "800",
-                  color: isDark ? "#FBBF24" : "#D97706",
-                  letterSpacing: 1,
-                  marginTop: 1,
-                  textAlign: "center",
-                }}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.7}
-              >
-                YOUR DESTINY, YOUR GUIDANCE
-              </Text>
-            </View>
-
-            <View
-              style={{
-                flex: 1,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "flex-end",
-                gap: 6,
-                flexShrink: 0,
-              }}
-            >
-              <TouchableOpacity
-                onPress={() => navigation.navigate("Notifications")}
-                style={{ padding: 4, position: "relative" }}
-              >
-                <Ionicons
-                  name="notifications-outline"
-                  size={24}
-                  color={iconColor}
-                />
-                {unreadCount > 0 && (
-                  <View style={styles.headerBadge}>
-                    <Text style={{ color: "#fff", fontSize: 10, fontWeight: "800" }}>
-                      {unreadCount > 9 ? "9+" : unreadCount}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
+          <BrandHeader
+            onLeftPress={() => setMenuOpen(true)}
+            notificationCount={notificationUnreadCount}
+            onNotificationsPress={() => navigation.navigate("Notifications")}
+          />
 
           {/* Greeting & Online Toggle Card */}
           <View
@@ -603,7 +521,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
                     backgroundColor: isDark
                       ? "rgba(245, 158, 11, 0.15)"
                       : "#FEF3C7",
-                    borderColor: isDark ? "rgba(245, 158, 11, 0.3)" : "#FCD34D",
+                    borderColor: isDark ? "rgba(245, 158, 11, 0.3)" : "#F2DFAE",
                   },
                 ]}
               >
@@ -817,7 +735,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
                 <Ionicons
                   name="call"
                   size={20}
-                  color={isAudioCallEnabled ? "#3B82F6" : mutedTextColor}
+                  color={isAudioCallEnabled ? "#3188FB" : mutedTextColor}
                 />
               </View>
               <View style={{ flex: 1 }}>
@@ -837,7 +755,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
               <Toggle
                 value={isAudioCallEnabled}
                 onValueChange={toggleAudioCall}
-                trackColor={{ false: "#D1D5DB", true: "#3B82F6" }}
+                trackColor={{ false: "#D1D5DB", true: "#3188FB" }}
               />
             </View>
 
@@ -984,12 +902,12 @@ export function AstrologerHomeScreen({ navigation }: any) {
                     borderRadius: 26,
                     backgroundColor: isDark ? "rgba(59, 130, 246, 0.15)" : "rgba(59, 130, 246, 0.08)",
                     borderWidth: 1.5,
-                    borderColor: "#3B82F6",
+                    borderColor: "#3188FB",
                     alignItems: "center",
                     justifyContent: "center",
                   }}
                 >
-                  <Ionicons name="call" size={22} color="#3B82F6" />
+                  <Ionicons name="call" size={22} color="#3188FB" />
                 </View>
                 <Text style={{ fontSize: 11, fontWeight: "700", color: colors.textPrimary, marginTop: 6, textAlign: "center" }}>
                   Call
@@ -1087,9 +1005,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
                   >
                     <View style={{ flex: 1 }}>
                       <Text style={[typography.cardTitle, { fontSize: 14 }]}>
-                        {t.category
-                          ?.replace(/_/g, " ")
-                          .replace(/\b\w/g, (c: string) => c.toUpperCase())}
+                        {transactionLabel(t as any)}
                       </Text>
                       <Text style={typography.caption}>
                         {new Date(t.createdAt).toLocaleDateString()}
@@ -1102,7 +1018,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
                           t.type === "credit" ? colors.success : colors.danger,
                       }}
                     >
-                      {t.type === "credit" ? "+" : "-"}₹{t.amount}
+                      {t.type === "credit" ? "+" : "-"}₹{formatAmount(t.amount)}
                     </Text>
                   </View>
                 </GlassCard>
@@ -1235,7 +1151,9 @@ export function AstrologerWalletScreen({ navigation }: any) {
   const isFocused = useIsFocused();
   const [balance, setBalance] = useState("0");
   const [txns, setTxns] = useState<Transaction[]>([]);
-  const [filter, setFilter] = useState<"all" | "credit" | "debit">("all");
+  const [filter, setFilter] = useState<
+    "all" | "credit" | "debit" | "chat" | "audio_call" | "video_call"
+  >("all");
   const [refreshing, setRefreshing] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -1259,14 +1177,20 @@ export function AstrologerWalletScreen({ navigation }: any) {
     setRefreshing(false);
   };
 
-  const filtered =
-    filter === "all" ? txns : txns.filter((t) => t.type === filter);
-  const totalCredits = txns
-    .filter((t) => t.type === "credit")
-    .reduce((s, t) => s + Number(t.amount), 0);
-  const totalDebits = txns
-    .filter((t) => t.type === "debit")
-    .reduce((s, t) => s + Number(t.amount), 0);
+  const filtered = useMemo(() => {
+    if (filter === "all") return txns;
+    if (filter === "credit" || filter === "debit") {
+      return txns.filter((t) => t.type === filter);
+    }
+    // service filters: only rows whose money came from that service
+    return txns.filter((t) => transactionService(t as any) === filter);
+  }, [txns, filter]);
+  const totalCredits = sumAmounts(
+    txns.filter((t) => t.type === "credit").map((t) => t.amount),
+  );
+  const totalDebits = sumAmounts(
+    txns.filter((t) => t.type === "debit").map((t) => t.amount),
+  );
 
   return (
     <ScreenWrapper noPadding>
@@ -1287,7 +1211,7 @@ export function AstrologerWalletScreen({ navigation }: any) {
               marginTop: 4,
             }}
           >
-            ₹{balance}
+            ₹{formatAmount(balance)}
           </Text>
           <View
             style={{
@@ -1311,13 +1235,13 @@ export function AstrologerWalletScreen({ navigation }: any) {
         <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
           <GlassCard style={{ flex: 1, alignItems: "center", padding: 14 }}>
             <Text style={[typography.cardTitle, { color: colors.success }]}>
-              +₹{totalCredits}
+              +₹{formatAmount(totalCredits)}
             </Text>
             <Text style={typography.caption}>Total Credits</Text>
           </GlassCard>
           <GlassCard style={{ flex: 1, alignItems: "center", padding: 14 }}>
             <Text style={[typography.cardTitle, { color: colors.danger }]}>
-              -₹{totalDebits}
+              -₹{formatAmount(totalDebits)}
             </Text>
             <Text style={typography.caption}>Total Debits</Text>
           </GlassCard>
@@ -1332,12 +1256,19 @@ export function AstrologerWalletScreen({ navigation }: any) {
             paddingHorizontal: 4,
           }}
         >
-          {(["all", "credit", "debit"] as const).map((f) => (
+          {([
+            { key: "all", label: "All" },
+            { key: "credit", label: "Credit" },
+            { key: "debit", label: "Debit" },
+            { key: "chat", label: "Chat" },
+            { key: "audio_call", label: "Audio Call" },
+            { key: "video_call", label: "Video Call" },
+          ] as const).map((f) => (
             <Chip
-              key={f}
-              label={f.charAt(0).toUpperCase() + f.slice(1)}
-              selected={filter === f}
-              onPress={() => setFilter(f)}
+              key={f.key}
+              label={f.label}
+              selected={filter === f.key}
+              onPress={() => setFilter(f.key)}
             />
           ))}
         </View>
@@ -1365,9 +1296,7 @@ export function AstrologerWalletScreen({ navigation }: any) {
               >
                 <View style={{ flex: 1 }}>
                   <Text style={[typography.cardTitle, { fontSize: 14 }]}>
-                    {t.category
-                      ?.replace(/_/g, " ")
-                      .replace(/\b\w/g, (c) => c.toUpperCase())}
+                    {transactionLabel(t as any)}
                   </Text>
                   <Text style={typography.caption}>
                     {new Date(t.createdAt).toLocaleDateString()}
@@ -1379,7 +1308,7 @@ export function AstrologerWalletScreen({ navigation }: any) {
                     color: t.type === "credit" ? colors.success : colors.danger,
                   }}
                 >
-                  {t.type === "credit" ? "+" : "-"}₹{t.amount}
+                  {t.type === "credit" ? "+" : "-"}₹{formatAmount(t.amount)}
                 </Text>
               </View>
             </GlassCard>
@@ -1730,7 +1659,7 @@ export function AstrologerWithdrawalScreen() {
               >
                 <View>
                   <Text style={[typography.cardTitle, { fontSize: 15 }]}>
-                    ₹{r.amount}
+                    ₹{formatAmount(r.amount)}
                   </Text>
                   <Text style={typography.caption}>
                     {new Date(r.createdAt).toLocaleDateString()}
@@ -1894,9 +1823,10 @@ export function AstrologerReviewsScreen() {
 export function AstrologerNotificationsScreen() {
   const navigation = useNavigation<any>();
   const { astrologer } = useAuth();
-  const { notificationVersion } = useChat();
+  const { notificationVersion, markAllNotificationsRead, refreshNotificationUnreadCount } = useChat();
   const [notifs, setNotifs] = useState<Notification[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [markingAll, setMarkingAll] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -1923,7 +1853,18 @@ export function AstrologerNotificationsScreen() {
       setNotifs((prev) =>
         prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
       );
+      refreshNotificationUnreadCount();
     } catch {}
+  };
+
+  const handleMarkAllRead = async () => {
+    setMarkingAll(true);
+    setNotifs((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    try {
+      await markAllNotificationsRead();
+    } finally {
+      setMarkingAll(false);
+    }
   };
 
   const handlePress = (n: Notification) => {
@@ -1931,6 +1872,8 @@ export function AstrologerNotificationsScreen() {
     const target = resolveNotificationTarget(n, 'astrologer');
     if (target) navigation.navigate(target.screen, target.params);
   };
+
+  const unread = notifs.filter((n) => !n.isRead).length;
 
   return (
     <ScreenWrapper>
@@ -1940,6 +1883,18 @@ export function AstrologerNotificationsScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
+        {notifs.length > 0 && unread > 0 && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <Text style={[typography.caption, { color: colors.textMuted }]}>
+              {unread} unread
+            </Text>
+            <TouchableOpacity onPress={handleMarkAllRead} disabled={markingAll}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primaryLight }}>
+                {markingAll ? 'Marking...' : 'Mark all as read'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
         {notifs.length === 0 ? (
           <EmptyState
             icon={
@@ -2466,8 +2421,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
       route: "Notifications",
     },
     { icon: "help-circle-outline", label: "Help & Support", route: "Support" },
-    { icon: "flag-outline", label: "Reports Filed by Me", route: "MyReports" },
-    { icon: "shield-outline", label: "Reports Against Me", route: "AstrologerReports" },
+    { icon: "flag-outline", label: "Reports by Me", route: "MyReports" },
   ];
 
   if (role === "admin") {
@@ -3088,14 +3042,14 @@ export function AstrologerProfileScreen({ navigation }: any) {
                   marginRight: 12,
                 }}
               >
-                <Ionicons name="trash-outline" size={20} color="#DC2626" />
+                <Ionicons name="trash-outline" size={20} color="#C21415" />
               </View>
               <Text
                 style={{
                   flex: 1,
                   fontSize: 14,
                   fontWeight: "600",
-                  color: "#DC2626",
+                  color: "#C21415",
                 }}
               >
                 Delete Account
@@ -3121,10 +3075,10 @@ export function AstrologerProfileScreen({ navigation }: any) {
           }}
           onPress={logout}
         >
-          <Ionicons name="log-out-outline" size={20} color="#DC2626" />
+          <Ionicons name="log-out-outline" size={20} color="#C21415" />
           <Text
             style={{
-              color: "#DC2626",
+              color: "#C21415",
               fontSize: 15,
               fontWeight: "700",
               marginLeft: 8,
@@ -3309,14 +3263,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 15,
   },
-  topHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
+
   greetingRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -3350,18 +3297,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
   },
-  headerBadge: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    backgroundColor: "#DC2626",
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 3,
-  },
+
 });
 
 export { AstrologerMuhuratScreen } from "./AstrologerMuhuratScreen";

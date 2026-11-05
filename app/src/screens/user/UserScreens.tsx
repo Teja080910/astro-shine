@@ -41,10 +41,14 @@ import {
   colors,
   radii,
   typography,
-  OmIcon,
+  BrandHeader,
+  FilterTabs,
   Navbar,
   resolveMediaUrl,
   formatAmount,
+  sumAmounts,
+  transactionLabel,
+  transactionIcon,
 } from "../../shared";
 import { api } from "../../shared/api-client";
 import { config } from "../../config";
@@ -52,7 +56,6 @@ import type {
   Astrologer,
   Blog,
   CallLog,
-  GiftTransaction,
   HoroscopeRecord,
   MandirPooja,
   Notification,
@@ -93,6 +96,12 @@ const zodiacImages: { [key: string]: any } = {
   aquarius: require("../../../assets/aquarius_bearer.png"),
   pisces: require("../../../assets/pisces_fish.png"),
 };
+
+const ASTROLOGER_CARD_WIDTH = 304;
+const ASTROLOGER_LIST_MAX_WIDTH = 380;
+const CAROUSEL_GAP = 16;
+const ZODIAC_ITEM_WIDTH = 62;
+const ZODIAC_ITEM_GAP = 10;
 
 const ASTRO_CATEGORIES = [
   "All",
@@ -170,8 +179,8 @@ function AstrologerRowCard({
   const { theme } = useAuth();
   const isDark = theme === "dark";
   const { astrologerStatuses, onlineUsers } = useChat();
-  const cardBg = isDark ? "#111827" : "#FFFFFF";
-  const cardBorderColor = isDark ? "rgba(245, 158, 11, 0.25)" : "#FDE68A";
+  const cardBg = colors.card;
+  const cardBorderColor = colors.cardBorder;
   const isOnline = getAstrologerOnlineStatus(item, astrologerStatuses, onlineUsers);
   const isVerified = item.verificationStatus === "approved";
 
@@ -261,7 +270,7 @@ function AstrologerRowCard({
                 style={[
                   styles.astroAvatarImg,
                   {
-                    backgroundColor: isDark ? "#374151" : "#FFF8E7",
+                    backgroundColor: colors.chipBg,
                     alignItems: "center",
                     justifyContent: "center",
                   },
@@ -271,7 +280,7 @@ function AstrologerRowCard({
                   style={{
                     fontSize: 22,
                     fontWeight: "800",
-                    color: isDark ? "#FBBF24" : "#7F1D1D",
+                    color: colors.heading,
                   }}
                 >
                   {item.name ? item.name.charAt(0).toUpperCase() : "A"}
@@ -285,21 +294,21 @@ function AstrologerRowCard({
             style={[
               styles.onlinePill,
               {
-                backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
-                borderColor: isOnline ? "#86EFAC" : (isDark ? "#374151" : "#E5E7EB"),
+                backgroundColor: colors.surface,
+                borderColor: isOnline ? "#9BE7BE" : (colors.cardBorder),
               },
             ]}
           >
             <View
               style={[
                 styles.onlineDot,
-                { backgroundColor: isOnline ? "#22C55E" : "#9CA3AF" },
+                { backgroundColor: isOnline ? "#23A867" : "#B9BDC7" },
               ]}
             />
             <Text
               style={[
                 styles.onlineText,
-                { color: isOnline ? "#15803D" : (isDark ? "#9CA3AF" : "#6B7280") },
+                { color: isOnline ? "#23A867" : (colors.textMuted) },
               ]}
             >
               {isOnline ? "Online" : "Offline"}
@@ -332,7 +341,7 @@ function AstrologerRowCard({
                 style={{
                   fontSize: 16,
                   fontWeight: "800",
-                  color: isDark ? "#FBBF24" : "#7F1D1D",
+                  color: colors.heading,
                   flexShrink: 1,
                 }}
                 numberOfLines={1}
@@ -340,7 +349,7 @@ function AstrologerRowCard({
                 {item.name || "Astrologer"}
               </Text>
               {isVerified && (
-                <Ionicons name="checkmark-circle" size={16} color="#3B82F6" />
+                <Ionicons name="checkmark-circle" size={16} color="#3188FB" />
               )}
             </TouchableOpacity>
 
@@ -351,7 +360,7 @@ function AstrologerRowCard({
               <Ionicons
                 name={isFav ? "heart" : "heart-outline"}
                 size={20}
-                color={isFav ? "#DC2626" : (isDark ? "#9CA3AF" : "#DC2626")}
+                color={isFav ? "#C21415" : (isDark ? "#9CA3AF" : "#C21415")}
               />
             </TouchableOpacity>
           </View>
@@ -361,7 +370,7 @@ function AstrologerRowCard({
             style={{
               fontSize: 11.5,
               fontWeight: "500",
-              color: isDark ? "#9CA3AF" : "#6B7280",
+              color: colors.textMuted,
               marginTop: 2,
               lineHeight: 15,
             }}
@@ -403,7 +412,7 @@ function AstrologerRowCard({
             >
               {item.rating ? parseFloat(String(item.rating)).toFixed(1) : "4.5"}
             </Text>
-            <Text style={{ fontSize: 11, color: isDark ? "#9CA3AF" : "#6B7280" }}>
+            <Text style={{ fontSize: 11, color: colors.textMuted }}>
               ({item.totalReviews
                 ? (item.totalReviews >= 1000
                   ? `${(item.totalReviews / 1000).toFixed(1)}K`
@@ -425,12 +434,12 @@ function AstrologerRowCard({
               <Ionicons
                 name="calendar-outline"
                 size={12}
-                color={isDark ? "#9CA3AF" : "#6B7280"}
+                color={colors.textMuted}
               />
               <Text
                 style={{
                   fontSize: 11,
-                  color: isDark ? "#E5E7EB" : "#4B5563",
+                  color: colors.textBody,
                   fontWeight: "500",
                 }}
               >
@@ -438,7 +447,7 @@ function AstrologerRowCard({
               </Text>
             </View>
 
-            <Text style={{ color: isDark ? "#4B5563" : "#D1D5DB", fontSize: 11 }}>|</Text>
+            <Text style={{ color: isDark ? "#4B5563" : "#D8D4CC", fontSize: 11 }}>|</Text>
 
             <View
               style={{
@@ -452,12 +461,12 @@ function AstrologerRowCard({
               <Ionicons
                 name="globe-outline"
                 size={12}
-                color={isDark ? "#9CA3AF" : "#6B7280"}
+                color={colors.textMuted}
               />
               <Text
                 style={{
                   fontSize: 11,
-                  color: isDark ? "#E5E7EB" : "#4B5563",
+                  color: colors.textBody,
                   fontWeight: "500",
                   flexShrink: 1,
                 }}
@@ -489,8 +498,8 @@ function AstrologerRowCard({
                 <View
                   key={sIdx}
                   style={{
-                    backgroundColor: isDark ? "rgba(217, 119, 6, 0.15)" : "#FFF7ED",
-                    borderColor: isDark ? "rgba(217, 119, 6, 0.3)" : "#FED7AA",
+                    backgroundColor: isDark ? "rgba(217, 119, 6, 0.15)" : "#FEF0DE",
+                    borderColor: isDark ? "rgba(217, 119, 6, 0.3)" : "#F4B355",
                     borderWidth: 1,
                     borderRadius: 12,
                     paddingHorizontal: 7,
@@ -505,13 +514,13 @@ function AstrologerRowCard({
                   <Ionicons
                     name={getSkillIcon(skill)}
                     size={10.5}
-                    color={isDark ? "#FBBF24" : "#D97706"}
+                    color={colors.accentText}
                   />
                   <Text
                     style={{
                       fontSize: 9.5,
                       fontWeight: "600",
-                      color: isDark ? "#FDE68A" : "#7C2D12",
+                      color: colors.accentText,
                       lineHeight: 12,
                     }}
                     numberOfLines={1}
@@ -535,7 +544,7 @@ function AstrologerRowCard({
             gap: 7,
             marginTop: 12,
             borderTopWidth: 1,
-            borderTopColor: isDark ? "rgba(255,255,255,0.08)" : "#FDE68A",
+            borderTopColor: colors.divider,
             paddingTop: 10,
           }}
         >
@@ -547,13 +556,13 @@ function AstrologerRowCard({
               flex: 1,
               height: 44,
               borderRadius: 14,
-              backgroundColor: item.isChatEnabled === false ? (isDark ? "#374151" : "#F3F4F6") : "#EA580C",
+              backgroundColor: item.isChatEnabled === false ? (colors.rowBorder) : "#EE7B10",
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
               gap: 5,
               paddingHorizontal: 4,
-              shadowColor: "#EA580C",
+              shadowColor: "#EE7B10",
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: item.isChatEnabled === false ? 0 : 0.25,
               shadowRadius: 3,
@@ -599,13 +608,13 @@ function AstrologerRowCard({
               flex: 1,
               height: 44,
               borderRadius: 14,
-              backgroundColor: item.isAudioCallEnabled === false ? (isDark ? "#374151" : "#F3F4F6") : "#EA580C",
+              backgroundColor: item.isAudioCallEnabled === false ? (colors.rowBorder) : "#EE7B10",
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
               gap: 5,
               paddingHorizontal: 4,
-              shadowColor: "#EA580C",
+              shadowColor: "#EE7B10",
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: item.isAudioCallEnabled === false ? 0 : 0.25,
               shadowRadius: 3,
@@ -651,13 +660,13 @@ function AstrologerRowCard({
               flex: 1,
               height: 44,
               borderRadius: 14,
-              backgroundColor: item.isVideoCallEnabled === false ? (isDark ? "#374151" : "#F3F4F6") : "#EA580C",
+              backgroundColor: item.isVideoCallEnabled === false ? (colors.rowBorder) : "#EE7B10",
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
               gap: 5,
               paddingHorizontal: 4,
-              shadowColor: "#EA580C",
+              shadowColor: "#EE7B10",
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: item.isVideoCallEnabled === false ? 0 : 0.25,
               shadowRadius: 3,
@@ -705,7 +714,7 @@ function AstrologerRowCard({
             marginTop: 12,
             paddingTop: 10,
             borderTopWidth: 1,
-            borderTopColor: isDark ? "rgba(255,255,255,0.08)" : "#FDE68A",
+            borderTopColor: colors.divider,
           }}
         >
           {/* Rate */}
@@ -714,7 +723,7 @@ function AstrologerRowCard({
               style={{
                 fontSize: 16,
                 fontWeight: "900",
-                color: isDark ? "#F59E0B" : "#7F1D1D",
+                color: colors.heading,
               }}
             >
               ₹{priceVal}
@@ -723,7 +732,7 @@ function AstrologerRowCard({
               style={{
                 fontSize: 11,
                 fontWeight: "600",
-                color: isDark ? "#FBBF24" : "#7F1D1D",
+                color: colors.heading,
               }}
             >
               /min
@@ -734,14 +743,14 @@ function AstrologerRowCard({
           <TouchableOpacity
             onPress={() => onAction?.()}
             style={{
-              backgroundColor: "#EA580C",
+              backgroundColor: "#EE7B10",
               borderRadius: 20,
               paddingHorizontal: 14,
               paddingVertical: 8,
               flexDirection: "row",
               alignItems: "center",
               gap: 4,
-              shadowColor: "#EA580C",
+              shadowColor: "#EE7B10",
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.25,
               shadowRadius: 4,
@@ -784,22 +793,21 @@ function AstrologerRowCard({
 
 export function UserHomeScreen({ navigation }: any) {
   const { user, theme } = useAuth();
-  const { conversations, openConversation, astrologerStatuses, onlineUsers, horoscopeVersion, blogVersion, notificationVersion, walletVersion, panchangVersion } = useChat();
+  const { conversations, openConversation, astrologerStatuses, onlineUsers, horoscopeVersion, blogVersion, notificationVersion, walletVersion, panchangVersion, notificationUnreadCount } = useChat();
   const { initiateCall } = useCall();
   const isFocused = useIsFocused();
   const isDark = theme === "dark";
   const { width: screenWidth } = useWindowDimensions();
   const isCompact = screenWidth < 380;
 
-  const titleColor = isDark ? "#FBBF24" : "#7F1D1D";
-  const iconColor = isDark ? "#F59E0B" : "#7F1D1D";
-  const cardBg = isDark ? "#111827" : "#FFFFFF";
-  const cardLightBg = isDark ? "#1F2937" : "#FFFBEB";
-  const cardBorderColor = isDark ? "rgba(245, 158, 11, 0.25)" : "#FDE68A";
-  const textPrimaryColor = isDark ? "#F9FAFB" : "#1F2937";
-  const bodyTextColor = isDark ? "#E5E7EB" : "#374151";
-  const mutedTextColor = isDark ? "#9CA3AF" : "#6B7280";
-  const goldTextColor = isDark ? "#FBBF24" : "#D97706";
+  const titleColor = colors.heading;
+  const cardBg = colors.card;
+  const cardLightBg = colors.cardAlt;
+  const cardBorderColor = colors.cardBorder;
+  const textPrimaryColor = colors.textStrong;
+  const bodyTextColor = colors.textBody;
+  const mutedTextColor = colors.textMuted;
+  const goldTextColor = colors.accentText;
   const [astrologers, setAstrologers] = useState<Astrologer[]>([]);
   const [favoriteAstrologers, setFavoriteAstrologers] = useState<Astrologer[]>([]);
   const [callLogs, setCallLogs] = useState<CallLog[]>([]);
@@ -820,7 +828,6 @@ export function UserHomeScreen({ navigation }: any) {
   const [activeHoroscopeTab, setActiveHoroscopeTab] = useState<
     "love" | "career" | "finance" | "health"
   >("career");
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
   const [weather, setWeather] = useState<{
     temp: string;
     condition: string;
@@ -1089,6 +1096,38 @@ export function UserHomeScreen({ navigation }: any) {
     }
   };
 
+  // The Home screen is wrapped in a padded ScreenWrapper (16px each side), and
+  // the carousel adds its own 16px content padding. Subtract both so a single
+  // card fits exactly inside the visible area without being clipped and the
+  // next card starts exactly at the viewport edge (no partial peek).
+  const carouselHorizontalPadding = 16;
+  const carouselCardWidth = Math.max(
+    screenWidth - carouselHorizontalPadding * 4,
+    220,
+  );
+  const carouselSnapInterval = carouselCardWidth + CAROUSEL_GAP;
+
+  // The zodiac row uses per-item snapping. snapToInterval alone cannot reach the
+  // end because the content width is not an exact multiple of (item + gap), which
+  // leaves the last signs clipped. Build explicit offsets that include the real
+  // final scroll offset so the row can always scroll fully.
+  const zodiacStride = ZODIAC_ITEM_WIDTH + ZODIAC_ITEM_GAP;
+  const zodiacContentPadding = 16;
+  const zodiacContentWidth =
+    zodiacContentPadding * 2 +
+    ZODIAC_ITEM_WIDTH * ZODIAC_SIGNS.length +
+    ZODIAC_ITEM_GAP * (ZODIAC_SIGNS.length - 1);
+  const zodiacViewportWidth = screenWidth - 32;
+  const zodiacMaxOffset = Math.max(0, zodiacContentWidth - zodiacViewportWidth);
+  const zodiacSnapOffsets = Array.from(
+    new Set([
+      ...ZODIAC_SIGNS.map((_, i) => i * zodiacStride).filter(
+        (o) => o <= zodiacMaxOffset,
+      ),
+      zodiacMaxOffset,
+    ]),
+  ).sort((a, b) => a - b);
+
   const renderAstroRowCard = (item: Astrologer, type: "chat" | "audio" | "video") => (
     <AstrologerRowCard
       item={item}
@@ -1100,8 +1139,19 @@ export function UserHomeScreen({ navigation }: any) {
       onChatPress={() => handleAstroAction(item, "chat")}
       onAudioPress={() => handleAstroAction(item, "audio")}
       onVideoPress={() => handleAstroAction(item, "video")}
+      style={{ width: carouselCardWidth, marginRight: CAROUSEL_GAP }}
     />
   );
+
+  const carouselProps = {
+    horizontal: true as const,
+    showsHorizontalScrollIndicator: false,
+    decelerationRate: "fast" as const,
+    snapToInterval: carouselSnapInterval,
+    snapToAlignment: "start" as const,
+    disableIntervalMomentum: true,
+    contentContainerStyle: { paddingHorizontal: 16 },
+  };
 
   const renderMiniAstroCard = (item: Astrologer, _keyPrefix: string) => {
     return renderAstroRowCard(item, "chat");
@@ -1132,120 +1182,27 @@ export function UserHomeScreen({ navigation }: any) {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        {/* Top Header Bar */}
-        <View style={styles.topHeader}>
-          <View style={{ flex: 1, alignItems: "flex-start" }}>
-            <TouchableOpacity
-              onPress={() => setMenuOpen(true)}
-              style={{ padding: 4, width: 40 }}
-            >
-              <Ionicons name="menu-outline" size={28} color={iconColor} />
-            </TouchableOpacity>
-          </View>
-
-          <View
-            style={{
-              alignItems: "center",
-              flexShrink: 1,
-              minWidth: 0,
-              paddingHorizontal: 4,
-            }}
-          >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 6,
-                maxWidth: "100%",
-              }}
-            >
-              <OmIcon isDark={isDark} />
-              <Text
-                style={{
-                  fontSize: isCompact ? 16 : 20,
-                  fontWeight: "900",
-                  color: isDark ? "#FBBF24" : "#8B1E1E",
-                  letterSpacing: 0.5,
-                  flexShrink: 1,
-                }}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                ASTROSHINE
-              </Text>
-            </View>
-            <Text
-              style={{
-                fontSize: 8,
-                fontWeight: "800",
-                color: isDark ? "#FBBF24" : "#D97706",
-                letterSpacing: 1.4,
-                marginTop: 2,
-                textAlign: "center",
-                alignSelf: "center",
-                width: "100%",
-              }}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.7}
-            >
-              YOUR DESTINY, YOUR GUIDANCE
-            </Text>
-          </View>
-
-          <View
-            style={{
-              flex: 1,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "flex-end",
-              gap: 6,
-              flexShrink: 0,
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => navigation.navigate("FavouriteAstrologers")}
-              style={{ padding: 4 }}
-            >
-              <Ionicons name="heart-outline" size={22} color={iconColor} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => navigation.navigate("Notifications")}
-              style={{ padding: 4, position: "relative" }}
-            >
-              <Ionicons
-                name="notifications-outline"
-                size={24}
-                color={iconColor}
-              />
-              {unreadCount > 0 && (
-                <View style={styles.headerBadge}>
-                  <Text
-                    style={{ color: "#fff", fontSize: 10, fontWeight: "800" }}
-                  >
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
+        <BrandHeader
+          onLeftPress={() => setMenuOpen(true)}
+          showFavorites
+          onFavoritesPress={() => navigation.navigate("FavouriteAstrologers")}
+          notificationCount={notificationUnreadCount}
+          onNotificationsPress={() => navigation.navigate("Notifications")}
+        />
 
         {/* Greeting & Ganesha Banner */}
         <View
           style={[
             styles.greetingRow,
             {
-              backgroundColor: isDark ? cardBg : "#FFF8ED",
-              borderColor: isDark ? cardBorderColor : "#FDE68A",
+              backgroundColor: colors.surfaceElevated,
+              borderColor: cardBorderColor,
               borderRadius: 20,
               paddingHorizontal: 14,
               paddingTop: 10,
               paddingBottom: 10,
               minHeight: isCompact ? 118 : 128,
-              shadowColor: "#D97706",
+              shadowColor: "#EE7B10",
               shadowOffset: { width: 0, height: 3 },
               shadowOpacity: isDark ? 0 : 0.08,
               shadowRadius: 8,
@@ -1272,7 +1229,7 @@ export function UserHomeScreen({ navigation }: any) {
               <Text
                 style={{
                   fontSize: 12,
-                  color: isDark ? "#F59E0B" : "#8B1E1E",
+                  color: colors.heading,
                   fontWeight: "600",
                 }}
               >
@@ -1286,7 +1243,7 @@ export function UserHomeScreen({ navigation }: any) {
                 style={{
                   fontSize: isCompact ? 15 : 17,
                   fontWeight: "800",
-                  color: isDark ? "#F9FAFB" : "#7F1D1D",
+                  color: colors.heading,
                   marginTop: 1,
                   marginBottom: 6,
                   flexShrink: 1,
@@ -1319,12 +1276,12 @@ export function UserHomeScreen({ navigation }: any) {
                 <Ionicons
                   name="wallet"
                   size={15}
-                  color="#DC2626"
+                  color="#C21415"
                 />
                 <Text
                   style={{
                     fontSize: isCompact ? 12.5 : 14,
-                    color: "#DC2626",
+                    color: "#C21415",
                     fontWeight: "800",
                     flexShrink: 1,
                   }}
@@ -1337,12 +1294,12 @@ export function UserHomeScreen({ navigation }: any) {
               <TouchableOpacity
                 onPress={() => navigation.navigate("Wallet")}
                 style={{
-                  backgroundColor: "#EA580C",
+                  backgroundColor: "#EE7B10",
                   borderRadius: 14,
                   paddingHorizontal: isCompact ? 8 : 10,
                   paddingVertical: 3.5,
                   flexShrink: 0,
-                  shadowColor: "#EA580C",
+                  shadowColor: "#EE7B10",
                   shadowOffset: { width: 0, height: 1 },
                   shadowOpacity: 0.2,
                   shadowRadius: 2,
@@ -1374,12 +1331,12 @@ export function UserHomeScreen({ navigation }: any) {
               <Ionicons
                 name="calendar-outline"
                 size={12}
-                color="#EA580C"
+                color="#EE7B10"
               />
                 <Text
                   style={{
                     fontSize: 10.5,
-                    color: isDark ? "#D1D5DB" : "#4B5563",
+                    color: colors.textBody,
                     fontWeight: "500",
                     flexShrink: 1,
                   }}
@@ -1400,12 +1357,12 @@ export function UserHomeScreen({ navigation }: any) {
               <Ionicons
                 name="location-sharp"
                 size={12}
-                color="#EA580C"
+                color="#EE7B10"
               />
                 <Text
                   style={{
                     fontSize: 10.5,
-                    color: isDark ? "#D1D5DB" : "#4B5563",
+                    color: colors.textBody,
                     fontWeight: "500",
                     flexShrink: 1,
                   }}
@@ -1448,7 +1405,7 @@ export function UserHomeScreen({ navigation }: any) {
                   style={{
                     fontSize: 12.5,
                     fontWeight: "800",
-                    color: isDark ? "#F9FAFB" : "#7F1D1D",
+                    color: colors.heading,
                     lineHeight: 14,
                   }}
                   numberOfLines={1}
@@ -1458,7 +1415,7 @@ export function UserHomeScreen({ navigation }: any) {
                 <Text
                   style={{
                     fontSize: 9.5,
-                    color: isDark ? "#9CA3AF" : "#6B7280",
+                    color: colors.textMuted,
                     fontWeight: "500",
                     lineHeight: 11,
                   }}
@@ -1488,26 +1445,33 @@ export function UserHomeScreen({ navigation }: any) {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          decelerationRate="fast"
+          snapToOffsets={zodiacSnapOffsets}
+          snapToAlignment="start"
+          disableIntervalMomentum
           contentContainerStyle={{
-            gap: 12,
             paddingHorizontal: 16,
             paddingVertical: 8,
           }}
         >
-          {ZODIAC_SIGNS.map((z) => {
+          {ZODIAC_SIGNS.map((z, index) => {
             const active = selectedSign === z.sign;
             return (
               <TouchableOpacity
                 key={z.sign}
                 onPress={() => handleSignSelect(z.sign)}
-                style={{ alignItems: "center", width: 62 }}
+                style={{
+                  alignItems: "center",
+                  width: ZODIAC_ITEM_WIDTH,
+                  marginRight: index === ZODIAC_SIGNS.length - 1 ? 0 : ZODIAC_ITEM_GAP,
+                }}
               >
                 <View
                   style={[
                     styles.zodiacCircle,
                     active
                       ? {
-                          backgroundColor: "#8B1E1E",
+                          backgroundColor: "#8D0B0C",
                           borderColor: "#F59E0B",
                           borderWidth: 2,
                           borderRadius: 28,
@@ -1518,7 +1482,7 @@ export function UserHomeScreen({ navigation }: any) {
                           overflow: "hidden",
                         }
                       : {
-                          backgroundColor: isDark ? cardLightBg : "#FFFDF7",
+                          backgroundColor: isDark ? cardLightBg : "#FEFDF9",
                           borderColor: cardBorderColor,
                           borderWidth: 1.5,
                           borderRadius: 28,
@@ -1539,7 +1503,7 @@ export function UserHomeScreen({ navigation }: any) {
                   style={{
                     fontSize: 11,
                     fontWeight: active ? "800" : "600",
-                    color: active ? (isDark ? "#FBBF24" : "#8B1E1E") : bodyTextColor,
+                    color: active ? (colors.heading) : bodyTextColor,
                     marginTop: 4,
                   }}
                   numberOfLines={1}
@@ -1547,17 +1511,15 @@ export function UserHomeScreen({ navigation }: any) {
                 >
                   {z.label}
                 </Text>
-                {active && (
-                  <View
-                    style={{
-                      width: 22,
-                      height: 2.5,
-                      backgroundColor: "#DC2626",
-                      borderRadius: 2,
-                      marginTop: 2,
-                    }}
-                  />
-                )}
+                <View
+                  style={{
+                    width: 22,
+                    height: 2.5,
+                    backgroundColor: active ? "#C21415" : "transparent",
+                    borderRadius: 2,
+                    marginTop: 2,
+                  }}
+                />
               </TouchableOpacity>
             );
           })}
@@ -1568,12 +1530,12 @@ export function UserHomeScreen({ navigation }: any) {
           style={[
             styles.horoscopeCard,
             {
-              backgroundColor: isDark ? cardBg : "#FFF8ED",
-              borderColor: isDark ? cardBorderColor : "#FDE68A",
+              backgroundColor: colors.surfaceElevated,
+              borderColor: cardBorderColor,
               borderRadius: 22,
               padding: 16,
               overflow: "hidden",
-              shadowColor: "#D97706",
+              shadowColor: "#EE7B10",
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: isDark ? 0 : 0.06,
               shadowRadius: 10,
@@ -1599,7 +1561,7 @@ export function UserHomeScreen({ navigation }: any) {
                 overflow: "hidden",
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: "#8B1E1E",
+                backgroundColor: "#8D0B0C",
               }}
             >
               <Image
@@ -1613,7 +1575,7 @@ export function UserHomeScreen({ navigation }: any) {
                 style={{
                   fontSize: 15,
                   fontWeight: "800",
-                  color: isDark ? "#FBBF24" : "#8B1E1E",
+                  color: colors.heading,
                 }}
               >
                 Your Daily Horoscope
@@ -1627,7 +1589,7 @@ export function UserHomeScreen({ navigation }: any) {
                 }}
               >
                 <Text
-                  style={{ fontSize: 15, fontWeight: "800", color: isDark ? "#F9FAFB" : "#7F1D1D" }}
+                  style={{ fontSize: 15, fontWeight: "800", color: colors.heading }}
                 >
                   {ZODIAC_SIGNS.find((z) => z.sign === selectedSign)?.label || "Aries"}
                 </Text>
@@ -1635,7 +1597,7 @@ export function UserHomeScreen({ navigation }: any) {
                   style={{
                     fontSize: 11.5,
                     fontWeight: "600",
-                    color: isDark ? "#F59E0B" : "#EA580C",
+                    color: colors.accentText,
                     flexShrink: 1,
                   }}
                   numberOfLines={2}
@@ -1671,7 +1633,7 @@ export function UserHomeScreen({ navigation }: any) {
                 width: 32,
                 height: 32,
                 borderRadius: 16,
-                backgroundColor: "#DC2626",
+                backgroundColor: "#C21415",
                 alignItems: "center",
                 justifyContent: "center",
                 flexShrink: 0,
@@ -1685,7 +1647,7 @@ export function UserHomeScreen({ navigation }: any) {
           <View
             style={{
               borderTopWidth: 1,
-              borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A",
+              borderTopColor: colors.divider,
               paddingTop: 12,
               marginTop: 12,
             }}
@@ -1746,8 +1708,8 @@ export function UserHomeScreen({ navigation }: any) {
                     ? activeHoroscopeTab === "career" ? "rgba(220, 38, 38, 0.25)" : "rgba(220, 38, 38, 0.12)"
                     : "#FEF2F2",
                   borderColor: isDark
-                    ? activeHoroscopeTab === "career" ? "#DC2626" : "rgba(220, 38, 38, 0.3)"
-                    : activeHoroscopeTab === "career" ? "#DC2626" : "#FECACA",
+                    ? activeHoroscopeTab === "career" ? "#C21415" : "rgba(220, 38, 38, 0.3)"
+                    : activeHoroscopeTab === "career" ? "#C21415" : "#FECACA",
                   borderWidth: 1,
                   paddingHorizontal: 12,
                   paddingVertical: 6,
@@ -1761,13 +1723,13 @@ export function UserHomeScreen({ navigation }: any) {
               <Ionicons
                 name="briefcase"
                 size={14}
-                color={isDark ? "#F87171" : "#DC2626"}
+                color={colors.danger}
               />
               <Text
                 style={{
                   fontSize: 11,
                   fontWeight: activeHoroscopeTab === "career" ? "800" : "600",
-                  color: isDark ? "#F87171" : "#991B1B",
+                  color: colors.danger,
                 }}
               >
                 Career
@@ -1783,8 +1745,8 @@ export function UserHomeScreen({ navigation }: any) {
                     ? activeHoroscopeTab === "finance" ? "rgba(217, 119, 6, 0.25)" : "rgba(217, 119, 6, 0.12)"
                     : "#FEF9C3",
                   borderColor: isDark
-                    ? activeHoroscopeTab === "finance" ? "#D97706" : "rgba(217, 119, 6, 0.3)"
-                    : activeHoroscopeTab === "finance" ? "#D97706" : "#FDE047",
+                    ? activeHoroscopeTab === "finance" ? "#EE7B10" : "rgba(217, 119, 6, 0.3)"
+                    : activeHoroscopeTab === "finance" ? "#EE7B10" : "#FDE047",
                   borderWidth: 1,
                   paddingHorizontal: 12,
                   paddingVertical: 6,
@@ -1798,13 +1760,13 @@ export function UserHomeScreen({ navigation }: any) {
               <Ionicons
                 name="wallet"
                 size={14}
-                color={isDark ? "#FBBF24" : "#D97706"}
+                color={colors.accentText}
               />
               <Text
                 style={{
                   fontSize: 11,
                   fontWeight: activeHoroscopeTab === "finance" ? "800" : "600",
-                  color: isDark ? "#FBBF24" : "#854D0E",
+                  color: colors.accentText,
                 }}
               >
                 Finance
@@ -1860,7 +1822,7 @@ export function UserHomeScreen({ navigation }: any) {
               borderColor: cardBorderColor,
               borderRadius: 16,
               overflow: "hidden",
-              shadowColor: "#D97706",
+              shadowColor: "#EE7B10",
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: isDark ? 0 : 0.05,
               shadowRadius: 8,
@@ -1872,7 +1834,7 @@ export function UserHomeScreen({ navigation }: any) {
             style={[
               styles.panchangHeaderBanner,
               {
-                backgroundColor: isDark ? "rgba(245, 158, 11, 0.15)" : "#FFF8E7",
+                backgroundColor: colors.chipBg,
                 borderBottomWidth: 1,
                 borderBottomColor: cardBorderColor,
               },
@@ -1881,14 +1843,14 @@ export function UserHomeScreen({ navigation }: any) {
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
             >
-              <Ionicons name="calendar-sharp" size={16} color={isDark ? "#F59E0B" : "#EA580C"} />
-              <Text style={{ fontSize: 14, fontWeight: "800", color: isDark ? "#FBBF24" : "#7F1D1D" }}>
+              <Ionicons name="calendar-sharp" size={16} color={colors.accentText} />
+              <Text style={{ fontSize: 14, fontWeight: "800", color: colors.heading }}>
                 Today's Panchang
               </Text>
             </View>
             <TouchableOpacity onPress={() => navigation.navigate("Panchang")}>
               <Text
-                style={{ fontSize: 12, fontWeight: "700", color: isDark ? "#FBBF24" : "#EA580C" }}
+                style={{ fontSize: 12, fontWeight: "700", color: colors.accentText }}
               >
                 View All ›
               </Text>
@@ -1911,7 +1873,7 @@ export function UserHomeScreen({ navigation }: any) {
                 <Ionicons
                   name="sunny-outline"
                   size={16}
-                  color={isDark ? "#F59E0B" : "#D97706"}
+                  color={colors.accentText}
                 />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={{ fontSize: 9, color: mutedTextColor }}>
@@ -1921,7 +1883,7 @@ export function UserHomeScreen({ navigation }: any) {
                     style={{
                       fontSize: 10,
                       fontWeight: "700",
-                      color: isDark ? "#F9FAFB" : "#7F1D1D",
+                      color: colors.heading,
                     }}
                     numberOfLines={1}
                   >
@@ -1930,7 +1892,7 @@ export function UserHomeScreen({ navigation }: any) {
                 </View>
               </View>
               <View style={styles.panchangItem}>
-                <Ionicons name="star-outline" size={16} color={isDark ? "#F59E0B" : "#D97706"} />
+                <Ionicons name="star-outline" size={16} color={colors.accentText} />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={{ fontSize: 9, color: mutedTextColor }}>
                     Nakshatra
@@ -1939,7 +1901,7 @@ export function UserHomeScreen({ navigation }: any) {
                     style={{
                       fontSize: 10,
                       fontWeight: "700",
-                      color: isDark ? "#F9FAFB" : "#7F1D1D",
+                      color: colors.heading,
                     }}
                     numberOfLines={1}
                   >
@@ -1951,7 +1913,7 @@ export function UserHomeScreen({ navigation }: any) {
                 <Ionicons
                   name="ribbon-outline"
                   size={16}
-                  color={isDark ? "#F59E0B" : "#D97706"}
+                  color={colors.accentText}
                 />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={{ fontSize: 9, color: mutedTextColor }}>
@@ -1961,7 +1923,7 @@ export function UserHomeScreen({ navigation }: any) {
                     style={{
                       fontSize: 10,
                       fontWeight: "700",
-                      color: isDark ? "#F9FAFB" : "#7F1D1D",
+                      color: colors.heading,
                     }}
                     numberOfLines={1}
                   >
@@ -1973,7 +1935,7 @@ export function UserHomeScreen({ navigation }: any) {
                 <Ionicons
                   name="compass-outline"
                   size={16}
-                  color={isDark ? "#F59E0B" : "#D97706"}
+                  color={colors.accentText}
                 />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={{ fontSize: 9, color: mutedTextColor }}>
@@ -1983,7 +1945,7 @@ export function UserHomeScreen({ navigation }: any) {
                     style={{
                       fontSize: 10,
                       fontWeight: "700",
-                      color: isDark ? "#F9FAFB" : "#7F1D1D",
+                      color: colors.heading,
                     }}
                     numberOfLines={1}
                   >
@@ -2000,7 +1962,7 @@ export function UserHomeScreen({ navigation }: any) {
                 justifyContent: "space-around",
                 paddingTop: 8,
                 borderTopWidth: 1,
-                borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A",
+                borderTopColor: colors.divider,
               }}
             >
               <View
@@ -2015,7 +1977,7 @@ export function UserHomeScreen({ navigation }: any) {
                     style={{
                       fontSize: 10,
                       fontWeight: "700",
-                      color: isDark ? "#F9FAFB" : "#7F1D1D",
+                      color: colors.heading,
                     }}
                   >
                     {panchangData?.sunrise ? to12h(panchangData.sunrise) : "--"}
@@ -2025,7 +1987,7 @@ export function UserHomeScreen({ navigation }: any) {
               <View
                 style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
               >
-                <Ionicons name="partly-sunny" size={14} color="#EA580C" />
+                <Ionicons name="partly-sunny" size={14} color="#EE7B10" />
                 <View>
                   <Text style={{ fontSize: 9, color: mutedTextColor }}>
                     Sunset
@@ -2034,7 +1996,7 @@ export function UserHomeScreen({ navigation }: any) {
                     style={{
                       fontSize: 10,
                       fontWeight: "700",
-                      color: isDark ? "#F9FAFB" : "#7F1D1D",
+                      color: colors.heading,
                     }}
                   >
                     {panchangData?.sunset ? to12h(panchangData.sunset) : "--"}
@@ -2044,7 +2006,7 @@ export function UserHomeScreen({ navigation }: any) {
               <View
                 style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
               >
-                <Ionicons name="time-outline" size={14} color="#DC2626" />
+                <Ionicons name="time-outline" size={14} color="#C21415" />
                 <View>
                   <Text style={{ fontSize: 9, color: mutedTextColor }}>
                     Rahukal
@@ -2053,7 +2015,7 @@ export function UserHomeScreen({ navigation }: any) {
                     style={{
                       fontSize: 10,
                       fontWeight: "700",
-                      color: isDark ? "#F9FAFB" : "#7F1D1D",
+                      color: colors.heading,
                     }}
                   >
                     {panchangData?.rahuKaal
@@ -2115,11 +2077,11 @@ export function UserHomeScreen({ navigation }: any) {
                 },
               ]}
             >
-              <Ionicons name="grid-outline" size={24} color={isDark ? "#FBBF24" : "#D97706"} />
+              <Ionicons name="grid-outline" size={24} color={colors.accentText} />
               <Text
                 style={[
                   styles.pastelCardText,
-                  { color: isDark ? "#FDE68A" : "#78350F" },
+                  { color: colors.accentText },
                 ]}
                 numberOfLines={1}
               >
@@ -2155,19 +2117,85 @@ export function UserHomeScreen({ navigation }: any) {
                 styles.pastelCard,
                 {
                   backgroundColor: isDark ? "rgba(234, 88, 12, 0.15)" : "#FFEDD5",
-                  borderColor: isDark ? "rgba(234, 88, 12, 0.3)" : "#FED7AA",
+                  borderColor: isDark ? "rgba(234, 88, 12, 0.3)" : "#F4B355",
                 },
               ]}
             >
-              <Ionicons name="calendar" size={24} color={isDark ? "#FB923C" : "#EA580C"} />
+              <Ionicons name="calendar" size={24} color={colors.accentText} />
               <Text
                 style={[
                   styles.pastelCardText,
-                  { color: isDark ? "#FDBA74" : "#7C2D12" },
+                  { color: isDark ? "#FDBA74" : "#733408" },
                 ]}
                 numberOfLines={1}
               >
                 Panchang
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Festivals")}
+              style={[
+                styles.pastelCard,
+                {
+                  backgroundColor: isDark ? "rgba(245, 158, 11, 0.15)" : "#FEF0DE",
+                  borderColor: isDark ? "rgba(245, 158, 11, 0.3)" : "#F4D9AE",
+                },
+              ]}
+            >
+              <Ionicons name="sparkles" size={24} color={colors.accentText} />
+              <Text
+                style={[
+                  styles.pastelCardText,
+                  { color: isDark ? "#FDE68A" : "#733408" },
+                ]}
+                numberOfLines={1}
+              >
+                Festivals
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Vrats")}
+              style={[
+                styles.pastelCard,
+                {
+                  backgroundColor: isDark ? "rgba(141, 11, 12, 0.2)" : "#FBE9E7",
+                  borderColor: isDark ? "rgba(141, 11, 12, 0.35)" : "#F1C9C4",
+                },
+              ]}
+            >
+              <Ionicons name="moon" size={24} color={colors.danger} />
+              <Text
+                style={[
+                  styles.pastelCardText,
+                  { color: isDark ? "#FCA5A5" : "#6B1112" },
+                ]}
+                numberOfLines={1}
+              >
+                Vrats
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Main", { screen: "Muhurat" })}
+              style={[
+                styles.pastelCard,
+                {
+                  backgroundColor: isDark ? "rgba(238, 123, 16, 0.15)" : "#FDEEDC",
+                  borderColor: isDark ? "rgba(238, 123, 16, 0.3)" : "#F7D3A8",
+                },
+              ]}
+            >
+              <Ionicons name="time" size={24} color={colors.accentText} />
+              <Text
+                style={[
+                  styles.pastelCardText,
+                  { color: isDark ? "#FDBA74" : "#7A3B06" },
+                ]}
+                numberOfLines={1}
+              >
+                Muhurats
               </Text>
             </TouchableOpacity>
 
@@ -2286,16 +2314,16 @@ export function UserHomeScreen({ navigation }: any) {
               style={[
                 styles.pastelCard,
                 {
-                  backgroundColor: isDark ? "rgba(245, 158, 11, 0.15)" : "#FEF3C7",
-                  borderColor: isDark ? "rgba(245, 158, 11, 0.3)" : "#FDE68A",
+                  backgroundColor: colors.iconBg,
+                  borderColor: colors.cardBorder,
                 },
               ]}
             >
-              <Ionicons name="gift" size={24} color={isDark ? "#FBBF24" : "#D97706"} />
+              <Ionicons name="gift" size={24} color={colors.accentText} />
               <Text
                 style={[
                   styles.pastelCardText,
-                  { color: isDark ? "#FDE68A" : "#78350F" },
+                  { color: colors.accentText },
                 ]}
                 numberOfLines={1}
               >
@@ -2310,15 +2338,15 @@ export function UserHomeScreen({ navigation }: any) {
           colors={
             isDark
               ? ["rgba(127, 29, 29, 0.55)", "rgba(217, 119, 6, 0.25)"]
-              : ["#FFFDF7", "#FEF3C7"]
+              : ["#FEFDF9", "#FEF3C7"]
           }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={[
             styles.specialBanner,
             {
-              backgroundColor: isDark ? undefined : "#FFF8E7",
-              borderColor: isDark ? "rgba(245, 158, 11, 0.4)" : "#FDE68A",
+              backgroundColor: isDark ? undefined : "#FEF8EA",
+              borderColor: colors.cardBorder,
               borderRadius: 18,
               borderWidth: 1,
               flexDirection: "row",
@@ -2326,7 +2354,7 @@ export function UserHomeScreen({ navigation }: any) {
               padding: 12,
               marginHorizontal: 16,
               marginVertical: 12,
-              shadowColor: "#D97706",
+              shadowColor: "#EE7B10",
               shadowOffset: { width: 0, height: 3 },
               shadowOpacity: isDark ? 0 : 0.08,
               shadowRadius: 8,
@@ -2341,7 +2369,7 @@ export function UserHomeScreen({ navigation }: any) {
           />
           <View style={{ flex: 1, paddingLeft: 12 }}>
             <Text
-              style={{ fontSize: 16, fontWeight: "800", color: isDark ? "#FBBF24" : "#7F1D1D" }}
+              style={{ fontSize: 16, fontWeight: "800", color: colors.heading }}
             >
               Shravan Special 🔱
             </Text>
@@ -2353,13 +2381,13 @@ export function UserHomeScreen({ navigation }: any) {
               style={[
                 styles.bookNowBtn,
                 {
-                  backgroundColor: "#EA580C",
+                  backgroundColor: "#EE7B10",
                   alignSelf: "flex-start",
                   borderRadius: 20,
                   paddingHorizontal: 18,
                   paddingVertical: 7,
                   elevation: 2,
-                  shadowColor: "#EA580C",
+                  shadowColor: "#EE7B10",
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 0.25,
                   shadowRadius: 4,
@@ -2387,12 +2415,10 @@ export function UserHomeScreen({ navigation }: any) {
           </View>
         ) : chatAstrologers.length > 0 ? (
           <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
+            {...carouselProps}
             data={chatAstrologers.slice(0, 8)}
             keyExtractor={(a) => `chat-${a.userId}`}
             renderItem={({ item }) => renderAstroRowCard(item, "chat")}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           />
         ) : (
           <GlassCard style={{ marginHorizontal: 16, padding: 12 }}>
@@ -2416,12 +2442,10 @@ export function UserHomeScreen({ navigation }: any) {
           </View>
         ) : audioCallAstrologers.length > 0 ? (
           <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
+            {...carouselProps}
             data={audioCallAstrologers.slice(0, 8)}
             keyExtractor={(a) => `audio-${a.userId}`}
             renderItem={({ item }) => renderAstroRowCard(item, "audio")}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           />
         ) : (
           <GlassCard style={{ marginHorizontal: 16, padding: 12 }}>
@@ -2445,12 +2469,10 @@ export function UserHomeScreen({ navigation }: any) {
           </View>
         ) : videoCallAstrologers.length > 0 ? (
           <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
+            {...carouselProps}
             data={videoCallAstrologers.slice(0, 8)}
             keyExtractor={(a) => `video-${a.userId}`}
             renderItem={({ item }) => renderAstroRowCard(item, "video")}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           />
         ) : (
           <GlassCard style={{ marginHorizontal: 16, padding: 12 }}>
@@ -2470,12 +2492,10 @@ export function UserHomeScreen({ navigation }: any) {
               onSeeAll={() => navigation.navigate("FavouriteAstrologers")}
             />
             <FlatList
-              horizontal
-              showsHorizontalScrollIndicator={false}
+              {...carouselProps}
               data={favoriteAstrologers}
               keyExtractor={(a) => `fav-${a.userId}`}
               renderItem={({ item }) => renderAstroRowCard(item, "chat")}
-              contentContainerStyle={{ paddingHorizontal: 16 }}
             />
             <View style={{ height: 20 }} />
           </>
@@ -2494,12 +2514,10 @@ export function UserHomeScreen({ navigation }: any) {
           </View>
         ) : liveAstrologers.length > 0 ? (
           <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
+            {...carouselProps}
             data={liveAstrologers.slice(0, 8)}
             keyExtractor={(a) => `live-${a.userId}`}
             renderItem={({ item }) => renderAstroRowCard(item, "chat")}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
           />
         ) : (
           <GlassCard style={{ marginHorizontal: 16, padding: 12 }}>
@@ -2588,14 +2606,13 @@ export function UserHomeScreen({ navigation }: any) {
               onSeeAll={() => navigation.navigate("MandirPooja")}
             />
             <FlatList
-              horizontal
-              showsHorizontalScrollIndicator={false}
+              {...carouselProps}
               data={poojas.slice(0, 4)}
               keyExtractor={(p) => p.id}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => navigation.navigate("MandirPoojaDetail", { poojaId: item.id })}
-                  style={{ width: 180, marginRight: 12 }}
+                  style={{ width: carouselCardWidth, marginRight: CAROUSEL_GAP }}
                 >
                   <GlassCard
                     style={{
@@ -2636,7 +2653,6 @@ export function UserHomeScreen({ navigation }: any) {
                   </GlassCard>
                 </TouchableOpacity>
               )}
-              style={{ marginLeft: 0 }}
             />
           </>
         )}
@@ -2649,15 +2665,14 @@ export function UserHomeScreen({ navigation }: any) {
               onSeeAll={() => navigation.navigate("Videos")}
             />
             <FlatList
-              horizontal
-              showsHorizontalScrollIndicator={false}
+              {...carouselProps}
               data={videos.slice(0, 5)}
               keyExtractor={(v) => v.id}
               renderItem={({ item }) => {
                 const ytMatch = (item.url || "").match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
                 const thumbUrl = ytMatch ? `https://img.youtube.com/vi/${ytMatch[1]}/hqdefault.jpg` : item.thumbnail;
                 return (
-                <TouchableOpacity style={{ width: 220, marginRight: 12 }} onPress={() => navigation.navigate("Videos", { videoId: item.id })}>
+                <TouchableOpacity style={{ width: carouselCardWidth, marginRight: CAROUSEL_GAP }} onPress={() => navigation.navigate("Videos", { videoId: item.id })}>
                   <GlassCard style={{ padding: 0, overflow: "hidden", height: 175 }}>
                     <View
                       style={{
@@ -2706,7 +2721,6 @@ export function UserHomeScreen({ navigation }: any) {
                 </TouchableOpacity>
                 );
               }}
-              style={{ marginLeft: 0 }}
             />
           </>
         )}
@@ -2719,14 +2733,13 @@ export function UserHomeScreen({ navigation }: any) {
               onSeeAll={() => navigation.navigate("Blogs")}
             />
             <FlatList
-              horizontal
-              showsHorizontalScrollIndicator={false}
+              {...carouselProps}
               data={blogs.slice(0, 5)}
               keyExtractor={(b) => b.id}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   onPress={() => navigation.navigate("BlogDetail", { blogId: item.id })}
-                  style={{ width: 240, marginRight: 12 }}
+                  style={{ width: carouselCardWidth, marginRight: CAROUSEL_GAP }}
                 >
                   <GlassCard style={{ padding: 14, height: 155 }}>
                     <Text style={typography.cardTitle} numberOfLines={2}>
@@ -2754,7 +2767,6 @@ export function UserHomeScreen({ navigation }: any) {
                   </GlassCard>
                 </TouchableOpacity>
               )}
-              style={{ marginLeft: 0 }}
             />
           </>
         )}
@@ -2937,11 +2949,11 @@ export function UserHomeScreen({ navigation }: any) {
 export function AstrologerListScreen({ route, navigation }: any) {
   const { theme } = useAuth();
   const isDark = theme === "dark";
-  const { openConversation, astrologerStatuses, onlineUsers } = useChat();
+  const { openConversation, astrologerStatuses, onlineUsers, notificationUnreadCount } = useChat();
   const { initiateCall } = useCall();
   const isFocused = useIsFocused();
   const { width: windowWidth } = useWindowDimensions();
-  const cardWidth = Math.min(Math.max(240, windowWidth - 32), 600);
+  const cardWidth = Math.min(windowWidth - 48, ASTROLOGER_LIST_MAX_WIDTH);
   const [data, setData] = useState<Astrologer[]>([]);
   const [search, setSearch] = useState("");
   const [selectedCat, setSelectedCat] = useState("All");
@@ -3035,89 +3047,17 @@ export function AstrologerListScreen({ route, navigation }: any) {
   return (
     <ScreenWrapper noPadding>
       {/* Brand Header Bar matching Home screen */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          paddingHorizontal: 16,
-          paddingTop: 8,
-          paddingBottom: 4,
-          backgroundColor: colors.background,
+      <BrandHeader
+        leftIcon="arrow-back"
+        onLeftPress={() => {
+          if (navigation.canGoBack()) navigation.goBack();
+          else navigation.navigate("Home");
         }}
-      >
-        <TouchableOpacity
-          onPress={() => {
-            if (navigation.canGoBack()) navigation.goBack();
-            else navigation.navigate("Home");
-          }}
-          style={{ padding: 4, width: 40 }}
-        >
-          <Ionicons name="menu-outline" size={28} color={isDark ? "#F59E0B" : "#7F1D1D"} />
-        </TouchableOpacity>
-
-        <View style={{ alignItems: "center", flexShrink: 1 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 }}>
-            <OmIcon isDark={isDark} />
-            <Text
-              style={{
-                fontSize: 19,
-                fontWeight: "900",
-                color: isDark ? "#FBBF24" : "#8B1E1E",
-                letterSpacing: 0.5,
-              }}
-              numberOfLines={1}
-            >
-              ASTROSHINE
-            </Text>
-          </View>
-          <Text
-            style={{
-              fontSize: 8,
-              fontWeight: "800",
-              color: isDark ? "#FBBF24" : "#D97706",
-              letterSpacing: 1.4,
-              marginTop: 1,
-              textAlign: "center",
-            }}
-            numberOfLines={1}
-          >
-            YOUR DESTINY, YOUR GUIDANCE
-          </Text>
-        </View>
-
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, width: 60, justifyContent: "flex-end" }}>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("FavouriteAstrologers")}
-            style={{ padding: 4 }}
-          >
-            <Ionicons name="heart-outline" size={22} color={isDark ? "#F59E0B" : "#7F1D1D"} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => navigation.navigate("Notifications")}
-            style={{ padding: 4, position: "relative" }}
-          >
-            <Ionicons name="notifications-outline" size={24} color={isDark ? "#F59E0B" : "#7F1D1D"} />
-            <View
-              style={{
-                position: "absolute",
-                top: 0,
-                right: 0,
-                backgroundColor: "#DC2626",
-                borderRadius: 9,
-                minWidth: 16,
-                height: 16,
-                justifyContent: "center",
-                alignItems: "center",
-                paddingHorizontal: 3,
-              }}
-            >
-              <Text style={{ color: "#FFF", fontSize: 9, fontWeight: "800" }}>9+</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-      </View>
+        showFavorites
+        onFavoritesPress={() => navigation.navigate("FavouriteAstrologers")}
+        notificationCount={notificationUnreadCount}
+        onNotificationsPress={() => navigation.navigate("Notifications")}
+      />
 
       {/* Screen Title */}
       <View style={{ paddingHorizontal: 16, paddingTop: 6, paddingBottom: 6 }}>
@@ -3125,7 +3065,7 @@ export function AstrologerListScreen({ route, navigation }: any) {
           style={{
             fontSize: 28,
             fontWeight: "900",
-            color: isDark ? "#FBBF24" : "#7F1D1D",
+            color: colors.heading,
             letterSpacing: -0.5,
           }}
         >
@@ -3138,97 +3078,60 @@ export function AstrologerListScreen({ route, navigation }: any) {
         style={{
           flexDirection: "row",
           alignItems: "center",
-          backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
-          borderColor: isDark ? "rgba(245, 158, 11, 0.25)" : "#FDE68A",
+          backgroundColor: colors.chipBg,
+          borderColor: colors.cardBorder,
           borderWidth: 1.5,
           borderRadius: 24,
           paddingHorizontal: 14,
           height: 48,
           marginHorizontal: 16,
           marginBottom: 10,
-          shadowColor: "#D97706",
+          shadowColor: "#EE7B10",
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: isDark ? 0 : 0.05,
           shadowRadius: 6,
           elevation: 1,
         }}
       >
-        <Ionicons name="search-outline" size={20} color="#9CA3AF" />
+        <Ionicons name="search-outline" size={20} color={colors.textMuted} />
         <TextInput
           style={{
             flex: 1,
             fontSize: 14,
             marginLeft: 10,
-            color: isDark ? "#F9FAFB" : "#1F2937",
+            color: colors.textStrong,
           }}
           value={search}
           onChangeText={setSearch}
           placeholder="Search astrologers, skills, language..."
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={colors.textMuted}
         />
         {search.length > 0 && (
           <TouchableOpacity onPress={() => setSearch("")} style={{ padding: 4 }}>
-            <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
           </TouchableOpacity>
         )}
         <TouchableOpacity
           onPress={() => {}}
           style={{ padding: 4, marginLeft: 4 }}
         >
-          <Ionicons name="options-outline" size={20} color="#EA580C" />
+          <Ionicons name="options-outline" size={20} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
       {/* Styled Filter Chips */}
-      <FlatList
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        data={cats}
-        style={{ height: 44, flexGrow: 0, marginBottom: 8 }}
-        contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}
-        renderItem={({ item }) => {
-          const selected = item === selectedCat;
-          return (
-            <TouchableOpacity
-              onPress={() => setSelectedCat(item)}
-              activeOpacity={0.7}
-              style={{
-                backgroundColor: selected
-                  ? (isDark ? "rgba(217, 119, 6, 0.2)" : "#FFFBEB")
-                  : (isDark ? "#1E293B" : "#EFF6FF"),
-                borderColor: selected
-                  ? "#EA580C"
-                  : (isDark ? "rgba(255,255,255,0.08)" : "#E2E8F0"),
-                borderWidth: selected ? 1.5 : 1,
-                borderRadius: 20,
-                paddingHorizontal: 16,
-                paddingVertical: 7,
-                justifyContent: "center",
-                alignItems: "center",
-                height: 36,
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: selected ? "700" : "500",
-                  color: selected
-                    ? "#EA580C"
-                    : (isDark ? "#D1D5DB" : "#374151"),
-                }}
-              >
-                {item}
-              </Text>
-            </TouchableOpacity>
-          );
-        }}
-        keyExtractor={(c) => c}
+      <FilterTabs
+        options={cats}
+        value={selectedCat}
+        onChange={setSelectedCat}
+        style={{ marginBottom: 8 }}
       />
 
       <FlatList
         data={filtered}
         keyExtractor={(a) => a.userId}
         showsVerticalScrollIndicator={false}
+        style={{ flex: 1 }}
         contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -3382,13 +3285,13 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
   const { user, theme } = useAuth();
   const isDark = theme === "dark";
 
-  const titleColor = isDark ? "#F9FAFB" : "#1F2937";
-  const bodyTextColor = isDark ? "#D1D5DB" : "#4B5563";
-  const mutedTextColor = isDark ? "#9CA3AF" : "#6B7280";
-  const goldTextColor = isDark ? "#F59E0B" : "#D97706";
-  const cardBg = isDark ? "#1F2937" : "#FFFFFF";
-  const cardBorderColor = isDark ? "rgba(245, 158, 11, 0.3)" : "#FDE68A";
-  const cardLightBg = isDark ? "rgba(255, 255, 255, 0.04)" : "#FFFBEB";
+  const titleColor = colors.textStrong;
+  const bodyTextColor = colors.textBody;
+  const mutedTextColor = colors.textMuted;
+  const goldTextColor = colors.accentText;
+  const cardBg = colors.card;
+  const cardBorderColor = colors.cardBorder;
+  const cardLightBg = colors.cardAlt;
 
   const getAbsoluteImageUrl = (path?: string) => {
     if (!path) return undefined;
@@ -3429,7 +3332,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           style={({ pressed }) => [{ paddingHorizontal: 12, paddingVertical: 6, opacity: pressed ? 0.5 : 1 }]}
         >
-          <Ionicons name="flag-outline" size={20} color={isDark ? '#9CA3AF' : '#64748B'} />
+          <Ionicons name="flag-outline" size={20} color={colors.textMuted} />
         </Pressable>
       ),
     });
@@ -3647,7 +3550,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
                   flexDirection: "row",
                   alignItems: "center",
                   gap: 4,
-                  backgroundColor: isDark ? "#111827" : "#FFFFFF",
+                  backgroundColor: colors.surface,
                   borderColor: "#F59E0B",
                   borderWidth: 1,
                   paddingHorizontal: 8,
@@ -3788,8 +3691,8 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
             <View
               style={{
                 alignSelf: "flex-start",
-                backgroundColor: isDark ? "rgba(245,158,11,0.15)" : "#FEF3C7",
-                borderColor: isDark ? "rgba(245,158,11,0.3)" : "#FCD34D",
+                backgroundColor: colors.iconBg,
+                borderColor: colors.chipBorder,
                 borderWidth: 1,
                 borderRadius: 8,
                 paddingHorizontal: 8,
@@ -3868,7 +3771,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
               paddingVertical: 12,
               borderTopWidth: 1,
               borderBottomWidth: 1,
-              borderColor: isDark ? "rgba(255,255,255,0.08)" : "#FDE68A",
+              borderColor: colors.divider,
               marginVertical: 10,
             }}
           >
@@ -3882,7 +3785,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
                       <View style={{ width: "100%", height: 12 }} />
                     )}
                     {showDivider && (
-                      <View style={{ width: 1, height: 32, backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#FDE68A" }} />
+                      <View style={{ width: 1, height: 32, backgroundColor: colors.divider }} />
                     )}
                     <View style={{ alignItems: "center", flex: 1, minWidth: 120 }}>
                       <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
@@ -3940,7 +3843,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
             )}
 
             {isChatEnabled && (isAudioCallEnabled || isVideoCallEnabled) && (
-              <View style={{ height: 1, backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "#F3F4F6" }} />
+              <View style={{ height: 1, backgroundColor: colors.rowBorder }} />
             )}
 
             {isAudioCallEnabled && (
@@ -3956,7 +3859,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
             )}
 
             {isAudioCallEnabled && isVideoCallEnabled && (
-              <View style={{ height: 1, backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "#F3F4F6" }} />
+              <View style={{ height: 1, backgroundColor: colors.rowBorder }} />
             )}
 
             {isVideoCallEnabled && (
@@ -4077,8 +3980,8 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
                 height: 44,
                 borderRadius: 12,
                 borderWidth: 1.5,
-                borderColor: isFavorite ? "#EF4444" : isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)",
-                backgroundColor: isFavorite ? "rgba(239, 68, 68, 0.1)" : isDark ? "rgba(255,255,255,0.05)" : "#F3F4F6",
+                borderColor: isFavorite ? "#C21415" : isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)",
+                backgroundColor: isFavorite ? "rgba(239, 68, 68, 0.1)" : colors.rowBorder,
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "center",
@@ -4088,9 +3991,9 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
               <Ionicons
                 name={isFavorite ? "heart" : "heart-outline"}
                 size={18}
-                color={isFavorite ? "#EF4444" : titleColor}
+                color={isFavorite ? "#C21415" : titleColor}
               />
-              <Text style={{ fontSize: 12, fontWeight: "700", color: isFavorite ? "#EF4444" : titleColor }}>
+              <Text style={{ fontSize: 12, fontWeight: "700", color: isFavorite ? "#C21415" : titleColor }}>
                 {isFavorite ? "Favorited" : "Add Favorite"}
               </Text>
             </TouchableOpacity>
@@ -4210,9 +4113,9 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
             marginTop: 8,
             paddingVertical: 12,
             borderRadius: 16,
-            backgroundColor: isDark ? "rgba(245, 158, 11, 0.15)" : "#FEF3C7",
+            backgroundColor: colors.iconBg,
             borderWidth: 1,
-            borderColor: isDark ? "rgba(245, 158, 11, 0.3)" : "#FCD34D",
+            borderColor: colors.chipBorder,
             alignItems: "center",
           }}
         >
@@ -4408,11 +4311,11 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
       {/* Gift Modal */}
       <Modal visible={giftModalVisible} transparent animationType="fade" onRequestClose={() => setGiftModalVisible(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', padding: 24 }}>
-          <View style={{ backgroundColor: isDark ? '#1F2937' : '#FFFFFF', borderRadius: 24, padding: 20, maxHeight: '80%' }}>
+          <View style={{ backgroundColor: colors.surface, borderRadius: 24, padding: 20, maxHeight: '80%' }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <Text style={{ fontSize: 18, fontWeight: '800', color: isDark ? '#FFF' : '#1E293B' }}>Send Gift to {astro?.name}</Text>
               <TouchableOpacity onPress={() => { setGiftModalVisible(false); setSelectedGift(null); }}>
-                <Ionicons name="close" size={24} color={isDark ? '#9CA3AF' : '#64748B'} />
+                <Ionicons name="close" size={24} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
             <ScrollView contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center', paddingBottom: 16 }}>
@@ -4420,38 +4323,51 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
                 const isSelected = selectedGift?.id === item.id;
                 return (
                   <TouchableOpacity key={item.id} onPress={() => setSelectedGift(item)}
-                    style={{ width: '30%', backgroundColor: isSelected ? (isDark ? 'rgba(217,119,6,0.15)' : '#FFFBEB') : (isDark ? '#111827' : '#FFF'), borderRadius: 14, borderWidth: 1, borderColor: isSelected ? colors.accentGold : isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0', paddingVertical: 12, alignItems: 'center', gap: 4 }}>
-                    <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: isDark ? '#1F2937' : '#FFF', borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    style={{ width: '30%', backgroundColor: isSelected ? (colors.chipBg) : (colors.surface), borderRadius: 14, borderWidth: 1, borderColor: isSelected ? colors.accentGold : isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0', paddingVertical: 12, alignItems: 'center', gap: 4 }}>
+                    <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surface, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                       {item.image ? (
                         <Image source={{ uri: item.image }} style={{ width: 48, height: 48 }} resizeMode="cover" />
                       ) : (
                         <Ionicons name="gift" size={24} color={colors.accentGold} />
                       )}
                     </View>
-                    <Text style={{ fontSize: 12, color: isDark ? '#9CA3AF' : '#64748B', fontWeight: '500', textAlign: 'center' }} numberOfLines={2}>{item.name}</Text>
-                    <Text style={{ fontSize: 13, fontWeight: '800', color: isDark ? '#FFF' : '#0F172A' }}>₹{item.price}</Text>
+                    <Text style={{ fontSize: 12, color: colors.textMuted, fontWeight: '500', textAlign: 'center' }} numberOfLines={2}>{item.name}</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: colors.textStrong }}>₹{item.price}</Text>
                   </TouchableOpacity>
                 );
               })}
             </ScrollView>
             <View style={{ alignItems: 'center', gap: 4, marginBottom: 12 }}>
-              <Text style={{ fontSize: 14, fontWeight: '800', color: isDark ? '#FFF' : '#0F172A' }}>Your Balance: ₹{walletBalance}</Text>
-              <Text style={{ fontSize: 11, color: isDark ? '#9CA3AF' : '#64748B', textAlign: 'center' }}>Entire amount will be provided to expert</Text>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: colors.textStrong }}>Your Balance: ₹{formatAmount(walletBalance)}</Text>
+              <Text style={{ fontSize: 11, color: colors.textMuted, textAlign: 'center' }}>Entire amount will be provided to expert</Text>
             </View>
-            <TouchableOpacity onPress={async () => {
-              if (!selectedGift) { Alert.alert('Select a Gift', 'Please choose a gift first.'); return; }
-              setGiftSending(true);
-              try {
-                await api.gifts.send({ giftId: selectedGift.id, receiverId: id });
-                setGiftModalVisible(false);
-                setSelectedGift(null);
-                Alert.alert('Gift Sent', `You sent ${selectedGift.name} to ${astro?.name}!`);
-              } catch (e: any) {
-                Alert.alert('Error', e?.response?.data?.message || 'Failed to send gift');
-              } finally { setGiftSending(false); }
-            }} disabled={giftSending} style={{ backgroundColor: isDark ? colors.accentGold : '#5C3214', borderRadius: 24, height: 48, alignItems: 'center', justifyContent: 'center', opacity: giftSending ? 0.7 : 1 }}>
-              <Text style={{ color: isDark ? '#000' : '#FFF', fontSize: 15, fontWeight: '700' }}>{giftSending ? 'Sending...' : 'Send Gift'}</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{ flex: 1 }}>
+                <GradientButton
+                  title="Cancel"
+                  variant="outline"
+                  onPress={() => { setGiftModalVisible(false); setSelectedGift(null); }}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <GradientButton
+                  title={giftSending ? 'Sending...' : 'Send Gift'}
+                  onPress={async () => {
+                    if (!selectedGift) { Alert.alert('Select a Gift', 'Please choose a gift first.'); return; }
+                    setGiftSending(true);
+                    try {
+                      await api.gifts.send({ giftId: selectedGift.id, receiverId: id });
+                      setGiftModalVisible(false);
+                      setSelectedGift(null);
+                      Alert.alert('Gift Sent', `You sent ${selectedGift.name} to ${astro?.name}!`);
+                    } catch (e: any) {
+                      Alert.alert('Error', e?.response?.data?.message || 'Failed to send gift');
+                    } finally { setGiftSending(false); }
+                  }}
+                  disabled={giftSending}
+                />
+              </View>
+            </View>
           </View>
         </View>
       </Modal>
@@ -4529,31 +4445,6 @@ const matchesWalletTxnDate = (t: Transaction, range: WalletTxnDateRange): boolea
   return created >= now.getTime() - days * 24 * 60 * 60 * 1000;
 };
 
-const walletTxnTitle = (t: Transaction): string => {
-  const kind = walletTxnKind(t);
-  const meta = t.metadata || {};
-  switch (kind) {
-    case "audio_call":
-      return "Audio Call";
-    case "video_call":
-      return "Video Call";
-    case "chat":
-      return "Chat Consultation";
-    case "gift":
-      return meta.giftName ? `Gift: ${meta.giftName}` : "Gift Sent";
-    case "add_funds":
-      return "Add Fund";
-    case "donation":
-      return "Donation";
-    case "pooja_booking":
-      return meta.poojaName ? `Puja: ${meta.poojaName}` : "Pooja Booking";
-    default:
-      return t.category
-        ? t.category.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-        : "Transaction";
-  }
-};
-
 const walletTxnDuration = (t: Transaction): string | null => {
   const meta = t.metadata || {};
   const minutes = Number(meta.minutesCharged || meta.minutes || 0);
@@ -4576,27 +4467,6 @@ const walletTxnDuration = (t: Transaction): string | null => {
   const minMatch = desc.match(/\((\d+)\s*min\)/i);
   if (minMatch) return `${minMatch[1]} min`;
   return null;
-};
-
-const walletTxnIcon = (t: Transaction): { name: string; color: string } => {
-  switch (walletTxnKind(t)) {
-    case "audio_call":
-      return { name: "call", color: "#0284C7" };
-    case "video_call":
-      return { name: "videocam", color: "#7C3AED" };
-    case "chat":
-      return { name: "chatbubble-ellipses", color: "#0D9488" };
-    case "gift":
-      return { name: "gift", color: "#D97706" };
-    case "donation":
-      return { name: "heart", color: "#DC2626" };
-    case "pooja_booking":
-      return { name: "flame", color: "#EA580C" };
-    case "add_funds":
-      return { name: "wallet", color: "#16A34A" };
-    default:
-      return { name: "receipt", color: colors.textMuted };
-  }
 };
 
 export function WalletScreen() {
@@ -4721,23 +4591,16 @@ export function WalletScreen() {
               Secure payment powered by Razorpay. Funds are added instantly.
             </Text>
             <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
-              <TouchableOpacity
-                onPress={() => {
-                  setShowAdd(false);
-                  setAmount("");
-                }}
-                style={{
-                  flex: 1,
-                  height: 48,
-                  borderRadius: radii.button,
-                  borderWidth: 1,
-                  borderColor: colors.cardBorder,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Text style={{ color: colors.textSecondary, fontWeight: "600" }}>Cancel</Text>
-              </TouchableOpacity>
+              <View style={{ flex: 1 }}>
+                <GradientButton
+                  title="Cancel"
+                  variant="outline"
+                  onPress={() => {
+                    setShowAdd(false);
+                    setAmount("");
+                  }}
+                />
+              </View>
               <View style={{ flex: 1 }}>
                 <GradientButton
                   title={loadingPayment ? "Processing..." : `Pay ₹${amount || "0"}`}
@@ -4928,7 +4791,7 @@ export function WalletScreen() {
         ) : (
           filteredTxns.map((t) => {
             const isCredit = t.type === "credit";
-            const icon = walletTxnIcon(t);
+            const icon = transactionIcon(t);
             const duration = walletTxnDuration(t);
             const statusKey = (t.status || "").toLowerCase();
             const statusColor =
@@ -4951,7 +4814,7 @@ export function WalletScreen() {
                   </View>
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={typography.cardTitle} numberOfLines={1}>
-                      {walletTxnTitle(t)}
+                      {transactionLabel(t)}
                     </Text>
                     {duration ? (
                       <Text style={[typography.caption, { color: colors.textSecondary }]}>
@@ -5826,9 +5689,11 @@ export function ShopScreen({ navigation }: any) {
     setCart((prev) => prev.filter((c) => c.product.id !== productId));
   };
 
-  const cartTotal = cart.reduce(
-    (s, c) => s + Number(c.product.price) * c.qty,
-    0,
+  const cartTotal = sumAmounts(
+    cart.flatMap((c) =>
+      // multiply in paise so qty never reintroduces float drift
+      Array.from({ length: Math.max(0, Number(c.qty) || 0) }, () => c.product.price),
+    ),
   );
 
   const handlePlaceOrder = async () => {
@@ -6016,7 +5881,7 @@ export function ShopScreen({ navigation }: any) {
                     {c.product.name} x{c.qty}
                   </Text>
                   <Text style={typography.caption}>
-                    ₹{Number(c.product.price) * c.qty}
+                    ₹{formatAmount(Number(c.product.price) * (Number(c.qty) || 0))}
                   </Text>
                 </View>
                 <TouchableOpacity onPress={() => removeFromCart(c.product.id)}>
@@ -6038,7 +5903,7 @@ export function ShopScreen({ navigation }: any) {
                   paddingTop: 8,
                 }}
               >
-                <Text style={[typography.cardTitle]}>Total: ₹{cartTotal}</Text>
+                <Text style={[typography.cardTitle]}>Total: ₹{formatAmount(cartTotal)}</Text>
               </View>
               <GradientButton
                 title={ordering ? "Placing Order..." : "Place Order"}
@@ -6236,20 +6101,17 @@ export function ProfileScreen({ navigation }: any) {
   const isFocused = useIsFocused();
   const isDark = theme === "dark";
 
-  const cardBg = isDark ? "#111827" : "#FFFFFF";
-  const cardLightBg = isDark ? "#1F2937" : "#FFFBEB";
-  const cardBorderColor = isDark ? "rgba(245, 158, 11, 0.25)" : "#FDE68A";
-  const textPrimaryColor = isDark ? "#F9FAFB" : "#7F1D1D";
-  const textSecondaryColor = isDark ? "#E5E7EB" : "#1F2937";
-  const mutedTextColor = isDark ? "#9CA3AF" : "#6B7280";
-  const goldTextColor = isDark ? "#FBBF24" : "#D97706";
-  const iconBgColor = isDark ? "rgba(245, 158, 11, 0.15)" : "#FEF3C7";
-  const rowBorderColor = isDark ? "rgba(255, 255, 255, 0.08)" : "#F3F4F6";
+  const cardBg = colors.card;
+  const cardLightBg = colors.cardAlt;
+  const cardBorderColor = colors.cardBorder;
+  const textPrimaryColor = colors.heading;
+  const textSecondaryColor = colors.textBody;
+  const mutedTextColor = colors.textMuted;
+  const goldTextColor = colors.accentText;
+  const iconBgColor = colors.surfaceLight;
+  const rowBorderColor = colors.rowBorder;
 
   const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [giftHistoryOpen, setGiftHistoryOpen] = useState(true);
-  const [giftHistory, setGiftHistory] = useState<GiftTransaction[]>([]);
-  const [giftHistoryLoading, setGiftHistoryLoading] = useState(false);
   const [pwOpen, setPwOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [currentPw, setCurrentPw] = useState("");
@@ -6340,14 +6202,8 @@ export function ProfileScreen({ navigation }: any) {
     },
     {
       icon: "flag-outline",
-      label: "Reports Filed by Me",
+      label: "Reports by Me",
       route: "MyReports",
-      category: "Preferences",
-    },
-    {
-      icon: "shield-outline",
-      label: "Reports Against Me",
-      route: "AstrologerReports",
       category: "Preferences",
     },
   ];
@@ -6514,7 +6370,7 @@ export function ProfileScreen({ navigation }: any) {
                 marginBottom: 8,
               }}
             >
-              <Text style={[styles.groupHeaderTitle, { color: goldTextColor, marginBottom: 0 }]}>
+              <Text style={[styles.groupHeaderTitle, { color: colors.primaryLight, marginBottom: 0 }]}>
                 PROFILE DETAILS
               </Text>
               <TouchableOpacity
@@ -6528,50 +6384,50 @@ export function ProfileScreen({ navigation }: any) {
             </View>
 
             <View style={[styles.menuRowItem, styles.menuRowBorder, { borderBottomColor: rowBorderColor }]}>
-              <Ionicons name="person-outline" size={18} color={goldTextColor} style={{ marginRight: 10 }} />
+              <Ionicons name="person-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
               <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Name</Text>
               <Text
-                style={{ color: user?.name ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: user?.name ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
+                style={{ color: user?.name ? colors.textStrong : mutedTextColor, fontSize: 13, fontWeight: user?.name ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
                 numberOfLines={2}
               >
                 {user?.name || "Not set"}
               </Text>
             </View>
             <View style={[styles.menuRowItem, styles.menuRowBorder, { borderBottomColor: rowBorderColor }]}>
-              <Ionicons name="mail-outline" size={18} color={goldTextColor} style={{ marginRight: 10 }} />
+              <Ionicons name="mail-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
               <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Email</Text>
               <Text
-                style={{ color: user?.email ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: user?.email ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
+                style={{ color: user?.email ? colors.textStrong : mutedTextColor, fontSize: 13, fontWeight: user?.email ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
                 numberOfLines={2}
               >
                 {user?.email || "Not set"}
               </Text>
             </View>
             <View style={[styles.menuRowItem, styles.menuRowBorder, { borderBottomColor: rowBorderColor }]}>
-              <Ionicons name="call-outline" size={18} color={goldTextColor} style={{ marginRight: 10 }} />
+              <Ionicons name="call-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
               <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Phone</Text>
               <Text
-                style={{ color: user?.phone ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: user?.phone ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
+                style={{ color: user?.phone ? colors.textStrong : mutedTextColor, fontSize: 13, fontWeight: user?.phone ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
                 numberOfLines={2}
               >
                 {user?.phone || "Not set"}
               </Text>
             </View>
             <View style={[styles.menuRowItem, styles.menuRowBorder, { borderBottomColor: rowBorderColor }]}>
-              <Ionicons name="male-female-outline" size={18} color={goldTextColor} style={{ marginRight: 10 }} />
+              <Ionicons name="male-female-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
               <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Gender</Text>
               <Text
-                style={{ color: (user as any)?.gender ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: (user as any)?.gender ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
+                style={{ color: (user as any)?.gender ? colors.textStrong : mutedTextColor, fontSize: 13, fontWeight: (user as any)?.gender ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
                 numberOfLines={2}
               >
                 {(user as any)?.gender ? String((user as any).gender).charAt(0).toUpperCase() + String((user as any).gender).slice(1) : "Not set"}
               </Text>
             </View>
             <View style={styles.menuRowItem}>
-              <Ionicons name="calendar-outline" size={18} color={goldTextColor} style={{ marginRight: 10 }} />
+              <Ionicons name="calendar-outline" size={18} color={colors.primaryLight} style={{ marginRight: 10 }} />
               <Text style={[styles.menuRowLabel, { color: textSecondaryColor, flex: 1 }]}>Date of Birth</Text>
               <Text
-                style={{ color: (user as any)?.dateOfBirth ? textPrimaryColor : mutedTextColor, fontSize: 13, fontWeight: (user as any)?.dateOfBirth ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
+                style={{ color: (user as any)?.dateOfBirth ? colors.textStrong : mutedTextColor, fontSize: 13, fontWeight: (user as any)?.dateOfBirth ? "600" : "400", flexShrink: 1, textAlign: "right", marginLeft: 8 }}
                 numberOfLines={2}
               >
                 {formatDisplayDate((user as any)?.dateOfBirth)}
@@ -6586,159 +6442,41 @@ export function ProfileScreen({ navigation }: any) {
               { backgroundColor: cardBg, borderColor: cardBorderColor },
             ]}
           >
-            <Text style={[styles.groupHeaderTitle, { color: goldTextColor }]}>
+            <Text style={[styles.groupHeaderTitle, { color: colors.primaryLight }]}>
               MY ACCOUNT
             </Text>
             {items
               .filter((it) => it.category === "Account")
-              .map((item, i, arr) => {
-                const isGiftHistory = item.route === "GiftHistory";
-                return (
-                  <React.Fragment key={item.label}>
-                    <TouchableOpacity
-                      onPress={() =>
-                        isGiftHistory
-                          ? toggleGiftHistory()
-                          : navigation.navigate(item.route, (item as any).params)
-                      }
-                      style={[
-                        styles.menuRowItem,
-                        { borderBottomColor: rowBorderColor },
-                        i < arr.length - 1 && styles.menuRowBorder,
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.menuItemIconBg,
-                          { backgroundColor: iconBgColor },
-                        ]}
-                      >
-                        <Ionicons
-                          name={item.icon as any}
-                          size={20}
-                          color={goldTextColor}
-                        />
-                      </View>
-                      <Text
-                        style={[styles.menuRowLabel, { color: textSecondaryColor }]}
-                      >
-                        {item.label}
-                      </Text>
-                      <Ionicons
-                        name={isGiftHistory && giftHistoryOpen ? "chevron-up" : "chevron-forward"}
-                        size={18}
-                        color="#9CA3AF"
-                      />
-                    </TouchableOpacity>
-                    {isGiftHistory && giftHistoryOpen && (
-                      <View
-                        style={{
-                          paddingHorizontal: 14,
-                          paddingBottom: 10,
-                          borderBottomWidth: i < arr.length - 1 ? 1 : 0,
-                          borderBottomColor: rowBorderColor,
-                        }}
-                      >
-                        {giftHistoryLoading ? (
-                          <ActivityIndicator
-                            size="small"
-                            color={goldTextColor}
-                            style={{ marginVertical: 12 }}
-                          />
-                        ) : giftHistory.length === 0 ? (
-                          <Text
-                            style={{
-                              color: mutedTextColor,
-                              fontSize: 12,
-                              paddingVertical: 10,
-                            }}
-                          >
-                            No gifts sent yet.
-                          </Text>
-                        ) : (
-                          <>
-                            {giftHistory.slice(0, 5).map((txn) => (
-                              <View
-                                key={txn.id}
-                                style={{
-                                  flexDirection: "row",
-                                  alignItems: "center",
-                                  gap: 10,
-                                  paddingVertical: 8,
-                                  borderTopWidth: StyleSheet.hairlineWidth,
-                                  borderTopColor: rowBorderColor,
-                                }}
-                              >
-                                <View
-                                  style={{
-                                    width: 30,
-                                    height: 30,
-                                    borderRadius: 15,
-                                    backgroundColor: iconBgColor,
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                  }}
-                                >
-                                  <Ionicons name="gift" size={15} color={goldTextColor} />
-                                </View>
-                                <View style={{ flex: 1, minWidth: 0 }}>
-                                  <Text
-                                    style={{
-                                      color: textSecondaryColor,
-                                      fontSize: 13,
-                                      fontWeight: "600",
-                                    }}
-                                    numberOfLines={1}
-                                  >
-                                    {txn.giftName || "Gift"}
-                                  </Text>
-                                  <Text style={{ color: mutedTextColor, fontSize: 11 }} numberOfLines={1}>
-                                    To {txn.receiverName || "Astrologer"} · {new Date(txn.createdAt).toLocaleDateString()}
-                                  </Text>
-                                </View>
-                                <View style={{ alignItems: "flex-end" }}>
-                                  <Text
-                                    style={{
-                                      color: goldTextColor,
-                                      fontSize: 13,
-                                      fontWeight: "700",
-                                    }}
-                                  >
-                                    ₹{Number(txn.giftPrice || 0).toFixed(2)}
-                                  </Text>
-                                  <Text
-                                    style={{
-                                      color: txn.isRedeemed ? colors.success : mutedTextColor,
-                                      fontSize: 9,
-                                      fontWeight: "800",
-                                    }}
-                                  >
-                                    {txn.isRedeemed ? "REDEEMED" : "SENT"}
-                                  </Text>
-                                </View>
-                              </View>
-                            ))}
-                            <TouchableOpacity
-                              onPress={() => navigation.navigate("GiftHistory")}
-                              style={{ paddingTop: 10, paddingBottom: 2 }}
-                            >
-                              <Text
-                                style={{
-                                  color: goldTextColor,
-                                  fontSize: 12,
-                                  fontWeight: "700",
-                                }}
-                              >
-                                View all gift history →
-                              </Text>
-                            </TouchableOpacity>
-                          </>
-                        )}
-                      </View>
-                    )}
-                  </React.Fragment>
-                );
-              })}
+              .map((item, i, arr) => (
+                <TouchableOpacity
+                  key={item.label}
+                  onPress={() => navigation.navigate(item.route, (item as any).params)}
+                  style={[
+                    styles.menuRowItem,
+                    { borderBottomColor: rowBorderColor },
+                    i < arr.length - 1 && styles.menuRowBorder,
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.menuItemIconBg,
+                      { backgroundColor: iconBgColor },
+                    ]}
+                  >
+                    <Ionicons
+                      name={item.icon as any}
+                      size={20}
+                      color={goldTextColor}
+                    />
+                  </View>
+                  <Text
+                    style={[styles.menuRowLabel, { color: textSecondaryColor }]}
+                  >
+                    {item.label}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                </TouchableOpacity>
+              ))}
           </View>
 
           {/* Preferences & Security Group */}
@@ -6748,7 +6486,7 @@ export function ProfileScreen({ navigation }: any) {
               { backgroundColor: cardBg, borderColor: cardBorderColor },
             ]}
           >
-            <Text style={[styles.groupHeaderTitle, { color: goldTextColor }]}>
+            <Text style={[styles.groupHeaderTitle, { color: colors.primaryLight }]}>
               PREFERENCES & SECURITY
             </Text>
 
@@ -6776,7 +6514,7 @@ export function ProfileScreen({ navigation }: any) {
               <Toggle
                 value={theme === "dark"}
                 onValueChange={toggleTheme}
-                trackColor={{ false: "#D1D5DB", true: "#7F1D1D" }}
+                trackColor={{ false: colors.switchOff, true: colors.switchOn }}
               />
             </View>
 
@@ -6834,7 +6572,7 @@ export function ProfileScreen({ navigation }: any) {
                   >
                     {item.label}
                   </Text>
-                  <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+                  <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
                 </TouchableOpacity>
               ))}
           </View>
@@ -6860,9 +6598,9 @@ export function ProfileScreen({ navigation }: any) {
                   },
                 ]}
               >
-                <Ionicons name="trash-outline" size={20} color="#DC2626" />
+                <Ionicons name="trash-outline" size={20} color="#C21415" />
               </View>
-              <Text style={[styles.menuRowLabel, { color: "#DC2626" }]}>
+              <Text style={[styles.menuRowLabel, { color: "#C21415" }]}>
                 Delete Account
               </Text>
               <Ionicons name="chevron-forward" size={18} color="#FCA5A5" />
@@ -6884,11 +6622,11 @@ export function ProfileScreen({ navigation }: any) {
           <Ionicons
             name="log-out-outline"
             size={20}
-            color={isDark ? "#F87171" : "#DC2626"}
+            color={colors.danger}
           />
           <Text
             style={{
-              color: isDark ? "#F87171" : "#DC2626",
+              color: colors.danger,
               fontSize: 15,
               fontWeight: "700",
               marginLeft: 8,
@@ -7139,26 +6877,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 4,
   },
-  topHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  headerBadge: {
-    position: "absolute",
-    top: 0,
-    right: 0,
-    backgroundColor: "#DC2626",
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 3,
-  },
+
+
   greetingRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -7483,13 +7203,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   astroRowCard: {
-    width: 326,
+    width: ASTROLOGER_CARD_WIDTH,
     maxWidth: "100%",
     marginRight: 14,
-    borderRadius: 24,
+    borderRadius: 20,
     borderWidth: 1.5,
     padding: 14,
-    shadowColor: "#D97706",
+    shadowColor: "#EE7B10",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
@@ -7551,22 +7271,23 @@ const styles = StyleSheet.create({
 
 // All quick actions
 export function QuickActionsScreen({ navigation }: any) {
-  const { theme } = useAuth();
-  const isDark = theme === "dark";
-  const cardBg = isDark ? "#111827" : "#FFFFFF";
-  const borderColor = isDark ? "rgba(245,158,11,0.25)" : "#FDE68A";
-  const titleColor = isDark ? "#F9FAFB" : "#7F1D1D";
-  const mutedColor = isDark ? "#9CA3AF" : "#6B7280";
+  const cardBg = colors.card;
+  const borderColor = colors.cardBorder;
+  const titleColor = colors.heading;
+  const mutedColor = colors.textMuted;
 
   const actions = [
-    { label: "Kundli", icon: "grid-outline", color: "#D97706", route: "Kundli" },
+    { label: "Kundli", icon: "grid-outline", color: "#EE7B10", route: "Kundli" },
     { label: "Matchmaking", icon: "heart", color: "#E11D48", route: "Matchmaking" },
-    { label: "Panchang", icon: "calendar", color: "#EA580C", route: "Panchang" },
+    { label: "Panchang", icon: "calendar", color: "#EE7B10", route: "Panchang" },
+    { label: "Festivals", icon: "sparkles", color: "#C026D3", route: "Festivals" },
+    { label: "Vrats", icon: "moon", color: "#0891B2", route: "Vrats" },
+    { label: "Muhurats", icon: "time", color: "#059669", route: "Main", params: { screen: "Muhurat" } },
     { label: "Pooja", icon: "flame", color: "#7C3AED", route: "MandirPooja" },
     { label: "Astrologers", icon: "people", color: "#0284C7", route: "Astrologers" },
     { label: "Shop", icon: "bag-handle", color: "#16A34A", route: "Shop" },
-    { label: "Send Gift", icon: "gift", color: "#D97706", route: "Gifts", params: { mode: "send" } },
-    { label: "Favourites", icon: "heart-circle", color: "#DC2626", route: "FavouriteAstrologers" },
+    { label: "Send Gift", icon: "gift", color: "#EE7B10", route: "Gifts", params: { mode: "send" } },
+    { label: "Favourites", icon: "heart-circle", color: "#C21415", route: "FavouriteAstrologers" },
     { label: "Wallet", icon: "wallet", color: "#0D9488", route: "Wallet" },
     { label: "Orders", icon: "receipt", color: "#9333EA", route: "OrderHistory" },
     { label: "News", icon: "newspaper", color: "#0D9488", route: "News" },
@@ -7682,6 +7403,7 @@ export function FavouriteAstrologersScreen({ navigation }: any) {
                 onAction={() => navigation.navigate("AstrologerDetail", { id: item.userId })}
                 actionLabel="View Profile ›"
                 actionIcon="person-outline"
+                style={{ width: '100%', marginRight: 0, marginBottom: 12 }}
               />
             )}
             ListEmptyComponent={

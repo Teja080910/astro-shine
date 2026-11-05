@@ -17,13 +17,13 @@ export function Navbar({ title, navigation, showBack = true, rightComponent }: N
     <View style={[styles.container, { borderBottomColor: colors.divider }]}>
       {canGoBack ? (
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+          <Ionicons name="arrow-back" size={24} color={colors.heading} />
         </TouchableOpacity>
       ) : (
         <View style={styles.placeholder} />
       )}
       
-      <Text style={[typography.sectionTitle, styles.title, { color: colors.textPrimary }]} numberOfLines={1}>
+      <Text style={[typography.sectionTitle, styles.title, { color: colors.heading }]} numberOfLines={1}>
         {title}
       </Text>
 

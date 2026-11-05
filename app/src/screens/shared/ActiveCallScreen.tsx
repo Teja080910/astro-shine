@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { colors } from '../../shared';
+import { colors, formatAmount } from '../../shared';
 import { Ionicons } from '@expo/vector-icons';
 import { useCall } from '../../context/CallContext';
 import { useChat } from '../../context/ChatContext';
@@ -188,7 +188,7 @@ export function ActiveCallScreen() {
               <View style={styles.balanceBadge}>
                 <Ionicons name="wallet-outline" size={14} color={colors.accentGold} />
                 <Text style={[styles.balanceText, walletBalance < 50 && { color: colors.danger }]}>
-                  ₹{walletBalance}
+                  ₹{formatAmount(walletBalance)}
                 </Text>
               </View>
             )}
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
   controlIcon: { width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(255,255,255,0.15)', justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
   controlIconActive: { backgroundColor: colors.primary },
   controlLabel: { color: colors.white, fontSize: 12, fontWeight: '500' },
-  endCallButton: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#EF4444', justifyContent: 'center', alignItems: 'center' },
+  endCallButton: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#C21415', justifyContent: 'center', alignItems: 'center' },
   balanceBadge: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)',
     paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, marginTop: 8,

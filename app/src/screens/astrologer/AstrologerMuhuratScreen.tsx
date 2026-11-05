@@ -8,9 +8,8 @@ import { ScreenWrapper, GlassCard, Chip, SkeletonLoader, EmptyState, CustomModal
 import type { MuhuratItem, MuhuratCategory } from '../../shared/types';
 
 export function AstrologerMuhuratScreen() {
-  const { astrologer, theme } = useAuth();
+  const { astrologer } = useAuth();
   const isFocused = useIsFocused();
-  const isDark = theme === 'dark';
 
   const [data, setData] = useState<MuhuratItem[]>([]);
   const [categories, setCategories] = useState<MuhuratCategory[]>([]);
@@ -207,7 +206,7 @@ export function AstrologerMuhuratScreen() {
         </View>
       </View>
 
-      <View style={[styles.divider, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)' }]} />
+      <View style={[styles.divider, { backgroundColor: colors.divider }]} />
 
       <View style={styles.actionsRow}>
         <Text
@@ -222,7 +221,7 @@ export function AstrologerMuhuratScreen() {
             <Ionicons name="pencil" size={16} color={colors.primary} />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => deleteItem(item.id)} style={[styles.actionBtn, { marginLeft: 8, borderColor: colors.cardBorder }]}>
-            <Ionicons name="trash" size={16} color="#EF4444" />
+            <Ionicons name="trash" size={16} color="#C21415" />
           </TouchableOpacity>
         </View>
       </View>
@@ -275,7 +274,7 @@ export function AstrologerMuhuratScreen() {
             placeholderTextColor={colors.textMuted}
             value={formName}
             onChangeText={setFormName}
-            style={[styles.inputField, { color: colors.textPrimary, borderColor: colors.cardBorder, backgroundColor: isDark ? '#1F2937' : '#FFFFFF' }]}
+            style={[styles.inputField, { color: colors.textPrimary, borderColor: colors.cardBorder, backgroundColor: colors.surface }]}
           />
 
           <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Category</Text>
@@ -294,7 +293,7 @@ export function AstrologerMuhuratScreen() {
           <View style={styles.dateTimeRow}>
             <View style={{ flex: 1, marginRight: 8 }}>
               <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Date</Text>
-              <TouchableOpacity onPress={() => setShowDatePicker(true)} style={[styles.selectorBtn, { borderColor: colors.cardBorder, backgroundColor: isDark ? '#1F2937' : '#FFFFFF' }]}>
+              <TouchableOpacity onPress={() => setShowDatePicker(true)} style={[styles.selectorBtn, { borderColor: colors.cardBorder, backgroundColor: colors.surface }]}>
                 <Ionicons name="calendar-outline" size={16} color={colors.primary} style={{ marginRight: 6 }} />
                 <Text style={{ color: colors.textPrimary }}>{formatDateString(formDate)}</Text>
               </TouchableOpacity>
@@ -330,7 +329,7 @@ export function AstrologerMuhuratScreen() {
             onChangeText={setFormDesc}
             multiline
             numberOfLines={4}
-            style={[styles.inputField, { height: 80, textAlignVertical: 'top', color: colors.textPrimary, borderColor: colors.cardBorder, backgroundColor: isDark ? '#1F2937' : '#FFFFFF' }]}
+            style={[styles.inputField, { height: 80, textAlignVertical: 'top', color: colors.textPrimary, borderColor: colors.cardBorder, backgroundColor: colors.surface }]}
           />
 
           <View style={styles.toggleRow}>

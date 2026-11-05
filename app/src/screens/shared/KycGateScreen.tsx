@@ -156,7 +156,7 @@ export function KycGateScreen() {
       message: 'Your profile has been approved! You now have full access to the application.',
     },
     rejected: {
-      color: '#EF4444',
+      color: '#C21415',
       icon: 'close-circle-outline' as const,
       label: 'Rejected',
       message: note || 'Your verification was not approved. Please review the feedback and upload valid documents to resubmit.',

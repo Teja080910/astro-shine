@@ -7,6 +7,7 @@ import { SearchInput } from '@/components/SearchInput';
 import { Table, Badge } from '@/components/UIComponents';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
+import { transactionLabel } from '@/lib/utils';
 import type { Transaction } from '@astro-shine/shared-types';
 
 export default function TransactionsPage() {
@@ -57,7 +58,7 @@ export default function TransactionsPage() {
           {data.map((t: any) => (
             <tr key={t.id} className="border-b border-divider hover:bg-surface-light/50">
               <td className="px-4 py-3 text-text-secondary">{t.type}</td>
-              <td className="px-4 py-3 text-text-secondary">{t.category?.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())}</td>
+              <td className="px-4 py-3 text-text-secondary">{transactionLabel(t)}</td>
               <td className="px-4 py-3 text-text-secondary">{(t as any).userName || t.userId?.slice(0, 8) || '-'}</td>
               <td className="px-4 py-3 text-text-secondary">{(t as any).astrologerName || t.astrologerId?.slice(0, 8) || '-'}</td>
               <td className="px-4 py-3 text-text-primary">₹{t.amount}</td>

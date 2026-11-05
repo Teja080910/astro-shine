@@ -48,10 +48,53 @@ export class ScheduleService {
   }
 
   async bulkUpsert(astrologerId: string, schedules: { dayOfWeek: number; startTime: string; endTime: string; isAvailable: boolean }[]) {
-    const results = [];
-    for (const s of schedules) {
-      results.push(await this.upsert(astrologerId, s.dayOfWeek, s.startTime, s.endTime, s.isAvailable));
+    if (!Array.isArray(schedules) || schedules.length === 0) {
+      throw new BadRequestException('schedules must be a non-empty array');
     }
-    return results;
+    // Validate everything up front so a bad slot cannot leave the week half-written.
+    const seen = new Set<number>();
+    for (const s of schedules) {
+      this.validateSlot(s.dayOfWeek, s.startTime, s.endTime);
+      if (seen.has(s.dayOfWeek)) {
+        throw new BadRequestException(`Duplicate schedule for day ${s.dayOfWeek}`);
+      }
+      seen.add(s.dayOfWeek);
+    }
+
+    return this.db.transaction(async (tx) => {
+      const results = [];
+      for (const s of schedules) {
+        const existing = await tx.query.astrologerSchedules.findFirst({
+          where: and(
+            eq(schema.astrologerSchedules.astrologerId, astrologerId),
+            eq(schema.astrologerSchedules.dayOfWeek, s.dayOfWeek),
+          ),
+        });
+        if (existing) {
+          const [updated] = await tx.update(schema.astrologerSchedules)
+            .set({
+              startTime: s.startTime,
+              endTime: s.endTime,
+              isAvailable: s.isAvailable ?? true,
+              updatedAt: new Date(),
+            })
+            .where(eq(schema.astrologerSchedules.id, existing.id))
+            .returning();
+          results.push(updated);
+        } else {
+          const [created] = await tx.insert(schema.astrologerSchedules)
+            .values({
+              astrologerId,
+              dayOfWeek: s.dayOfWeek,
+              startTime: s.startTime,
+              endTime: s.endTime,
+              isAvailable: s.isAvailable ?? true,
+            })
+            .returning();
+          results.push(created);
+        }
+      }
+      return results;
+    });
   }
 }

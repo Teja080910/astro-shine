@@ -8,6 +8,7 @@ import {
   Observer,
   getPanchangam,
   getKundli,
+  getUpcomingFestivals,
   matchKundli,
   tithiNames,
   nakshatraNames,
@@ -15,6 +16,7 @@ import {
 } from '@ishubhamx/panchangam-js';
 import type {
   BirthDetails,
+  FestivalResult,
   HoroscopeResult,
   KundliResult,
   MatchmakingResult,
@@ -22,7 +24,7 @@ import type {
   PersonSummary,
   PlanetaryPosition,
 } from './astrology.types';
-import { formatTimeInZone, localNoonUtc, toUtcDate } from './astro-utils';
+import { formatTimeInZone, localNoonUtc, parseDateStr, toUtcDate } from './astro-utils';
 
 const PLANET_KEYS: Record<string, string> = {
   Sun: 'Su',
@@ -403,6 +405,38 @@ export class LocalAstrologyService {
       luckyColor: lucky.color,
       mood: lucky.mood,
     };
+  }
+
+  festivals(
+    dateStr: string,
+    lat: number,
+    lng: number,
+    timezone: number,
+    days: number,
+    fastingOnly: boolean,
+  ): FestivalResult[] {
+    const tz = timezone || 5.5;
+    const observer = this.observer(lat, lng);
+    const { day, month, year } = parseDateStr(dateStr);
+    const start = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+    const list = getUpcomingFestivals({
+      date: start,
+      observer,
+      days: Math.min(Math.max(days || 30, 1), 366),
+      timezoneOffset: Math.round(tz * 60),
+    });
+    return list
+      .filter((f) => (fastingOnly ? Boolean(f.isFastingDay) : true))
+      .map((f) => ({
+        name: f.name,
+        category: f.category,
+        date: f.date.toISOString().slice(0, 10),
+        description: f.description,
+        isFastingDay: Boolean(f.isFastingDay),
+        paksha: f.paksha,
+        tithi: f.tithi,
+        masa: f.masa,
+      }));
   }
 
   chaughadiya(

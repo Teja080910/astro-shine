@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Image, Keyboard, Platform, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
-import { Avatar, CustomModal, EmptyState, GlassCard, GradientButton, ScreenWrapper, colors, radii, resolveMediaUrl, typography } from '../../shared';
+import { Avatar, CustomModal, EmptyState, GlassCard, GradientButton, ScreenWrapper, colors, radii, resolveMediaUrl, typography, formatAmount, sumAmounts } from '../../shared';
 import { api } from '../../shared/api-client';
 import type { Astrologer, Gift, GiftTransaction } from '../../shared/types';
 
@@ -12,9 +12,7 @@ import type { Astrologer, Gift, GiftTransaction } from '../../shared/types';
 
 export function GiftScreen({ route, navigation }: any) {
   const { user } = useAuth();
-  const { theme } = useAuth();
   const { giftVersion } = useChat();
-  const isDark = theme === 'dark';
   const isFocused = useIsFocused();
   const [gifts, setGifts] = useState<Gift[]>([]);
   const [astrologers, setAstrologers] = useState<Astrologer[]>([]);
@@ -32,11 +30,9 @@ export function GiftScreen({ route, navigation }: any) {
   // The Profile menu opens the dedicated GiftHistory route; treat it exactly
   // like history mode so the Send Gift catalogue can never show up there.
   const historyOnly = initialMode === 'history' || route?.name === 'GiftHistory';
-  const [activeTab, setActiveTab] = useState<'send' | 'history'>(historyOnly ? 'history' : 'send');
 
   useEffect(() => {
     navigation.setOptions({ title: historyOnly ? 'Gift History' : 'Gifts' });
-    setActiveTab(historyOnly ? 'history' : 'send');
   }, [navigation, historyOnly]);
 
   useEffect(() => {
@@ -152,31 +148,31 @@ export function GiftScreen({ route, navigation }: any) {
       <ScreenWrapper style={{ backgroundColor: 'transparent' }} edges={[]}>
         <View style={[styles.directSendContainer, { backgroundColor: 'rgba(0, 0, 0, 0.6)' }]}>
           <View style={[styles.modalCard, {
-            backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
-            borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0',
-            borderWidth: isDark ? 1 : 0
+            backgroundColor: colors.surface,
+            borderColor: colors.chipBorder,
+            borderWidth: 1
           }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: isDark ? '#FFFFFF' : '#1E293B' }]}>Gift for your expert</Text>
+              <Text style={[styles.modalTitle, { color: colors.textStrong }]}>Gift for your expert</Text>
               <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeBtn}>
-                <Ionicons name="close" size={24} color={isDark ? '#9CA3AF' : '#64748B'} />
+                <Ionicons name="close" size={24} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
 
             <View style={[styles.expertRow, {
-              backgroundColor: isDark ? '#111827' : '#F8FAFC',
-              borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0'
+              backgroundColor: colors.surface,
+              borderColor: colors.chipBorder
             }]}>
               <Avatar size={48} uri={selectedAstrologer.avatar} />
               <View style={{ flex: 1 }}>
-                <Text style={[styles.expertName, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>{selectedAstrologer.name}</Text>
-                <Text style={[styles.expertSub, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+                <Text style={[styles.expertName, { color: colors.textStrong }]}>{selectedAstrologer.name}</Text>
+                <Text style={[styles.expertSub, { color: colors.textMuted }]}>
                   {selectedAstrologer.specialization?.join(', ') || 'Vedic Astrology Expert'}
                 </Text>
               </View>
             </View>
 
-            <Text style={[styles.chooseTitle, { color: isDark ? '#FFFFFF' : '#1E293B' }]}>Choose gift</Text>
+            <Text style={[styles.chooseTitle, { color: colors.textStrong }]}>Choose gift</Text>
 
             <View style={styles.gridContainer}>
               {gifts.map((item) => {
@@ -188,19 +184,19 @@ export function GiftScreen({ route, navigation }: any) {
                     style={[
                       styles.giftCardCompact,
                       {
-                        backgroundColor: isDark ? '#111827' : '#FFFFFF',
+                        backgroundColor: colors.surface,
                         borderColor: isSelected 
                           ? colors.accentGold 
-                          : isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0',
+                          : colors.chipBorder,
                       },
                       isSelected && {
-                        backgroundColor: isDark ? 'rgba(217, 119, 6, 0.15)' : '#FFFBEB',
+                        backgroundColor: colors.chipBg,
                       }
                     ]}
                   >
                     <View style={[styles.giftIconCircle, {
-                      backgroundColor: isDark ? '#1F2937' : '#FFFFFF',
-                      borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9',
+                      backgroundColor: colors.surface,
+                      borderColor: colors.rowBorder,
                       overflow: 'hidden',
                     }]}>
                       {item.image ? (
@@ -209,10 +205,10 @@ export function GiftScreen({ route, navigation }: any) {
                         <Ionicons name="gift" size={24} color={colors.accentGold} />
                       )}
                     </View>
-                    <Text style={[styles.giftNameCompact, { color: isDark ? '#9CA3AF' : '#64748B' }]} numberOfLines={1}>
+                    <Text style={[styles.giftNameCompact, { color: colors.textMuted }]} numberOfLines={1}>
                       {item.name}
                     </Text>
-                    <Text style={[styles.giftPriceCompact, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+                    <Text style={[styles.giftPriceCompact, { color: colors.textStrong }]}>
                       ₹ {item.price}
                     </Text>
                   </TouchableOpacity>
@@ -221,10 +217,10 @@ export function GiftScreen({ route, navigation }: any) {
             </View>
 
             <View style={styles.balanceRow}>
-              <Text style={[styles.balanceLabel, { color: isDark ? '#FFFFFF' : '#0F172A' }]}>
+              <Text style={[styles.balanceLabel, { color: colors.textStrong }]}>
                 Your Balance: ₹{wallet?.balance || '0'}
               </Text>
-              <Text style={[styles.balanceDesc, { color: isDark ? '#9CA3AF' : '#64748B' }]}>
+              <Text style={[styles.balanceDesc, { color: colors.textMuted }]}>
                 Entire amount of the gift will be provided to expert
               </Text>
             </View>
@@ -234,11 +230,11 @@ export function GiftScreen({ route, navigation }: any) {
               disabled={sending}
               style={[
                 styles.sendBtnLarge, 
-                { backgroundColor: isDark ? colors.accentGold : '#5C3214' },
+                { backgroundColor: colors.accentGold },
                 sending && { opacity: 0.7 }
               ]}
             >
-              <Text style={[styles.sendBtnText, { color: isDark ? '#000000' : '#FFFFFF' }]}>
+              <Text style={[styles.sendBtnText, { color: colors.white }]}>
                 {sending ? 'Sending...' : 'Send Gift'}
               </Text>
             </TouchableOpacity>
@@ -248,15 +244,14 @@ export function GiftScreen({ route, navigation }: any) {
     );
   }
 
-  const totalGiftValue = transactions.reduce((sum, t) => {
-    const gift = gifts.find((g) => g.id === t.giftId);
-    return sum + Number(t.giftPrice || gift?.price || 0);
-  }, 0);
+  const totalGiftValue = sumAmounts(
+    transactions.map((t) => t.giftPrice || gifts.find((g) => g.id === t.giftId)?.price || 0),
+  );
 
   return (
     <ScreenWrapper noPadding>
       <View style={{ flex: 1, width: '100%', maxWidth: 600, alignSelf: 'center' }}>
-        {activeTab === 'history' ? (
+        {historyOnly ? (
           <FlatList
             key="gift-history"
             data={transactions}
@@ -265,28 +260,6 @@ export function GiftScreen({ route, navigation }: any) {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             ListHeaderComponent={
               <>
-                {!historyOnly && (
-                  <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-                    <TouchableOpacity
-                      onPress={() => setActiveTab('send')}
-                      style={{
-                        flex: 1, paddingVertical: 10, borderRadius: 20, alignItems: 'center',
-                        backgroundColor: colors.surfaceLight, borderWidth: 1, borderColor: colors.cardBorder,
-                      }}
-                    >
-                      <Text style={{ fontWeight: '700', color: colors.textSecondary }}>Send Gift</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => setActiveTab('history')}
-                      style={{
-                        flex: 1, paddingVertical: 10, borderRadius: 20, alignItems: 'center',
-                        backgroundColor: colors.accentGold, borderWidth: 1, borderColor: colors.accentGold,
-                      }}
-                    >
-                      <Text style={{ fontWeight: '700', color: '#FFFFFF' }}>Gift History</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
                 <Text style={[typography.caption, { color: colors.textMuted, marginBottom: 14 }]}>
                   Gifts you have sent to astrologers
                 </Text>
@@ -299,7 +272,7 @@ export function GiftScreen({ route, navigation }: any) {
                       </View>
                       <View style={{ alignItems: 'flex-end' }}>
                         <Text style={[typography.caption, { color: colors.textMuted }]}>Total Value</Text>
-                        <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>₹{totalGiftValue.toFixed(2)}</Text>
+                        <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>₹{formatAmount(totalGiftValue)}</Text>
                       </View>
                     </View>
                   </GlassCard>
@@ -371,29 +344,16 @@ export function GiftScreen({ route, navigation }: any) {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             ListHeaderComponent={
               <>
-                {!historyOnly && (
-                  <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-                    <TouchableOpacity
-                      onPress={() => setActiveTab('send')}
-                      style={{
-                        flex: 1, paddingVertical: 10, borderRadius: 20, alignItems: 'center',
-                        backgroundColor: colors.accentGold, borderWidth: 1, borderColor: colors.accentGold,
-                      }}
-                    >
-                      <Text style={{ fontWeight: '700', color: '#FFFFFF' }}>Send Gift</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => setActiveTab('history')}
-                      style={{
-                        flex: 1, paddingVertical: 10, borderRadius: 20, alignItems: 'center',
-                        backgroundColor: colors.surfaceLight, borderWidth: 1, borderColor: colors.cardBorder,
-                      }}
-                    >
-                      <Text style={{ fontWeight: '700', color: colors.textSecondary }}>Gift History</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-                <Text style={[typography.pageTitle, { color: colors.textPrimary, marginBottom: 4 }]}>Send a Gift</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <Text style={[typography.pageTitle, { color: colors.textPrimary }]}>Send a Gift</Text>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate('GiftHistory')}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+                  >
+                    <Ionicons name="time-outline" size={15} color={colors.accentGold} />
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: colors.accentGold }}>History</Text>
+                  </TouchableOpacity>
+                </View>
                 <Text style={[typography.body, { color: colors.textSecondary, marginBottom: 14 }]}>
                   Show appreciation to your astrologer with a thoughtful gift.
                 </Text>
@@ -465,32 +425,32 @@ export function GiftScreen({ route, navigation }: any) {
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
-                  backgroundColor: isDark ? '#111827' : '#F1F5F9',
+                  backgroundColor: colors.surface,
                   borderRadius: 12,
                   paddingHorizontal: 12,
                   height: 42,
                   borderWidth: 1,
-                  borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0',
+                  borderColor: colors.chipBorder,
                 }}
               >
-                <Ionicons name="search" size={16} color={isDark ? '#9CA3AF' : '#64748B'} style={{ marginRight: 8 }} />
+                <Ionicons name="search" size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
                 <TextInput
                   placeholder="Search astrologer name..."
-                  placeholderTextColor={isDark ? '#6B7280' : '#94A3B8'}
+                  placeholderTextColor={colors.textMuted}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                   returnKeyType="done"
                   onSubmitEditing={() => Keyboard.dismiss()}
                   style={{
                     flex: 1,
-                    color: isDark ? '#FFFFFF' : '#0F172A',
+                    color: colors.textStrong,
                     fontSize: 13,
                     padding: 0,
                   }}
                 />
                 {searchQuery.length > 0 && (
                   <TouchableOpacity onPress={() => setSearchQuery("")} style={{ padding: 4 }}>
-                    <Ionicons name="close-circle" size={16} color={isDark ? '#9CA3AF' : '#64748B'} />
+                    <Ionicons name="close-circle" size={16} color={colors.textMuted} />
                   </TouchableOpacity>
                 )}
                 {isKeyboardOpen && (
@@ -499,7 +459,7 @@ export function GiftScreen({ route, navigation }: any) {
                     style={{
                       paddingHorizontal: 8,
                       paddingVertical: 4,
-                      backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+                      backgroundColor: colors.divider,
                       borderRadius: 8,
                       marginLeft: 6,
                     }}
@@ -523,8 +483,8 @@ export function GiftScreen({ route, navigation }: any) {
                     >
                       <Avatar size={36} uri={item.avatar} />
                       <View style={{ flex: 1 }}>
-                        <Text style={[typography.body, { fontWeight: '600', color: isDark ? '#FFFFFF' : '#0F172A' }]}>{item.name}</Text>
-                        <Text style={[typography.caption, { color: isDark ? '#9CA3AF' : '#64748B' }]}>{item.specialization?.[0] || 'Astrologer'}</Text>
+                        <Text style={[typography.body, { fontWeight: '600', color: colors.textStrong }]}>{item.name}</Text>
+                        <Text style={[typography.caption, { color: colors.textMuted }]}>{item.specialization?.[0] || 'Astrologer'}</Text>
                       </View>
                       <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
                     </TouchableOpacity>
@@ -540,6 +500,7 @@ export function GiftScreen({ route, navigation }: any) {
             <View style={{ flex: 1 }}>
               <GradientButton
                 title="Cancel"
+                variant="outline"
                 onPress={() => { Keyboard.dismiss(); setShowSendModal(false); }}
               />
             </View>
@@ -603,7 +564,7 @@ const styles = StyleSheet.create({
   },
   expertSub: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#8B8B8D',
     marginTop: 2,
   },
   chooseTitle: {
@@ -653,7 +614,7 @@ const styles = StyleSheet.create({
   },
   giftNameCompact: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#8B8B8D',
     fontWeight: '500',
     textAlign: 'center',
   },
@@ -674,7 +635,7 @@ const styles = StyleSheet.create({
   },
   balanceDesc: {
     fontSize: 11,
-    color: '#64748B',
+    color: '#8B8B8D',
     textAlign: 'center',
   },
   sendBtnLarge: {
