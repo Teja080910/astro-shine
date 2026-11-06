@@ -124,8 +124,14 @@ export class AdminsService {
     `);
 
     return {
-      deposits: deposits.rows.map(r => ({ period: r.period, amount: Number(r.amount).toFixed(2) })),
-      platformFees: fees.rows.map(r => ({ period: r.period, amount: Number(r.amount).toFixed(2) })),
+      deposits: deposits.rows.map((r: { period: string; amount: string }) => ({
+        period: r.period,
+        amount: Number(r.amount).toFixed(2),
+      })),
+      platformFees: fees.rows.map((r: { period: string; amount: string }) => ({
+        period: r.period,
+        amount: Number(r.amount).toFixed(2),
+      })),
     };
   }
 
