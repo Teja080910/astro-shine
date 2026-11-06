@@ -662,7 +662,7 @@ function Input({ icon, placeholder, value, onChange, secure, keyboardType, right
       <TextInput 
         style={[styles.input, { color: colors.textPrimary }]} 
         placeholder={placeholder} 
-        placeholderTextColor={colors.textMuted} 
+        placeholderTextColor={colors.placeholderText} 
         value={value} 
         onChangeText={onChange} 
         secureTextEntry={secure} 

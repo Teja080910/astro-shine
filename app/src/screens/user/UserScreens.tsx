@@ -407,7 +407,7 @@ function AstrologerRowCard({
               style={{
                 fontSize: 11.5,
                 fontWeight: "800",
-                color: isDark ? "#F3F4F6" : "#1F2937",
+                color: colors.heading,
               }}
             >
               {item.rating ? parseFloat(String(item.rating)).toFixed(1) : "4.5"}
@@ -447,7 +447,7 @@ function AstrologerRowCard({
               </Text>
             </View>
 
-            <Text style={{ color: isDark ? "#4B5563" : "#D8D4CC", fontSize: 11 }}>|</Text>
+            <Text style={{ color: colors.rowBorder, fontSize: 11 }}>|</Text>
 
             <View
               style={{
@@ -3104,7 +3104,7 @@ export function AstrologerListScreen({ route, navigation }: any) {
           value={search}
           onChangeText={setSearch}
           placeholder="Search astrologers, skills, language..."
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholderText}
         />
         {search.length > 0 && (
           <TouchableOpacity onPress={() => setSearch("")} style={{ padding: 4 }}>
@@ -4255,7 +4255,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
             value={feedbackComment}
             onChangeText={setFeedbackComment}
             placeholder="Write your comments (optional)"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.placeholderText}
             multiline
           />
           <GradientButton
@@ -4589,7 +4589,7 @@ export function WalletScreen() {
               value={amount}
               onChangeText={setAmount}
               placeholder="Enter amount in ₹"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.placeholderText}
               keyboardType="decimal-pad"
             />
             <Text style={[typography.caption, { color: colors.textMuted, marginTop: 8 }]}>
@@ -4912,7 +4912,7 @@ export function ChatScreen() {
             fontSize: 15,
           }}
           placeholder="Type a message..."
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholderText}
           value={input}
           onChangeText={setInput}
         />
@@ -6069,7 +6069,7 @@ function PasswordInput({
           value={value}
           onChangeText={onChange}
           placeholder={placeholder}
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholderText}
           secureTextEntry={!show}
         />
         <Ionicons

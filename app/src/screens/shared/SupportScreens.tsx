@@ -86,11 +86,11 @@ export function SupportScreen() {
                 </View>
                 <View style={{ marginBottom: 14 }}>
                   <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Subject</Text>
-                  <TextInput style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]} value={subject} onChangeText={setSubject} placeholder="Brief title" placeholderTextColor={colors.textMuted} />
+                  <TextInput style={[styles.input, { backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]} value={subject} onChangeText={setSubject} placeholder="Brief title" placeholderTextColor={colors.placeholderText} />
                 </View>
                 <View style={{ marginBottom: 14 }}>
                   <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Message</Text>
-                  <TextInput style={[styles.input, { height: 100, backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]} value={message} onChangeText={setMessage} placeholder="Describe your issue in detail" placeholderTextColor={colors.textMuted} multiline textAlignVertical="top" />
+                  <TextInput style={[styles.input, { height: 100, backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]} value={message} onChangeText={setMessage} placeholder="Describe your issue in detail" placeholderTextColor={colors.placeholderText} multiline textAlignVertical="top" />
                 </View>
                 <GradientButton title={submitting ? 'Submitting...' : 'Submit Ticket'} onPress={handleSubmit} disabled={submitting} />
               </GlassCard>
@@ -223,7 +223,7 @@ export function TicketDetailScreen({ route }: any) {
                 <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
                   <TextInput
                     style={[styles.input, { flex: 1, backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-                    value={replyText} onChangeText={setReplyText} placeholder="Type your reply..." placeholderTextColor={colors.textMuted} multiline
+                    value={replyText} onChangeText={setReplyText} placeholder="Type your reply..." placeholderTextColor={colors.placeholderText} multiline
                   />
                   <TouchableOpacity onPress={handleSendReply} disabled={sending || !replyText.trim()} style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: colors.accentGold, alignItems: 'center', justifyContent: 'center', opacity: sending || !replyText.trim() ? 0.5 : 1 }}>
                     <Ionicons name="send" size={18} color="#FFF" />
@@ -450,7 +450,7 @@ export function AdminTicketDetailScreen({ route }: any) {
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <TextInput
                 style={[styles.input, { flex: 1, backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]}
-                value={replyText} onChangeText={setReplyText} placeholder="Type your reply..." placeholderTextColor={colors.textMuted} multiline
+                value={replyText} onChangeText={setReplyText} placeholder="Type your reply..." placeholderTextColor={colors.placeholderText} multiline
               />
               <TouchableOpacity onPress={handleSendReply} disabled={sending || !replyText.trim()} style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: colors.accentGold, alignItems: 'center', justifyContent: 'center', opacity: sending || !replyText.trim() ? 0.5 : 1 }}>
                 <Ionicons name="send" size={18} color="#FFF" />

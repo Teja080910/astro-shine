@@ -1470,7 +1470,7 @@ export function AstrologerWithdrawalScreen() {
                 value={amount}
                 onChangeText={setAmount}
                 placeholder="Enter amount"
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={colors.placeholderText}
                 keyboardType="decimal-pad"
               />
             </View>
@@ -1545,7 +1545,7 @@ export function AstrologerWithdrawalScreen() {
                     value={bankAc}
                     onChangeText={setBankAc}
                     placeholder="Enter account number"
-                    placeholderTextColor={colors.textMuted}
+                    placeholderTextColor={colors.placeholderText}
                     keyboardType="number-pad"
                   />
                 </View>
@@ -1570,7 +1570,7 @@ export function AstrologerWithdrawalScreen() {
                     value={ifsc}
                     onChangeText={setIfsc}
                     placeholder="Enter IFSC code"
-                    placeholderTextColor={colors.textMuted}
+                    placeholderTextColor={colors.placeholderText}
                     autoCapitalize="characters"
                   />
                 </View>
@@ -1597,7 +1597,7 @@ export function AstrologerWithdrawalScreen() {
                   value={upiId}
                   onChangeText={setUpiId}
                   placeholder="e.g. name@okhdfcbank"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholderText}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -3205,7 +3205,7 @@ function PasswordInput({
           value={value}
           onChangeText={onChange}
           placeholder={placeholder}
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholderText}
           secureTextEntry={!show}
         />
         <Ionicons

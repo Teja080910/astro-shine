@@ -33,10 +33,14 @@ export const colors = {
   get rowBorder() { return activeTheme === 'dark' ? 'rgba(255, 255, 255, 0.08)' : '#F3EAD6'; },
   get heading() { return activeTheme === 'dark' ? '#FBBF24' : '#8D0B0C'; },
   get textPrimary() { return activeTheme === 'dark' ? '#F9FAFB' : '#8D0B0C'; },
-  get textStrong() { return activeTheme === 'dark' ? '#F9FAFB' : '#1F2937'; },
-  get textBody() { return activeTheme === 'dark' ? '#E5E7EB' : '#45484F'; },
-  get textSecondary() { return activeTheme === 'dark' ? '#E5E7EB' : '#45484F'; },
-  get textMuted() { return activeTheme === 'dark' ? '#9CA3AF' : '#8B8B8D'; },
+  // Client request: all body copy on light surfaces reads in maroon, matching
+  // the astrologer name. Hierarchy still comes from size and weight.
+  get textStrong() { return activeTheme === 'dark' ? '#F9FAFB' : '#8D0B0C'; },
+  get textBody() { return activeTheme === 'dark' ? '#E5E7EB' : '#8D0B0C'; },
+  get textSecondary() { return activeTheme === 'dark' ? '#E5E7EB' : '#8D0B0C'; },
+  get textMuted() { return activeTheme === 'dark' ? '#9CA3AF' : '#8D0B0C'; },
+  // Input placeholders stay neutral: maroon would look like typed content.
+  get placeholderText() { return activeTheme === 'dark' ? '#6B7280' : '#A8A29A'; },
   get accentText() { return activeTheme === 'dark' ? '#FBBF24' : '#EE7B10'; },
   get iconBg() { return activeTheme === 'dark' ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7'; },
   get chipBg() { return activeTheme === 'dark' ? '#1F2937' : '#FEF8EA'; },

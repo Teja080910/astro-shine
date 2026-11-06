@@ -271,7 +271,7 @@ export function AstrologerMuhuratScreen() {
           <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Title</Text>
           <TextInput
             placeholder="e.g. Vivah Muhurat"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.placeholderText}
             value={formName}
             onChangeText={setFormName}
             style={[styles.inputField, { color: colors.textPrimary, borderColor: colors.cardBorder, backgroundColor: colors.surface }]}
@@ -324,7 +324,7 @@ export function AstrologerMuhuratScreen() {
           <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Description</Text>
           <TextInput
             placeholder="Auspicious details..."
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.placeholderText}
             value={formDesc}
             onChangeText={setFormDesc}
             multiline

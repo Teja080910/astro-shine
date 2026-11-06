@@ -436,7 +436,7 @@ export function GiftScreen({ route, navigation }: any) {
                 <Ionicons name="search" size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
                 <TextInput
                   placeholder="Search astrologer name..."
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholderText}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                   returnKeyType="done"

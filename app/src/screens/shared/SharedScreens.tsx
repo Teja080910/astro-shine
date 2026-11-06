@@ -942,7 +942,7 @@ export function EditProfileScreen() {
               value={name}
               onChangeText={setName}
               placeholder="Your name"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.placeholderText}
             />
           </View>
           
@@ -954,7 +954,7 @@ export function EditProfileScreen() {
                 value={phone}
                 onChangeText={setPhone}
                 placeholder="Phone number"
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={colors.placeholderText}
                 keyboardType="phone-pad"
               />
             </View>
@@ -1031,7 +1031,7 @@ export function EditProfileScreen() {
                   value={bio}
                   onChangeText={setBio}
                   placeholder="Tell clients about yourself"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholderText}
                   multiline
                   textAlignVertical="top"
                 />
@@ -1044,7 +1044,7 @@ export function EditProfileScreen() {
                   value={experience}
                   onChangeText={setExperience}
                   placeholder="e.g. 10"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholderText}
                   keyboardType="number-pad"
                 />
               </View>
@@ -1056,7 +1056,7 @@ export function EditProfileScreen() {
                   value={specialization}
                   onChangeText={setSpecialization}
                   placeholder="e.g. Vedic, Palmistry, Vastu"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholderText}
                 />
               </View>
 
@@ -1067,7 +1067,7 @@ export function EditProfileScreen() {
                   value={languages}
                   onChangeText={setLanguages}
                   placeholder="e.g. Hindi, English, Tamil"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholderText}
                 />
               </View>
 
@@ -1078,7 +1078,7 @@ export function EditProfileScreen() {
                   value={skills}
                   onChangeText={setSkills}
                   placeholder="e.g. Birth Chart, Predictions, Remedies"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholderText}
                   onFocus={() => {
                     setTimeout(() => {
                       scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -1094,7 +1094,7 @@ export function EditProfileScreen() {
                   value={chatPricePerMin}
                   onChangeText={setChatPricePerMin}
                   placeholder="e.g. 10"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholderText}
                   keyboardType="decimal-pad"
                   onFocus={() => {
                     setTimeout(() => {
@@ -1110,7 +1110,7 @@ export function EditProfileScreen() {
                   value={audioCallPricePerMin}
                   onChangeText={setAudioCallPricePerMin}
                   placeholder="e.g. 15"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholderText}
                   keyboardType="decimal-pad"
                   onFocus={() => {
                     setTimeout(() => {
@@ -1126,7 +1126,7 @@ export function EditProfileScreen() {
                   value={videoCallPricePerMin}
                   onChangeText={setVideoCallPricePerMin}
                   placeholder="e.g. 20"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholderText}
                   keyboardType="decimal-pad"
                   onFocus={() => {
                     setTimeout(() => {
@@ -1240,7 +1240,7 @@ export function DonationScreen() {
             value={amount}
             onChangeText={setAmount}
             placeholder="Custom amount"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.placeholderText}
             keyboardType="decimal-pad"
           />
 
@@ -1347,7 +1347,7 @@ export function ReportScreen({ route, navigation }: any) {
           value={desc}
           onChangeText={setDesc}
           placeholder="Please describe the issue..."
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholderText}
           multiline
           textAlignVertical="top"
         />
@@ -2641,7 +2641,7 @@ export function AstrologerGoLiveScreen({ navigation }: any) {
         </View>
         <TextInput
           style={{ backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, color: colors.textPrimary, fontSize: 15, marginBottom: 12 }}
-          value={title} onChangeText={setTitle} placeholder="Session title" placeholderTextColor={colors.textMuted}
+          value={title} onChangeText={setTitle} placeholder="Session title" placeholderTextColor={colors.placeholderText}
         />
         <GradientButton title={creating ? 'Starting...' : 'Go Live Now'} variant="gold" onPress={handleGoLive} disabled={creating} />
       </GlassCard>
@@ -2813,7 +2813,7 @@ export function CreateBlogScreen({ navigation, route }: any) {
           value={title}
           onChangeText={setTitle}
           placeholder="Blog title"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholderText}
         />
         <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Excerpt (optional)</Text>
         <TextInput
@@ -2821,7 +2821,7 @@ export function CreateBlogScreen({ navigation, route }: any) {
           value={excerpt}
           onChangeText={setExcerpt}
           placeholder="Short summary"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholderText}
         />
         <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Content</Text>
         <TextInput
@@ -2829,7 +2829,7 @@ export function CreateBlogScreen({ navigation, route }: any) {
           value={content}
           onChangeText={setContent}
           placeholder="Write your blog content..."
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholderText}
           multiline
         />
         <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Tags (comma separated, optional)</Text>
@@ -2838,7 +2838,7 @@ export function CreateBlogScreen({ navigation, route }: any) {
           value={tags}
           onChangeText={setTags}
           placeholder="e.g. astrology, vedic, gemstones"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholderText}
         />
         <GradientButton
           title={loading ? 'Publishing...' : 'Publish Blog'}

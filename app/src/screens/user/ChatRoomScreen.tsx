@@ -529,7 +529,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
               <TextInput
                 style={[styles.input, { backgroundColor: colors.surfaceLight, color: colors.textPrimary }]}
                 placeholder="Type a message..."
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={colors.placeholderText}
                 value={input}
                 onChangeText={handleChangeText}
                 multiline
@@ -704,7 +704,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
             value={reportDesc}
             onChangeText={setReportDesc}
             placeholder="Additional details (optional)..."
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.placeholderText}
             multiline
           />
           <GradientButton
