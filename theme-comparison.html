@@ -899,6 +899,7 @@
       <li>Every tab label and icon now uses <code>#EE7B10</code> in light mode and <code>#F59E0B</code> in dark — <code>tabInactive</code> was changed to match <code>tabActive</code>.</li>
       <li>The active tab is still identifiable: its icon switches to the filled variant and the label is bold (700 vs 600).</li>
       <li>Icon colours come from <code>tabActive</code> / <code>tabInactive</code> rather than a second local copy of the same hex values.</li>
+      <li>The <strong>Chat / Call / Video buttons</strong> on every astrologer card use the same <code>tabActive</code> token, so the cards and the tab bar can never drift apart.</li>
     </ul>
   </section>
 
@@ -3056,6 +3057,7 @@
         <tr><td><code>chipBg</code> / <code>chipBorder</code></td><td>#FEF8EA / #F2DFAE</td><td>#1F2937 / white 8%</td><td>#E2E8F0 / #1E293B slate</td></tr>
         <tr><td><code>tabBarBorder</code></td><td>#F6EDC4</td><td>rgba(245,158,11,.25)</td><td>#374151 dark grey</td></tr>
         <tr><td><code>tabInactive</code></td><td>#EE7B10</td><td>#F59E0B</td><td>#8B8B8D / #9CA3AF grey tabs</td></tr>
+        <tr><td><code>tabActive</code> (also the Chat / Call / Video buttons)</td><td>#EE7B10</td><td>#F59E0B</td><td>hardcoded "#EE7B10" on 4 buttons</td></tr>
         <tr><td><code>switchOn</code> / <code>switchOff</code></td><td>#EE7B10 / #D1D5DB</td><td>#F59E0B / #4B5563</td><td>hardcoded #8D0B0C / #D1D5DB</td></tr>
         <tr><td><code>primaryLight</code> (group headers, menu icons)</td><td>#F59E0B</td><td>#F59E0B</td><td>per-screen gold/maroon mixes</td></tr>
         <tr><td><code>rowBorder</code> in gift &amp; wallet</td><td>#F3EAD6</td><td>rgba(255,255,255,.08)</td><td>#E2E8F0 / #F1F5F9 slate</td></tr>
