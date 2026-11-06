@@ -4471,6 +4471,9 @@ const walletTxnDuration = (t: Transaction): string | null => {
 
 export function WalletScreen() {
   const navigation = useNavigation<any>();
+  // Without this the screen never re-renders on theme change, so every colour
+  // stayed frozen at its light-mode value.
+  const { theme } = useAuth();
   const isFocused = useIsFocused();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [txns, setTxns] = useState<Transaction[]>([]);
@@ -4545,7 +4548,9 @@ export function WalletScreen() {
       <View style={{ width: "100%", maxWidth: 600, alignSelf: "center", padding: 16 }}>
         <GlassCard style={styles.balanceCard}>
           <Text style={typography.caption}>Available Balance</Text>
-          <Text style={styles.balance}>₹{formatAmount(wallet?.balance)}</Text>
+          <Text style={[styles.balance, { color: colors.accentText }]}>
+            ₹{formatAmount(wallet?.balance)}
+          </Text>
           <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}>
             <View style={{ flex: 1 }}>
               <GradientButton title="Add Funds" onPress={() => setShowAdd((v) => !v)} small />
@@ -4794,9 +4799,10 @@ export function WalletScreen() {
             const icon = transactionIcon(t);
             const duration = walletTxnDuration(t);
             const statusKey = (t.status || "").toLowerCase();
-            const statusColor =
-              statusKey === "success" ? colors.success :
-              statusKey === "pending" ? colors.warning : colors.danger;
+            // Client request: transaction rows should use the app's theme colour
+            // (maroon in light, gold in dark) instead of red/green per status, so
+            // a long list reads as one consistent palette.
+            const statusColor = colors.heading;
             return (
               <GlassCard key={t.id} style={{ marginTop: 8, padding: 12 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
@@ -4831,14 +4837,14 @@ export function WalletScreen() {
                       style={{
                         fontWeight: "800",
                         fontSize: 15,
-                        color: isCredit ? colors.success : colors.danger,
+                        color: colors.heading,
                       }}
                     >
                       {isCredit ? "+" : "-"}₹{formatAmount(t.amount)}
                     </Text>
                     <View
                       style={{
-                        backgroundColor: statusColor + "18",
+                        backgroundColor: colors.heading + "14",
                         borderRadius: 8,
                         paddingHorizontal: 7,
                         paddingVertical: 2,
@@ -4861,6 +4867,8 @@ export function WalletScreen() {
 
 // Chat
 export function ChatScreen() {
+  // subscribe to theme so colours re-resolve on toggle
+  useAuth();
   const [input, setInput] = useState("");
   return (
     <ScreenWrapper noPadding>
@@ -6822,7 +6830,6 @@ const styles = StyleSheet.create({
   balance: {
     fontSize: 42,
     fontWeight: "800",
-    color: colors.accentGold,
     marginTop: 4,
   },
   menuItem: { flexDirection: "row", alignItems: "center", paddingVertical: 14 },
@@ -7271,6 +7278,8 @@ const styles = StyleSheet.create({
 
 // All quick actions
 export function QuickActionsScreen({ navigation }: any) {
+  // subscribe to theme so colours re-resolve on toggle
+  useAuth();
   const cardBg = colors.card;
   const borderColor = colors.cardBorder;
   const titleColor = colors.heading;
@@ -7347,6 +7356,8 @@ export function QuickActionsScreen({ navigation }: any) {
 
 // Favourite astrologers
 export function FavouriteAstrologersScreen({ navigation }: any) {
+  // subscribe to theme so colours re-resolve on toggle
+  useAuth();
   const isFocused = useIsFocused();
   const [favourites, setFavourites] = useState<Astrologer[]>([]);
   const [loading, setLoading] = useState(true);

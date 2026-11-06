@@ -44,7 +44,10 @@ export const colors = {
   get tabBarBg() { return activeTheme === 'dark' ? '#111827' : '#FFFCF5'; },
   get tabBarBorder() { return activeTheme === 'dark' ? 'rgba(255, 255, 255, 0.08)' : '#F6EDC4'; },
   get tabActive() { return activeTheme === 'dark' ? '#F59E0B' : '#EE7B10'; },
-  get tabInactive() { return activeTheme === 'dark' ? '#9CA3AF' : '#8B8B8D'; },
+  // Client request: every tab uses the same tab colour as the screenshot, so
+  // inactive tabs no longer fall back to grey. The active tab is still
+  // distinguished by its filled icon and 700 font weight.
+  get tabInactive() { return activeTheme === 'dark' ? '#F59E0B' : '#EE7B10'; },
   get switchOn() { return activeTheme === 'dark' ? '#F59E0B' : '#EE7B10'; },
   get switchOff() { return activeTheme === 'dark' ? '#4B5563' : '#D1D5DB'; },
   get divider() { return activeTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#F6EDC4'; },

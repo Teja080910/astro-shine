@@ -686,6 +686,53 @@
     text-decoration-thickness: 1.5px;
   }
 
+
+  /* wallet mock (Frozen vs reactive) */
+  .wallet-balance {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-top: 2px;
+  }
+  .wallet-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .wallet-btn {
+    flex: 1; height: 34px; border-radius: 17px;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    color: #fff; font-size: 9.5px; font-weight: 800;
+    background: linear-gradient(90deg, #EE7B10, #F59E0B, #FBBF24);
+  }
+  .wallet-btn.gold { background: linear-gradient(90deg, #F59E0B, #EE7B10); }
+  .wallet-btn svg { width: 13px; height: 13px; }
+  .txn-row {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 8px 10px; margin-bottom: 7px;
+  }
+  .txn-icon {
+    width: 28px; height: 28px; border-radius: 14px; flex: none;
+    display: grid; place-items: center;
+  }
+  .txn-icon svg { width: 14px; height: 14px; }
+  .txn-title { font-size: 10px; font-weight: 700; color: var(--heading); }
+  .txn-sub { font-size: 7.5px; color: var(--muted); margin-top: 1px; }
+  .txn-amt { font-size: 10px; font-weight: 800; }
+  .txn-status {
+    display: inline-block; margin-top: 3px; padding: 1px 5px;
+    border-radius: 5px; font-size: 6.5px; font-weight: 800; letter-spacing: .04em;
+  }
+  .filter-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    height: 27px; padding: 0 9px; border-radius: 14px;
+    border: 1px solid var(--chip-border); background: var(--chip-bg);
+    font-size: 8.5px; font-weight: 700; color: var(--heading);
+  }
+  .filter-pill svg { width: 11px; height: 11px; color: var(--muted); }
+  .stale-note {
+    font-size: 7px; font-weight: 800; letter-spacing: .05em;
+    color: #C21415; background: rgba(194,20,21,.10);
+    padding: 2px 5px; border-radius: 4px; display: inline-block;
+  }
+
   /* the sprite symbols are line-art, so render them as strokes that inherit color */
   svg {
     fill: none;
@@ -2218,10 +2265,599 @@
     </ul>
   </section>
 
-  <!-- recap -->
+  <!-- wallet theme -->
+  <section class="cmp">
+    <div class="cmp-head">
+      <div class="num">15</div>
+      <div>
+        <h2>Wallet: only the tab bar changed on theme switch</h2>
+        <p>
+          <code>colors.*</code> are getters over a module-level <code>activeTheme</code>, but
+          <code>StyleSheet.create()</code> runs <strong>once at import</strong>. Any colour captured
+          there is frozen at the light-mode value forever. The tab bar changed because it reads its
+          tokens inside the component at render time — everything baked into the shared
+          <code>styles</code> object could not.
+        </p>
+      </div>
+    </div>
+
+    <div class="phones">
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before — dark mode</span>
+        <div class="phone">
+          <div class="screen before tall" style="background:#09090B">
+            <div class="statusbar" style="color:#F9FAFB;opacity:.85"><span>16:20</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body" style="padding-bottom:0">
+              <div style="text-align:center;padding:2px 0 8px">
+                <span style="font-size:15px;font-weight:900;color:#FBBF24">My Wallet</span>
+              </div>
+
+              <div style="background:#FFFCF5;border:1px solid #F6EDC4;border-radius:18px;padding:12px;text-align:center">
+                <div style="font-size:8px;color:#8B8B8D">Available Balance</div>
+                <div class="wallet-balance" style="color:#F59E0B">₹920.33</div>
+                <div style="display:flex;gap:8px;margin-top:10px">
+                  <div style="flex:1;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;gap:5px;color:#fff;font-size:9px;font-weight:800;background:linear-gradient(90deg,#EE7B10,#F59E0B,#FBBF24)">
+                    <svg style="width:12px;height:12px;color:#fff"><use href="#i-wallet"/></svg>Add Funds
+                  </div>
+                  <div style="flex:1;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;gap:5px;color:#fff;font-size:9px;font-weight:800;background:linear-gradient(90deg,#F59E0B,#EE7B10)">
+                    <svg style="width:12px;height:12px;color:#fff"><use href="#i-check"/></svg>Donate
+                  </div>
+                </div>
+              </div>
+
+              <div style="font-size:13px;font-weight:900;color:#FBBF24;margin:12px 0 7px">Transactions</div>
+              <div style="display:flex;gap:6px;margin-bottom:8px">
+                <span style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 9px;border-radius:13px;border:1px solid #F6EDC4;background:#FFFCF5;font-size:8.5px;font-weight:700;color:#8D0B0C">
+                  <svg style="width:10px;height:10px;color:#8B8B8D"><use href="#i-receipt"/></svg>All Transactions
+                  <svg style="width:9px;height:9px;color:#8B8B8D"><use href="#i-chevron"/></svg>
+                </span>
+                <span style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 9px;border-radius:13px;border:1px solid #F6EDC4;background:#FFFCF5;font-size:8.5px;font-weight:700;color:#8D0B0C">
+                  <svg style="width:10px;height:10px;color:#8B8B8D"><use href="#i-calendar"/></svg>All Dates
+                  <svg style="width:9px;height:9px;color:#8B8B8D"><use href="#i-chevron"/></svg>
+                </span>
+              </div>
+
+              <div style="display:flex;align-items:center;gap:8px;background:#FFFCF5;border:1px solid #F6EDC4;border-radius:14px;padding:8px 10px;margin-bottom:7px">
+                <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#C2141518">
+                  <svg style="width:14px;height:14px;color:#C21415"><use href="#i-check"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:10px;font-weight:700;color:#8D0B0C">Donation</div>
+                  <div style="font-size:7.5px;color:#8B8B8D;margin-top:1px">26/10/2026 · 00:20</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:10px;font-weight:800;color:#C21415">-₹5.00</div>
+                  <span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:5px;font-size:6.5px;font-weight:800;letter-spacing:.04em;background:#23A86720;color:#23A867">SUCCESS</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;background:#FFFCF5;border:1px solid #F6EDC4;border-radius:14px;padding:8px 10px;margin-bottom:7px">
+                <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#C2141518">
+                  <svg style="width:14px;height:14px;color:#C21415"><use href="#i-check"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:10px;font-weight:700;color:#8D0B0C">Donation</div>
+                  <div style="font-size:7.5px;color:#8B8B8D;margin-top:1px">26/10/2026 · 00:20</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:10px;font-weight:800;color:#C21415">-₹2.00</div>
+                  <span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:5px;font-size:6.5px;font-weight:800;letter-spacing:.04em;background:#23A86720;color:#23A867">SUCCESS</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;background:#FFFCF5;border:1px solid #F6EDC4;border-radius:14px;padding:8px 10px;margin-bottom:7px">
+                <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#8B8B8D18">
+                  <svg style="width:14px;height:14px;color:#8B8B8D"><use href="#i-receipt"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:10px;font-weight:700;color:#8D0B0C">Order Payment</div>
+                  <div style="font-size:7.5px;color:#8B8B8D;margin-top:1px">25/10/2026 · 23:54</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:10px;font-weight:800;color:#C21415">-₹999.00</div>
+                  <span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:5px;font-size:6.5px;font-weight:800;letter-spacing:.04em;background:#23A86720;color:#23A867">SUCCESS</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;background:#FFFCF5;border:1px solid #F6EDC4;border-radius:14px;padding:8px 10px;margin-bottom:7px">
+                <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#EE7B1018">
+                  <svg style="width:14px;height:14px;color:#EE7B10"><use href="#i-gift"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:10px;font-weight:700;color:#8D0B0C">Puja: Rudra abhishek</div>
+                  <div style="font-size:7.5px;color:#8B8B8D;margin-top:1px">25/10/2026 · 23:45</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:10px;font-weight:800;color:#C21415">-₹1.00</div>
+                  <span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:5px;font-size:6.5px;font-weight:800;letter-spacing:.04em;background:#23A86720;color:#23A867">SUCCESS</span>
+                </div>
+              </div>
+<div style="position:absolute;left:10px;right:10px;bottom:8px;display:flex;justify-content:space-around;align-items:center;padding:6px 2px;border-radius:999px;background:#111827;border:1px solid rgba(245,158,11,.25);font-size:6.5px;text-align:center"><div class="tab" style="color:#9CA3AF;font-weight:600"><svg style="width:16px;height:16px"><use href="#i-home"/></svg><span>Home</span></div><div class="tab" style="color:#9CA3AF;font-weight:600"><svg style="width:16px;height:16px"><use href="#i-users"/></svg><span>Astro</span></div><div class="tab" style="color:#9CA3AF;font-weight:600"><svg style="width:16px;height:16px"><use href="#i-clock"/></svg><span>Muhurat</span></div><div class="tab on" style="color:#F59E0B;font-weight:700"><svg style="width:16px;height:16px"><use href="#i-wallet"/></svg><span>Wallet</span></div><div class="tab" style="color:#9CA3AF;font-weight:600"><svg style="width:16px;height:16px"><use href="#i-chat"/></svg><span>Chat</span></div><div class="tab" style="color:#9CA3AF;font-weight:600"><svg style="width:16px;height:16px"><use href="#i-person"/></svg><span>Profile</span></div></div>
+            </div>
+          </div>
+        </div>
+        <span class="stale-note">BALANCE + CARDS STUCK IN LIGHT COLOURS</span>
+      </div>
+      <div class="phone-wrap">
+        <span class="tag tag-after">After — dark mode</span>
+        <div class="phone">
+          <div class="screen after tall" style="background:#09090B;--wallet-title:#FBBF24;--wallet-heading:#FBBF24">
+            <div class="statusbar"><span>16:20</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body" style="padding-bottom:0">
+              <div style="text-align:center;padding:2px 0 8px">
+                <span style="font-size:15px;font-weight:900;color:#FBBF24">My Wallet</span>
+              </div>
+
+              <div style="background:#111827;border:1px solid rgba(245,158,11,.25);border-radius:18px;padding:12px;text-align:center">
+                <div style="font-size:8px;color:#9CA3AF">Available Balance</div>
+                <div class="wallet-balance" style="color:#FBBF24">₹920.33</div>
+                <div style="display:flex;gap:8px;margin-top:10px">
+                  <div style="flex:1;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;gap:5px;color:#fff;font-size:9px;font-weight:800;background:linear-gradient(90deg,#EE7B10,#F59E0B,#FBBF24)">
+                    <svg style="width:12px;height:12px;color:#fff"><use href="#i-wallet"/></svg>Add Funds
+                  </div>
+                  <div style="flex:1;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;gap:5px;color:#fff;font-size:9px;font-weight:800;background:linear-gradient(90deg,#F59E0B,#EE7B10)">
+                    <svg style="width:12px;height:12px;color:#fff"><use href="#i-check"/></svg>Donate
+                  </div>
+                </div>
+              </div>
+
+              <div style="font-size:13px;font-weight:900;color:#FBBF24;margin:12px 0 7px">Transactions</div>
+              <div style="display:flex;gap:6px;margin-bottom:8px">
+                <span style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 9px;border-radius:13px;border:1px solid rgba(245,158,11,.25);background:#111827;font-size:8.5px;font-weight:700;color:#FBBF24">
+                  <svg style="width:10px;height:10px;color:#9CA3AF"><use href="#i-receipt"/></svg>All Transactions
+                  <svg style="width:9px;height:9px;color:#9CA3AF"><use href="#i-chevron"/></svg>
+                </span>
+                <span style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 9px;border-radius:13px;border:1px solid rgba(245,158,11,.25);background:#111827;font-size:8.5px;font-weight:700;color:#FBBF24">
+                  <svg style="width:10px;height:10px;color:#9CA3AF"><use href="#i-calendar"/></svg>All Dates
+                  <svg style="width:9px;height:9px;color:#9CA3AF"><use href="#i-chevron"/></svg>
+                </span>
+              </div>
+
+              <div style="display:flex;align-items:center;gap:8px;background:#111827;border:1px solid rgba(245,158,11,.25);border-radius:14px;padding:8px 10px;margin-bottom:7px">
+                <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#C2141518">
+                  <svg style="width:14px;height:14px;color:#C21415"><use href="#i-check"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:10px;font-weight:700;color:#FBBF24">Donation</div>
+                  <div style="font-size:7.5px;color:#9CA3AF;margin-top:1px">26/10/2026 · 00:20</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:10px;font-weight:800;color:#FBBF24">-₹5.00</div>
+                  <span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:5px;font-size:6.5px;font-weight:800;letter-spacing:.04em;background:rgba(251,191,36,.14);color:#FBBF24">SUCCESS</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;background:#111827;border:1px solid rgba(245,158,11,.25);border-radius:14px;padding:8px 10px;margin-bottom:7px">
+                <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#C2141518">
+                  <svg style="width:14px;height:14px;color:#C21415"><use href="#i-check"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:10px;font-weight:700;color:#FBBF24">Donation</div>
+                  <div style="font-size:7.5px;color:#9CA3AF;margin-top:1px">26/10/2026 · 00:20</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:10px;font-weight:800;color:#FBBF24">-₹2.00</div>
+                  <span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:5px;font-size:6.5px;font-weight:800;letter-spacing:.04em;background:rgba(251,191,36,.14);color:#FBBF24">SUCCESS</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;background:#111827;border:1px solid rgba(245,158,11,.25);border-radius:14px;padding:8px 10px;margin-bottom:7px">
+                <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#8B8B8D18">
+                  <svg style="width:14px;height:14px;color:#8B8B8D"><use href="#i-receipt"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:10px;font-weight:700;color:#FBBF24">Order Payment</div>
+                  <div style="font-size:7.5px;color:#9CA3AF;margin-top:1px">25/10/2026 · 23:54</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:10px;font-weight:800;color:#FBBF24">-₹999.00</div>
+                  <span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:5px;font-size:6.5px;font-weight:800;letter-spacing:.04em;background:rgba(251,191,36,.14);color:#FBBF24">SUCCESS</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;background:#111827;border:1px solid rgba(245,158,11,.25);border-radius:14px;padding:8px 10px;margin-bottom:7px">
+                <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#EE7B1018">
+                  <svg style="width:14px;height:14px;color:#EE7B10"><use href="#i-gift"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:10px;font-weight:700;color:#FBBF24">Puja: Rudra abhishek</div>
+                  <div style="font-size:7.5px;color:#9CA3AF;margin-top:1px">25/10/2026 · 23:45</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:10px;font-weight:800;color:#FBBF24">-₹1.00</div>
+                  <span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:5px;font-size:6.5px;font-weight:800;letter-spacing:.04em;background:rgba(251,191,36,.14);color:#FBBF24">SUCCESS</span>
+                </div>
+              </div>
+<div style="position:absolute;left:10px;right:10px;bottom:8px;display:flex;justify-content:space-around;align-items:center;padding:6px 2px;border-radius:999px;background:#111827;border:1px solid rgba(245,158,11,.25);font-size:6.5px;text-align:center"><div class="tab" style="color:#9CA3AF;font-weight:600"><svg style="width:16px;height:16px"><use href="#i-home"/></svg><span>Home</span></div><div class="tab" style="color:#9CA3AF;font-weight:600"><svg style="width:16px;height:16px"><use href="#i-users"/></svg><span>Astro</span></div><div class="tab" style="color:#9CA3AF;font-weight:600"><svg style="width:16px;height:16px"><use href="#i-clock"/></svg><span>Muhurat</span></div><div class="tab on" style="color:#F59E0B;font-weight:700"><svg style="width:16px;height:16px"><use href="#i-wallet"/></svg><span>Wallet</span></div><div class="tab" style="color:#9CA3AF;font-weight:600"><svg style="width:16px;height:16px"><use href="#i-chat"/></svg><span>Chat</span></div><div class="tab" style="color:#9CA3AF;font-weight:600"><svg style="width:16px;height:16px"><use href="#i-person"/></svg><span>Profile</span></div></div>
+            </div>
+          </div>
+        </div>
+        <span class="stale-note" style="color:#17794b;background:rgba(35,168,103,.12)">EVERYTHING FOLLOWS THE THEME</span>
+      </div>
+    </div>
+
+    <div class="phones" style="margin-top:22px">
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before — light mode</span>
+        <div class="phone">
+          <div class="screen before tall" style="background:#FEFDF9;--wallet-title:#8D0B0C;--wallet-heading:#8D0B0C">
+            <div class="statusbar"><span>16:20</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body" style="padding-bottom:0">
+              <div style="text-align:center;padding:2px 0 8px">
+                <span style="font-size:15px;font-weight:900;color:var(--wallet-title)">My Wallet</span>
+              </div>
+
+              <div style="background:#FFFCF5;border:1px solid #F6EDC4;border-radius:18px;padding:12px;text-align:center">
+                <div style="font-size:8px;color:#8B8B8D">Available Balance</div>
+                <div class="wallet-balance" style="color:#F59E0B">₹920.33</div>
+                <div style="display:flex;gap:8px;margin-top:10px">
+                  <div style="flex:1;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;gap:5px;color:#fff;font-size:9px;font-weight:800;background:linear-gradient(90deg,#EE7B10,#F59E0B,#FBBF24)">
+                    <svg style="width:12px;height:12px;color:#fff"><use href="#i-wallet"/></svg>Add Funds
+                  </div>
+                  <div style="flex:1;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;gap:5px;color:#fff;font-size:9px;font-weight:800;background:linear-gradient(90deg,#F59E0B,#EE7B10)">
+                    <svg style="width:12px;height:12px;color:#fff"><use href="#i-check"/></svg>Donate
+                  </div>
+                </div>
+              </div>
+
+              <div style="font-size:13px;font-weight:900;color:var(--wallet-heading);margin:12px 0 7px">Transactions</div>
+              <div style="display:flex;gap:6px;margin-bottom:8px">
+                <span style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 9px;border-radius:13px;border:1px solid #F6EDC4;background:#FFFCF5;font-size:8.5px;font-weight:700;color:#8D0B0C">
+                  <svg style="width:10px;height:10px;color:#8B8B8D"><use href="#i-receipt"/></svg>All Transactions
+                  <svg style="width:9px;height:9px;color:#8B8B8D"><use href="#i-chevron"/></svg>
+                </span>
+                <span style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 9px;border-radius:13px;border:1px solid #F6EDC4;background:#FFFCF5;font-size:8.5px;font-weight:700;color:#8D0B0C">
+                  <svg style="width:10px;height:10px;color:#8B8B8D"><use href="#i-calendar"/></svg>All Dates
+                  <svg style="width:9px;height:9px;color:#8B8B8D"><use href="#i-chevron"/></svg>
+                </span>
+              </div>
+
+              <div style="display:flex;align-items:center;gap:8px;background:#FFFCF5;border:1px solid #F6EDC4;border-radius:14px;padding:8px 10px;margin-bottom:7px">
+                <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#C2141518">
+                  <svg style="width:14px;height:14px;color:#C21415"><use href="#i-check"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:10px;font-weight:700;color:#8D0B0C">Donation</div>
+                  <div style="font-size:7.5px;color:#8B8B8D;margin-top:1px">26/10/2026 · 00:20</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:10px;font-weight:800;color:#C21415">-₹5.00</div>
+                  <span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:5px;font-size:6.5px;font-weight:800;letter-spacing:.04em;background:#23A86720;color:#23A867">SUCCESS</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;background:#FFFCF5;border:1px solid #F6EDC4;border-radius:14px;padding:8px 10px;margin-bottom:7px">
+                <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#C2141518">
+                  <svg style="width:14px;height:14px;color:#C21415"><use href="#i-check"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:10px;font-weight:700;color:#8D0B0C">Donation</div>
+                  <div style="font-size:7.5px;color:#8B8B8D;margin-top:1px">26/10/2026 · 00:20</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:10px;font-weight:800;color:#C21415">-₹2.00</div>
+                  <span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:5px;font-size:6.5px;font-weight:800;letter-spacing:.04em;background:#23A86720;color:#23A867">SUCCESS</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;background:#FFFCF5;border:1px solid #F6EDC4;border-radius:14px;padding:8px 10px;margin-bottom:7px">
+                <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#8B8B8D18">
+                  <svg style="width:14px;height:14px;color:#8B8B8D"><use href="#i-receipt"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:10px;font-weight:700;color:#8D0B0C">Order Payment</div>
+                  <div style="font-size:7.5px;color:#8B8B8D;margin-top:1px">25/10/2026 · 23:54</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:10px;font-weight:800;color:#C21415">-₹999.00</div>
+                  <span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:5px;font-size:6.5px;font-weight:800;letter-spacing:.04em;background:#23A86720;color:#23A867">SUCCESS</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;background:#FFFCF5;border:1px solid #F6EDC4;border-radius:14px;padding:8px 10px;margin-bottom:7px">
+                <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#EE7B1018">
+                  <svg style="width:14px;height:14px;color:#EE7B10"><use href="#i-gift"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:10px;font-weight:700;color:#8D0B0C">Puja: Rudra abhishek</div>
+                  <div style="font-size:7.5px;color:#8B8B8D;margin-top:1px">25/10/2026 · 23:45</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:10px;font-weight:800;color:#C21415">-₹1.00</div>
+                  <span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:5px;font-size:6.5px;font-weight:800;letter-spacing:.04em;background:#23A86720;color:#23A867">SUCCESS</span>
+                </div>
+              </div>
+<div style="position:absolute;left:10px;right:10px;bottom:8px;display:flex;justify-content:space-around;align-items:center;padding:6px 2px;border-radius:999px;background:#FFFCF5;border:1px solid #F6EDC4;font-size:6.5px;text-align:center"><div class="tab" style="color:#8B8B8D;font-weight:600"><svg style="width:16px;height:16px"><use href="#i-home"/></svg><span>Home</span></div><div class="tab" style="color:#8B8B8D;font-weight:600"><svg style="width:16px;height:16px"><use href="#i-users"/></svg><span>Astro</span></div><div class="tab" style="color:#8B8B8D;font-weight:600"><svg style="width:16px;height:16px"><use href="#i-clock"/></svg><span>Muhurat</span></div><div class="tab on" style="color:#EE7B10;font-weight:700"><svg style="width:16px;height:16px"><use href="#i-wallet"/></svg><span>Wallet</span></div><div class="tab" style="color:#8B8B8D;font-weight:600"><svg style="width:16px;height:16px"><use href="#i-chat"/></svg><span>Chat</span></div><div class="tab" style="color:#8B8B8D;font-weight:600"><svg style="width:16px;height:16px"><use href="#i-person"/></svg><span>Profile</span></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-wrap">
+        <span class="tag tag-after">After — light mode</span>
+        <div class="phone">
+          <div class="screen after tall" style="background:#FEFDF9;--wallet-title:#8D0B0C;--wallet-heading:#8D0B0C">
+            <div class="statusbar"><span>16:20</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body" style="padding-bottom:0">
+              <div style="text-align:center;padding:2px 0 8px">
+                <span style="font-size:15px;font-weight:900;color:var(--wallet-title)">My Wallet</span>
+              </div>
+
+              <div style="background:#FFFCF5;border:1px solid #F6EDC4;border-radius:18px;padding:12px;text-align:center">
+                <div style="font-size:8px;color:#8B8B8D">Available Balance</div>
+                <div class="wallet-balance" style="color:#EE7B10">₹920.33</div>
+                <div style="display:flex;gap:8px;margin-top:10px">
+                  <div style="flex:1;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;gap:5px;color:#fff;font-size:9px;font-weight:800;background:linear-gradient(90deg,#EE7B10,#F59E0B,#FBBF24)">
+                    <svg style="width:12px;height:12px;color:#fff"><use href="#i-wallet"/></svg>Add Funds
+                  </div>
+                  <div style="flex:1;height:32px;border-radius:16px;display:flex;align-items:center;justify-content:center;gap:5px;color:#fff;font-size:9px;font-weight:800;background:linear-gradient(90deg,#F59E0B,#EE7B10)">
+                    <svg style="width:12px;height:12px;color:#fff"><use href="#i-check"/></svg>Donate
+                  </div>
+                </div>
+              </div>
+
+              <div style="font-size:13px;font-weight:900;color:var(--wallet-heading);margin:12px 0 7px">Transactions</div>
+              <div style="display:flex;gap:6px;margin-bottom:8px">
+                <span style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 9px;border-radius:13px;border:1px solid #F6EDC4;background:#FFFCF5;font-size:8.5px;font-weight:700;color:#8D0B0C">
+                  <svg style="width:10px;height:10px;color:#8B8B8D"><use href="#i-receipt"/></svg>All Transactions
+                  <svg style="width:9px;height:9px;color:#8B8B8D"><use href="#i-chevron"/></svg>
+                </span>
+                <span style="display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 9px;border-radius:13px;border:1px solid #F6EDC4;background:#FFFCF5;font-size:8.5px;font-weight:700;color:#8D0B0C">
+                  <svg style="width:10px;height:10px;color:#8B8B8D"><use href="#i-calendar"/></svg>All Dates
+                  <svg style="width:9px;height:9px;color:#8B8B8D"><use href="#i-chevron"/></svg>
+                </span>
+              </div>
+
+              <div style="display:flex;align-items:center;gap:8px;background:#FFFCF5;border:1px solid #F6EDC4;border-radius:14px;padding:8px 10px;margin-bottom:7px">
+                <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#C2141518">
+                  <svg style="width:14px;height:14px;color:#C21415"><use href="#i-check"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:10px;font-weight:700;color:#8D0B0C">Donation</div>
+                  <div style="font-size:7.5px;color:#8B8B8D;margin-top:1px">26/10/2026 · 00:20</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:10px;font-weight:800;color:#8D0B0C">-₹5.00</div>
+                  <span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:5px;font-size:6.5px;font-weight:800;letter-spacing:.04em;background:rgba(141,11,12,.08);color:#8D0B0C">SUCCESS</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;background:#FFFCF5;border:1px solid #F6EDC4;border-radius:14px;padding:8px 10px;margin-bottom:7px">
+                <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#C2141518">
+                  <svg style="width:14px;height:14px;color:#C21415"><use href="#i-check"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:10px;font-weight:700;color:#8D0B0C">Donation</div>
+                  <div style="font-size:7.5px;color:#8B8B8D;margin-top:1px">26/10/2026 · 00:20</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:10px;font-weight:800;color:#8D0B0C">-₹2.00</div>
+                  <span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:5px;font-size:6.5px;font-weight:800;letter-spacing:.04em;background:rgba(141,11,12,.08);color:#8D0B0C">SUCCESS</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;background:#FFFCF5;border:1px solid #F6EDC4;border-radius:14px;padding:8px 10px;margin-bottom:7px">
+                <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#8B8B8D18">
+                  <svg style="width:14px;height:14px;color:#8B8B8D"><use href="#i-receipt"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:10px;font-weight:700;color:#8D0B0C">Order Payment</div>
+                  <div style="font-size:7.5px;color:#8B8B8D;margin-top:1px">25/10/2026 · 23:54</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:10px;font-weight:800;color:#8D0B0C">-₹999.00</div>
+                  <span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:5px;font-size:6.5px;font-weight:800;letter-spacing:.04em;background:rgba(141,11,12,.08);color:#8D0B0C">SUCCESS</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;background:#FFFCF5;border:1px solid #F6EDC4;border-radius:14px;padding:8px 10px;margin-bottom:7px">
+                <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#EE7B1018">
+                  <svg style="width:14px;height:14px;color:#EE7B10"><use href="#i-gift"/></svg>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:10px;font-weight:700;color:#8D0B0C">Puja: Rudra abhishek</div>
+                  <div style="font-size:7.5px;color:#8B8B8D;margin-top:1px">25/10/2026 · 23:45</div>
+                </div>
+                <div style="text-align:right">
+                  <div style="font-size:10px;font-weight:800;color:#8D0B0C">-₹1.00</div>
+                  <span style="display:inline-block;margin-top:2px;padding:1px 5px;border-radius:5px;font-size:6.5px;font-weight:800;letter-spacing:.04em;background:rgba(141,11,12,.08);color:#8D0B0C">SUCCESS</span>
+                </div>
+              </div>
+<div style="position:absolute;left:10px;right:10px;bottom:8px;display:flex;justify-content:space-around;align-items:center;padding:6px 2px;border-radius:999px;background:#FFFCF5;border:1px solid #F6EDC4;font-size:6.5px;text-align:center"><div class="tab" style="color:#8B8B8D;font-weight:600"><svg style="width:16px;height:16px"><use href="#i-home"/></svg><span>Home</span></div><div class="tab" style="color:#8B8B8D;font-weight:600"><svg style="width:16px;height:16px"><use href="#i-users"/></svg><span>Astro</span></div><div class="tab" style="color:#8B8B8D;font-weight:600"><svg style="width:16px;height:16px"><use href="#i-clock"/></svg><span>Muhurat</span></div><div class="tab on" style="color:#EE7B10;font-weight:700"><svg style="width:16px;height:16px"><use href="#i-wallet"/></svg><span>Wallet</span></div><div class="tab" style="color:#8B8B8D;font-weight:600"><svg style="width:16px;height:16px"><use href="#i-chat"/></svg><span>Chat</span></div><div class="tab" style="color:#8B8B8D;font-weight:600"><svg style="width:16px;height:16px"><use href="#i-person"/></svg><span>Profile</span></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ul class="notes">
+      <li><strong>Root cause:</strong> <code>balance: { color: colors.accentGold }</code> inside <code>StyleSheet.create</code> is evaluated once, at import, and never re-evaluated. 33 theme colour references in the shared style block had the same problem.</li>
+      <li><strong>Second bug:</strong> <code>WalletScreen</code> never called <code>useAuth()</code>, so it had no theme subscription and did not even re-render on toggle.</li>
+      <li><strong>Fix 1:</strong> the balance colour moved out of the style object into the render tree — <code>[styles.balance, { color: colors.accentText }]</code>.</li>
+      <li><strong>Fix 2:</strong> <code>WalletScreen</code> now subscribes via <code>useAuth()</code>.</li>
+      <li><strong>Fix 3:</strong> the same missing subscription was added to <code>ChatScreen</code>, <code>QuickActionsScreen</code> and <code>FavouriteAstrologersScreen</code>.</li>
+      <li>Transaction amounts were read inline at render, so they did follow the theme — but they used <code>success</code> / <code>danger</code>, which are static red and green. The next section replaces them with the app's own theme colour.</li>
+    </ul>
+  </section>
+
+  <!-- wallet transaction colours -->
   <section class="cmp">
     <div class="cmp-head">
       <div class="num">16</div>
+      <div>
+        <h2>Transaction rows: one theme colour</h2>
+        <p>
+          The client asked for the wallet rows to use the app's own theme colour instead of
+          red/green per transaction direction. The list now reads as a single palette —
+          <strong>maroon</strong> in light mode, <strong>gold</strong> in dark — for the amount digits,
+          the row title and the status pill.
+        </p>
+      </div>
+    </div>
+
+    <div class="phones" style="display:grid;grid-template-columns:repeat(2,max-content);gap:28px 34px;justify-content:center">
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before — light</span>
+        <div class="phone">
+          <div class="screen before tall" style="background:#FEFDF9">
+            <div class="statusbar" style="color:#8D0B0C;opacity:.85"><span>16:20</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body" style="padding-bottom:0">
+              <div style="text-align:center;padding:2px 0 10px">
+                <span style="font-size:15px;font-weight:900;color:#8D0B0C">My Wallet</span>
+              </div>
+              <div style="font-size:12px;font-weight:900;color:#8D0B0C;margin-bottom:9px">Transactions</div>
+            <div style="display:flex;align-items:center;gap:10px;background:#FFFCF5;border:1px solid #F6EDC4;border-radius:14px;padding:10px 12px;margin-bottom:10px">
+              <div style="width:34px;height:34px;border-radius:17px;flex:none;display:grid;place-items:center;background:rgba(194,20,21,.10)">
+                <svg style="width:16px;height:16px;color:#C21415"><use href="#i-check"/></svg>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:11.5px;font-weight:700;color:#8D0B0C">Donation</div>
+                <div style="font-size:8px;color:#8B8B8D;margin-top:1px">26/10/2026 · 00:20</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:13px;font-weight:800;color:#C21415">-₹5.00</div>
+                <span style="display:inline-block;margin-top:3px;padding:1px 6px;border-radius:6px;font-size:7px;font-weight:800;letter-spacing:.04em;background:rgba(35,168,103,.12);color:#23A867">SUCCESS</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;background:#FFFCF5;border:1px solid #F6EDC4;border-radius:14px;padding:10px 12px;margin-bottom:10px">
+              <div style="width:34px;height:34px;border-radius:17px;flex:none;display:grid;place-items:center;background:rgba(194,20,21,.10)">
+                <svg style="width:16px;height:16px;color:#C21415"><use href="#i-check"/></svg>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:11.5px;font-weight:700;color:#8D0B0C">Order Payment</div>
+                <div style="font-size:8px;color:#8B8B8D;margin-top:1px">26/10/2026 · 00:20</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:13px;font-weight:800;color:#C21415">-₹999.00</div>
+                <span style="display:inline-block;margin-top:3px;padding:1px 6px;border-radius:6px;font-size:7px;font-weight:800;letter-spacing:.04em;background:rgba(35,168,103,.12);color:#23A867">SUCCESS</span>
+              </div>
+            </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-wrap">
+        <span class="tag tag-after">After — light</span>
+        <div class="phone">
+          <div class="screen after tall" style="background:#FEFDF9">
+            <div class="statusbar" style="color:#8D0B0C;opacity:.85"><span>16:20</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body" style="padding-bottom:0">
+              <div style="text-align:center;padding:2px 0 10px">
+                <span style="font-size:15px;font-weight:900;color:#8D0B0C">My Wallet</span>
+              </div>
+              <div style="font-size:12px;font-weight:900;color:#8D0B0C;margin-bottom:9px">Transactions</div>
+            <div style="display:flex;align-items:center;gap:10px;background:#FFFCF5;border:1px solid #F6EDC4;border-radius:14px;padding:10px 12px;margin-bottom:10px">
+              <div style="width:34px;height:34px;border-radius:17px;flex:none;display:grid;place-items:center;background:rgba(194,20,21,.10)">
+                <svg style="width:16px;height:16px;color:#C21415"><use href="#i-check"/></svg>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:11.5px;font-weight:700;color:#8D0B0C">Donation</div>
+                <div style="font-size:8px;color:#8B8B8D;margin-top:1px">26/10/2026 · 00:20</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:13px;font-weight:800;color:#8D0B0C">-₹5.00</div>
+                <span style="display:inline-block;margin-top:3px;padding:1px 6px;border-radius:6px;font-size:7px;font-weight:800;letter-spacing:.04em;background:rgba(141,11,12,.08);color:#8D0B0C">SUCCESS</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;background:#FFFCF5;border:1px solid #F6EDC4;border-radius:14px;padding:10px 12px;margin-bottom:10px">
+              <div style="width:34px;height:34px;border-radius:17px;flex:none;display:grid;place-items:center;background:rgba(194,20,21,.10)">
+                <svg style="width:16px;height:16px;color:#C21415"><use href="#i-check"/></svg>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:11.5px;font-weight:700;color:#8D0B0C">Order Payment</div>
+                <div style="font-size:8px;color:#8B8B8D;margin-top:1px">26/10/2026 · 00:20</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:13px;font-weight:800;color:#8D0B0C">-₹999.00</div>
+                <span style="display:inline-block;margin-top:3px;padding:1px 6px;border-radius:6px;font-size:7px;font-weight:800;letter-spacing:.04em;background:rgba(141,11,12,.08);color:#8D0B0C">SUCCESS</span>
+              </div>
+            </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-wrap">
+        <span class="tag tag-before">Before — dark</span>
+        <div class="phone">
+          <div class="screen before tall" style="background:#09090B">
+            <div class="statusbar" style="color:#F9FAFB;opacity:.85"><span>16:20</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body" style="padding-bottom:0">
+              <div style="text-align:center;padding:2px 0 10px">
+                <span style="font-size:15px;font-weight:900;color:#FBBF24">My Wallet</span>
+              </div>
+              <div style="font-size:12px;font-weight:900;color:#FBBF24;margin-bottom:9px">Transactions</div>
+            <div style="display:flex;align-items:center;gap:10px;background:#111827;border:1px solid rgba(245,158,11,.25);border-radius:14px;padding:10px 12px;margin-bottom:10px">
+              <div style="width:34px;height:34px;border-radius:17px;flex:none;display:grid;place-items:center;background:rgba(194,20,21,.10)">
+                <svg style="width:16px;height:16px;color:#C21415"><use href="#i-check"/></svg>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:11.5px;font-weight:700;color:#FBBF24">Donation</div>
+                <div style="font-size:8px;color:#9CA3AF;margin-top:1px">26/10/2026 · 00:20</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:13px;font-weight:800;color:#C21415">-₹5.00</div>
+                <span style="display:inline-block;margin-top:3px;padding:1px 6px;border-radius:6px;font-size:7px;font-weight:800;letter-spacing:.04em;background:rgba(35,168,103,.12);color:#23A867">SUCCESS</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;background:#111827;border:1px solid rgba(245,158,11,.25);border-radius:14px;padding:10px 12px;margin-bottom:10px">
+              <div style="width:34px;height:34px;border-radius:17px;flex:none;display:grid;place-items:center;background:rgba(194,20,21,.10)">
+                <svg style="width:16px;height:16px;color:#C21415"><use href="#i-check"/></svg>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:11.5px;font-weight:700;color:#FBBF24">Order Payment</div>
+                <div style="font-size:8px;color:#9CA3AF;margin-top:1px">26/10/2026 · 00:20</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:13px;font-weight:800;color:#C21415">-₹999.00</div>
+                <span style="display:inline-block;margin-top:3px;padding:1px 6px;border-radius:6px;font-size:7px;font-weight:800;letter-spacing:.04em;background:rgba(35,168,103,.12);color:#23A867">SUCCESS</span>
+              </div>
+            </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-wrap">
+        <span class="tag tag-after">After — dark</span>
+        <div class="phone">
+          <div class="screen after tall" style="background:#09090B">
+            <div class="statusbar" style="color:#F9FAFB;opacity:.85"><span>16:20</span><span class="dots"><i></i><i></i><i></i></span></div>
+            <div class="screen-body" style="padding-bottom:0">
+              <div style="text-align:center;padding:2px 0 10px">
+                <span style="font-size:15px;font-weight:900;color:#FBBF24">My Wallet</span>
+              </div>
+              <div style="font-size:12px;font-weight:900;color:#FBBF24;margin-bottom:9px">Transactions</div>
+            <div style="display:flex;align-items:center;gap:10px;background:#111827;border:1px solid rgba(245,158,11,.25);border-radius:14px;padding:10px 12px;margin-bottom:10px">
+              <div style="width:34px;height:34px;border-radius:17px;flex:none;display:grid;place-items:center;background:rgba(194,20,21,.10)">
+                <svg style="width:16px;height:16px;color:#C21415"><use href="#i-check"/></svg>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:11.5px;font-weight:700;color:#FBBF24">Donation</div>
+                <div style="font-size:8px;color:#9CA3AF;margin-top:1px">26/10/2026 · 00:20</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:13px;font-weight:800;color:#FBBF24">-₹5.00</div>
+                <span style="display:inline-block;margin-top:3px;padding:1px 6px;border-radius:6px;font-size:7px;font-weight:800;letter-spacing:.04em;background:rgba(251,191,36,.14);color:#FBBF24">SUCCESS</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;background:#111827;border:1px solid rgba(245,158,11,.25);border-radius:14px;padding:10px 12px;margin-bottom:10px">
+              <div style="width:34px;height:34px;border-radius:17px;flex:none;display:grid;place-items:center;background:rgba(194,20,21,.10)">
+                <svg style="width:16px;height:16px;color:#C21415"><use href="#i-check"/></svg>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:11.5px;font-weight:700;color:#FBBF24">Order Payment</div>
+                <div style="font-size:8px;color:#9CA3AF;margin-top:1px">26/10/2026 · 00:20</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:13px;font-weight:800;color:#FBBF24">-₹999.00</div>
+                <span style="display:inline-block;margin-top:3px;padding:1px 6px;border-radius:6px;font-size:7px;font-weight:800;letter-spacing:.04em;background:rgba(251,191,36,.14);color:#FBBF24">SUCCESS</span>
+              </div>
+            </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ul class="notes">
+      <li><strong>Amount digits</strong> — <code>colors.heading</code>: maroon <code>#8D0B0C</code> in light, gold <code>#FBBF24</code> in dark. No more red for debits / green for credits.</li>
+      <li><strong>Status pill</strong> — same token, so <code>SUCCESS</code> matches the amount instead of introducing a third hue.</li>
+      <li><strong>Contrast</strong> — <code>heading</code> is <strong>9.44:1</strong> on cream and <strong>11.92:1</strong> on charcoal, so both themes stay well above WCAG AA. (The previous <code>accentText</code> orange would have been only 2.76:1 on cream.)</li>
+      <li>Applied to the user wallet, the astrologer wallet rows, and the Total Credits / Debits headline digits.</li>
+      <li>The direction is still visible from the <code>+</code> / <code>-</code> sign, so the meaning is not lost.</li>
+    </ul>
+  </section>
+
+  <!-- recap -->
+  <section class="cmp">
+    <div class="cmp-head">
+      <div class="num">17</div>
       <div>
         <h2>Token recap</h2>
         <p>What replaced the per-screen hex values. Everything below lives in <code>app/src/shared/theme.ts</code>.</p>

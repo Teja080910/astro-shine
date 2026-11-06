@@ -1014,8 +1014,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
                     <Text
                       style={{
                         fontWeight: "700",
-                        color:
-                          t.type === "credit" ? colors.success : colors.danger,
+                        color: colors.heading,
                       }}
                     >
                       {t.type === "credit" ? "+" : "-"}₹{formatAmount(t.amount)}
@@ -1234,13 +1233,13 @@ export function AstrologerWalletScreen({ navigation }: any) {
 
         <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
           <GlassCard style={{ flex: 1, alignItems: "center", padding: 14 }}>
-            <Text style={[typography.cardTitle, { color: colors.success }]}>
+            <Text style={[typography.cardTitle, { color: colors.heading }]}>
               +₹{formatAmount(totalCredits)}
             </Text>
             <Text style={typography.caption}>Total Credits</Text>
           </GlassCard>
           <GlassCard style={{ flex: 1, alignItems: "center", padding: 14 }}>
-            <Text style={[typography.cardTitle, { color: colors.danger }]}>
+            <Text style={[typography.cardTitle, { color: colors.heading }]}>
               -₹{formatAmount(totalDebits)}
             </Text>
             <Text style={typography.caption}>Total Debits</Text>
@@ -1305,7 +1304,7 @@ export function AstrologerWalletScreen({ navigation }: any) {
                 <Text
                   style={{
                     fontWeight: "700",
-                    color: t.type === "credit" ? colors.success : colors.danger,
+                    color: colors.heading,
                   }}
                 >
                   {t.type === "credit" ? "+" : "-"}₹{formatAmount(t.amount)}
