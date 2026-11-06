@@ -155,7 +155,7 @@ export function HoroscopeDetailScreen({ route, navigation }: any) {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <Text style={{ fontSize: 44 }}>{meta?.emoji || '✨'}</Text>
           <View style={{ flex: 1 }}>
-            <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>{label}</Text>
+            <Text style={[typography.sectionTitle, { color: colors.heading }]}>{label}</Text>
             <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>{meta?.range}</Text>
           </View>
         </View>
@@ -212,7 +212,7 @@ export function HoroscopeDetailScreen({ route, navigation }: any) {
           <GlassCard><Text style={[typography.body, { textAlign: 'center' }]}>Loading...</Text></GlassCard>
         ) : record?.prediction ? (
           <GlassCard style={{ padding: 16 }}>
-            <Text style={[typography.caption, { color: colors.accentGold, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8 }]}>
+            <Text style={[typography.caption, { color: colors.heading, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8 }]}>
               {period === 'daily' ? `${category} prediction` : `${period} prediction`}
             </Text>
             <Text style={[typography.body, { lineHeight: 23 }]}>{predictionText}</Text>
@@ -231,7 +231,7 @@ export function HoroscopeDetailScreen({ route, navigation }: any) {
                     <View key={s.label} style={{ flex: 1, minWidth: 0 }}>
                       <Text style={[typography.caption, { color: colors.textSecondary }]}>{s.label}</Text>
                       <Text
-                        style={{ fontSize: statFontSize, fontWeight: '700', color: colors.accentGold }}
+                        style={{ fontSize: statFontSize, fontWeight: '700', color: colors.heading }}
                         numberOfLines={1}
                       >
                         {s.value}
@@ -317,7 +317,7 @@ export function PanchangScreen() {
             </View>
 
             <GlassCard style={{ padding: 16, marginTop: 2 }}>
-              <Text style={[typography.caption, { color: colors.accentGold, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8 }]}>
+              <Text style={[typography.caption, { color: colors.heading, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8 }]}>
                 Sun & Moon
               </Text>
               <Row icon="sunny" label="Sunrise" value={data.sunrise ? to12h(data.sunrise) : undefined} />
@@ -327,7 +327,7 @@ export function PanchangScreen() {
             </GlassCard>
 
             <GlassCard style={{ padding: 16, marginTop: 12 }}>
-              <Text style={[typography.caption, { color: colors.accentGold, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8 }]}>
+              <Text style={[typography.caption, { color: colors.heading, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8 }]}>
                 Muhurta
               </Text>
               {inauspicious && (
@@ -1367,16 +1367,16 @@ export function ReportScreen({ route, navigation }: any) {
 
 /** Reports only ever move between these states; the API stores them as free text. */
 const REPORT_STATUS_META: Record<string, { label: string; color: string; backgroundColor: string }> = {
-  pending: { label: 'Pending', color: colors.warning, backgroundColor: 'rgba(245,158,11,0.15)' },
-  in_review: { label: 'In Review', color: colors.accentGold, backgroundColor: 'rgba(245,158,11,0.15)' },
-  under_review: { label: 'In Review', color: colors.accentGold, backgroundColor: 'rgba(245,158,11,0.15)' },
-  processing: { label: 'In Review', color: colors.accentGold, backgroundColor: 'rgba(245,158,11,0.15)' },
-  reviewed: { label: 'Reviewed', color: colors.success, backgroundColor: 'rgba(16,185,129,0.15)' },
-  approved: { label: 'Reviewed', color: colors.success, backgroundColor: 'rgba(16,185,129,0.15)' },
-  resolved: { label: 'Resolved', color: colors.success, backgroundColor: 'rgba(16,185,129,0.15)' },
-  closed: { label: 'Closed', color: colors.success, backgroundColor: 'rgba(16,185,129,0.15)' },
-  dismissed: { label: 'Dismissed', color: colors.danger, backgroundColor: 'rgba(194,20,21,0.12)' },
-  rejected: { label: 'Dismissed', color: colors.danger, backgroundColor: 'rgba(194,20,21,0.12)' },
+  pending: { label: 'Pending', color: colors.heading, backgroundColor: 'rgba(245,158,11,0.15)' },
+  in_review: { label: 'In Review', color: colors.heading, backgroundColor: 'rgba(245,158,11,0.15)' },
+  under_review: { label: 'In Review', color: colors.heading, backgroundColor: 'rgba(245,158,11,0.15)' },
+  processing: { label: 'In Review', color: colors.heading, backgroundColor: 'rgba(245,158,11,0.15)' },
+  reviewed: { label: 'Reviewed', color: colors.heading, backgroundColor: 'rgba(16,185,129,0.15)' },
+  approved: { label: 'Reviewed', color: colors.heading, backgroundColor: 'rgba(16,185,129,0.15)' },
+  resolved: { label: 'Resolved', color: colors.heading, backgroundColor: 'rgba(16,185,129,0.15)' },
+  closed: { label: 'Closed', color: colors.heading, backgroundColor: 'rgba(16,185,129,0.15)' },
+  dismissed: { label: 'Dismissed', color: colors.heading, backgroundColor: 'rgba(194,20,21,0.12)' },
+  rejected: { label: 'Dismissed', color: colors.heading, backgroundColor: 'rgba(194,20,21,0.12)' },
 };
 
 const REPORT_STATUS_HINT: Record<string, string> = {
@@ -1400,7 +1400,7 @@ function reportStatusMeta(status?: string, resolvedAt?: string | null) {
   if (!key) {
     return resolvedAt
       ? REPORT_STATUS_META.reviewed
-      : { label: 'Pending', color: colors.warning, backgroundColor: 'rgba(245,158,11,0.15)' };
+      : { label: 'Pending', color: colors.heading, backgroundColor: 'rgba(245,158,11,0.15)' };
   }
   const known = REPORT_STATUS_META[key];
   // A report the admin already acted on must never read "Pending", even when the
@@ -1799,7 +1799,7 @@ export function MandirPoojaScreen({ route, navigation }: any) {
                           Date: {new Date(b.bookingDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
                         </Text>
                       </View>
-                      <Text style={{ fontSize: 15, fontWeight: '800', color: colors.accentGold }}>
+                      <Text style={{ fontSize: 15, fontWeight: '800', color: colors.heading }}>
                         ₹{b.amount}
                       </Text>
                     </View>
@@ -1886,7 +1886,7 @@ export function MandirPoojaScreen({ route, navigation }: any) {
 
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                 <Text style={{ fontSize: 13, color: colors.textSecondary }}>Amount Paid</Text>
-                <Text style={{ fontSize: 14, fontWeight: "800", color: colors.accentGold }}>
+                <Text style={{ fontSize: 14, fontWeight: "800", color: colors.heading }}>
                   ₹{selectedBooking.amount}
                 </Text>
               </View>
@@ -1955,12 +1955,12 @@ export function MandirPoojaScreen({ route, navigation }: any) {
 
 // Order History
 const ORDER_STATUS_META: Record<string, { label: string; color: string; icon: string }> = {
-  pending: { label: 'Pending', color: colors.warning, icon: 'time-outline' },
-  confirmed: { label: 'Confirmed', color: colors.accentGold, icon: 'checkmark-circle-outline' },
-  processing: { label: 'Processing', color: colors.accentGold, icon: 'sync-outline' },
-  shipped: { label: 'Shipped', color: '#0EA5E9', icon: 'cube-outline' },
-  delivered: { label: 'Delivered', color: colors.success, icon: 'checkmark-done-outline' },
-  cancelled: { label: 'Cancelled', color: colors.danger, icon: 'close-circle-outline' },
+  pending: { label: 'Pending', color: colors.heading, icon: 'time-outline' },
+  confirmed: { label: 'Confirmed', color: colors.heading, icon: 'checkmark-circle-outline' },
+  processing: { label: 'Processing', color: colors.heading, icon: 'sync-outline' },
+  shipped: { label: 'Shipped', color: colors.heading, icon: 'cube-outline' },
+  delivered: { label: 'Delivered', color: colors.heading, icon: 'checkmark-done-outline' },
+  cancelled: { label: 'Cancelled', color: colors.heading, icon: 'close-circle-outline' },
 };
 
 function orderStatusMeta(status: string) {
@@ -1968,7 +1968,7 @@ function orderStatusMeta(status: string) {
   return (
     ORDER_STATUS_META[key] || {
       label: status || 'Unknown',
-      color: colors.textMuted,
+      color: colors.heading,
       icon: 'ellipse-outline',
     }
   );
@@ -2048,7 +2048,7 @@ export function OrderHistoryScreen() {
                     <Text
                       style={[
                         typography.caption,
-                        { marginTop: 2, color: order.transactionId ? colors.success : colors.warning, fontWeight: '700' },
+                        { marginTop: 2, color: colors.heading, fontWeight: '700' },
                       ]}
                     >
                       {order.transactionId ? 'Paid via Razorpay' : 'Payment pending'}
@@ -2555,17 +2555,17 @@ export function AstrologerCommissionScreen() {
 
         <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
           <GlassCard style={{ flex: 1, alignItems: 'center', padding: 14 }}>
-            <Text style={[typography.cardTitle, { color: colors.success }]}>₹{totalEarned.toFixed(2)}</Text>
+            <Text style={[typography.cardTitle, { color: colors.heading }]}>₹{totalEarned.toFixed(2)}</Text>
             <Text style={typography.caption}>Your Earnings</Text>
           </GlassCard>
           <GlassCard style={{ flex: 1, alignItems: 'center', padding: 14 }}>
-            <Text style={[typography.cardTitle, { color: colors.danger }]}>₹{totalFees.toFixed(2)}</Text>
+            <Text style={[typography.cardTitle, { color: colors.heading }]}>₹{totalFees.toFixed(2)}</Text>
             <Text style={typography.caption}>Platform Fees</Text>
           </GlassCard>
         </View>
 
         <GlassCard style={{ marginTop: 10, alignItems: 'center', padding: 14 }}>
-          <Text style={[typography.cardTitle, { color: colors.accentGold }]}>₹{totalRevenue.toFixed(2)}</Text>
+          <Text style={[typography.cardTitle, { color: colors.heading }]}>₹{totalRevenue.toFixed(2)}</Text>
           <Text style={typography.caption}>Total Revenue Generated</Text>
         </GlassCard>
 
@@ -2581,7 +2581,7 @@ export function AstrologerCommissionScreen() {
                   <Text style={typography.caption}>{new Date(l.createdAt).toLocaleDateString()}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={[typography.cardTitle, { fontSize: 14, color: colors.success }]}>+₹{l.totalEarned}</Text>
+                  <Text style={[typography.cardTitle, { fontSize: 14, color: colors.heading }]}>+₹{l.totalEarned}</Text>
                   <Text style={[typography.caption, { color: colors.textMuted }]}>Fee: ₹{l.platformFee}</Text>
                 </View>
               </View>
@@ -2656,7 +2656,7 @@ export function AstrologerGoLiveScreen({ navigation }: any) {
                   <Text style={[typography.cardTitle, { fontSize: 14 }]}>{s.title || 'Live Session'}</Text>
                   <Text style={typography.caption}>{new Date(s.createdAt).toLocaleDateString()} · {s.viewerCount || 0} viewers</Text>
                 </View>
-                <Text style={[typography.caption, { color: s.status === 'live' ? colors.success : colors.textMuted, fontWeight: '600' }]}>{s.status.toUpperCase()}</Text>
+                <Text style={[typography.caption, { color: colors.heading, fontWeight: '600' }]}>{s.status.toUpperCase()}</Text>
               </View>
             </GlassCard>
           ))}
@@ -2672,34 +2672,34 @@ export function PrivacyPolicyScreen({ navigation }: any) {
     <ScreenWrapper scroll>
       <SectionTitle title="Privacy Policy" />
       <GlassCard style={{ marginBottom: 16 }}>
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>1. Overview & Commitment</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>1. Overview & Commitment</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
           Astroshine respects your privacy and is committed to protecting your personal data. This privacy policy explains how we collect, store, share, and protect your personal information when you use our website, mobile application, or online consultation services.
         </Text>
 
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>2. Information We Collect</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>2. Information We Collect</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
           • Personal Identification: Name, email address, telephone number, and gender.{'\n'}
           • Astrological Profile Details: Date, time, and precise city/country of birth. This data is strictly used to compile your natal chart, horoscope calculations, and matching reports.{'\n'}
           • Wallet & Billing: We record purchase transaction summaries and wallet ledger history. No full credit/debit card numbers or sensitive banking credentials are saved on our servers.
         </Text>
 
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>3. Use of Your Personal Data</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>3. Use of Your Personal Data</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
           We utilize the collected information to calculate accurate astronomical positions, pair you with suitable consulting astrologers, process your wallet additions, verify your identity during logins, and dispatch push alerts or horoscopes.
         </Text>
 
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>4. Consultation Confidentiality</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>4. Consultation Confidentiality</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
           Your private text chats and voice calls with astrologers are entirely confidential. They are encrypted and are not shared with any third-party marketing networks or external entities under any circumstances.
         </Text>
 
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>5. Cookies & Session Management</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>5. Cookies & Session Management</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
           We use temporary session identifiers and local browser storage to keep you logged in, save your layout settings, and track basic anonymous diagnostics to optimize application performance.
         </Text>
 
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>6. Data Deletion Rights</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>6. Data Deletion Rights</Text>
         <Text style={typography.body}>
           You have the right to request deletion of your account and related data at any time. Simply use the "Delete Account" button on your Profile page or email us at support@astroshine.com.
         </Text>
@@ -2716,27 +2716,27 @@ export function TermsConditionsScreen({ navigation }: any) {
     <ScreenWrapper scroll>
       <SectionTitle title="Terms & Conditions" />
       <GlassCard style={{ marginBottom: 16 }}>
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>1. Acceptance of Terms</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>1. Acceptance of Terms</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
           By registering an account, purchasing wallet credits, or using any feature on Astroshine, you agree to be bound by these Terms & Conditions. If you do not accept these terms, you must immediately deactivate your account and exit our services.
         </Text>
 
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>2. Nature of Astrological Advice</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>2. Nature of Astrological Advice</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
           Astroshine offers guidance tools based on traditional Vedic astrology, Numerology, and Tarot cards. Predictions, advice, and charts are provided for entertainment and self-reflection purposes only. They do not constitute certified medical, psychiatric, legal, or financial advice.
         </Text>
 
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>3. Wallet Recharge & Fees</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>3. Wallet Recharge & Fees</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
           Recharging your account wallet allows you to connect with astrologers. Rates are charged per-minute and are deducted in real-time. Recharge balances are non-refundable. Under rare technical dropouts, you may submit a support ticket within 24 hours to request a credit refund.
         </Text>
 
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>4. Professional Code of Conduct</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>4. Professional Code of Conduct</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
           Any form of abusive language, harassment, threats, or sharing of personal phone numbers, emails, or payment links during a consultation is strictly forbidden. Violations will result in permanent suspension without a refund.
         </Text>
 
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>5. Limitation of Liability</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>5. Limitation of Liability</Text>
         <Text style={typography.body}>
           Astroshine is not liable for any direct, indirect, incidental, or consequential damages resulting from user actions taken based on advice or readings provided by astrologers on the platform.
         </Text>

@@ -179,7 +179,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
               <Text style={[headerStyles.status, { color: colors.textMuted }]}>{isOnline ? 'Online' : 'Offline'}</Text>
             )}
             {isUser && (
-              <Text style={[headerStyles.price, { color: colors.accentGold }]}>₹{chatPrice}/min</Text>
+              <Text style={[headerStyles.price, { color: colors.heading }]}>₹{chatPrice}/min</Text>
             )}
           </View>
         </TouchableOpacity>
@@ -469,7 +469,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
         {isUser && needsFunds ? (
           <View style={[styles.inputBar, { flexDirection: 'column', alignItems: 'center', gap: 8, paddingVertical: 16, borderTopColor: colors.divider, borderTopWidth: StyleSheet.hairlineWidth }]}>
             <Ionicons name="wallet-outline" size={24} color={colors.danger} />
-            <Text style={[typography.body, { color: colors.danger, textAlign: 'center' }]}>
+            <Text style={[typography.body, { color: colors.heading, textAlign: 'center' }]}>
               Insufficient wallet balance (₹{walletBalance !== null ? walletBalance : 0}) to chat at ₹{chatPrice}/min
             </Text>
             <GradientButton title="Add Funds" onPress={handleAddFunds} />

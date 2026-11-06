@@ -308,7 +308,7 @@ export function KycGateScreen() {
                 }}
               >
                 <Ionicons name="camera-outline" size={18} color={colors.accentGold} />
-                <Text style={{ fontWeight: '700', color: colors.accentGold }}>
+                <Text style={{ fontWeight: '700', color: colors.heading }}>
                   Take Live Selfie
                 </Text>
               </TouchableOpacity>

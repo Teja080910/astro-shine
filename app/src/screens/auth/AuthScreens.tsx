@@ -609,7 +609,7 @@ export function ForgotPasswordScreen({ navigation }: any) {
           </View>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
-          {success ? <Text style={[styles.error, { color: colors.success }]}>{success}</Text> : null}
+          {success ? <Text style={[styles.error, { color: colors.heading }]}>{success}</Text> : null}
 
           <View style={[styles.formCard, { backgroundColor: colors.glassBg, borderColor: colors.inputBorder }, shadows.card]}>
             {step === 'id' && (
@@ -692,7 +692,7 @@ const styles = StyleSheet.create({
   headerLogo: { width: '78%', maxWidth: 280, aspectRatio: 280 / 203, height: undefined, marginBottom: 8 },
   headerTitle: { color: '#FFFFFF' },
   headerSub: { color: '#B6B6C2' },
-  error: { color: colors.danger, textAlign: 'center', marginBottom: 16, fontSize: 14 },
+  error: { color: colors.heading, textAlign: 'center', marginBottom: 16, fontSize: 14 },
   formCard: {
     borderRadius: radii.card,
     borderWidth: 1,

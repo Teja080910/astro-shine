@@ -310,7 +310,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
       label: "Today's Earnings",
       value: stats.todayEarnings,
       icon: "cash-outline",
-      color: colors.success,
+      color: colors.heading,
     },
     {
       label: "Total Calls",
@@ -322,7 +322,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
       label: "Rating",
       value: stats.rating,
       icon: "star-outline",
-      color: colors.accentGold,
+      color: colors.heading,
     },
     {
       label: "Total Earnings",
@@ -879,7 +879,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
               <Text
                 style={[
                   typography.caption,
-                  { color: colors.success, fontWeight: "600", marginTop: 4 },
+                  { color: colors.heading, fontWeight: "600", marginTop: 4 },
                 ]}
               >
                 Wallet
@@ -1206,7 +1206,7 @@ export function AstrologerWalletScreen({ navigation }: any) {
             style={{
               fontSize: 42,
               fontWeight: "800",
-              color: colors.accentGold,
+              color: colors.heading,
               marginTop: 4,
             }}
           >
@@ -1767,7 +1767,7 @@ export function AstrologerReviewsScreen() {
             style={{
               fontSize: 48,
               fontWeight: "800",
-              color: colors.accentGold,
+              color: colors.heading,
             }}
           >
             {avgRating}
@@ -3077,7 +3077,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
           <Ionicons name="log-out-outline" size={20} color="#C21415" />
           <Text
             style={{
-              color: "#C21415",
+              color: colors.heading,
               fontSize: 15,
               fontWeight: "700",
               marginLeft: 8,
@@ -3096,13 +3096,13 @@ export function AstrologerProfileScreen({ navigation }: any) {
         <View style={{ paddingHorizontal: 24, paddingBottom: 20 }}>
           {pwError ? (
             <Text
-              style={{ color: colors.danger, fontSize: 14, marginBottom: 10 }}
+              style={{ color: colors.heading, fontSize: 14, marginBottom: 10 }}
             >
               {pwError}
             </Text>
           ) : null}
           {pwSuccess ? (
-            <Text style={{ color: "#22c55e", fontSize: 14, marginBottom: 10 }}>
+            <Text style={{ color: colors.heading, fontSize: 14, marginBottom: 10 }}>
               {pwSuccess}
             </Text>
           ) : null}

@@ -28,7 +28,7 @@ export function BlogDetailScreen({ route }: any) {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginBottom: 12 }}>
               {blog.tags.map(t => (
                 <View key={t} style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, backgroundColor: colors.accentGold + '20' }}>
-                  <Text style={{ fontSize: 10, fontWeight: '600', color: colors.accentGold }}>{t}</Text>
+                  <Text style={{ fontSize: 10, fontWeight: '600', color: colors.heading }}>{t}</Text>
                 </View>
               ))}
             </View>

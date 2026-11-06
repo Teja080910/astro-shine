@@ -9,11 +9,11 @@ import { useAuth } from '../../context/AuthContext';
 import { useChat } from '../../context/ChatContext';
 
 const CATEGORIES = ['Billing', 'Technical', 'Account', 'General'];
-const STATUS_COLORS: Record<string, string> = { open: '#F59E0B', in_progress: '#3188FB', resolved: '#10B981' };
-const PRIORITY_COLORS: Record<string, string> = { low: '#8B8B8D', normal: '#F59E0B', high: '#C21415', urgent: '#C21415' };
+const STATUS_COLORS: Record<string, string> = { open: colors.heading, in_progress: colors.heading, resolved: colors.heading };
+const PRIORITY_COLORS: Record<string, string> = { low: colors.heading, normal: colors.heading, high: colors.heading, urgent: colors.heading };
 
 function StatusBadge({ status }: { status: string }) {
-  const color = STATUS_COLORS[status] || '#8B8B8D';
+  const color = STATUS_COLORS[status] || colors.heading;
   const label = status === 'in_progress' ? 'In Progress' : status.charAt(0).toUpperCase() + status.slice(1);
   return (
     <View style={{ paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, backgroundColor: color + '20', borderWidth: 1, borderColor: color }}>
@@ -72,7 +72,7 @@ export function SupportScreen() {
           <>
             <Text style={[typography.pageTitle, { color: colors.textPrimary, marginBottom: 8 }]}>Help & Support</Text>
             <TouchableOpacity onPress={() => setShowForm(!showForm)} style={{ alignSelf: 'flex-start', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, backgroundColor: colors.accentGold + '20', borderWidth: 1, borderColor: colors.accentGold, marginBottom: 16 }}>
-              <Text style={{ fontSize: 12, fontWeight: '700', color: colors.accentGold }}>{showForm ? 'Cancel' : '+ New Ticket'}</Text>
+              <Text style={{ fontSize: 12, fontWeight: '700', color: colors.heading }}>{showForm ? 'Cancel' : '+ New Ticket'}</Text>
             </TouchableOpacity>
 
             {showForm && (
@@ -236,7 +236,7 @@ export function TicketDetailScreen({ route }: any) {
             )}
             {ticket.status === 'resolved' && (
               <View style={{ paddingVertical: 10, borderRadius: 12, backgroundColor: '#10B981' + '20', alignItems: 'center', borderWidth: 1, borderColor: '#10B981' }}>
-                <Text style={{ color: '#10B981', fontSize: 13, fontWeight: '700' }}>✓ Resolved</Text>
+                <Text style={{ color: colors.heading, fontSize: 13, fontWeight: '700' }}>✓ Resolved</Text>
               </View>
             )}
           </View>
@@ -302,7 +302,7 @@ export function AdminSupportScreen() {
                   <Text style={{ fontSize: 9, fontWeight: '600', color: PRIORITY_COLORS[item.priority] || '#8B8B8D' }}>{item.priority.toUpperCase()}</Text>
                 </View>
                 <Text style={[typography.caption, { fontSize: 10 }]}>{new Date(item.createdAt).toLocaleDateString()}</Text>
-                {item.assignedTo && <Text style={[typography.caption, { fontSize: 10, color: colors.accentGold }]}>Assigned</Text>}
+                {item.assignedTo && <Text style={[typography.caption, { fontSize: 10, color: colors.heading }]}>Assigned</Text>}
               </View>
             </GlassCard>
           </TouchableOpacity>
@@ -404,7 +404,7 @@ export function AdminTicketDetailScreen({ route }: any) {
                     <Text style={{ fontSize: 12, fontWeight: '700', color: colors.primaryLight }}>Assign to Me</Text>
                   </TouchableOpacity>
                 )}
-                {ticket.assignedTo && <Text style={[typography.caption, { marginBottom: 8, color: colors.accentGold }]}>✓ Assigned to you</Text>}
+                {ticket.assignedTo && <Text style={[typography.caption, { marginBottom: 8, color: colors.heading }]}>✓ Assigned to you</Text>}
 
                 {/* Status */}
                 <View style={{ flexDirection: 'row', gap: 6, marginBottom: 8 }}>

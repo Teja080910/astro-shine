@@ -13,7 +13,7 @@ export function Chip({ label, selected, onPress, color, style }: Props) {
       };
 
   const dynamicLabelStyle = selected
-    ? { color: colors.accentGold, fontWeight: '700' as const }
+    ? { color: colors.heading, fontWeight: '700' as const }
     : { color: colors.textBody };
 
   return (

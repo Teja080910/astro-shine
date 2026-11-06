@@ -111,7 +111,7 @@ export function ActiveCallScreen() {
                   {remoteUid && isRemoteMuted && (
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
                       <Ionicons name="mic-off" size={16} color={colors.danger} />
-                      <Text style={{ color: colors.danger, marginLeft: 4, fontSize: 14 }}>Muted</Text>
+                      <Text style={{ color: colors.heading, marginLeft: 4, fontSize: 14 }}>Muted</Text>
                     </View>
                   )}
                 </>

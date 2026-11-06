@@ -520,7 +520,7 @@ function AstrologerRowCard({
                     style={{
                       fontSize: 9.5,
                       fontWeight: "600",
-                      color: colors.accentText,
+                      color: colors.heading,
                       lineHeight: 12,
                     }}
                     numberOfLines={1}
@@ -1281,7 +1281,7 @@ export function UserHomeScreen({ navigation }: any) {
                 <Text
                   style={{
                     fontSize: isCompact ? 12.5 : 14,
-                    color: "#C21415",
+                    color: colors.heading,
                     fontWeight: "800",
                     flexShrink: 1,
                   }}
@@ -1597,7 +1597,7 @@ export function UserHomeScreen({ navigation }: any) {
                   style={{
                     fontSize: 11.5,
                     fontWeight: "600",
-                    color: colors.accentText,
+                    color: colors.heading,
                     flexShrink: 1,
                   }}
                   numberOfLines={2}
@@ -1729,7 +1729,7 @@ export function UserHomeScreen({ navigation }: any) {
                 style={{
                   fontSize: 11,
                   fontWeight: activeHoroscopeTab === "career" ? "800" : "600",
-                  color: colors.danger,
+                  color: colors.heading,
                 }}
               >
                 Career
@@ -1766,7 +1766,7 @@ export function UserHomeScreen({ navigation }: any) {
                 style={{
                   fontSize: 11,
                   fontWeight: activeHoroscopeTab === "finance" ? "800" : "600",
-                  color: colors.accentText,
+                  color: colors.heading,
                 }}
               >
                 Finance
@@ -1850,7 +1850,7 @@ export function UserHomeScreen({ navigation }: any) {
             </View>
             <TouchableOpacity onPress={() => navigation.navigate("Panchang")}>
               <Text
-                style={{ fontSize: 12, fontWeight: "700", color: colors.accentText }}
+                style={{ fontSize: 12, fontWeight: "700", color: colors.heading }}
               >
                 View All ›
               </Text>
@@ -2081,7 +2081,7 @@ export function UserHomeScreen({ navigation }: any) {
               <Text
                 style={[
                   styles.pastelCardText,
-                  { color: colors.accentText },
+                  { color: colors.heading },
                 ]}
                 numberOfLines={1}
               >
@@ -2323,7 +2323,7 @@ export function UserHomeScreen({ navigation }: any) {
               <Text
                 style={[
                   styles.pastelCardText,
-                  { color: colors.accentText },
+                  { color: colors.heading },
                 ]}
                 numberOfLines={1}
               >
@@ -4016,7 +4016,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
               }}
             >
               <Ionicons name="gift" size={18} color="#E11D48" />
-              <Text style={{ fontSize: 12, fontWeight: "700", color: "#E11D48" }}>
+              <Text style={{ fontSize: 12, fontWeight: "700", color: colors.heading }}>
                 Send Gift
               </Text>
             </TouchableOpacity>
@@ -4548,7 +4548,7 @@ export function WalletScreen() {
       <View style={{ width: "100%", maxWidth: 600, alignSelf: "center", padding: 16 }}>
         <GlassCard style={styles.balanceCard}>
           <Text style={typography.caption}>Available Balance</Text>
-          <Text style={[styles.balance, { color: colors.accentText }]}>
+          <Text style={[styles.balance, { color: colors.heading }]}>
             ₹{formatAmount(wallet?.balance)}
           </Text>
           <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}>
@@ -5178,7 +5178,7 @@ function MatchmakingReport({ result }: { result: any }) {
     <View style={{ gap: 16, marginTop: 20 }}>
       <GlassCard style={{ padding: 20, alignItems: "center" }}>
         <Text style={[typography.sectionTitle]}>Guna Milan Score</Text>
-        <Text style={{ fontSize: 40, fontWeight: "800", color: colors.accentGold, marginTop: 8 }}>
+        <Text style={{ fontSize: 40, fontWeight: "800", color: colors.heading, marginTop: 8 }}>
           {score}
           <Text style={{ fontSize: 20, color: colors.textMuted }}> / {maxScore}</Text>
         </Text>
@@ -5970,7 +5970,7 @@ export function ShopScreen({ navigation }: any) {
                   paddingVertical: 4,
                 }}
               >
-                <Text style={{ fontSize: 11, fontWeight: "700", color: colors.accentGold }}>
+                <Text style={{ fontSize: 11, fontWeight: "700", color: colors.heading }}>
                   {selectedProduct.category}
                 </Text>
               </View>
@@ -6608,7 +6608,7 @@ export function ProfileScreen({ navigation }: any) {
               >
                 <Ionicons name="trash-outline" size={20} color="#C21415" />
               </View>
-              <Text style={[styles.menuRowLabel, { color: "#C21415" }]}>
+              <Text style={[styles.menuRowLabel, { color: colors.heading }]}>
                 Delete Account
               </Text>
               <Ionicons name="chevron-forward" size={18} color="#FCA5A5" />
@@ -6634,7 +6634,7 @@ export function ProfileScreen({ navigation }: any) {
           />
           <Text
             style={{
-              color: colors.danger,
+              color: colors.heading,
               fontSize: 15,
               fontWeight: "700",
               marginLeft: 8,
@@ -6653,13 +6653,13 @@ export function ProfileScreen({ navigation }: any) {
         <View style={{ paddingHorizontal: 24, paddingBottom: 20 }}>
           {pwError ? (
             <Text
-              style={{ color: colors.danger, fontSize: 14, marginBottom: 10 }}
+              style={{ color: colors.heading, fontSize: 14, marginBottom: 10 }}
             >
               {pwError}
             </Text>
           ) : null}
           {pwSuccess ? (
-            <Text style={{ color: "#22c55e", fontSize: 14, marginBottom: 10 }}>
+            <Text style={{ color: colors.heading, fontSize: 14, marginBottom: 10 }}>
               {pwSuccess}
             </Text>
           ) : null}

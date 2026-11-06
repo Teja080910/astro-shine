@@ -87,7 +87,7 @@ function FestivalCard({ item }: { item: FestivalItem }) {
             </Text>
             {today && (
               <View style={{ backgroundColor: colors.success + '20', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 }}>
-                <Text style={{ fontSize: 9, fontWeight: '800', color: colors.success }}>TODAY</Text>
+                <Text style={{ fontSize: 9, fontWeight: '800', color: colors.heading }}>TODAY</Text>
               </View>
             )}
           </View>

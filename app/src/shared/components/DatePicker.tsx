@@ -75,7 +75,7 @@ export function DatePicker({ visible, value, onClose, onSelect, title = 'Select 
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <TouchableOpacity activeOpacity={1} onPress={onClose} style={styles.overlay}>
         <TouchableOpacity activeOpacity={1} style={[styles.dialog, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
-          <Text style={[typography.sectionTitle, { textAlign: 'center', marginBottom: 12, color: colors.accentGold }]}>{title}</Text>
+          <Text style={[typography.sectionTitle, { textAlign: 'center', marginBottom: 12, color: colors.heading }]}>{title}</Text>
 
           {view === 'years' ? (
             <>
