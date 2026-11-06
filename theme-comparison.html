@@ -2108,17 +2108,17 @@
     </ul>
   </section>
 
-  <!-- chat keyboard gap -->
+  <!-- chat keyboard overlap -->
   <section class="cmp">
     <div class="cmp-head">
       <div class="num">14</div>
       <div>
-        <h2>Chat input: gap above the keyboard</h2>
+        <h2>Chat input: sits behind the keyboard</h2>
         <p>
-          On Android the input bar floated well above the keyboard. Two things stacked up:
-          the app is configured with <code>softwareKeyboardLayoutMode: "resize"</code>, so Android
-          already shrinks the window when the keyboard opens — and the screen <em>also</em> added the
-          full keyboard height to the bar's <code>paddingBottom</code>.
+          The app is built with <code>edgeToEdgeEnabled=true</code>. React Native then calls
+          <code>WindowCompat.setDecorFitsSystemWindows(window, false)</code>, which makes the
+          Android window <em>not</em> resize for the IME — <code>windowSoftInputMode="adjustResize"</code>
+          stops having any effect. Content is laid out edge-to-edge, under the keyboard.
         </p>
       </div>
     </div>
@@ -2142,35 +2142,24 @@
               <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:7px;padding-bottom:8px">
                 <div style="align-self:flex-start;max-width:78%;background:var(--card-alt);border:1px solid var(--border);padding:7px 10px;border-radius:12px 12px 12px 3px;font-size:9px;line-height:1.45;color:var(--body)">Kundli dekh lo please</div>
                 <div style="align-self:flex-end;max-width:80%;background:#EE7B10;color:#fff;padding:7px 10px;border-radius:12px 12px 3px 12px;font-size:9px;line-height:1.45">Bhej diya, check karo</div>
+                <div style="align-self:flex-start;max-width:70%;background:var(--card-alt);border:1px solid var(--border);padding:7px 10px;border-radius:12px 12px 12px 3px;font-size:9px;line-height:1.45;color:var(--body)">Thanks 🙏</div>
               </div>
-              <div style="height:92px;display:grid;place-items:center;background:repeating-linear-gradient(45deg,rgba(194,20,21,.10),rgba(194,20,21,.10) 5px,transparent 5px,transparent 10px);border-radius:6px;margin:6px 0">
-                <span style="font-size:7.5px;font-weight:800;letter-spacing:.06em;color:#C21415;background:rgba(255,255,255,.75);padding:1px 4px;border-radius:3px">DEAD SPACE ~92px</span>
+              <div style="height:118px;position:relative;overflow:hidden">
+                <div style="position:absolute;inset:0;background:repeating-linear-gradient(45deg,rgba(194,20,21,.12),rgba(194,20,21,.12) 5px,transparent 5px,transparent 10px);display:grid;place-items:center">
+                  <span style="font-size:7.5px;font-weight:800;letter-spacing:.06em;color:#C21415;background:rgba(255,255,255,.8);padding:2px 5px;border-radius:3px">INPUT HIDDEN BEHIND KEYBOARD</span>
+                </div>
               </div>
-              <div style="border-top:1px solid var(--border);background:var(--app-bg);padding:8px 10px 70px;display:flex;align-items:center;gap:6px;margin:0 -14px -16px">
+              <div style="border-top:1px solid var(--border);background:var(--app-bg);padding:8px 10px 10px;display:flex;align-items:center;gap:6px;margin:0 -14px -16px">
                 <svg style="width:17px;height:17px;color:#EE7B10;flex:none"><use href="#i-attach"/></svg>
                 <div style="flex:1;height:30px;border-radius:15px;background:var(--card-alt);display:flex;align-items:center;padding:0 10px;font-size:9px;color:var(--muted)">Type a message...</div>
                 <div style="width:30px;height:30px;border-radius:15px;background:#EE7B10;display:grid;place-items:center;flex:none"><svg style="width:13px;height:13px;color:#fff"><use href="#i-send"/></svg></div>
               </div>
               <div style="margin:0 -14px -16px;height:150px;background:#20202a;border-top:1px solid #34343f;display:flex;flex-direction:column;justify-content:center;gap:5px;padding:8px 10px">
                 <div style="display:flex;gap:3px;justify-content:center">
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
                 </div>
                 <div style="display:flex;gap:3px;justify-content:center">
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
                 </div>
                 <div style="text-align:center;font-size:6.5px;color:#8b8b96;margin-top:2px">keyboard</div>
               </div>
@@ -2197,33 +2186,20 @@
               <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:7px;padding-bottom:8px">
                 <div style="align-self:flex-start;max-width:78%;background:var(--card-alt);border:1px solid var(--border);padding:7px 10px;border-radius:12px 12px 12px 3px;font-size:9px;line-height:1.45;color:var(--body)">Kundli dekh lo please</div>
                 <div style="align-self:flex-end;max-width:80%;background:#EE7B10;color:#fff;padding:7px 10px;border-radius:12px 12px 3px 12px;font-size:9px;line-height:1.45">Bhej diya, check karo</div>
+                <div style="align-self:flex-start;max-width:70%;background:var(--card-alt);border:1px solid var(--border);padding:7px 10px;border-radius:12px 12px 12px 3px;font-size:9px;line-height:1.45;color:var(--body)">Thanks 🙏</div>
               </div>
 
-              <div style="border-top:1px solid var(--border);background:var(--app-bg);padding:8px 10px 8px;display:flex;align-items:center;gap:6px;margin:0 -14px -16px">
+              <div style="border-top:1px solid var(--border);background:var(--app-bg);padding:8px 10px 10px;display:flex;align-items:center;gap:6px;margin:0 -14px -16px">
                 <svg style="width:17px;height:17px;color:#EE7B10;flex:none"><use href="#i-attach"/></svg>
                 <div style="flex:1;height:30px;border-radius:15px;background:var(--card-alt);display:flex;align-items:center;padding:0 10px;font-size:9px;color:var(--muted)">Type a message...</div>
                 <div style="width:30px;height:30px;border-radius:15px;background:#EE7B10;display:grid;place-items:center;flex:none"><svg style="width:13px;height:13px;color:#fff"><use href="#i-send"/></svg></div>
               </div>
               <div style="margin:0 -14px -16px;height:150px;background:#20202a;border-top:1px solid #34343f;display:flex;flex-direction:column;justify-content:center;gap:5px;padding:8px 10px">
                 <div style="display:flex;gap:3px;justify-content:center">
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
                 </div>
                 <div style="display:flex;gap:3px;justify-content:center">
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
-                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
+                  <span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span><span style="width:22px;height:13px;border-radius:2px;background:#3a3a46"></span>
                 </div>
                 <div style="text-align:center;font-size:6.5px;color:#8b8b96;margin-top:2px">keyboard</div>
               </div>
@@ -2233,174 +2209,12 @@
       </div>
     </div>
     <ul class="notes">
-      <li><strong>Cause 1:</strong> <code>paddingBottom: keyboardHeight + insets.bottom + 12</code> on Android. Since the window already resized, that pushed the bar up by a whole keyboard height — the visible dead space.</li>
-      <li><strong>Cause 2:</strong> the bottom safe-area inset kept being reserved while the keyboard was open, adding the navigation-bar inset a second time.</li>
-      <li><strong>Fix:</strong> Android now uses a flat 8px breathing space; only iOS pads manually, because it overlays the window instead of resizing it.</li>
-      <li>The bottom safe-area edge is dropped while the keyboard is visible and restored when it closes, so nothing is reserved twice.</li>
-      <li>Removed the now-unused <code>keyboardHeight</code> state — the listener only tracks visibility.</li>
-    </ul>
-  </section>
-
-  <!-- transaction labels -->
-  <section class="cmp">
-    <div class="cmp-head">
-      <div class="num">15</div>
-      <div>
-        <h2>Wallet transactions: show the service, not the accounting category</h2>
-        <p>
-          Both apps printed the raw database <code>category</code>. Every astrologer credit is stored
-          as <code>commission</code> — whether it came from a chat, an audio call or a video call —
-          so the wallet showed a wall of identical "Commission" rows. <code>refund</code> was shown
-          the same way, with no hint of what was refunded.
-        </p>
-      </div>
-    </div>
-    <div class="phones">
-      <div class="phone-wrap">
-        <span class="tag tag-before">Before</span>
-        <div class="phone">
-          <div class="screen before tall">
-            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
-            <div class="screen-body">
-              <div class="navbar">
-                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
-                <span class="nav-title">My Wallet</span>
-                <span class="spacer"></span>
-              </div>
-              <div class="card" style="padding:11px;text-align:center">
-                <div style="font-size:8px;color:var(--muted)">Available Balance</div>
-                <div style="font-size:24px;font-weight:800;color:var(--accent);margin-top:1px">₹124.64</div>
-              </div>
-              <div style="display:flex;gap:6px;margin:9px 0 4px">
-                <span class="chip on" style="height:24px;padding:0 9px;font-size:8.5px">All</span>
-                <span class="chip" style="height:24px;padding:0 9px;font-size:8.5px">Credit</span>
-                <span class="chip" style="height:24px;padding:0 9px;font-size:8.5px">Chat</span>
-                <span class="chip" style="height:24px;padding:0 9px;font-size:8.5px">Audio</span>
-                <span class="chip" style="height:24px;padding:0 9px;font-size:8.5px">Video</span>
-              </div>
-              <div class="card" style="padding:4px 10px">
-                <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--row-border)">
-                  <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#23A86722">
-                    <svg style="width:14px;height:14px;color:#23A867"><use href="#i-cash"/></svg>
-                  </div>
-                  <div style="flex:1;min-width:0">
-                    <div style="font-size:10px;font-weight:700;color:var(--heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Commission</div>
-                    <div style="font-size:8px;color:var(--muted)">05/11/2026</div>
-                  </div>
-                  <div style="font-size:10px;font-weight:800;color:#23A867;flex:none">+₹1.03</div>
-                </div>
-                <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--row-border)">
-                  <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#8B8B8D22">
-                    <svg style="width:14px;height:14px;color:#8B8B8D"><use href="#i-receipt"/></svg>
-                  </div>
-                  <div style="flex:1;min-width:0">
-                    <div style="font-size:10px;font-weight:700;color:var(--heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Commission</div>
-                    <div style="font-size:8px;color:var(--muted)">05/11/2026</div>
-                  </div>
-                  <div style="font-size:10px;font-weight:800;color:#23A867;flex:none">+₹0.12</div>
-                </div>
-                <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--row-border)">
-                  <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#23A86722">
-                    <svg style="width:14px;height:14px;color:#23A867"><use href="#i-cash"/></svg>
-                  </div>
-                  <div style="flex:1;min-width:0">
-                    <div style="font-size:10px;font-weight:700;color:var(--heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Commission</div>
-                    <div style="font-size:8px;color:var(--muted)">04/11/2026</div>
-                  </div>
-                  <div style="font-size:10px;font-weight:800;color:#23A867;flex:none">+₹0.83</div>
-                </div>
-                <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--row-border)">
-                  <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#8B8B8D22">
-                    <svg style="width:14px;height:14px;color:#8B8B8D"><use href="#i-receipt"/></svg>
-                  </div>
-                  <div style="flex:1;min-width:0">
-                    <div style="font-size:10px;font-weight:700;color:var(--heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Call Charge</div>
-                    <div style="font-size:8px;color:var(--muted)">04/11/2026</div>
-                  </div>
-                  <div style="font-size:10px;font-weight:800;color:#C21415;flex:none">-₹0.92</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="phone-wrap">
-        <span class="tag tag-after">After</span>
-        <div class="phone">
-          <div class="screen after tall">
-            <div class="statusbar"><span>9:41</span><span class="dots"><i></i><i></i><i></i></span></div>
-            <div class="screen-body">
-              <div class="navbar">
-                <svg style="width:18px;height:18px"><use href="#i-back"/></svg>
-                <span class="nav-title">My Wallet</span>
-                <span class="spacer"></span>
-              </div>
-              <div class="card" style="padding:11px;text-align:center">
-                <div style="font-size:8px;color:var(--muted)">Available Balance</div>
-                <div style="font-size:24px;font-weight:800;color:var(--accent);margin-top:1px">₹124.64</div>
-              </div>
-              <div style="display:flex;gap:6px;margin:9px 0 4px">
-                <span class="chip on" style="height:24px;padding:0 9px;font-size:8.5px">All</span>
-                <span class="chip" style="height:24px;padding:0 9px;font-size:8.5px">Credit</span>
-                <span class="chip" style="height:24px;padding:0 9px;font-size:8.5px">Chat</span>
-                <span class="chip" style="height:24px;padding:0 9px;font-size:8.5px">Audio</span>
-                <span class="chip" style="height:24px;padding:0 9px;font-size:8.5px">Video</span>
-              </div>
-              <div class="card" style="padding:4px 10px">
-                <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--row-border)">
-                  <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#0284C722">
-                    <svg style="width:14px;height:14px;color:#0284C7"><use href="#i-call"/></svg>
-                  </div>
-                  <div style="flex:1;min-width:0">
-                    <div style="font-size:10px;font-weight:700;color:var(--heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Audio call earnings</div>
-                    <div style="font-size:8px;color:var(--muted)">05/11/2026 · 23s</div>
-                  </div>
-                  <div style="font-size:10px;font-weight:800;color:#23A867;flex:none">+₹1.03</div>
-                </div>
-                <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--row-border)">
-                  <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#23A86722">
-                    <svg style="width:14px;height:14px;color:#23A867"><use href="#i-cash"/></svg>
-                  </div>
-                  <div style="flex:1;min-width:0">
-                    <div style="font-size:10px;font-weight:700;color:var(--heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Platform fee — audio call</div>
-                    <div style="font-size:8px;color:var(--muted)">05/11/2026</div>
-                  </div>
-                  <div style="font-size:10px;font-weight:800;color:#23A867;flex:none">+₹0.12</div>
-                </div>
-                <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--row-border)">
-                  <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#7C3AED22">
-                    <svg style="width:14px;height:14px;color:#7C3AED"><use href="#i-videocam"/></svg>
-                  </div>
-                  <div style="flex:1;min-width:0">
-                    <div style="font-size:10px;font-weight:700;color:var(--heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Video call earnings</div>
-                    <div style="font-size:8px;color:var(--muted)">04/11/2026 · 11s</div>
-                  </div>
-                  <div style="font-size:10px;font-weight:800;color:#23A867;flex:none">+₹0.83</div>
-                </div>
-                <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--row-border)">
-                  <div style="width:28px;height:28px;border-radius:14px;flex:none;display:grid;place-items:center;background:#0284C722">
-                    <svg style="width:14px;height:14px;color:#0284C7"><use href="#i-call"/></svg>
-                  </div>
-                  <div style="flex:1;min-width:0">
-                    <div style="font-size:10px;font-weight:700;color:var(--heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Audio call</div>
-                    <div style="font-size:8px;color:var(--muted)">04/11/2026 · 23s</div>
-                  </div>
-                  <div style="font-size:10px;font-weight:800;color:#C21415;flex:none">-₹0.92</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <ul class="notes">
-      <li><strong>Root cause:</strong> the label was <code>t.category.replace('_',' ')</code>, and the category is an accounting bucket, not a description of the service.</li>
-      <li>Every row now resolves to a service: <em>Chat consultation / Chat earnings</em>, <em>Audio call / Audio call earnings</em>, <em>Video call / Video call earnings</em>.</li>
-      <li>Platform-fee rows are distinguished from the astrologer's own earnings instead of both reading "Commission".</li>
-      <li><code>refund</code> now reads <strong>Refund to wallet</strong>, and the other categories got plain names too — Wallet recharge, Temple donation, Store order, Puja booking.</li>
-      <li><strong>Backend:</strong> new credits record <code>metadata.serviceType</code>, and the real call type is passed through instead of defaulting to audio.</li>
-      <li><strong>Backfill:</strong> migration resolves historical rows by joining <code>call_logs.type</code> via <code>reference_id</code> — 12 rows corrected exactly, no guessing from text.</li>
-      <li>The astrologer wallet also gained Chat / Audio Call / Video Call filters, matching the user wallet.</li>
+      <li><strong>Root cause:</strong> edge-to-edge + <code>setDecorFitsSystemWindows(false)</code>. The window is full-height, so nothing shrinks when the keyboard appears. A <code>KeyboardAvoidingView</code> with <code>behavior={undefined}</code> on Android does nothing, leaving the composer underneath the IME.</li>
+      <li>All other screens use <code>ScreenWrapper</code>, which already wraps Android in <code>KeyboardAvoidingView behavior="height"</code>. The chat room bypassed it with a bare, iOS-only avoid view.</li>
+      <li><strong>Fix:</strong> the chat column now lifts itself by the reported <code>keyboardHeight</code> on Android, and the message list gets <code>flex: 1</code> so it shrinks and stays scrollable instead of overflowing behind the keyboard.</li>
+      <li>The composer keeps only normal safe-area padding. <code>insets.bottom</code> is already part of the IME height, so adding it again would reintroduce a gap.</li>
+      <li>iOS keeps its <code>KeyboardAvoidingView behaviour="padding"</code> — it overlays rather than resizes, so it needs the padding path.</li>
+      <li><strong>Same bug fixed in 6 other screens</strong> that used <code>behavior={Platform.OS === 'ios' ? 'padding' : undefined}</code>: Support (×3), Edit Profile, Astrologer profile edit, and the auth OTP screen.</li>
     </ul>
   </section>
 

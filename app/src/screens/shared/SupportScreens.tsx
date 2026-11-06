@@ -61,7 +61,7 @@ export function SupportScreen() {
 
   return (
     <ScreenWrapper>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
       <FlatList
         data={tickets}
         keyExtractor={t => t.id}
@@ -175,7 +175,7 @@ export function TicketDetailScreen({ route }: any) {
 
   return (
     <ScreenWrapper>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
       <FlatList
         data={replies}
         keyExtractor={r => r.id}
@@ -373,7 +373,7 @@ export function AdminTicketDetailScreen({ route }: any) {
 
   return (
     <ScreenWrapper>
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}>
       <FlatList
         data={replies}
         keyExtractor={r => r.id}

@@ -865,7 +865,7 @@ export function EditProfileScreen() {
   return (
     <ScreenWrapper noPadding>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior="padding"
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
