@@ -47,7 +47,29 @@ log "code: $(git rev-parse --short HEAD)  $(git log -1 --format=%s)"
 # ---- 2. install dependencies ------------------------------------------------
 log "installing dependencies (fresh, npm workspaces) ..."
 rm -rf node_modules server/node_modules web/node_modules packages/*/node_modules
-npm install --no-audit --no-fund
+# --legacy-peer-deps: the repo has a pre-existing react 19.2/19.3 peer conflict
+# between lucide-react and a stale op-sqlite entry; it is unrelated to the server
+# and would otherwise abort the install.
+npm install --no-audit --no-fund --legacy-peer-deps
+
+# drizzle-kit resolves "drizzle-orm" from its OWN file location, so in a
+# hoisting workspace both must live at the repo root. npm can hoist the kit and
+# leave the orm nested under server/, which makes drizzle-kit fail with a
+# misleading "Please install latest version of drizzle-orm". Verify the real
+# resolution here rather than discovering it during a migration.
+node -e "
+  const fs=require('fs'),path=require('path');
+  const kitDir=path.resolve('node_modules/drizzle-kit');
+  if(!fs.existsSync(path.join(kitDir,'bin.cjs'))){console.error('[deploy] drizzle-kit missing at repo root');process.exit(1)}
+  // Walk up from the kit exactly like Node does, testing for the package dir
+  // (drizzle-orm does not export ./package.json, so require.resolve lies).
+  let dir=kitDir,found=false;
+  for(;;){
+    if(fs.existsSync(path.join(dir,'node_modules','drizzle-orm','package.json'))){found=true;break}
+    const up=path.dirname(dir); if(up===dir)break; dir=up;
+  }
+  if(!found){console.error('[deploy] drizzle-orm is not resolvable from drizzle-kit.');console.error('[deploy] fix: npm install drizzle-orm --save-dev at the repo root');process.exit(1)}
+" || die "drizzle-orm resolution broken — see message above"
 
 # ---- 3. database migrations -------------------------------------------------
 # Tracker table schema_migrations; on a DB that already has tables but no
