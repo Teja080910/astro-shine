@@ -67,6 +67,7 @@ export function ChatRoomScreen({ route, navigation }: any) {
   const prevMsgCount = useRef(0);
   const insets = useSafeAreaInsets();
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [chatPrice, setChatPrice] = useState(5);
   const [audioCallPrice, setAudioCallPrice] = useState(10);
   const [videoCallPrice, setVideoCallPrice] = useState(20);
@@ -129,10 +130,13 @@ export function ChatRoomScreen({ route, navigation }: any) {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
     
-    const showSubscription = Keyboard.addListener(showEvent, () => {
+    const showSubscription = Keyboard.addListener(showEvent, (e) => {
+      // endCoordinates.height is the full IME height in dp.
+      setKeyboardHeight(e?.endCoordinates?.height ?? 0);
       setKeyboardVisible(true);
     });
     const hideSubscription = Keyboard.addListener(hideEvent, () => {
+      setKeyboardHeight(0);
       setKeyboardVisible(false);
     });
 
@@ -448,6 +452,9 @@ export function ChatRoomScreen({ route, navigation }: any) {
           renderItem={renderItem}
           onScroll={handleScroll}
           scrollEventThrottle={100}
+          // Must take the remaining space so it shrinks (and stays scrollable)
+          // when the keyboard lifts the column, instead of overflowing under it.
+          style={{ flex: 1 }}
           contentContainerStyle={styles.list}
           ListFooterComponent={typing ? <TypingIndicator /> : null}
           onContentSizeChange={() => {}}
@@ -469,20 +476,40 @@ export function ChatRoomScreen({ route, navigation }: any) {
           </View>
         ) : (
           <KeyboardAvoidingView
+            // iOS: the OS overlays the window and reports a usable frame, so RN's
+            // own padding behaviour works.
+            //
+            // Android: the app is edge-to-edge, so RN calls
+            // setDecorFitsSystemWindows(false) and the window never resizes for the
+            // IME. That also makes KeyboardAvoidingView useless here - it computes
+            // its displacement as (frame.bottom - endCoordinates.screenY), and
+            // screenY is the full window bottom under edge-to-edge, so the result is
+            // always 0. The composer must be offset manually instead.
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+            style={
+              Platform.OS === 'android' && keyboardVisible
+                ? {
+                    // endCoordinates.height is reported as
+                    //   (ime.bottom - systemBar.bottom)
+                    // while the IME visually covers ime.bottom from the window
+                    // bottom. Adding insets.bottom back restores the true covered
+                    // height; using the raw value left the composer hidden by
+                    // exactly one navigation bar (the bug in the screenshots).
+                    marginBottom: keyboardHeight + insets.bottom,
+                  }
+                : undefined
+            }
           >
             <View style={[
               styles.inputBar, 
               { 
                 borderTopColor: colors.divider, 
                 backgroundColor: colors.background,
-                paddingBottom: keyboardVisible
-                  // Android resizes the window itself (adjustResize), so the bar is
-                  // already sitting on top of the keyboard. Only iOS needs manual
-                  // spacing because it overlays the window instead of resizing it.
-                  ? (Platform.OS === 'ios' ? 10 : 8)
-                  : Math.max(insets.bottom, 20)
+                // While the keyboard is open the composer has already been lifted
+                // clear of the IME, so it only needs a small breathing space.
+                // When closed, reserve the navigation-bar inset.
+                paddingBottom: keyboardVisible ? 10 : Math.max(insets.bottom, 20)
               }
             ]}>
               {isUser && (
