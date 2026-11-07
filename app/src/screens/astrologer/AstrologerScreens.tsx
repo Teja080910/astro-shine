@@ -1604,25 +1604,12 @@ export function AstrologerWithdrawalScreen() {
                 />
               </View>
             )}
+            {/* Both actions use the same component so height, radius and
+                background always match; only the label differs. */}
             <View style={{ flexDirection: "row", gap: 10 }}>
-              <TouchableOpacity
-                onPress={() => setShowForm(false)}
-                style={{
-                  flex: 1,
-                  height: 48,
-                  borderRadius: radii.button,
-                  borderWidth: 1,
-                  borderColor: colors.cardBorder,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Text
-                  style={{ color: colors.textSecondary, fontWeight: "600" }}
-                >
-                  Cancel
-                </Text>
-              </TouchableOpacity>
+              <View style={{ flex: 1 }}>
+                <GradientButton title="Cancel" onPress={() => setShowForm(false)} />
+              </View>
               <View style={{ flex: 1 }}>
                 <GradientButton
                   title={loading ? "Submitting..." : "Submit"}
