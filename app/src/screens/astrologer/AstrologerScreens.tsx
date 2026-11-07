@@ -577,7 +577,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
             <Toggle
               value={isOnline}
               onValueChange={toggleOnline}
-              trackColor={{ false: mutedTextColor, true: "#10B981" }}
+              trackColor={{ false: colors.switchOff, true: colors.success }}
             />
           </View>
 
@@ -655,7 +655,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
               <Toggle
                 value={isChatEnabled && isAudioCallEnabled && isVideoCallEnabled}
                 onValueChange={toggleAllServices}
-                trackColor={{ false: "#D1D5DB", true: "#F59E0B" }}
+                trackColor={{ false: colors.switchOff, true: colors.accentGold }}
               />
             </View>
 
@@ -705,7 +705,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
               <Toggle
                 value={isChatEnabled}
                 onValueChange={toggleChat}
-                trackColor={{ false: "#D1D5DB", true: "#10B981" }}
+                trackColor={{ false: colors.switchOff, true: colors.success }}
               />
             </View>
 
@@ -755,7 +755,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
               <Toggle
                 value={isAudioCallEnabled}
                 onValueChange={toggleAudioCall}
-                trackColor={{ false: "#D1D5DB", true: "#3188FB" }}
+                trackColor={{ false: colors.switchOff, true: colors.info }}
               />
             </View>
 
@@ -803,7 +803,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
               <Toggle
                 value={isVideoCallEnabled}
                 onValueChange={toggleVideoCall}
-                trackColor={{ false: "#D1D5DB", true: "#EC4899" }}
+                trackColor={{ false: colors.switchOff, true: "#EC4899" }}
               />
             </View>
           </GlassCard>
@@ -2965,7 +2965,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
               <Toggle
                 value={theme === "dark"}
                 onValueChange={toggleTheme}
-                trackColor={{ false: "#D1D5DB", true: colors.primary }}
+                trackColor={{ false: colors.switchOff, true: colors.primary }}
               />
             </View>
 

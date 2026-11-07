@@ -29,7 +29,7 @@ export function OnboardingScreen({ navigation }: any) {
               key={i} 
               style={[
                 styles.dot, 
-                { backgroundColor: colors.textMuted },
+                { backgroundColor: colors.switchOff },
                 i === step && [styles.activeDot, { backgroundColor: colors.primaryLight }]
               ]} 
             />

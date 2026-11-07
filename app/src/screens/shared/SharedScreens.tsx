@@ -2373,7 +2373,7 @@ export function AstrologerScheduleScreen() {
                   <Toggle
                     value={isAvail}
                     onValueChange={(v) => updateDay(i, 'isAvailable', v)}
-                    trackColor={{ false: colors.textMuted, true: colors.success }}
+                    trackColor={{ false: colors.switchOff, true: colors.heading }}
                   />
                 </View>
 
