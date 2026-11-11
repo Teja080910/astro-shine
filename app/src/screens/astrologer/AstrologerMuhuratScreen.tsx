@@ -337,7 +337,7 @@ export function AstrologerMuhuratScreen() {
             <Toggle value={formActive} onValueChange={setFormActive} />
           </View>
 
-          <GradientButton title={editingItem ? 'Save Changes' : 'Create timing'} onPress={save} style={{ marginTop: 24 }} />
+          <GradientButton title={editingItem ? 'Save Changes' : 'Create timing'} variant="solid" onPress={save} style={{ marginTop: 24 }} />
           <View style={{ height: 60 }} />
         </View>
       </CustomModal>

@@ -6691,6 +6691,7 @@ export function ProfileScreen({ navigation }: any) {
           />
           <GradientButton
             title={pwLoading ? "Changing..." : "Change Password"}
+            variant="solid"
             onPress={handlePasswordChange}
             disabled={pwLoading}
             style={{ marginTop: 8 }}

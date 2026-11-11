@@ -458,6 +458,7 @@ export function BlogsScreen({ navigation }: any) {
       {(role === 'astrologer' || role === 'admin') && (
         <GradientButton
           title="Create Blog"
+          variant="solid"
           onPress={() => navigation.navigate('CreateBlog')}
           style={{ marginBottom: 16 }}
         />
@@ -2401,6 +2402,7 @@ export function AstrologerScheduleScreen() {
         })}
         <GradientButton
           title={loading ? 'Saving...' : isDirty ? 'Save Schedule' : 'Saved'}
+          variant="solid"
           onPress={saveAll}
           disabled={loading || !isDirty}
           style={{ marginTop: 16 }}
@@ -2509,6 +2511,7 @@ export function AstrologerDocumentsScreen() {
         </Text>
         <GradientButton
           title={uploading ? 'Uploading...' : 'Upload Document'}
+          variant="solid"
           onPress={pickAndUpload}
           disabled={uploading}
         />
@@ -2643,7 +2646,7 @@ export function AstrologerGoLiveScreen({ navigation }: any) {
           style={{ backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, color: colors.textPrimary, fontSize: 15, marginBottom: 12 }}
           value={title} onChangeText={setTitle} placeholder="Session title" placeholderTextColor={colors.placeholderText}
         />
-        <GradientButton title={creating ? 'Starting...' : 'Go Live Now'} variant="gold" onPress={handleGoLive} disabled={creating} />
+        <GradientButton title={creating ? 'Starting...' : 'Go Live Now'} variant="solid" onPress={handleGoLive} disabled={creating} />
       </GlassCard>
 
       {sessions.length > 0 && (

@@ -31,11 +31,13 @@ export function ConfirmDialog({ visible, title, subtitle, icon, actions, onClose
           {subtitle && <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginBottom: 24, lineHeight: 20 }]}>{subtitle}</Text>}
           <View style={{ flexDirection: 'row', gap: 10 }}>
             {actions.map((action, i) => {
-              const bgColor = action.variant === 'danger' ? colors.danger : action.variant === 'secondary' ? colors.surfaceLight : colors.primary;
-              const txtColor = action.variant === 'secondary' ? colors.textPrimary : colors.white;
-              const border = action.variant === 'secondary' ? { borderWidth: 1, borderColor: colors.cardBorder } : {};
+              // Client request: every confirm action uses the brand orange
+              // (#EE7B10) - "danger" no longer paints a different red, and
+              // "secondary" no longer falls back to a grey surface.
+              const bgColor = colors.primary;
+              const txtColor = colors.white;
               return (
-                <TouchableOpacity key={i} onPress={action.onPress} style={[styles.button, { backgroundColor: bgColor }, border]}>
+                <TouchableOpacity key={i} onPress={action.onPress} style={[styles.button, { backgroundColor: bgColor }]}>
                   <Text style={[typography.cardTitle, { color: txtColor }]}>{action.label}</Text>
                 </TouchableOpacity>
               );

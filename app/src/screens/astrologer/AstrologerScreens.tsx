@@ -1223,7 +1223,7 @@ export function AstrologerWalletScreen({ navigation }: any) {
             <View style={{ flex: 1 }}>
               <GradientButton
                 title="Withdraw"
-                variant="gold"
+                variant="solid"
                 onPress={() => navigation.navigate("Withdrawals")}
                 small
               />
@@ -1433,7 +1433,7 @@ export function AstrologerWithdrawalScreen() {
           </Text>
           <GradientButton
             title="New Withdrawal Request"
-            variant="gold"
+            variant="solid"
             onPress={() => setShowForm(true)}
             style={{ marginTop: 16 }}
           />
@@ -3113,6 +3113,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
           />
           <GradientButton
             title={pwLoading ? "Changing..." : "Change Password"}
+            variant="solid"
             onPress={handlePasswordChange}
             disabled={pwLoading}
             style={{ marginTop: 8 }}

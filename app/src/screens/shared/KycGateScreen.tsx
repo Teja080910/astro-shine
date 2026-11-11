@@ -287,6 +287,7 @@ export function KycGateScreen() {
               </View>
               <GradientButton
                 title={uploading ? 'Uploading...' : 'Upload Document'}
+                variant="solid"
                 onPress={pickAndUpload}
                 disabled={uploading}
               />

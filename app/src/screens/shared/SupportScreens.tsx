@@ -92,7 +92,7 @@ export function SupportScreen() {
                   <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Message</Text>
                   <TextInput style={[styles.input, { height: 100, backgroundColor: colors.surfaceLight, borderColor: colors.cardBorder, color: colors.textPrimary }]} value={message} onChangeText={setMessage} placeholder="Describe your issue in detail" placeholderTextColor={colors.placeholderText} multiline textAlignVertical="top" />
                 </View>
-                <GradientButton title={submitting ? 'Submitting...' : 'Submit Ticket'} onPress={handleSubmit} disabled={submitting} />
+                <GradientButton title={submitting ? 'Submitting...' : 'Submit Ticket'} variant="solid" onPress={handleSubmit} disabled={submitting} />
               </GlassCard>
             )}
 
