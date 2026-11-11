@@ -4229,7 +4229,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
                 const isSelected = selectedGift?.id === item.id;
                 return (
                   <TouchableOpacity key={item.id} onPress={() => setSelectedGift(item)}
-                    style={{ width: '30%', backgroundColor: isSelected ? (colors.chipBg) : (colors.surface), borderRadius: 14, borderWidth: 1, borderColor: isSelected ? colors.accentGold : isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0', paddingVertical: 12, alignItems: 'center', gap: 4 }}>
+                    style={{ width: '30%', backgroundColor: isSelected ? (colors.chipBg) : (colors.surface), borderRadius: 14, borderWidth: 1, borderColor: isSelected ? colors.primary : isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0', paddingVertical: 12, alignItems: 'center', gap: 4 }}>
                     <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surface, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                       {item.image ? (
                         <Image source={{ uri: item.image }} style={{ width: 48, height: 48 }} resizeMode="cover" />
@@ -4535,7 +4535,7 @@ export function WalletScreen() {
                 alignItems: "center",
                 gap: 6,
                 backgroundColor: colors.surfaceLight,
-                borderColor: txnFilter === "all" ? colors.cardBorder : colors.accentGold,
+                borderColor: txnFilter === "all" ? colors.cardBorder : colors.primary,
                 borderWidth: 1,
                 borderRadius: radii.input,
                 paddingHorizontal: 12,
@@ -4554,7 +4554,7 @@ export function WalletScreen() {
                 alignItems: "center",
                 gap: 6,
                 backgroundColor: colors.surfaceLight,
-                borderColor: dateRange === "all" ? colors.cardBorder : colors.accentGold,
+                borderColor: dateRange === "all" ? colors.cardBorder : colors.primary,
                 borderWidth: 1,
                 borderRadius: radii.input,
                 paddingHorizontal: 12,
@@ -4623,7 +4623,7 @@ export function WalletScreen() {
                     <Text style={{ fontSize: 15, fontWeight: "600", color: colors.textPrimary }}>
                       {f.label}
                     </Text>
-                    {active && <Ionicons name="checkmark-circle" size={20} color={colors.accentGold} />}
+                    {active && <Ionicons name="checkmark-circle" size={20} color={colors.primary} />}
                   </TouchableOpacity>
                 );
               })}
@@ -4684,7 +4684,7 @@ export function WalletScreen() {
                     <Text style={{ fontSize: 15, fontWeight: "600", color: colors.textPrimary }}>
                       {f.label}
                     </Text>
-                    {active && <Ionicons name="checkmark-circle" size={20} color={colors.accentGold} />}
+                    {active && <Ionicons name="checkmark-circle" size={20} color={colors.primary} />}
                   </TouchableOpacity>
                 );
               })}
@@ -6284,7 +6284,7 @@ export function ProfileScreen({ navigation }: any) {
                 marginBottom: 8,
               }}
             >
-              <Text style={[styles.groupHeaderTitle, { color: colors.primaryLight, marginBottom: 0 }]}>
+              <Text style={[styles.groupHeaderTitle, { color: colors.heading, marginBottom: 0 }]}>
                 PROFILE DETAILS
               </Text>
               <TouchableOpacity
@@ -6356,7 +6356,7 @@ export function ProfileScreen({ navigation }: any) {
               { backgroundColor: cardBg, borderColor: cardBorderColor },
             ]}
           >
-            <Text style={[styles.groupHeaderTitle, { color: colors.primaryLight }]}>
+            <Text style={[styles.groupHeaderTitle, { color: colors.heading }]}>
               MY ACCOUNT
             </Text>
             {items
@@ -6400,7 +6400,7 @@ export function ProfileScreen({ navigation }: any) {
               { backgroundColor: cardBg, borderColor: cardBorderColor },
             ]}
           >
-            <Text style={[styles.groupHeaderTitle, { color: colors.primaryLight }]}>
+            <Text style={[styles.groupHeaderTitle, { color: colors.heading }]}>
               PREFERENCES & SECURITY
             </Text>
 

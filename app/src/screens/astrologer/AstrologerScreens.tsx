@@ -1495,8 +1495,8 @@ export function AstrologerWithdrawalScreen() {
                         height: 44,
                         borderRadius: radii.button,
                         borderWidth: 1,
-                        borderColor: active ? colors.accentGold : colors.cardBorder,
-                        backgroundColor: active ? colors.accentGold + "22" : colors.surfaceLight,
+                        borderColor: active ? colors.primary : colors.cardBorder,
+                        backgroundColor: active ? colors.primary + "22" : colors.surfaceLight,
                         justifyContent: "center",
                         alignItems: "center",
                         flexDirection: "row",
@@ -1506,11 +1506,11 @@ export function AstrologerWithdrawalScreen() {
                       <Ionicons
                         name={m === "bank" ? "business-outline" : "phone-portrait-outline"}
                         size={16}
-                        color={active ? colors.accentGold : colors.textSecondary}
+                        color={active ? colors.primary : colors.textSecondary}
                       />
                       <Text
                         style={{
-                          color: active ? colors.accentGold : colors.textSecondary,
+                          color: active ? colors.primary : colors.textSecondary,
                           fontWeight: "700",
                           fontSize: 13,
                         }}
@@ -2785,7 +2785,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
               style={{
                 fontSize: 11,
                 fontWeight: "800",
-                color: colors.primaryLight,
+                color: colors.heading,
                 letterSpacing: 0.8,
                 marginBottom: 8,
                 marginLeft: 4,
@@ -2851,7 +2851,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
               style={{
                 fontSize: 11,
                 fontWeight: "800",
-                color: colors.primaryLight,
+                color: colors.heading,
                 letterSpacing: 0.8,
                 marginBottom: 8,
                 marginLeft: 4,
@@ -2917,7 +2917,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
               style={{
                 fontSize: 11,
                 fontWeight: "800",
-                color: colors.primaryLight,
+                color: colors.heading,
                 letterSpacing: 0.8,
                 marginBottom: 8,
                 marginLeft: 4,

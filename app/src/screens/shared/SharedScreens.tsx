@@ -1253,8 +1253,8 @@ export function DonationScreen() {
             style={{
               flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14,
               borderRadius: radii.input, borderWidth: 1,
-              borderColor: method === 'wallet' ? colors.accentGold : colors.cardBorder,
-              backgroundColor: method === 'wallet' ? colors.accentGold + '12' : colors.surfaceLight,
+              borderColor: method === 'wallet' ? colors.primary : colors.cardBorder,
+              backgroundColor: method === 'wallet' ? colors.primary + '12' : colors.surfaceLight,
             }}
           >
             <Ionicons name="wallet" size={22} color={colors.accentGold} />
@@ -1262,7 +1262,7 @@ export function DonationScreen() {
               <Text style={{ fontWeight: '700', color: colors.textPrimary }}>Wallet Balance</Text>
               <Text style={[typography.caption, { color: colors.textMuted }]}>Available ₹{balance.toFixed(2)}</Text>
             </View>
-            <Ionicons name={method === 'wallet' ? 'radio-button-on' : 'radio-button-off'} size={20} color={colors.accentGold} />
+            <Ionicons name={method === 'wallet' ? 'radio-button-on' : 'radio-button-off'} size={20} color={colors.primary} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -1270,8 +1270,8 @@ export function DonationScreen() {
             style={{
               flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14,
               borderRadius: radii.input, borderWidth: 1, marginTop: 10,
-              borderColor: method === 'razorpay' ? colors.accentGold : colors.cardBorder,
-              backgroundColor: method === 'razorpay' ? colors.accentGold + '12' : colors.surfaceLight,
+              borderColor: method === 'razorpay' ? colors.primary : colors.cardBorder,
+              backgroundColor: method === 'razorpay' ? colors.primary + '12' : colors.surfaceLight,
             }}
           >
             <Ionicons name="card-outline" size={22} color={colors.textSecondary} />
@@ -1279,7 +1279,7 @@ export function DonationScreen() {
               <Text style={{ fontWeight: '700', color: colors.textPrimary }}>Pay Online</Text>
               <Text style={[typography.caption, { color: colors.textMuted }]}>UPI, card or netbanking via Razorpay</Text>
             </View>
-            <Ionicons name={method === 'razorpay' ? 'radio-button-on' : 'radio-button-off'} size={20} color={colors.accentGold} />
+            <Ionicons name={method === 'razorpay' ? 'radio-button-on' : 'radio-button-off'} size={20} color={colors.primary} />
           </TouchableOpacity>
 
           <GradientButton

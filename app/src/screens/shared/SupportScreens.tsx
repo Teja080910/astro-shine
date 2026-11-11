@@ -207,7 +207,7 @@ export function TicketDetailScreen({ route }: any) {
           const isMe = item.senderId === user?.id || item.senderId === astrologer?.userId;
           return (
             <View style={{ marginBottom: 10, alignItems: isMe ? 'flex-end' : 'flex-start' }}>
-              <View style={[styles.replyBubble, { backgroundColor: isMe ? colors.accentGold + '20' : colors.surfaceLight, borderColor: isMe ? colors.accentGold + '40' : colors.cardBorder }]}>
+              <View style={[styles.replyBubble, { backgroundColor: isMe ? colors.primary + '20' : colors.surfaceLight, borderColor: isMe ? colors.primary + '40' : colors.cardBorder }]}>
                 <Text style={[typography.caption, { fontSize: 10, marginBottom: 4, color: colors.textSecondary }]}>
                   {isMe ? 'You' : item.senderRole} · {new Date(item.createdAt).toLocaleString()}
                 </Text>
@@ -436,7 +436,7 @@ export function AdminTicketDetailScreen({ route }: any) {
           const isMe = item.senderId === user?.id;
           return (
             <View style={{ marginBottom: 10, alignItems: isMe ? 'flex-end' : 'flex-start' }}>
-              <View style={[styles.replyBubble, { backgroundColor: isMe ? colors.accentGold + '20' : colors.surfaceLight, borderColor: isMe ? colors.accentGold + '40' : colors.cardBorder }]}>
+              <View style={[styles.replyBubble, { backgroundColor: isMe ? colors.primary + '20' : colors.surfaceLight, borderColor: isMe ? colors.primary + '40' : colors.cardBorder }]}>
                 <Text style={[typography.caption, { fontSize: 10, marginBottom: 4, color: colors.textSecondary }]}>
                   {isMe ? 'You (Admin)' : item.senderRole} · {new Date(item.createdAt).toLocaleString()}
                 </Text>
