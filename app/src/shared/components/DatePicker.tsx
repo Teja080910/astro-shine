@@ -132,8 +132,8 @@ export function DatePicker({ visible, value, onClose, onSelect, title = 'Select 
               </ScrollView>
 
               <View style={styles.actions}>
-                <TouchableOpacity onPress={onClose} style={[styles.actionBtn, { borderColor: colors.cardBorder, borderWidth: 1 }]}>
-                  <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '600' }]}>Cancel</Text>
+                <TouchableOpacity onPress={onClose} style={[styles.actionBtn, { backgroundColor: colors.primary }]}>
+                  <Text style={[typography.caption, { color: colors.white, fontWeight: '700' }]}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={handleConfirm} style={[styles.actionBtn, { backgroundColor: colors.primary }]}>
                   <Text style={[typography.caption, { color: colors.white, fontWeight: '700' }]}>Select Date</Text>

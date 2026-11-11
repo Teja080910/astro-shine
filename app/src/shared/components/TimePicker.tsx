@@ -120,8 +120,8 @@ export function TimePicker({ value, onChange, label }: Props) {
               </View>
             </View>
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-              <TouchableOpacity onPress={() => setOpen(false)} style={[styles.actionBtn, { borderColor: colors.cardBorder, borderWidth: 1 }]}>
-                <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '600' }]}>Cancel</Text>
+              <TouchableOpacity onPress={() => setOpen(false)} style={[styles.actionBtn, { backgroundColor: colors.primary }]}>
+                <Text style={[typography.caption, { color: colors.white, fontWeight: '700' }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleConfirm} style={[styles.actionBtn, { backgroundColor: colors.primary }]}>
                 <Text style={[typography.caption, { color: colors.white, fontWeight: '700' }]}>Set</Text>
