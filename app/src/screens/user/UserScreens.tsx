@@ -1628,7 +1628,15 @@ export function UserHomeScreen({ navigation }: any) {
             </View>
 
             <TouchableOpacity
-              onPress={() => navigation.navigate("Horoscope")}
+              onPress={() =>
+                // The Horoscope tab was removed; open today's reading directly.
+                navigation.navigate("HoroscopeDetail", {
+                  sign: selectedSign,
+                  label:
+                    ZODIAC_SIGNS.find((z) => z.sign === selectedSign)?.label ||
+                    "Aries",
+                })
+              }
               style={{
                 width: 32,
                 height: 32,
@@ -2815,7 +2823,6 @@ export function UserHomeScreen({ navigation }: any) {
           </View>
           <GradientButton
             title="Donate Now"
-            variant="gold"
             onPress={() => navigation.navigate("Donation")}
             style={{ width: "100%" }}
           />
