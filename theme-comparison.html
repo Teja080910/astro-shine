@@ -130,8 +130,8 @@
     --a-chip-weight: 700;
     --a-tab-bg: #111827;
     --a-tab-border: rgba(245,158,11,0.25);
-    --a-tab-active: #F59E0B;
-    --a-tab-inactive: #F59E0B;
+    --a-tab-active: #EE7B10;
+    --a-tab-inactive: #EE7B10;
     --a-switch-on: #F59E0B;
     --a-switch-off: #4B5563;
     --a-field-bg: #1F2937;
@@ -896,7 +896,7 @@
     </div>
     <ul class="notes">
       <li>Bar border uses the same token as every card: <code>tabBarBorder</code> — <code>#F6EDC4</code> light, <code>rgba(245,158,11,0.25)</code> dark.</li>
-      <li>Every tab label and icon now uses <code>#EE7B10</code> in light mode and <code>#F59E0B</code> in dark — <code>tabInactive</code> was changed to match <code>tabActive</code>.</li>
+      <li>Every tab label and icon uses <code>#EE7B10</code> in <strong>both</strong> themes — <code>tabInactive</code> was changed to match <code>tabActive</code>, and the dark variant was removed.</li>
       <li>The active tab is still identifiable: its icon switches to the filled variant and the label is bold (700 vs 600).</li>
       <li>Icon colours come from <code>tabActive</code> / <code>tabInactive</code> rather than a second local copy of the same hex values.</li>
       <li>The <strong>Chat / Call / Video buttons</strong> on every astrologer card use the same <code>tabActive</code> token, so the cards and the tab bar can never drift apart.</li>
@@ -3056,8 +3056,8 @@
         <tr><td><code>success</code> / <code>danger</code> / <code>warning</code> as text</td><td>#8D0B0C</td><td>#FBBF24</td><td>green / red / amber status text</td></tr>
         <tr><td><code>chipBg</code> / <code>chipBorder</code></td><td>#FEF8EA / #F2DFAE</td><td>#1F2937 / white 8%</td><td>#E2E8F0 / #1E293B slate</td></tr>
         <tr><td><code>tabBarBorder</code></td><td>#F6EDC4</td><td>rgba(245,158,11,.25)</td><td>#374151 dark grey</td></tr>
-        <tr><td><code>tabInactive</code></td><td>#EE7B10</td><td>#F59E0B</td><td>#8B8B8D / #9CA3AF grey tabs</td></tr>
-        <tr><td><code>tabActive</code> (also the Chat / Call / Video buttons)</td><td>#EE7B10</td><td>#F59E0B</td><td>hardcoded "#EE7B10" on 4 buttons</td></tr>
+        <tr><td><code>tabInactive</code></td><td>#EE7B10</td><td>#EE7B10</td><td>#8B8B8D / #9CA3AF grey tabs</td></tr>
+        <tr><td><code>tabActive</code> (also the Chat / Call / Video buttons)</td><td>#EE7B10</td><td>#EE7B10</td><td>hardcoded "#EE7B10" on 4 buttons</td></tr>
         <tr><td><code>switchOn</code> / <code>switchOff</code></td><td>#EE7B10 / #D1D5DB</td><td>#F59E0B / #4B5563</td><td>hardcoded #8D0B0C / #D1D5DB</td></tr>
         <tr><td><code>primaryLight</code> (group headers, menu icons)</td><td>#F59E0B</td><td>#F59E0B</td><td>per-screen gold/maroon mixes</td></tr>
         <tr><td><code>rowBorder</code> in gift &amp; wallet</td><td>#F3EAD6</td><td>rgba(255,255,255,.08)</td><td>#E2E8F0 / #F1F5F9 slate</td></tr>
