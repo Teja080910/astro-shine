@@ -2823,6 +2823,7 @@ export function UserHomeScreen({ navigation }: any) {
           </View>
           <GradientButton
             title="Donate Now"
+            variant="solid"
             onPress={() => navigation.navigate("Donation")}
             style={{ width: "100%" }}
           />
@@ -4563,7 +4564,7 @@ export function WalletScreen() {
               <GradientButton title="Add Funds" onPress={() => setShowAdd((v) => !v)} small />
             </View>
             <View style={{ flex: 1 }}>
-              <GradientButton title="Donate" variant="gold" onPress={handleDonate} small />
+              <GradientButton title="Donate" variant="solid" onPress={handleDonate} small />
             </View>
           </View>
         </GlassCard>

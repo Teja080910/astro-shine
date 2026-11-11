@@ -1289,7 +1289,7 @@ export function DonationScreen() {
                   ? `Donate ₹${amount || '0'} from Wallet`
                   : `Donate ₹${amount || '0'} Online`
             }
-            variant="gold"
+            variant="solid"
             onPress={handleDonate}
             disabled={loading}
             style={{ marginTop: 16 }}
