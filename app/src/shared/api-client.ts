@@ -34,6 +34,15 @@ class ApiClient {
               }
             }
           } catch {}
+
+          // Only destroy the session when the token is genuinely expired.
+          // A 401 can also come from an endpoint-level rule (missing role,
+          // disabled account, transient server state); logging the user out for
+          // those forces an unnecessary OTP round-trip.
+          if (!this.isTokenExpired()) {
+            return Promise.reject(error);
+          }
+
           this.token = null;
           await import('@react-native-async-storage/async-storage')
             .then((AsyncStorage) => AsyncStorage.default.removeItem('auth'))
@@ -46,6 +55,30 @@ class ApiClient {
   }
 
   setToken(token: string | null) { this.token = token; }
+
+  /**
+   * True when the current JWT is past its `exp`. Unreadable tokens count as
+   * expired so a malformed value still forces a clean re-login.
+   */
+  private isTokenExpired(): boolean {
+    if (!this.token) return true;
+    try {
+      const payload = this.token.split('.')[1];
+      if (!payload) return true;
+      const json = JSON.parse(
+        decodeURIComponent(
+          atob(payload.replace(/-/g, '+').replace(/_/g, '/'))
+            .split('')
+            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join(''),
+        ),
+      );
+      if (!json?.exp) return false; // no exp claim -> treat as non-expiring
+      return json.exp * 1000 <= Date.now();
+    } catch {
+      return true;
+    }
+  }
 
   private async get<T>(path: string, params?: any): Promise<T> { const r = await this.client.get(path, { params }); return r.data; }
   private async post<T>(path: string, data?: any): Promise<T> { const r = await this.client.post(path, data); return r.data; }

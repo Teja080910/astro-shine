@@ -37,9 +37,32 @@ export function LoginScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) { setError('Please fill all fields'); return; }
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
+    // Validate before hitting the API so the user gets a precise message
+    // instead of a generic 401.
+    if (!trimmedEmail && !trimmedPassword) { setError('Please enter your email and password'); return; }
+    if (!trimmedEmail) { setError('Please enter your email address'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trimmedEmail)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    if (!trimmedPassword) { setError('Please enter your password'); return; }
+    if (trimmedPassword.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
     setLoading(true); setError('');
-    try { await loginAsUser(email, password); } catch (e: any) { setError(e?.response?.data?.message || 'Login failed'); setLoading(false); }
+    try {
+      await loginAsUser(trimmedEmail, trimmedPassword);
+    } catch (e: any) {
+      setError(e?.response?.data?.message || 'Login failed');
+      setLoading(false);
+    }
+    // On success this screen unmounts; do not clear `loading` so the button
+    // cannot be pressed twice while the navigator swaps.
   };
 
   const isDark = theme === 'dark';

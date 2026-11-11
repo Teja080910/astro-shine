@@ -3837,7 +3837,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
                   <Text style={{ fontSize: 13, fontWeight: "600", color: titleColor }}>Chat Price</Text>
                 </View>
                 <Text style={{ fontSize: 13, fontWeight: "800", color: titleColor }}>
-                  ₹{astro.chatPricePerMin || 15}.00<Text style={{ fontSize: 11, color: mutedTextColor, fontWeight: "400" }}>/min</Text>
+                  ₹{formatAmount(astro.chatPricePerMin || "15")}<Text style={{ fontSize: 11, color: mutedTextColor, fontWeight: "400" }}>/min</Text>
                 </Text>
               </View>
             )}
@@ -3853,7 +3853,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
                   <Text style={{ fontSize: 13, fontWeight: "600", color: titleColor }}>Voice Call Price</Text>
                 </View>
                 <Text style={{ fontSize: 13, fontWeight: "800", color: titleColor }}>
-                  ₹{astro.audioCallPricePerMin || 22}.50<Text style={{ fontSize: 11, color: mutedTextColor, fontWeight: "400" }}>/min</Text>
+                  ₹{formatAmount(astro.audioCallPricePerMin || "22.50")}<Text style={{ fontSize: 11, color: mutedTextColor, fontWeight: "400" }}>/min</Text>
                 </Text>
               </View>
             )}
@@ -3869,7 +3869,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
                   <Text style={{ fontSize: 13, fontWeight: "600", color: titleColor }}>Video Call Price</Text>
                 </View>
                 <Text style={{ fontSize: 13, fontWeight: "800", color: titleColor }}>
-                  ₹{astro.videoCallPricePerMin || 20}.00<Text style={{ fontSize: 11, color: mutedTextColor, fontWeight: "400" }}>/min</Text>
+                  ₹{formatAmount(astro.videoCallPricePerMin || "20")}<Text style={{ fontSize: 11, color: mutedTextColor, fontWeight: "400" }}>/min</Text>
                 </Text>
               </View>
             )}
@@ -3889,12 +3889,12 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
                   flex: 1,
                   height: 48,
                   borderRadius: 16,
-                  backgroundColor: "#F59E0B",
+                  backgroundColor: colors.tabActive,
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 8,
-                  shadowColor: "#F59E0B",
+                  shadowColor: colors.tabActive,
                   shadowOpacity: 0.3,
                   shadowRadius: 6,
                   elevation: 3,
@@ -3916,12 +3916,12 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
                   flex: 1,
                   height: 48,
                   borderRadius: 16,
-                  backgroundColor: "#F59E0B",
+                  backgroundColor: colors.tabActive,
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 8,
-                  shadowColor: "#F59E0B",
+                  shadowColor: colors.tabActive,
                   shadowOpacity: 0.3,
                   shadowRadius: 6,
                   elevation: 3,
@@ -3943,12 +3943,12 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
                   flex: 1,
                   height: 48,
                   borderRadius: 16,
-                  backgroundColor: "#F59E0B",
+                  backgroundColor: colors.tabActive,
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 8,
-                  shadowColor: "#F59E0B",
+                  shadowColor: colors.tabActive,
                   shadowOpacity: 0.3,
                   shadowRadius: 6,
                   elevation: 3,
