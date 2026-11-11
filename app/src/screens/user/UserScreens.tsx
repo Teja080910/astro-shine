@@ -1670,153 +1670,51 @@ export function UserHomeScreen({ navigation }: any) {
                 paddingRight: 2,
               }}
             >
-            <TouchableOpacity
-              onPress={() => setActiveHoroscopeTab("love")}
-              style={[
-                styles.subTabItem,
-                {
-                  backgroundColor: isDark
-                    ? activeHoroscopeTab === "love" ? "rgba(225, 29, 72, 0.25)" : "rgba(225, 29, 72, 0.12)"
-                    : "#FFF1F2",
-                  borderColor: isDark
-                    ? activeHoroscopeTab === "love" ? "#E11D48" : "rgba(225, 29, 72, 0.3)"
-                    : activeHoroscopeTab === "love" ? "#E11D48" : "#FECDD3",
-                  borderWidth: 1,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 18,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 4,
-                },
-              ]}
-            >
-              <Ionicons
-                name="heart"
-                size={14}
-                color={isDark ? "#FDA4AF" : "#E11D48"}
-              />
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: activeHoroscopeTab === "love" ? "800" : "600",
-                  color: isDark ? "#FDA4AF" : "#BE123C",
-                }}
-              >
-                Love
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setActiveHoroscopeTab("career")}
-              style={[
-                styles.subTabItem,
-                {
-                  backgroundColor: isDark
-                    ? activeHoroscopeTab === "career" ? "rgba(220, 38, 38, 0.25)" : "rgba(220, 38, 38, 0.12)"
-                    : "#FEF2F2",
-                  borderColor: isDark
-                    ? activeHoroscopeTab === "career" ? "#C21415" : "rgba(220, 38, 38, 0.3)"
-                    : activeHoroscopeTab === "career" ? "#C21415" : "#FECACA",
-                  borderWidth: 1,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 18,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 4,
-                },
-              ]}
-            >
-              <Ionicons
-                name="briefcase"
-                size={14}
-                color={colors.danger}
-              />
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: activeHoroscopeTab === "career" ? "800" : "600",
-                  color: colors.heading,
-                }}
-              >
-                Career
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setActiveHoroscopeTab("finance")}
-              style={[
-                styles.subTabItem,
-                {
-                  backgroundColor: isDark
-                    ? activeHoroscopeTab === "finance" ? "rgba(217, 119, 6, 0.25)" : "rgba(217, 119, 6, 0.12)"
-                    : "#FEF9C3",
-                  borderColor: isDark
-                    ? activeHoroscopeTab === "finance" ? "#EE7B10" : "rgba(217, 119, 6, 0.3)"
-                    : activeHoroscopeTab === "finance" ? "#EE7B10" : "#FDE047",
-                  borderWidth: 1,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 18,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 4,
-                },
-              ]}
-            >
-              <Ionicons
-                name="wallet"
-                size={14}
-                color={colors.accentText}
-              />
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: activeHoroscopeTab === "finance" ? "800" : "600",
-                  color: colors.heading,
-                }}
-              >
-                Finance
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setActiveHoroscopeTab("health")}
-              style={[
-                styles.subTabItem,
-                {
-                  backgroundColor: isDark
-                    ? activeHoroscopeTab === "health" ? "rgba(16, 185, 129, 0.25)" : "rgba(16, 185, 129, 0.12)"
-                    : "#ECFDF5",
-                  borderColor: isDark
-                    ? activeHoroscopeTab === "health" ? "#10B981" : "rgba(16, 185, 129, 0.3)"
-                    : activeHoroscopeTab === "health" ? "#10B981" : "#A7F3D0",
-                  borderWidth: 1,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 18,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 4,
-                },
-              ]}
-            >
-              <Ionicons
-                name="leaf"
-                size={14}
-                color={isDark ? "#34D399" : "#059669"}
-              />
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: activeHoroscopeTab === "health" ? "800" : "600",
-                  color: isDark ? "#34D399" : "#065F46",
-                }}
-              >
-                Health
-              </Text>
-            </TouchableOpacity>
+            {[
+              { key: "love", label: "Love", icon: "heart" },
+              { key: "career", label: "Career", icon: "briefcase" },
+              { key: "finance", label: "Finance", icon: "wallet" },
+              { key: "health", label: "Health", icon: "leaf" },
+            ].map((tab) => {
+              const active = activeHoroscopeTab === tab.key;
+              return (
+                <TouchableOpacity
+                  key={tab.key}
+                  onPress={() => setActiveHoroscopeTab(tab.key as any)}
+                  style={[
+                    styles.subTabItem,
+                    {
+                      backgroundColor: active
+                        ? colors.primary + "20"
+                        : colors.chipBg,
+                      borderColor: active ? colors.primary : colors.chipBorder,
+                      borderWidth: 1,
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 18,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 4,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={tab.icon as any}
+                    size={14}
+                    color={active ? colors.primary : colors.accentText}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: active ? "800" : "600",
+                      color: active ? colors.primary : colors.textPrimary,
+                    }}
+                  >
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
             </ScrollView>
           </View>
         </View>

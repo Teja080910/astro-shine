@@ -846,13 +846,13 @@ export function AstrologerHomeScreen({ navigation }: any) {
               <Ionicons
                 name="time-outline"
                 size={22}
-                color={colors.primaryLight}
+                color={colors.heading}
               />
               <Text
                 style={[
                   typography.caption,
                   {
-                    color: colors.primaryLight,
+                    color: colors.heading,
                     fontWeight: "600",
                     marginTop: 4,
                   },

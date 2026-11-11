@@ -42,7 +42,7 @@ export function FilterTabs({ options, value, onChange, style, contentContainerSt
               style={[
                 styles.label,
                 {
-                  color: selected ? colors.accentGold : colors.textBody,
+                  color: selected ? colors.primary : colors.textBody,
                   fontWeight: selected ? '700' : '500',
                 },
               ]}

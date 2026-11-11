@@ -5,7 +5,6 @@ import { colors, radii, typography, shadows } from '../../shared/theme';
 import { useAuth } from '../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../shared/api-client';
-import { LinearGradient } from 'expo-linear-gradient';
 
 function useKeyboard() {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -105,7 +104,7 @@ export function LoginScreen({ navigation }: any) {
           </View>
 
           <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('Register')}>
-            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Don't have an account? <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>Register</Text></Text>
+            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Don't have an account? <Text style={{ color: colors.primary, fontWeight: '700' }}>Register</Text></Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('ForgotPassword')}>
@@ -252,7 +251,7 @@ export function RegisterScreen({ navigation }: any) {
                   onPress={() => { setSelectedRole('user'); setStep(1); setError(''); }}
                 >
                   <View style={[styles.roleCardIconContainer, { backgroundColor: colors.surfaceLight }]}>
-                    <Ionicons name="person-outline" size={32} color={colors.primaryLight} />
+                    <Ionicons name="person-outline" size={32} color={colors.primary} />
                   </View>
                   <Text style={[typography.cardTitle, styles.roleCardTitle, { color: colors.textPrimary }]}>Join as a User</Text>
                   <Text style={[typography.body, styles.roleCardDesc, { color: colors.textMuted }]}>Get personalized astrology insights and chat with verified experts</Text>
@@ -263,7 +262,7 @@ export function RegisterScreen({ navigation }: any) {
                   onPress={() => { setSelectedRole('astrologer'); setStep(1); setError(''); }}
                 >
                   <View style={[styles.roleCardIconContainer, { backgroundColor: colors.surfaceLight }]}>
-                    <Ionicons name="star-outline" size={32} color={colors.accentGold} />
+                    <Ionicons name="star-outline" size={32} color={colors.primary} />
                   </View>
                   <Text style={[typography.cardTitle, styles.roleCardTitle, { color: colors.textPrimary }]}>Join as an Astrologer</Text>
                   <Text style={[typography.body, styles.roleCardDesc, { color: colors.textMuted }]}>Share your wisdom, consult clients, and manage your consultations</Text>
@@ -331,7 +330,7 @@ export function RegisterScreen({ navigation }: any) {
           )}
 
           <TouchableOpacity style={styles.link} onPress={() => navigation.goBack()}>
-            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Already have an account? <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>Sign In</Text></Text>
+            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Already have an account? <Text style={{ color: colors.primary, fontWeight: '700' }}>Sign In</Text></Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -448,7 +447,7 @@ export function OtpLoginScreen({ navigation }: any) {
             {sent ? (
               <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', lineHeight: 22 }]}>
                 Enter code sent to{'\n'}
-                <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>{identifier}</Text>
+                <Text style={{ color: colors.primary, fontWeight: '700' }}>{identifier}</Text>
               </Text>
             ) : (
               <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>
@@ -467,16 +466,9 @@ export function OtpLoginScreen({ navigation }: any) {
                 disabled={sent}
               >
                 {verType === 'phone' ? (
-                  <View style={[{ flex: 1, width: '100%', height: '100%' }, shadows.button]}>
-                    <LinearGradient
-                      colors={[colors.gradientStart, colors.gradientMid]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={styles.roleButtonActiveGradient}
-                    >
-                      <Ionicons name="call-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
-                      <Text style={[styles.roleText, { color: '#FFFFFF' }]}>Phone</Text>
-                    </LinearGradient>
+                  <View style={[styles.roleButtonActive, styles.roleButtonInactive, shadows.button]}>
+                    <Ionicons name="call-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                    <Text style={[styles.roleText, { color: '#FFFFFF' }]}>Phone</Text>
                   </View>
                 ) : (
                   <View style={styles.roleButtonInactive}>
@@ -491,16 +483,9 @@ export function OtpLoginScreen({ navigation }: any) {
                 disabled={sent}
               >
                 {verType === 'email' ? (
-                  <View style={[{ flex: 1, width: '100%', height: '100%' }, shadows.button]}>
-                    <LinearGradient
-                      colors={[colors.gradientStart, colors.gradientMid]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={styles.roleButtonActiveGradient}
-                    >
-                      <Ionicons name="mail-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
-                      <Text style={[styles.roleText, { color: '#FFFFFF' }]}>Email</Text>
-                    </LinearGradient>
+                  <View style={[styles.roleButtonActive, styles.roleButtonInactive, shadows.button]}>
+                    <Ionicons name="mail-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                    <Text style={[styles.roleText, { color: '#FFFFFF' }]}>Email</Text>
                   </View>
                 ) : (
                   <View style={styles.roleButtonInactive}>
@@ -545,7 +530,7 @@ export function OtpLoginScreen({ navigation }: any) {
           </View>
 
           <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('Login')}>
-            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Back to <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>Login</Text></Text>
+            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Back to <Text style={{ color: colors.primary, fontWeight: '700' }}>Login</Text></Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -553,7 +538,7 @@ export function OtpLoginScreen({ navigation }: any) {
       <Modal visible={showRegisterPrompt} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
-            <Ionicons name="person-outline" size={48} color={colors.primaryLight} />
+            <Ionicons name="person-outline" size={48} color={colors.primary} />
             <Text style={[typography.sectionTitle, { marginTop: 16, textAlign: 'center' }]}>User Not Found</Text>
             <Text style={[typography.body, { marginTop: 8, textAlign: 'center' }]}>No account found with this {verType === 'email' ? 'email' : 'number'}. Please register first.</Text>
             <GradientButton title="Go to Register" onPress={() => { setShowRegisterPrompt(false); navigation.navigate('Register'); }} />
@@ -670,7 +655,7 @@ export function ForgotPasswordScreen({ navigation }: any) {
           </View>
 
           <TouchableOpacity style={styles.link} onPress={() => navigation.goBack()}>
-            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Back to <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>Login</Text></Text>
+            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Back to <Text style={{ color: colors.primary, fontWeight: '700' }}>Login</Text></Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -722,15 +707,6 @@ const styles = StyleSheet.create({
     padding: 20,
     width: '100%',
     marginBottom: 20,
-  },
-  roleButtonActiveGradient: {
-    flex: 1,
-    flexDirection: 'row',
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: radii.input - 4,
   },
   roleButtonInactive: {
     flex: 1,
@@ -785,7 +761,7 @@ const styles = StyleSheet.create({
   input: { flex: 1, fontSize: 15 },
   link: { alignItems: 'center', marginTop: 16 },
   linkTextStatic: { fontSize: 14, color: '#B6B6C2' },
-  resend: { textAlign: 'center', marginTop: 12, color: colors.primaryLight, fontWeight: '600' },
+  resend: { textAlign: 'center', marginTop: 12, color: colors.primary, fontWeight: '600' },
   themeToggle: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 12 : 16,

@@ -170,7 +170,7 @@ export function HoroscopeDetailScreen({ route, navigation }: any) {
                 paddingVertical: 10,
                 borderRadius: radii.md,
                 alignItems: 'center',
-                backgroundColor: period === p.key ? colors.accentGold : 'transparent',
+                backgroundColor: period === p.key ? colors.primary : 'transparent',
               }}
             >
               <Text style={{ color: period === p.key ? '#FFF' : colors.textPrimary, fontWeight: '700', fontSize: 13 }}>
@@ -195,9 +195,9 @@ export function HoroscopeDetailScreen({ route, navigation }: any) {
                   paddingHorizontal: 14,
                   paddingVertical: 7,
                   borderRadius: 16,
-                  backgroundColor: category === cat.key ? colors.accentGold : colors.surfaceLight,
+                  backgroundColor: category === cat.key ? colors.primary : colors.surfaceLight,
                   borderWidth: 1,
-                  borderColor: category === cat.key ? colors.accentGold : colors.cardBorder,
+                  borderColor: category === cat.key ? colors.primary : colors.cardBorder,
                 }}
               >
                 <Text style={{ color: category === cat.key ? '#FFF' : colors.textPrimary, fontWeight: '700', fontSize: 12 }}>
@@ -413,7 +413,7 @@ export function VideosScreen({ route }: any) {
                 <Text style={typography.cardTitle}>{v.title}</Text>
                 {v.description ? <Text style={[typography.body, { marginTop: 4 }]} numberOfLines={2}>{v.description}</Text> : null}
                 <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
-                  {v.category && <Text style={[typography.caption, { color: colors.primaryLight }]}>{v.category}</Text>}
+                  {v.category && <Text style={[typography.caption, { color: colors.primary }]}>{v.category}</Text>}
                   {v.duration && <Text style={typography.caption}>{Math.floor(v.duration / 60)}:{String(v.duration % 60).padStart(2, '0')}</Text>}
                 </View>
               </View>
@@ -644,7 +644,7 @@ export function NotificationsScreen({ route }: any) {
               {unread} unread
             </Text>
             <TouchableOpacity onPress={handleMarkAllRead} disabled={markingAll}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primaryLight }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primary }}>
                 {markingAll ? 'Marking...' : 'Mark all as read'}
               </Text>
             </TouchableOpacity>
@@ -671,19 +671,19 @@ export function NotificationsScreen({ route }: any) {
                 <GlassCard style={{ marginBottom: 8, padding: 14, opacity: n.isRead ? 0.85 : 1 }}>
                   <View style={{ flexDirection: 'row', gap: 12 }}>
                     <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: n.isRead ? colors.surfaceLight : colors.primary + '20', alignItems: 'center', justifyContent: 'center' }}>
-                      <Ionicons name={iconName} size={20} color={n.isRead ? colors.textMuted : colors.primaryLight} />
+                      <Ionicons name={iconName} size={20} color={n.isRead ? colors.textMuted : colors.primary} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                         <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: n.type === 'system' ? colors.primary + '20' : n.type === 'promotional' ? '#9333EA30' : n.type === 'transactional' ? '#10B98130' : '#F59E0B30' }}>
-                          <Text style={{ fontSize: 9, fontWeight: '700', color: n.type === 'system' ? colors.primaryLight : n.type === 'promotional' ? '#A855F7' : n.type === 'transactional' ? '#10B981' : '#F59E0B', textTransform: 'uppercase' }}>{n.type}</Text>
+                          <Text style={{ fontSize: 9, fontWeight: '700', color: n.type === 'system' ? colors.primary : n.type === 'promotional' ? '#A855F7' : n.type === 'transactional' ? '#10B981' : '#F59E0B', textTransform: 'uppercase' }}>{n.type}</Text>
                         </View>
                         <Text style={[typography.cardTitle, { fontSize: 14, flex: 1 }]}>{n.title}</Text>
                       </View>
                       <Text style={[typography.body, { fontSize: 13, marginTop: 2 }]}>{n.body}</Text>
                       <Text style={[typography.caption, { marginTop: 4 }]}>{new Date(n.createdAt).toLocaleDateString()}</Text>
                     </View>
-                    {!n.isRead && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primaryLight, marginTop: 4 }} />}
+                    {!n.isRead && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary, marginTop: 4 }} />}
                   </View>
                 </GlassCard>
               </TouchableOpacity>
@@ -979,7 +979,7 @@ export function EditProfileScreen() {
                       justifyContent: 'center',
                     }}
                   >
-                    <Text style={{ color: gender === 'male' ? colors.primaryLight : colors.textPrimary, fontWeight: '600' }}>Male</Text>
+                    <Text style={{ color: gender === 'male' ? colors.primary : colors.textPrimary, fontWeight: '600' }}>Male</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => setGender('female')}
@@ -994,7 +994,7 @@ export function EditProfileScreen() {
                       justifyContent: 'center',
                     }}
                   >
-                    <Text style={{ color: gender === 'female' ? colors.primaryLight : colors.textPrimary, fontWeight: '600' }}>Female</Text>
+                    <Text style={{ color: gender === 'female' ? colors.primary : colors.textPrimary, fontWeight: '600' }}>Female</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -2489,7 +2489,7 @@ export function AstrologerDocumentsScreen() {
           <Text style={[typography.sectionTitle, { marginBottom: 8 }]}>Uploaded Documents</Text>
           {docs.map((doc, i) => (
             <View key={i} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.glassBg, borderColor: colors.cardBorder, borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 8 }}>
-              <Ionicons name="document-text-outline" size={20} color={colors.primaryLight} style={{ marginRight: 10 }} />
+              <Ionicons name="document-text-outline" size={20} color={colors.primary} style={{ marginRight: 10 }} />
               <Text style={[typography.body, { color: colors.textPrimary, flex: 1 }]} numberOfLines={2}>
                 {doc.split('/').pop()?.substring(14) || `Document ${i + 1}`}
               </Text>
@@ -2502,7 +2502,7 @@ export function AstrologerDocumentsScreen() {
       )}
 
       <GlassCard style={{ alignItems: 'center', padding: 24 }}>
-        <Ionicons name="cloud-upload-outline" size={48} color={colors.primaryLight} />
+        <Ionicons name="cloud-upload-outline" size={48} color={colors.primary} />
         <Text style={[typography.body, { textAlign: 'center', marginTop: 12, color: colors.textSecondary }]}>
           Upload ID proof, certificates, or degree documents for verification
         </Text>
