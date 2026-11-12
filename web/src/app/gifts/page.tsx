@@ -5,6 +5,7 @@ import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, CustomModal, GradientButton } from '@/components/UIComponents';
 import { SearchInput, matchesSearch } from '@/components/SearchInput';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { ImageUpload } from '@/components/ImageUpload';
 import { api } from '@/lib/api';
@@ -18,7 +19,13 @@ export default function GiftsPage() {
   const [error, setError] = useState('');
   const [tab, setTab] = useState<'gifts' | 'transactions'>('gifts');
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Commit the query as the user types instead of requiring Enter.
+  const typedSearch = useDebouncedValue(search, 300);
+
+  // Reset to the first page whenever the query changes.
+  useEffect(() => {
+    setPage(1);
+  }, [typedSearch]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [giftsTotal, setGiftsTotal] = useState(0);
@@ -38,7 +45,7 @@ export default function GiftsPage() {
     setLoading(true);
     setError('');
     const giftParams = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (debouncedSearch) giftParams.set('q', debouncedSearch);
+    if (typedSearch) giftParams.set('q', typedSearch);
     const txParams = new URLSearchParams({ page: String(page), limit: String(limit) });
     Promise.all([
       api.get<any>(`/gifts?${giftParams.toString()}`),
@@ -56,7 +63,7 @@ export default function GiftsPage() {
       })
       .catch((e) => setError(e.message || 'Failed to load gifts'))
       .finally(() => setLoading(false));
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, typedSearch]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -148,12 +155,22 @@ export default function GiftsPage() {
 
       <div className="mb-6">
         <SearchInput
-          onEnter={(v) => { setDebouncedSearch(v); setPage(1); }}
           value={search}
           onChange={setSearch}
           placeholder={tab === 'gifts' ? 'Search gifts by name...' : 'Search by gift, sender, receiver or status...'}
         />
       </div>
+
+      {tab === 'transactions' && (
+        <div className="mb-4 rounded-xl border border-amber-500/25 bg-amber-500/[0.07] px-4 py-3 text-xs leading-relaxed text-text-secondary">
+          <span className="font-bold text-amber-400">What &ldquo;Redeemed&rdquo; means: </span>
+          the astrologer has acknowledged the gift. It does <span className="font-semibold text-text-primary">not</span> move
+          money &mdash; the gift value is credited to the astrologer&rsquo;s wallet (minus
+          <span className="font-semibold text-text-primary"> 30% commission</span>: 20% platform fee + 10% TDS) the
+          moment it is sent. <span className="text-text-muted">Sent</span> = awaiting acknowledgement,
+          <span className="text-text-muted"> Redeemed</span> = acknowledged.
+        </div>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center h-64 text-text-secondary">Loading gifts...</div>
@@ -195,7 +212,7 @@ export default function GiftsPage() {
         </>
       ) : (
         <>
-          <Table headers={['Gift', 'Sender', 'Receiver', 'Status', 'Redeemed At', 'Date', '']} emptyMessage="No gift transactions yet">
+          <Table headers={['Gift', 'Sender', 'Receiver', 'Status', 'Acknowledged At', 'Date', '']} emptyMessage="No gift transactions yet">
             {filteredTransactions.map(t => {
               const gift = gifts.find(g => g.id === t.giftId);
               const giftName = (t as any).giftName || gift?.name;
@@ -224,7 +241,7 @@ export default function GiftsPage() {
                         disabled={redeeming === t.id}
                         className="text-primary-light hover:underline text-sm font-medium disabled:opacity-50"
                       >
-                        {redeeming === t.id ? 'Marking...' : 'Mark Redeemed'}
+                        {redeeming === t.id ? 'Marking...' : 'Mark Acknowledged'}
                       </button>
                     )}
                   </td>

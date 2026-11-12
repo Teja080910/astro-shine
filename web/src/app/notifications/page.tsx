@@ -5,6 +5,7 @@ import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { GradientButton, CustomModal } from '@/components/UIComponents';
 import { SearchInput } from '@/components/SearchInput';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 import type { Notification } from '@astro-shine/shared-types';
@@ -92,7 +93,13 @@ export default function NotificationsPage() {
   const [form, setForm] = useState({ title: '', body: '', type: 'system', targetAudience: 'all_users', screen: '', itemId: '' });
   const [formError, setFormError] = useState('');
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Commit the query as the user types instead of requiring Enter.
+  const typedSearch = useDebouncedValue(search, 300);
+
+  // Reset to the first page whenever the query changes.
+  useEffect(() => {
+    setPage(1);
+  }, [typedSearch]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
@@ -100,7 +107,7 @@ export default function NotificationsPage() {
 
   const fetchAll = useCallback(() => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (debouncedSearch) params.set('q', debouncedSearch);
+    if (typedSearch) params.set('q', typedSearch);
     api.get<any>(`/notifications?${params.toString()}`)
       .then((res) => {
         const list = unwrapList<Notification>(res);
@@ -110,7 +117,7 @@ export default function NotificationsPage() {
       })
       .catch((e) => setError(e.message || 'Failed to load notifications'))
       .finally(() => setLoading(false));
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, typedSearch]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
@@ -145,7 +152,7 @@ export default function NotificationsPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search notifications by title, body, or type..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search notifications by title, body, or type..." />
       </div>
 
       {loading ? (
@@ -155,7 +162,7 @@ export default function NotificationsPage() {
       ) : (
         <>
           <div className="glass-card p-6">
-            {data.length === 0 ? <p style={{ color: 'var(--text-secondary)' }}>{debouncedSearch ? 'No notifications match your search.' : 'No notifications sent yet.'}</p> :
+            {data.length === 0 ? <p style={{ color: 'var(--text-secondary)' }}>{typedSearch ? 'No notifications match your search.' : 'No notifications sent yet.'}</p> :
               data.map(n => {
                 const ts = typeStyles[n.type] || typeStyles.system;
                 const adminText = adminNotificationText(n);

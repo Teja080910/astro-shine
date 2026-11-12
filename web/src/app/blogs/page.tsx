@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { GradientButton, CustomModal, Badge } from '@/components/UIComponents';
 import { SearchInput } from '@/components/SearchInput';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
@@ -21,7 +22,13 @@ export default function BlogsPage() {
   const [showMine, setShowMine] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Blog | null>(null);
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Commit the query as the user types instead of requiring Enter.
+  const typedSearch = useDebouncedValue(search, 300);
+
+  // Reset to the first page whenever the query changes.
+  useEffect(() => {
+    setPage(1);
+  }, [typedSearch]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
@@ -30,7 +37,7 @@ export default function BlogsPage() {
   const fetchBlogs = useCallback(() => {
     const endpoint = showMine ? '/blogs/my' : '/blogs';
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (debouncedSearch) params.set('q', debouncedSearch);
+    if (typedSearch) params.set('q', typedSearch);
     api.get<any>(`${endpoint}?${params.toString()}`)
       .then((res) => {
         const list = unwrapList<Blog>(res);
@@ -40,7 +47,7 @@ export default function BlogsPage() {
       })
       .catch((e) => setError(e.message || 'Failed to load blogs'))
       .finally(() => setLoading(false));
-  }, [showMine, page, limit, debouncedSearch]);
+  }, [showMine, page, limit, typedSearch]);
 
   useEffect(() => { fetchBlogs(); }, [fetchBlogs]);
 
@@ -94,7 +101,7 @@ export default function BlogsPage() {
       </div>
 
       <div className="mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by title, slug or status..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by title, slug or status..."  />
       </div>
 
       {loading ? (

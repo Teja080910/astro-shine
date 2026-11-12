@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { GradientButton, CustomModal } from '@/components/UIComponents';
 import { SearchInput } from '@/components/SearchInput';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { ImageUpload } from '@/components/ImageUpload';
 import { imageSrc } from '@/lib/media';
@@ -18,7 +19,13 @@ export default function NewsPage() {
   const [form, setForm] = useState({ title: '', content: '', image: '', isActive: true });
   const [formError, setFormError] = useState('');
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Commit the query as the user types instead of requiring Enter.
+  const typedSearch = useDebouncedValue(search, 300);
+
+  // Reset to the first page whenever the query changes.
+  useEffect(() => {
+    setPage(1);
+  }, [typedSearch]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
@@ -26,7 +33,7 @@ export default function NewsPage() {
 
   const fetchNews = useCallback(() => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (debouncedSearch) params.set('q', debouncedSearch);
+    if (typedSearch) params.set('q', typedSearch);
     api.get<any>(`/news/admin?${params.toString()}`)
       .then((res) => {
         const list = unwrapList<NewsItem>(res);
@@ -36,7 +43,7 @@ export default function NewsPage() {
       })
       .catch((e) => setError(e.message || 'Failed to load news'))
       .finally(() => setLoading(false));
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, typedSearch]);
 
   useEffect(() => { fetchNews(); }, [fetchNews]);
 
@@ -63,7 +70,7 @@ export default function NewsPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search news by title or content..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search news by title or content..." />
       </div>
 
       {loading ? (

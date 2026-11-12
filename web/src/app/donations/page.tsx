@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { SearchInput } from '@/components/SearchInput';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
@@ -21,7 +22,13 @@ function DonationsContent() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState('');
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Commit the query as the user types instead of requiring Enter.
+  const typedSearch = useDebouncedValue(search, 300);
+
+  // Reset to the first page whenever the query changes.
+  useEffect(() => {
+    setPage(1);
+  }, [typedSearch]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
@@ -31,7 +38,7 @@ function DonationsContent() {
     setLoading(true);
     setFetchError('');
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (debouncedSearch) params.set('q', debouncedSearch);
+    if (typedSearch) params.set('q', typedSearch);
     Promise.all([
       api.get<any>('/donations/stats'),
       api.get<any>(`/donations/logs?${params.toString()}`),
@@ -45,7 +52,7 @@ function DonationsContent() {
       })
       .catch((e) => setFetchError(e.message || 'Failed to load donation data'))
       .finally(() => setLoading(false));
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, typedSearch]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -79,7 +86,7 @@ function DonationsContent() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by type, note, amount..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by type, note, amount..." />
       </div>
 
       {loading ? (

@@ -5,6 +5,7 @@ import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
 import { SearchInput } from '@/components/SearchInput';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth';
@@ -29,7 +30,13 @@ export default function SupportPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [userMap, setUserMap] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Commit the query as the user types instead of requiring Enter.
+  const typedSearch = useDebouncedValue(search, 300);
+
+  // Reset to the first page whenever the query changes.
+  useEffect(() => {
+    setPage(1);
+  }, [typedSearch]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
@@ -47,7 +54,7 @@ export default function SupportPage() {
     try {
       const params = new URLSearchParams({ page: String(page), limit: String(limit) });
       if (status) params.set('status', status);
-      if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim());
+      if (typedSearch.trim()) params.set('q', typedSearch.trim());
       const res = await api.get<any>(`/support/admin/tickets?${params.toString()}`);
       const { data, total, totalPages } = unwrapList<any>(res);
       setTickets(data);
@@ -55,7 +62,7 @@ export default function SupportPage() {
       setTotalPages(totalPages);
     } catch (e: any) { setError(e.message || 'Failed to load tickets'); }
     finally { setLoading(false); }
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, typedSearch]);
 
   useEffect(() => { loadTickets(statusFilter); }, [statusFilter, loadTickets]);
 
@@ -119,7 +126,7 @@ export default function SupportPage() {
       </div>
 
       <div className="flex gap-2 mb-4">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by subject, status, or priority..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by subject, status, or priority..."  />
         {filters.map(f => (
           <button key={f.value} onClick={() => { setStatusFilter(f.value); setPage(1); }}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${statusFilter === f.value ? 'bg-accent-gold text-white' : 'bg-surface-light text-text-secondary hover:bg-surface-light/80'}`}>

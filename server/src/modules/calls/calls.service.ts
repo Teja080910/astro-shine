@@ -1,7 +1,7 @@
 import { Injectable, Inject, Logger, ConflictException } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../db/schemas';
-import { eq, and, sql, inArray, desc } from 'drizzle-orm';
+import { eq, and, or, sql, inArray, desc } from 'drizzle-orm';
 import { RealtimeService } from '../../common/realtime.service';
 import { WalletService } from '../wallet/wallet.service';
 import { CommissionService } from '../commission/commission.service';
@@ -20,7 +20,7 @@ export class CallsService {
   private searchWhere(q?: string) {
     if (!q) return undefined;
     const pattern = `%${q}%`;
-    return and(
+    return or(
       sql`${schema.callLogs.type}::text ILIKE ${pattern}`,
       sql`${schema.callLogs.status}::text ILIKE ${pattern}`,
     );
@@ -31,15 +31,19 @@ export class CallsService {
       const calls = await this.db.query.callLogs.findMany();
       return this.withUserNames(calls);
     }
-    const conditions: any[] = [];
-    if (pagination.q) {
+    // A single search term should match ANY of these columns, not all of them.
+    // Joining with and() made every term require a match on type AND status AND
+    // both ids at once, so searches returned nothing.
+    let where: any;
+    if (pagination?.q) {
       const pattern = `%${pagination.q}%`;
-      conditions.push(sql`${schema.callLogs.type}::text ILIKE ${pattern}`);
-      conditions.push(sql`${schema.callLogs.status}::text ILIKE ${pattern}`);
-      conditions.push(sql`${schema.callLogs.userId}::text ILIKE ${pattern}`);
-      conditions.push(sql`${schema.callLogs.astrologerId}::text ILIKE ${pattern}`);
+      where = or(
+        sql`${schema.callLogs.type}::text ILIKE ${pattern}`,
+        sql`${schema.callLogs.status}::text ILIKE ${pattern}`,
+        sql`${schema.callLogs.userId}::text ILIKE ${pattern}`,
+        sql`${schema.callLogs.astrologerId}::text ILIKE ${pattern}`,
+      );
     }
-    const where = conditions.length ? and(...conditions) : undefined;
     const build = () => this.db.select().from(schema.callLogs).where(where);
     const [data, countRows] = await Promise.all([
       build().orderBy(desc(schema.callLogs.createdAt)).limit(pagination.limit).offset(pagination.offset),

@@ -5,6 +5,7 @@ import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge } from '@/components/UIComponents';
 import { SearchInput } from '@/components/SearchInput';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 import type { Review } from '@astro-shine/shared-types';
@@ -14,7 +15,13 @@ export default function ReviewsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Commit the query as the user types instead of requiring Enter.
+  const typedSearch = useDebouncedValue(search, 300);
+
+  // Reset to the first page whenever the query changes.
+  useEffect(() => {
+    setPage(1);
+  }, [typedSearch]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
@@ -22,7 +29,7 @@ export default function ReviewsPage() {
 
   const fetchReviews = useCallback(() => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim());
+    if (typedSearch.trim()) params.set('q', typedSearch.trim());
     api.get<any>(`/reviews?${params.toString()}`)
       .then((res) => {
         const { data, total, totalPages } = unwrapList<Review>(res);
@@ -32,7 +39,7 @@ export default function ReviewsPage() {
       })
       .catch((e) => setError(e.message || 'Failed to load reviews'))
       .finally(() => setLoading(false));
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, typedSearch]);
 
   useEffect(() => { fetchReviews(); }, [fetchReviews]);
 
@@ -53,7 +60,7 @@ export default function ReviewsPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search reviews by comment or rating..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search reviews by comment or rating..." />
       </div>
 
       {loading ? (

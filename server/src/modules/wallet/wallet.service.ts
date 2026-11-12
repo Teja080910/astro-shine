@@ -50,8 +50,24 @@ export class WalletService {
       WHEN w.astrologer_id IS NOT NULL THEN 'Astrologer'
       ELSE 'User'
     END`;
-    const searchClause = pattern
-      ? sql`WHERE (COALESCE(u.name, '') ILIKE ${pattern} OR ${ownerType} ILIKE ${pattern})`
+    // Combine search and the optional date range into one WHERE clause.
+    const conditions: any[] = [];
+    if (pattern) {
+      conditions.push(
+        sql`(COALESCE(u.name, '') ILIKE ${pattern} OR ${ownerType} ILIKE ${pattern})`,
+      );
+    }
+    // Admins asked to scope wallet records by date. Bound on created_at so the
+    // filter is stable and index-friendly.
+    if (pagination?.from) {
+      conditions.push(sql`w.created_at >= ${pagination.from}::date`);
+    }
+    if (pagination?.to) {
+      // Cast `to` to a date and use < next day so the whole day is included.
+      conditions.push(sql`w.created_at < (${pagination.to}::date + interval '1 day')`);
+    }
+    const searchClause = conditions.length
+      ? sql`WHERE ${sql.join(conditions, sql` AND `)}`
       : sql``;
     const joins = sql`
       FROM wallets w

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { GradientButton, CustomModal, Table, Badge } from '@/components/UIComponents';
 import { SearchInput } from '@/components/SearchInput';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 import { useSocket } from '@/hooks/useSocket';
@@ -15,7 +16,13 @@ export default function MuhuratCategoriesPage() {
   const [form, setForm] = useState({ name: '', description: '', isActive: true });
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Commit the query as the user types instead of requiring Enter.
+  const typedSearch = useDebouncedValue(search, 300);
+
+  // Reset to the first page whenever the query changes.
+  useEffect(() => {
+    setPage(1);
+  }, [typedSearch]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
@@ -26,7 +33,7 @@ export default function MuhuratCategoriesPage() {
       page: String(page),
       limit: String(limit),
     });
-    if (debouncedSearch) params.set('q', debouncedSearch);
+    if (typedSearch) params.set('q', typedSearch);
     try {
       const res = await api.get<any>(`/muhurat-categories/admin?${params.toString()}`);
       const { data, total, totalPages } = unwrapList<MuhuratCategory>(res);
@@ -36,7 +43,7 @@ export default function MuhuratCategoriesPage() {
     } catch (err) {
       console.error(err);
     }
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, typedSearch]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -95,7 +102,7 @@ export default function MuhuratCategoriesPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by name or description..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by name or description..." />
       </div>
 
       <div className="glass-card-solid p-6">
