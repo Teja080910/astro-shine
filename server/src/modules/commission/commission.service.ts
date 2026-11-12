@@ -59,6 +59,62 @@ export class CommissionService {
   }
   async findByAstrologerId(astrologerId: string) { return this.db.query.commissions.findFirst({ where: eq(schema.commissions.astrologerId, astrologerId) }); }
 
+  // ===== commission split =====
+  // The platform retains a single combined percentage made of two parts:
+  //   platform fee (default 20%) + TDS withheld (default 10%) = 30% total.
+  // Only the remainder is credited to the astrologer. Both parts are recorded
+  // separately on commission_logs so TDS can be reported and filed.
+  static readonly DEFAULT_PLATFORM_FEE_PERCENT = 20;
+  static readonly DEFAULT_TDS_PERCENT = 10;
+  static readonly DEFAULT_TOTAL_PERCENT = 30;
+
+  private async readSettingNumber(key: string, fallback: number): Promise<number> {
+    try {
+      const row = await this.db.query.appSettings.findFirst({
+        where: eq(schema.appSettings.key, key),
+      });
+      if (!row) return fallback;
+      const raw = row.value;
+      const num = typeof raw === 'number' ? raw : parseFloat(String(raw));
+      return Number.isFinite(num) ? num : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  /**
+   * Work out how a gross amount splits between platform fee, TDS and the
+   * astrologer. `totalPercent` is the combined withheld percentage (defaults
+   * to the astrologer's configured commission, which is 30).
+   */
+  private async computeSplit(totalCost: number, totalPercent: number) {
+    const configuredTotal = Number.isFinite(totalPercent)
+      ? Math.max(0, Math.min(100, totalPercent))
+      : CommissionService.DEFAULT_TOTAL_PERCENT;
+
+    const tdsSetting = await this.readSettingNumber(
+      'tds_percentage',
+      CommissionService.DEFAULT_TDS_PERCENT,
+    );
+    // TDS can never exceed the combined cut, otherwise the platform fee would
+    // go negative on a custom low commission.
+    const tdsPercent = Math.max(0, Math.min(configuredTotal, tdsSetting));
+    const platformFeePercent = Math.max(0, configuredTotal - tdsPercent);
+
+    const platformFee = (totalCost * platformFeePercent) / 100;
+    const tdsAmount = (totalCost * tdsPercent) / 100;
+    const astrologerEarnings = totalCost - platformFee - tdsAmount;
+
+    return {
+      totalPercent: configuredTotal,
+      platformFeePercent,
+      tdsPercent,
+      platformFee,
+      tdsAmount,
+      astrologerEarnings,
+    };
+  }
+
   async create(data: typeof schema.commissions.$inferInsert) {
     const [r] = await this.db.insert(schema.commissions).values(data).returning(); return r;
   }
@@ -119,10 +175,12 @@ export class CommissionService {
     source: 'audio' | 'video' | 'chat' = 'audio',
   ): Promise<void> {
     const commission = await this.findByAstrologerId(astrologerId);
-    const percentage = commission && commission.isActive ? parseFloat(commission.value) : 10;
-    const effectivePercentage = Math.max(0, Math.min(100, percentage));
-    const platformFee = (totalCost * effectivePercentage) / 100;
-    const astrologerEarnings = totalCost - platformFee;
+    const percentage =
+      commission && commission.isActive
+        ? parseFloat(commission.value)
+        : CommissionService.DEFAULT_TOTAL_PERCENT;
+    const split = await this.computeSplit(totalCost, percentage);
+    const { platformFee, tdsAmount, astrologerEarnings } = split;
 
     await this.db.transaction(async (tx) => {
       const [existingLog] = await tx
@@ -174,6 +232,8 @@ export class CommissionService {
           callId,
           grossAmount: totalCost.toFixed(2),
           platformFee: platformFee.toFixed(2),
+          tdsAmount: tdsAmount.toFixed(2),
+          netEarnings: astrologerEarnings.toFixed(2),
         } as any,
       }).returning();
 
@@ -182,10 +242,13 @@ export class CommissionService {
         astrologerId,
         transactionId: astrologerTxn.id,
         amount: totalCost.toFixed(2),
-        percentage: effectivePercentage.toFixed(2),
+        percentage: split.totalPercent.toFixed(2),
         totalEarned: astrologerEarnings.toFixed(2),
         platformFee: platformFee.toFixed(2),
-      });
+        platformFeePercentage: split.platformFeePercent.toFixed(2),
+        tdsPercentage: split.tdsPercent.toFixed(2),
+        tdsAmount: tdsAmount.toFixed(2),
+      } as any);
 
       if (platformFee > 0) {
         // Inline admin wallet resolution inside transaction for proper locking
@@ -256,10 +319,12 @@ export class CommissionService {
     chargeAmount: number,
   ): Promise<void> {
     const commission = await this.findByAstrologerId(astrologerId);
-    const percentage = commission && commission.isActive ? parseFloat(commission.value) : 10;
-    const effectivePercentage = Math.max(0, Math.min(100, percentage));
-    const platformFee = (chargeAmount * effectivePercentage) / 100;
-    const astrologerEarnings = chargeAmount - platformFee;
+    const percentage =
+      commission && commission.isActive
+        ? parseFloat(commission.value)
+        : CommissionService.DEFAULT_TOTAL_PERCENT;
+    const split = await this.computeSplit(chargeAmount, percentage);
+    const { platformFee, tdsAmount, astrologerEarnings } = split;
 
     await this.db.transaction(async (tx) => {
       const idempotent = await tx
@@ -315,6 +380,8 @@ export class CommissionService {
           conversationId,
           grossAmount: chargeAmount.toFixed(2),
           platformFee: platformFee.toFixed(2),
+          tdsAmount: tdsAmount.toFixed(2),
+          netEarnings: astrologerEarnings.toFixed(2),
         } as any,
       }).returning();
 
@@ -323,10 +390,13 @@ export class CommissionService {
         astrologerId,
         transactionId: txn.id,
         amount: chargeAmount.toFixed(2),
-        percentage: effectivePercentage.toFixed(2),
+        percentage: split.totalPercent.toFixed(2),
         totalEarned: astrologerEarnings.toFixed(2),
         platformFee: platformFee.toFixed(2),
-      });
+        platformFeePercentage: split.platformFeePercent.toFixed(2),
+        tdsPercentage: split.tdsPercent.toFixed(2),
+        tdsAmount: tdsAmount.toFixed(2),
+      } as any);
 
       // Credit platform fee to admin wallet
       if (platformFee > 0) {
@@ -384,5 +454,42 @@ export class CommissionService {
         })
         .where(eq(schema.astrologers.userId, astrologerId));
     });
+  }
+
+  /**
+   * Split a gift into platform fee, TDS and the astrologer's net credit, and
+   * return the computed amounts so the caller can write its own transaction
+   * rows inside its existing DB transaction.
+   *
+   * Gifts previously credited 100% to the astrologer, so the platform earned
+   * nothing on them. They now go through the same 30% split as calls and chat.
+   */
+  async quoteGiftSplit(
+    astrologerId: string,
+    grossAmount: number,
+  ): Promise<{
+    gross: number;
+    platformFee: number;
+    tdsAmount: number;
+    astrologerEarnings: number;
+    totalPercent: number;
+    platformFeePercent: number;
+    tdsPercent: number;
+  }> {
+    const commission = await this.findByAstrologerId(astrologerId);
+    const percentage =
+      commission && commission.isActive
+        ? parseFloat(commission.value)
+        : CommissionService.DEFAULT_TOTAL_PERCENT;
+    const split = await this.computeSplit(grossAmount, percentage);
+    return {
+      gross: grossAmount,
+      platformFee: split.platformFee,
+      tdsAmount: split.tdsAmount,
+      astrologerEarnings: split.astrologerEarnings,
+      totalPercent: split.totalPercent,
+      platformFeePercent: split.platformFeePercent,
+      tdsPercent: split.tdsPercent,
+    };
   }
 }

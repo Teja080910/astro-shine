@@ -6,6 +6,7 @@ import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { SearchInput } from '@/components/SearchInput';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { api } from '@/lib/api';
 import { config } from '@/config';
 import { FileText, ExternalLink, Shield, CheckCircle, XCircle } from 'lucide-react';
@@ -22,7 +23,13 @@ export default function AstrologersPage() {
   const [videoPrice, setVideoPrice] = useState('');
   const [rejectionNote, setRejectionNote] = useState('');
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Commit the query as the user types instead of requiring Enter.
+  const typedSearch = useDebouncedValue(search, 300);
+
+  // Reset to the first page whenever the query changes.
+  useEffect(() => {
+    setPage(1);
+  }, [typedSearch]);
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -47,7 +54,7 @@ export default function AstrologersPage() {
   useEffect(() => {
     setLoading(true);
     setError('');
-    const params = `?page=${page}&limit=${limit}${debouncedSearch ? `&q=${encodeURIComponent(debouncedSearch)}` : ''}`;
+    const params = `?page=${page}&limit=${limit}${typedSearch ? `&q=${encodeURIComponent(typedSearch)}` : ''}`;
     api.get<any>(`/astrologers${params}`)
       .then((res) => {
         const result = unwrapList<Astrologer>(res);
@@ -57,7 +64,7 @@ export default function AstrologersPage() {
       })
       .catch((e) => setError(e.message || 'Failed to load astrologers'))
       .finally(() => setLoading(false));
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, typedSearch]);
 
   const handleVerify = async (id: string, status: 'approved' | 'rejected') => {
     await api.post<any>(`/astrologers/${id}/verify`, { status, note: rejectionNote });
@@ -130,7 +137,6 @@ export default function AstrologersPage() {
         <SearchInput
           value={search}
           onChange={setSearch}
-          onEnter={(v) => { setDebouncedSearch(v); setPage(1); }}
           placeholder="Search by name, email, or specialization..."
         />
         <div className="flex gap-2">
@@ -201,15 +207,16 @@ export default function AstrologersPage() {
                 >
                   View
                 </button>
-                {a.verificationStatus === 'pending' && (
-                  <button
-                    onClick={() => { setVerify(a); setRejectionNote(''); }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 text-[10px] font-bold transition-all"
-                  >
-                    <Shield size={12} />
-                    Review
-                  </button>
-                )}
+                {/* Always available so an admin can reverse a decision.
+                    Previously this only rendered for 'pending', which made a
+                    rejection permanent in the UI. */}
+                <button
+                  onClick={() => { setVerify(a); setRejectionNote(a.verificationNote || ''); }}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 text-[10px] font-bold transition-all"
+                >
+                  <Shield size={12} />
+                  {a.verificationStatus === 'pending' ? 'Review' : 'Change'}
+                </button>
               </div>
             </td>
           </tr>

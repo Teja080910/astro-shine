@@ -250,10 +250,17 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     const commission =
       await this.commissionService.findByAstrologerId(astrologerId);
     const percentage =
-      commission && commission.isActive ? parseFloat(commission.value) : 10;
+      commission && commission.isActive
+        ? parseFloat(commission.value)
+        : CommissionService.DEFAULT_TOTAL_PERCENT;
     const safePercentage = Math.max(
       0,
-      Math.min(100, Number.isFinite(percentage) ? percentage : 10),
+      Math.min(
+        100,
+        Number.isFinite(percentage)
+          ? percentage
+          : CommissionService.DEFAULT_TOTAL_PERCENT,
+      ),
     );
     const astrologerShareRate = Number(
       (rate * (1 - safePercentage / 100)).toFixed(2),

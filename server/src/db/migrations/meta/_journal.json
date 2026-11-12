@@ -50,6 +50,13 @@
       "when": 1787200000000,
       "tag": "0006_transaction_service_metadata",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787400000000,
+      "tag": "0007_commission_tds_split",
+      "breakpoints": true
     }
   ]
 }

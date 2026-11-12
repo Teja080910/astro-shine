@@ -11,6 +11,7 @@ import * as schema from '../../db/schemas';
 import { eq, sql, aliasedTable, desc, ilike } from 'drizzle-orm';
 import { RealtimeService } from '../../common/realtime.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { CommissionService } from '../commission/commission.service';
 import { parsePrice } from '../../common/utils/parse-price';
 import { UUID_RE } from '../../common/utils/validation';
 import {
@@ -26,6 +27,7 @@ export class GiftsService {
     @Inject('DRIZZLE_DB') private db: NodePgDatabase<typeof schema>,
     private readonly realtime: RealtimeService,
     private readonly notifications: NotificationsService,
+    private readonly commission: CommissionService,
   ) {}
 
   async findAll(pagination?: Pagination) {
@@ -238,6 +240,13 @@ export class GiftsService {
         this.logger.warn(`Gift initiated notification failed: ${e.message}`),
       );
 
+    // Gifts go through the same platform-fee + TDS split as calls and chat.
+    // Before this, the astrologer received 100% and the platform earned nothing.
+    const split = await this.commission.quoteGiftSplit(receiverId, amount);
+    const netAmountStr = split.astrologerEarnings.toFixed(2);
+    const platformFeeStr = split.platformFee.toFixed(2);
+    const tdsAmountStr = split.tdsAmount.toFixed(2);
+
     try {
       await this.db.transaction(async (tx) => {
       // Lock and deduct sender wallet
@@ -302,8 +311,8 @@ export class GiftsService {
       await tx
         .update(schema.wallets)
         .set({
-          balance: sql`${schema.wallets.balance} + ${amountStr}::decimal`,
-          totalAdded: sql`${schema.wallets.totalAdded} + ${amountStr}::decimal`,
+          balance: sql`${schema.wallets.balance} + ${netAmountStr}::decimal`,
+          totalAdded: sql`${schema.wallets.totalAdded} + ${netAmountStr}::decimal`,
           updatedAt: new Date(),
         })
         .where(eq(schema.wallets.id, astroWallet.id));
@@ -313,12 +322,21 @@ export class GiftsService {
         astrologerId: receiverId,
         type: 'credit',
         category: 'gift',
-        amount: amountStr,
-        fee: '0',
-        netAmount: amountStr,
+        amount: netAmountStr,
+        fee: (split.platformFee + split.tdsAmount).toFixed(2),
+        netAmount: netAmountStr,
         status: 'success',
         description: `Gift received: ${gift.name}`,
         referenceId: giftId,
+        metadata: {
+          grossAmount: amountStr,
+          platformFee: platformFeeStr,
+          tdsAmount: tdsAmountStr,
+          netEarnings: netAmountStr,
+          totalCommissionPercent: split.totalPercent,
+          platformFeePercent: split.platformFeePercent,
+          tdsPercent: split.tdsPercent,
+        } as any,
       });
 
       await tx.insert(schema.giftTransactions).values({
@@ -331,10 +349,71 @@ export class GiftsService {
       await tx
         .update(schema.astrologers)
         .set({
-          totalEarnings: sql`${schema.astrologers.totalEarnings} + ${amountStr}::decimal`,
+          totalEarnings: sql`${schema.astrologers.totalEarnings} + ${netAmountStr}::decimal`,
           updatedAt: new Date(),
         })
         .where(eq(schema.astrologers.userId, receiverId));
+
+      // Credit the platform (admin wallet) with the withheld commission so
+      // gift revenue is visible in admin earnings like calls and chat.
+      if (split.platformFee + split.tdsAmount > 0) {
+        let adminWallet = (
+          await tx.execute<{ id: string }>(
+            sql`SELECT w.id FROM wallets w
+              INNER JOIN admins a ON w.admin_id = a.user_id
+              INNER JOIN users u ON a.user_id = u.id
+              WHERE u.is_active = true
+              LIMIT 1 FOR UPDATE`,
+          )
+        ).rows?.[0];
+        if (!adminWallet) {
+          const [admin] = await tx
+            .select({ id: schema.admins.userId })
+            .from(schema.admins)
+            .innerJoin(schema.users, eq(schema.admins.userId, schema.users.id))
+            .where(eq(schema.users.isActive, true))
+            .limit(1);
+          if (admin) {
+            const [created] = await tx
+              .insert(schema.wallets)
+              .values({ adminId: admin.id })
+              .returning({ id: schema.wallets.id });
+            adminWallet = created;
+          }
+        }
+        if (adminWallet) {
+          const feeStr = (split.platformFee + split.tdsAmount).toFixed(2);
+          await tx
+            .update(schema.wallets)
+            .set({
+              balance: sql`${schema.wallets.balance} + ${feeStr}::decimal`,
+              totalAdded: sql`${schema.wallets.totalAdded} + ${feeStr}::decimal`,
+              updatedAt: new Date(),
+            })
+            .where(eq(schema.wallets.id, adminWallet.id));
+
+          await tx.insert(schema.transactions).values({
+            walletId: adminWallet.id,
+            type: 'credit',
+            category: 'commission',
+            amount: feeStr,
+            fee: '0',
+            netAmount: feeStr,
+            status: 'success',
+            description: `Commission from gift "${gift.name}"`,
+            referenceId: giftId,
+            metadata: {
+              source: 'gift',
+              giftId,
+              grossAmount: amountStr,
+              platformFee: platformFeeStr,
+              tdsAmount: tdsAmountStr,
+            } as any,
+          });
+        } else {
+          this.logger.error('No active admin found for gift commission credit');
+        }
+      }
       });
     } catch (e: any) {
       this.notifications

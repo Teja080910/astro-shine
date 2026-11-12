@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Admin Panel — Bug Verification &amp; Fix Plan</title>
+<style>
+  :root{
+    --bg:#0B0B0D; --panel:#141417; --panel2:#1B1B20; --line:#2A2A31;
+    --text:#E9E9EE; --muted:#9A9AA6; --brand:#EE7B10; --maroon:#8D0B0C;
+    --ok:#23A867; --warn:#F59E0B; --bad:#E5484D; --info:#3B82F6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:1080px;margin:0 auto;padding:40px 24px 96px}
+  header{border-bottom:1px solid var(--line);padding-bottom:24px;margin-bottom:36px}
+  h1{margin:0 0 6px;font-size:30px;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:14px}
+  .meta{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px}
+  .pill{font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;
+    border:1px solid var(--line);background:var(--panel2);color:var(--muted);
+    text-transform:uppercase;letter-spacing:.06em}
+  .pill.brand{color:var(--brand);border-color:rgba(238,123,16,.35);background:rgba(238,123,16,.10)}
+  h2{font-size:20px;margin:44px 0 6px;letter-spacing:-.01em}
+  h2 .num{color:var(--brand);font-weight:800;margin-right:8px}
+  .verdict{font-size:13px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin:14px 0 18px;
+    display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:8px}
+  .v-bug{color:var(--bad);background:rgba(229,72,77,.10);border:1px solid rgba(229,72,77,.30)}
+  .v-partial{color:var(--warn);background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.30)}
+  .v-ok{color:var(--ok);background:rgba(35,168,103,.10);border:1px solid rgba(35,168,103,.30)}
+  .v-missing{color:var(--muted);background:rgba(154,154,166,.10);border:1px solid var(--line)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin:14px 0}
+  .card h3{margin:0 0 10px;font-size:15px;letter-spacing:.01em}
+  .card h3 .tag{font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:2px 7px;margin-left:8px;vertical-align:2px}
+  p{margin:10px 0}
+  code{background:var(--panel2);border:1px solid var(--line);border-radius:5px;
+    padding:1px 6px;font-size:12.5px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#F0C29A}
+  pre{background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+    padding:14px 16px;overflow:auto;margin:12px 0}
+  pre code{background:none;border:0;padding:0;color:#D9D9E3;font-size:12.5px;line-height:1.6}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+  tbody tr:last-child td{border-bottom:0}
+  .loc{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:#9FD5B5}
+  .evidence{border-left:2px solid var(--bad);padding-left:14px;margin:12px 0;color:var(--muted);font-size:13.5px}
+  .evidence.warn{border-left-color:var(--warn)}
+  .evidence.ok{border-left-color:var(--ok)}
+  ul{margin:10px 0 10px 20px;padding:0}
+  li{margin:5px 0}
+  .fix{background:rgba(238,123,16,.06);border:1px solid rgba(238,123,16,.22);border-radius:12px;padding:16px 18px;margin:14px 0}
+  .fix h4{margin:0 0 8px;font-size:12.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--brand)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:760px){.grid2{grid-template-columns:1fr}}
+  .summary{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:4px 0;margin:20px 0 8px}
+  .summary table{margin:0}
+  .summary td:first-child{width:44px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .sev{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;
+    padding:2px 7px;border-radius:5px;white-space:nowrap}
+  .s-crit{color:var(--bad);background:rgba(229,72,77,.12)}
+  .s-high{color:#FB923C;background:rgba(251,146,60,.12)}
+  .s-med{color:var(--warn);background:rgba(245,158,11,.12)}
+  .s-low{color:var(--muted);background:rgba(154,154,166,.12)}
+  .s-none{color:var(--ok);background:rgba(35,168,103,.12)}
+  .verify{background:rgba(35,168,103,.06);border:1px solid rgba(35,168,103,.28);
+    border-left:3px solid var(--ok);border-radius:12px;padding:16px 18px;margin:16px 0}
+  .verify h4{margin:0 0 10px;font-size:12.5px;font-weight:800;letter-spacing:.07em;
+    text-transform:uppercase;color:var(--ok);display:flex;align-items:center;gap:7px}
+  .verify h4 .tick{width:16px;height:16px;border-radius:50%;background:var(--ok);color:#08110C;
+    display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:900}
+  .verify p{margin:8px 0;color:var(--muted);font-size:13.5px}
+  .verify p:first-of-type{margin-top:0}
+  .verify table{font-size:12.5px;margin:10px 0 4px}
+  .verify th{font-size:10.5px}
+  .verify code{font-size:11.5px}
+  .vcol{font-size:11.5px;font-weight:700;white-space:nowrap}
+  .vcol.done{color:var(--ok)}
+  .vcol.na{color:var(--muted)}
+  .summary th{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+  footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
+  .anchor{color:var(--brand);text-decoration:none;font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Admin Panel — Bug Verification &amp; Fix Plan</h1>
+  <div class="sub">Claims were tested against the actual codebase and a running database, not taken at face value.</div>
+  <div class="meta">
+    <span class="pill brand">7 areas reviewed</span>
+    <span class="pill">6 real bugs</span>
+    <span class="pill">1 already working</span>
+    <span class="pill" style="color:var(--ok);border-color:rgba(35,168,103,.35);background:rgba(35,168,103,.10)">6/6 bugs fixed</span>
+    <span class="pill" style="color:var(--ok);border-color:rgba(35,168,103,.35);background:rgba(35,168,103,.10)">commission 30% live</span>
+    <span class="pill">verified 2026-11-12</span>
+  </div>
+</header>
+
+<div class="summary">
+<table>
+  <thead>
+    <tr><th>#</th><th>Area</th><th>Severity</th><th>Original finding</th><th>Verification — fixed</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>1</td><td>Astrologer — re-approve a rejected astrologer</td><td><span class="sev s-high">High</span></td><td>Confirmed — UI only</td><td class="vcol done">✓ Fixed</td></tr>
+    <tr><td>2</td><td>Admin wallet — dates &amp; filtering</td><td><span class="sev s-med">Medium</span></td><td>Confirmed — feature absent</td><td class="vcol done">✓ Fixed</td></tr>
+    <tr><td>3</td><td>Gifts — commission not deducted</td><td><span class="sev s-crit">Critical</span></td><td>Confirmed — revenue leak</td><td class="vcol done">✓ Fixed</td></tr>
+    <tr><td>4</td><td>Withdrawals — admin processing</td><td><span class="sev s-none">Working</span></td><td>Already implemented</td><td class="vcol na">— No change needed</td></tr>
+    <tr><td>5</td><td>Call log search returns nothing</td><td><span class="sev s-high">High</span></td><td>Confirmed — 2 defects</td><td class="vcol done">✓ Fixed</td></tr>
+    <tr><td>6</td><td>Pooja image cannot be set</td><td><span class="sev s-med">Medium</span></td><td>Confirmed — form gap</td><td class="vcol done">✓ Fixed</td></tr>
+    <tr><td>7</td><td>Reports — Open/Resolve status</td><td><span class="sev s-med">Medium</span></td><td>Partly confirmed</td><td class="vcol done">✓ Fixed</td></tr>
+    <tr><td>★</td><td>Commission raised to 30% (20% fee + 10% TDS)</td><td><span class="sev s-crit">Requested</span></td><td>Was 10%, gifts 0%</td><td class="vcol done">✓ Implemented</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ============================================================ 1 -->
+<h2><span class="num">1</span>Astrologer Review &amp; Approval</h2>
+<div class="verdict v-bug">Bug confirmed — UI gap, server already supports it</div>
+
+<p><strong>What works:</strong> the Review modal offers <em>Approve</em> and <em>Reject</em>, a rejection note is optional, rejected astrologers are counted and filterable, and a <code>rejected</code> badge plus note are shown.</p>
+
+<p><strong>What is broken:</strong> the <em>Review</em> button only renders when the status is <code>pending</code>:</p>
+
+<pre><code>{a.verificationStatus === 'pending' &amp;&amp; (
+  &lt;button onClick={() =&gt; { setVerify(a); ... }}&gt; Review &lt;/button&gt;
+)}</code></pre>
+
+<p>Once an astrologer is rejected, that button disappears and there is no other control to change the decision. The row still shows in the <em>Rejected</em> filter, but only <em>View</em> is available — so <strong>re-approving is impossible from the UI</strong>, exactly as reported.</p>
+
+<div class="evidence">
+  <strong>Server is not the blocker.</strong> <span class="loc">astrologers.service.ts:243</span>
+  <code>verify()</code> simply writes the new status and notifies the astrologer — it has no
+  "only from pending" guard. Calling it with <code>approved</code> on a rejected astrologer
+  succeeds today. This is purely a missing button.
+</div>
+
+<div class="fix">
+  <h4>Fix</h4>
+  <ul>
+    <li>Show the Review/Manage button for <code>pending</code>, <code>approved</code> and <code>rejected</code> (label it <em>Review</em> when pending, <em>Change</em> otherwise).</li>
+    <li>Never hide the action — only the note field should be conditional.</li>
+    <li>Add an explicit <em>Re-open review</em> affordance so a rejection is visibly reversible.</li>
+  </ul>
+</div>
+<div class="verify">
+  <h4><span class="tick">✓</span>Verification — fixed</h4>
+  
+  <p>The pending-only guard around the Review button was removed. The action now
+  always renders and relabels itself by state.</p>
+  <table>
+    <thead><tr><th>Before</th><th>After</th></tr></thead>
+    <tbody>
+      <tr><td><code>{a.verificationStatus === 'pending' &amp;&amp; (&lt;button&gt;Review…)}</code></td>
+      <td>Button rendered unconditionally; label is <code>Review</code> when pending, <code>Change</code> otherwise</td></tr>
+      <tr><td>Rejection permanent in the UI</td><td>Opens the same modal pre-filled with the existing note</td></tr>
+    </tbody>
+  </table>
+  <p>Server required no change — <code>verify()</code> already accepted a status
+  transition from any state.</p>
+
+</div>
+
+
+<!-- ============================================================ 2 -->
+<h2><span class="num">2</span>Wallet Management — dates &amp; admin access</h2>
+<div class="verdict v-bug">Bug confirmed — date filtering does not exist</div>
+
+<p>The admin wallet page lists balances and totals, and supports a search + pagination. But a search for any date control returns <strong>nothing</strong>:</p>
+
+<div class="evidence">
+  <span class="loc">web/src/app/wallet/page.tsx</span> (155 lines) — zero occurrences of
+  <code>date</code>, <code>Date</code> or <code>filter</code>. There is no date column, no
+  date range picker, and no date parameter sent to the API.
+</div>
+
+<p>Admin wallet access itself <em>does</em> exist (<code>getWalletByAdminId</code>, and the page loads <code>/wallet</code> for the logged-in admin), so that half of the claim is already satisfied. What is missing is the ability to <strong>scope records by date</strong>.</p>
+
+<div class="fix">
+  <h4>Fix</h4>
+  <ul>
+    <li>Add a <code>from</code>/<code>to</code> date range picker to the wallet table (same component the wallet filters already use).</li>
+    <li>Send <code>from</code>/<code>to</code> to <code>/wallet/all</code> and filter on <code>transactions.createdAt</code>; show a <em>Created</em> column.</li>
+    <li>Validate <code>from &lt;= to</code> and cap the range (e.g. 12 months) to keep the query cheap.</li>
+  </ul>
+</div>
+<div class="verify">
+  <h4><span class="tick">✓</span>Verification — fixed</h4>
+  
+  <p>Date scoping was added end to end and tested against the live API.</p>
+  <table>
+    <thead><tr><th>Request</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>No filter</td><td>3 wallets</td></tr>
+      <tr><td><code>from=2020-01-01&amp;to=2020-01-31</code></td><td>0 wallets (correct — no rows in that window)</td></tr>
+      <tr><td><code>from=2020-01-01&amp;to=2030-01-01</code></td><td>3 wallets</td></tr>
+      <tr><td><code>from=not-a-date</code></td><td>3 wallets — invalid input ignored, no 500</td></tr>
+    </tbody>
+  </table>
+  <p><code>parsePagination</code> now returns typed <code>from</code>/<code>to</code>,
+  validated as <code>YYYY-MM-DD</code> before reaching SQL. The query filters on
+  <code>wallets.created_at</code> with an exclusive next-day upper bound, and the
+  UI gained two <em>date</em> inputs, a Clear action, a client-side
+  <code>from &lt;= to</code> guard and a <em>Created</em> column.</p>
+
+</div>
+
+
+<p><em>Note on "live key and admin account configuration":</em> that is a credentials/ops task, not a code bug. Razorpay keys live in <code>server/.env</code> (<code>RAZORPAY_KEY_ID</code>/<code>SECRET</code>) — switching test→live is a config change, and the admin Settings page currently has no Razorpay section at all.</p>
+
+<!-- ============================================================ 3 -->
+<h2><span class="num">3</span>Gifts — commission &amp; "Redeemed"</h2>
+<div class="verdict v-bug">Critical bug confirmed — 100% of the gift goes to the astrologer</div>
+
+<p>This is the most serious finding. Calls and chat both split revenue through a commission service. Gifts do not.</p>
+
+<div class="evidence">
+  <span class="loc">server/src/modules/gifts/gifts.service.ts</span> — <code>grep -c commission</code> returns
+  <strong>0</strong>. The send path credits the receiver the full amount and records
+  <code>fee: '0'</code>, <code>netAmount: amountStr</code>:
+  <pre><code>balance: sql`${schema.wallets.balance} + ${amountStr}::decimal`,   // full amount
+fee: '0',
+netAmount: amountStr,</code></pre>
+  Compare <span class="loc">calls.service.ts:195</span>, which correctly calls
+  <code>commissionService.distributeEarnings(...)</code>.
+</div>
+
+<p>So on every gift the platform earns <strong>nothing</strong>, and the astrologer receives the entire sum — directly contradicting the requirement that commission be deducted and only the remainder credited.</p>
+
+<h3 style="font-size:15px;margin:24px 0 8px">"Redeemed" is cosmetic</h3>
+<p><code>redeemGift()</code> only flips a flag:</p>
+<pre><code>.set({ isRedeemed: true, redeemedAt: new Date() })</code></pre>
+<p>No wallet balance, no transaction row, no payout changes. But the gift is <em>already</em> credited at send time, so "Redeemed" has no financial meaning — it is a status with no consequence, which is exactly the confusion described.</p>
+
+<div class="evidence warn">
+  <strong>Currently latent:</strong> this database has <code>0</code> gift transactions, so no money has
+  been lost yet. Fixing it before gifts go live prevents a retroactive reconciliation problem.
+</div>
+
+<div class="fix">
+  <h4>Fix</h4>
+  <ul>
+    <li>Route gifts through <code>commissionService.distributeEarnings</code> like calls/chat: debit sender, credit astrologer <code>amount × (1 − commission%)</code>, record platform share.</li>
+    <li>Store the split on the transaction (<code>fee</code>, <code>netAmount</code>) so reporting is truthful.</li>
+    <li><strong>Decide the semantics of Redeemed.</strong> Two sane models:
+      <ul>
+        <li><em>Credit-on-send</em> (current): drop "Redeemed" or relabel it "Acknowledged" — it is not money.</li>
+        <li><em>Credit-on-redeem</em>: hold the gift, credit the astrologer only when redeemed, and make Redeemed the payout trigger. This matches the word's everyday meaning.</li>
+      </ul>
+    </li>
+    <li>Whichever is chosen, show it in the astrologer's earnings breakdown so the number is explainable.</li>
+  </ul>
+</div>
+<div class="verify">
+  <h4><span class="tick">✓</span>Verification — fixed (&amp; commission set to 30%)</h4>
+  
+  <p>Gifts now route through the shared commission split. Verified with a live
+  ₹100 gift against the running API and database:</p>
+  <table>
+    <thead><tr><th>Party</th><th>Before</th><th>After</th><th>Delta</th></tr></thead>
+    <tbody>
+      <tr><td>Astrologer</td><td>₹5.45</td><td>₹75.45</td><td><strong>+₹70.00</strong></td></tr>
+      <tr><td>Platform (admin wallet)</td><td>₹0.60</td><td>₹30.60</td><td><strong>+₹30.00</strong></td></tr>
+    </tbody>
+  </table>
+  <p>₹100 gift = <code>₹20 platform fee + ₹10 TDS + ₹70 to the astrologer</code>.
+  The transaction stores the breakdown in metadata
+  (<code>grossAmount</code>, <code>platformFee</code>, <code>tdsAmount</code>,
+  <code>netEarnings</code>) and <code>fee</code> is now 30.00 instead of 0.</p>
+  <p><strong>Redeemed</strong> is now explained in the Transactions tab: the gift is
+  credited when sent, and <em>Redeemed</em> means the astrologer acknowledged it.
+  The action and column were relabelled <em>Acknowledged</em> for clarity.</p>
+  <p>Test data was removed and the three wallets were restored to their original
+  balances after verification.</p>
+
+</div>
+
+
+<!-- ============================================================ 4 -->
+<h2><span class="num">4</span>Withdrawal Management</h2>
+<div class="verdict v-ok">No bug found — already implemented</div>
+
+<p>This claim does not hold up. The admin withdrawal page supports the full flow:</p>
+<ul>
+  <li>Lists requests with requester, amount, payout method and status.</li>
+  <li><em>Approve</em> and <em>Reject</em> actions on pending requests, with a confirm dialog.</li>
+  <li>Status badges for <code>pending</code>, <code>approved</code>, <code>completed</code>, <code>rejected</code>.</li>
+  <li>Payout state surfaced separately (<code>processed</code>/<code>completed</code>).</li>
+</ul>
+
+<div class="evidence ok">
+  The server side is real, not cosmetic: <span class="loc">withdrawal.service.ts:367</span>
+  <code>approve()</code> runs in a transaction, takes <code>FOR UPDATE</code> row locks on both the
+  request and the astrologer's wallet, refuses non-pending requests, and debits the balance.
+</div>
+
+<p>If admin still cannot process withdrawals in practice, the likely cause is credentials or the payout provider, not this code. Worth reproducing before scheduling work.</p>
+<div class="verify">
+  <h4><span class="tick">✓</span>Verification — no change required</h4>
+  
+  <p>Re-checked after all other fixes: <code>withdrawal.service.ts:367</code>
+  <code>approve()</code> is untouched and still transactionally locks the request
+  and the astrologer wallet before debiting. Nothing in this area needed editing.</p>
+
+</div>
+
+
+<!-- ============================================================ 5 -->
+<h2><span class="num">5</span>Call Log Search</h2>
+<div class="verdict v-bug">Bug confirmed — two independent defects</div>
+
+<h3 style="font-size:15px;margin:22px 0 8px">Defect A — the search only runs on Enter</h3>
+<p><code>SearchInput</code> calls <code>onEnter</code> from the <code>keydown</code> handler alone. Typing a query and clicking elsewhere does nothing; the term is only committed when Enter is pressed. Clear (×) also only works because it explicitly calls <code>onEnter('')</code>.</p>
+
+<h3 style="font-size:15px;margin:22px 0 8px">Defect B — the SQL joins conditions with AND instead of OR</h3>
+<div class="evidence">
+  <span class="loc">calls.service.ts:20-45</span> pushes <em>type</em>, <em>status</em>, <em>userId</em> and
+  <em>astrologerId</em> as separate conditions and combines them with <code>and(...)</code>. A single search
+  term must therefore match <em>every</em> column at once — practically impossible.
+</div>
+
+<p>Reproduced against the live database (5 call logs, 2 of type <code>video</code>):</p>
+<table>
+  <thead><tr><th>Query</th><th>Rows returned</th><th>Expected</th></tr></thead>
+  <tbody>
+    <tr><td><code>type ILIKE '%video%' AND status ILIKE '%video%'</code> (current)</td><td><strong>0</strong></td><td>2</td></tr>
+    <tr><td><code>type ILIKE '%video%' OR status ILIKE '%video%'</code></td><td>2</td><td>2</td></tr>
+  </tbody>
+</table>
+
+<div class="fix">
+  <h4>Fix</h4>
+  <ul>
+    <li>Combine the searchable columns with <code>or(...)</code>, not <code>and(...)</code>. The identical
+      <code>and(...)</code> mistake is in <code>searchWhere()</code> and in <code>findAll()</code>.</li>
+    <li>Debounce the input (~300 ms) and search as the user types; keep Enter as an immediate trigger.</li>
+    <li>Audit the other nine pages using the same <code>onEnter</code>-only pattern (orders, reports, support,
+      withdrawals, gifts, blogs, videos, muhurat) — they share Defect A.</li>
+  </ul>
+</div>
+<div class="verify">
+  <h4><span class="tick">✓</span>Verification — fixed (both defects, plus one missed path)</h4>
+  
+  <p><strong>Defect B — SQL:</strong> the searchable columns are now combined with
+  <code>or(...)</code>. Verified against the live database:</p>
+  <table>
+    <thead><tr><th>Endpoint</th><th>Before</th><th>After</th></tr></thead>
+    <tbody>
+      <tr><td><code>/calls?q=video</code> (admin)</td><td>0 of 2</td><td><strong>2</strong></td></tr>
+      <tr><td><code>/calls?userId=…&amp;q=video</code> (user-scoped)</td><td>0</td><td><strong>2</strong></td></tr>
+    </tbody>
+  </table>
+  <p><em>A second pass caught a path the first fix missed:</em>
+  <code>findByUserId()</code> had its own copy of the AND bug and was still broken
+  until corrected. <code>findByAstrologerId()</code> was already correct because it
+  delegates to <code>searchWhere()</code>.</p>
+  <p><strong>Defect A — client:</strong> added a <code>useDebouncedValue</code> hook
+  so queries commit ~300&nbsp;ms after typing instead of requiring Enter. Applied to
+  <strong>21 admin tables</strong>: orders, reports, support, withdrawals, gifts,
+  blogs, videos, muhurat (+ categories), commissions, users, releases, wallet, shop,
+  news, transactions, pooja, reviews, notifications, donations, live sessions and
+  astrologers.</p>
+
+</div>
+
+
+<!-- ============================================================ 6 -->
+<h2><span class="num">6</span>Pooja Image Icon</h2>
+<div class="verdict v-bug">Bug confirmed — the field exists in the DB but not in the form</div>
+
+<p>The database stores an image for each pooja, but the admin form never touches it:</p>
+
+<div class="evidence">
+  <span class="loc">server/src/db/schemas/mandir-pooja.ts:7</span> declares
+  <code>image: text('image')</code>.<br>
+  <span class="loc">web/src/app/mandir-pooja/page.tsx</span> reads only
+  <code>name</code>, <code>description</code> and <code>price</code>, and saves
+  <code>{ name, description, price }</code> — no <code>image</code> anywhere, and no icon column in the table.
+</div>
+
+<p>Consequence: any image previously seeded shows, but <strong>a new pooja can never get one</strong>, and admins cannot fix a wrong image — which is what "needs to be checked and corrected" describes.</p>
+
+<div class="fix">
+  <h4>Fix</h4>
+  <ul>
+    <li>Add an image URL/upload field to the pooja form, included in the save payload.</li>
+    <li>Show a thumbnail column in the list so a broken image is visible immediately.</li>
+    <li>Validate the URL/extension and fall back to a placeholder icon when missing.</li>
+    <li>Confirm the mobile app consumes the same field so admin changes appear there.</li>
+  </ul>
+</div>
+<div class="verify">
+  <h4><span class="tick">✓</span>Verification — fixed</h4>
+  
+  <p>The admin form now reads and writes <code>image</code>:</p>
+  <table>
+    <thead><tr><th>Before</th><th>After</th></tr></thead>
+    <tbody>
+      <tr><td><code>payload = { name, description, price }</code></td><td><code>payload = { name, description, price, image }</code></td></tr>
+      <tr><td>No image input in the form</td><td>Image URL field with a live preview</td></tr>
+      <tr><td>No visual feedback in the list</td><td>Thumbnail column — a broken image is immediately visible</td></tr>
+    </tbody>
+  </table>
+  <p>Empty input saves <code>null</code> so existing default icons are preserved.</p>
+
+</div>
+
+
+<!-- ============================================================ 7 -->
+<h2><span class="num">7</span>Reports &amp; Review Management</h2>
+<div class="verdict v-partial">Partly confirmed — actions exist but the status model is wrong</div>
+
+<p><strong>Already present:</strong> <em>View</em>, <em>Edit</em> and <em>Delete</em> per row, a details modal, and a resolve endpoint that notifies both parties.</p>
+
+<p><strong>What is wrong:</strong></p>
+<ul>
+  <li><strong>Only two statuses exist</strong> — <code>pending</code> and <code>reviewed</code>. The requested
+    <em>Open</em> / <em>Resolve</em> vocabulary is absent.</li>
+  <li><strong>Resolve disappears once reviewed</strong> (<code>r.status !== 'reviewed' &amp;&amp; ...</code>), so a
+    wrongly-resolved report can never be re-opened from the UI — the same shape of bug as #1.</li>
+  <li><strong>Resolved is not an action</strong>, only a badge. There is no explicit <em>Resolved</em> control
+    in the action column, which is why the options look incomplete.</li>
+</ul>
+
+<div class="evidence">
+  <span class="loc">web/src/app/reports/page.tsx:13</span>
+  <code>const STATUSES = ['pending', 'reviewed'] as const;</code> — the Edit dropdown can only ever offer those two.
+</div>
+
+<div class="fix">
+  <h4>Fix</h4>
+  <ul>
+    <li>Model three states: <code>open</code> → <code>resolved</code>, with re-open supported.
+      Either migrate <code>pending</code>/<code>reviewed</code> or map them for display.</li>
+    <li>Always render the full action set — <em>View</em>, <em>Edit</em>, <em>Open</em>/<em>Resolve</em> (toggling),
+      <em>Resolved</em> (state chip), <em>Delete</em> — instead of hiding Resolve.</li>
+    <li>Expose both options in the Edit dropdown, as requested.</li>
+    <li>Re-opening should clear <code>resolvedAt</code>/<code>resolvedBy</code>; the service already does this.</li>
+  </ul>
+</div>
+<div class="verify">
+  <h4><span class="tick">✓</span>Verification — fixed</h4>
+  
+  <p>Resolve no longer disappears and the vocabulary matches the request.</p>
+  <table>
+    <thead><tr><th>Before</th><th>After</th></tr></thead>
+    <tbody>
+      <tr><td>Resolve hidden once <code>reviewed</code></td><td>Action toggles to <em>Re-open</em></td></tr>
+      <tr><td>Only <code>pending</code> / <code>reviewed</code> in Edit</td><td>Dropdown shows <em>Open</em> / <em>Resolved</em></td></tr>
+      <tr><td>Badges read Pending / Reviewed</td><td>Badges read Open / Resolved</td></tr>
+    </tbody>
+  </table>
+  <p>Stored values are unchanged (<code>pending</code>/<code>reviewed</code>) to avoid a
+  data migration; only the display layer was renamed. Re-opening sends
+  <code>status: pending</code>, and the service clears <code>resolvedAt</code> /
+  <code>resolvedBy</code>.</p>
+
+</div>
+
+
+<!-- ============================================================ PLAN -->
+<h2><span class="num">★</span>Commission — raised to 30% (20% fee + 10% TDS)</h2>
+<div class="verdict v-ok">Implemented and verified — this was a requested change, not a bug</div>
+
+<p>The platform now retains <strong>30%</strong> of every consultation and gift:
+a <strong>20% platform fee</strong> plus <strong>10% TDS</strong> withheld under
+section 194J. Only the remaining <strong>70%</strong> reaches the astrologer.</p>
+
+<div class="evidence warn">
+  <strong>Before:</strong> the default was <strong>10%</strong>, and gifts deducted
+  <strong>nothing at all</strong> (100% to the astrologer). The two rates were also
+  duplicated in four places, so they could drift.
+</div>
+
+<table>
+  <thead><tr><th>Change</th><th>Detail</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Single source of truth</td>
+      <td><code>CommissionService.computeSplit()</code> — calls, chat and gifts all route through it</td>
+    </tr>
+    <tr>
+      <td>New columns</td>
+      <td><code>commission_logs.platform_fee_percentage</code>, <code>.tds_percentage</code>, <code>.tds_amount</code> so the two halves stay separable for TDS filing</td>
+    </tr>
+    <tr>
+      <td>Defaults persisted</td>
+      <td><code>app_settings</code>: <code>platform_fee_percentage=20</code>, <code>tds_percentage=10</code>, <code>total_commission_percentage=30</code></td>
+    </tr>
+    <tr>
+      <td>Hardcoded fallbacks removed</td>
+      <td><code>chat.gateway.ts</code> no longer falls back to a literal <code>10</code></td>
+    </tr>
+    <tr>
+      <td>Migration</td>
+      <td><code>0007_commission_tds_split.sql</code>, applied and recorded by drizzle</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="verify">
+  <h4><span class="tick">✓</span>Verification — split arithmetic</h4>
+  <p>Ran the real service against a ₹1000 gross amount:</p>
+  <table>
+    <thead><tr><th>Component</th><th>Rate</th><th>Amount</th></tr></thead>
+    <tbody>
+      <tr><td>Platform fee</td><td>20%</td><td>₹200.00</td></tr>
+      <tr><td>TDS</td><td>10%</td><td>₹100.00</td></tr>
+      <tr><td>Astrologer net</td><td>70%</td><td><strong>₹700.00</strong></td></tr>
+    </tbody>
+  </table>
+  <p>Parts sum to the gross amount exactly. A live ₹100 gift produced ₹30 to the
+  platform wallet and ₹70 to the astrologer, confirming the wiring end to end.</p>
+</div>
+
+<h2><span class="num">§</span>Suggested sequence</h2>
+
+<table>
+  <thead><tr><th>Order</th><th>Item</th><th>Why first</th><th>Effort</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>#3 Gift commission</td><td>Money was being lost on every gift. Fixed before gifts go live.</td><td>~½ day</td><td class="vcol done">✓ Done</td></tr>
+    <tr><td>2</td><td>#5 Call log search</td><td>Broken feature users hit immediately; two small changes.</td><td>~2 h</td><td class="vcol done">✓ Done</td></tr>
+    <tr><td>3</td><td>#1 Re-approve astrologer</td><td>Blocked onboarding of corrected applications.</td><td>~1 h</td><td class="vcol done">✓ Done</td></tr>
+    <tr><td>4</td><td>#7 Report statuses</td><td>Same hiding pattern as #1; fixes workflow.</td><td>~3 h</td><td class="vcol done">✓ Done</td></tr>
+    <tr><td>5</td><td>#6 Pooja image</td><td>Visual correctness, low risk.</td><td>~2 h</td><td class="vcol done">✓ Done</td></tr>
+    <tr><td>6</td><td>#2 Wallet dates</td><td>Needed an API change; independent.</td><td>~4 h</td><td class="vcol done">✓ Done</td></tr>
+    <tr><td>★</td><td>Commission → 30%</td><td>Requested alongside the fixes.</td><td>~3 h</td><td class="vcol done">✓ Done</td></tr>
+  </tbody>
+</table>
+
+<div class="card">
+  <h3>Decisions — as implemented<span class="tag">resolved</span></h3>
+  <ul>
+    <li><strong>Gift Redeemed:</strong> kept credit-on-send. The status now explains
+      itself in the UI and the action is labelled <em>Acknowledged</em>.</li>
+    <li><strong>Gift commission %:</strong> gifts use the same 30% split as calls and
+      chat — no separate gift rate.</li>
+    <li><strong>Report statuses:</strong> stored values kept
+      (<code>pending</code>/<code>reviewed</code>); only the labels changed to
+      Open / Resolved, avoiding a data migration.</li>
+    <li><strong>Wallet dates:</strong> implemented as a <em>from</em>/<em>to</em> range,
+      which also covers single-day use.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3>Not in scope / not a code bug</h3>
+  <ul>
+    <li><strong>Razorpay live keys</strong> — configuration in <code>server/.env</code>. Note the admin Settings page has no Razorpay section; adding one is a separate feature.</li>
+    <li><strong>"Admin account configuration"</strong> for payouts — depends on the payout provider credentials rather than application logic.</li>
+  </ul>
+</div>
+
+<footer>
+  Every claim was checked in source and, where data-shaped, against the running database.
+  File and line references are included so each finding can be re-verified quickly.<br /><br />
+  <strong style="color:var(--ok)">Post-fix verification (2026-11-12):</strong> all six confirmed
+  bugs were fixed and re-tested; the commission change was implemented and verified with a live
+  transaction. Both the server and admin panel type-check cleanly. Test data was removed and
+  wallet balances were restored to their original values.
+</footer>
+
+</div>
+</body>
+</html>

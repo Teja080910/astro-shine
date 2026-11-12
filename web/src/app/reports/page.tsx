@@ -5,12 +5,18 @@ import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
 import { SearchInput } from '@/components/SearchInput';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 import type { Report } from '@astro-shine/shared-types';
 
 const REASONS = ['spam', 'harassment', 'fake_profile', 'inappropriate', 'other'] as const;
-const STATUSES = ['pending', 'reviewed'] as const;
+// Stored values stay pending/reviewed for compatibility; the UI speaks in
+// Open / Resolved, which is the vocabulary the client asked for.
+const STATUS_OPTIONS = [
+  { value: 'pending', label: 'Open' },
+  { value: 'reviewed', label: 'Resolved' },
+] as const;
 
 function reportTarget(r: Report): { role: string; name?: string; id?: string } {
   if (r.reportedAstrologerId || r.reportedAstrologerName) {
@@ -36,7 +42,13 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Commit the query as the user types instead of requiring Enter.
+  const typedSearch = useDebouncedValue(search, 300);
+
+  // Reset to the first page whenever the query changes.
+  useEffect(() => {
+    setPage(1);
+  }, [typedSearch]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
@@ -54,7 +66,7 @@ export default function ReportsPage() {
 
   const fetchReports = useCallback(() => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim());
+    if (typedSearch.trim()) params.set('q', typedSearch.trim());
     api.get<any>(`/reports?${params.toString()}`)
       .then((res) => {
         const { data, total, totalPages } = unwrapList<Report>(res);
@@ -64,13 +76,30 @@ export default function ReportsPage() {
       })
       .catch((e) => setError(e.message || 'Failed to load reports'))
       .finally(() => setLoading(false));
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, typedSearch]);
 
   useEffect(() => { fetchReports(); }, [fetchReports]);
 
   const openView = (r: Report) => {
     setViewing(r);
     setResolveError('');
+  };
+
+  // Re-open a resolved report. The service clears resolvedAt/resolvedBy when
+  // the status goes back to 'pending'.
+  const reopen = async (report: Report) => {
+    setResolving(true);
+    setResolveError('');
+    try {
+      const updated = await api.put<Report>(`/reports/${report.id}`, { status: 'pending' });
+      const next: Report = { ...report, ...(updated || {}), status: 'pending', resolvedAt: undefined };
+      setData(prev => prev.map(r => (r.id === report.id ? { ...r, ...next } : r)));
+      setViewing(prev => (prev && prev.id === report.id ? { ...prev, ...next } : prev));
+    } catch (e: any) {
+      setResolveError(e.message || 'Failed to re-open report');
+    } finally {
+      setResolving(false);
+    }
   };
 
   const resolve = async (report: Report) => {
@@ -144,7 +173,7 @@ export default function ReportsPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search reports by reason or status..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search reports by reason or status..."  />
       </div>
 
       {resolveError && !viewing && (
@@ -182,12 +211,14 @@ export default function ReportsPage() {
               </td>
               <td className="px-4 py-3 text-text-secondary capitalize">{r.reason?.replace(/_/g, ' ')}</td>
               <td className="px-4 py-3 text-text-muted text-sm max-w-xs truncate" title={r.description || undefined}>{r.description || '—'}</td>
-              <td className="px-4 py-3">{r.status === 'reviewed' ? <Badge variant="success">Reviewed</Badge> : <Badge variant="warning">Pending</Badge>}</td>
+              <td className="px-4 py-3">{r.status === 'reviewed' ? <Badge variant="success">Resolved</Badge> : <Badge variant="warning">Open</Badge>}</td>
               <td className="px-4 py-3 text-text-muted text-sm">{formatDate(r.createdAt)}</td>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-3 whitespace-nowrap">
                   <button onClick={() => openView(r)} className="text-primary-light hover:underline text-sm font-medium">View</button>
-                  {r.status !== 'reviewed' && (
+                  {r.status === 'reviewed' ? (
+                    <button onClick={() => reopen(r)} disabled={resolving} className="text-amber-400 hover:underline text-sm font-medium disabled:opacity-50">Re-open</button>
+                  ) : (
                     <button onClick={() => resolve(r)} disabled={resolving} className="text-primary-light hover:underline text-sm font-medium disabled:opacity-50">Resolve</button>
                   )}
                   <button onClick={() => openEdit(r)} className="text-primary-light hover:underline text-sm font-medium">Edit</button>
@@ -213,7 +244,7 @@ export default function ReportsPage() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="text-[11px] uppercase tracking-wide text-text-muted mb-1">Status</div>
-                {viewing.status === 'reviewed' ? <Badge variant="success">Reviewed</Badge> : <Badge variant="warning">Pending</Badge>}
+                {viewing.status === 'reviewed' ? <Badge variant="success">Resolved</Badge> : <Badge variant="warning">Open</Badge>}
               </div>
               <div className="text-right min-w-0">
                 <div className="text-[11px] uppercase tracking-wide text-text-muted mb-1">Report ID</div>
@@ -293,8 +324,8 @@ export default function ReportsPage() {
             <div>
               <label className="block text-text-primary font-medium mb-1">Status</label>
               <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="input-field text-sm">
-                {STATUSES.map(s => (
-                  <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                {STATUS_OPTIONS.map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
               </select>
             </div>

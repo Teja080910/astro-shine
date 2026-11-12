@@ -5,6 +5,7 @@ import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
 import { SearchInput } from '@/components/SearchInput';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 import { useSocket } from '@/hooks/useSocket';
@@ -17,7 +18,13 @@ function WithdrawalsContent() {
   const [actionError, setActionError] = useState('');
   const [acting, setActing] = useState(false);
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Commit the query as the user types instead of requiring Enter.
+  const typedSearch = useDebouncedValue(search, 300);
+
+  // Reset to the first page whenever the query changes.
+  useEffect(() => {
+    setPage(1);
+  }, [typedSearch]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
@@ -25,14 +32,14 @@ function WithdrawalsContent() {
 
   const refresh = useCallback(() => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (debouncedSearch) params.set('q', debouncedSearch);
+    if (typedSearch) params.set('q', typedSearch);
     api.get<any>(`/withdrawals?${params.toString()}`).then((res) => {
       const { data, total, totalPages } = unwrapList<any>(res);
       setData(data);
       setTotal(total);
       setTotalPages(totalPages);
     });
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, typedSearch]);
 
   useEffect(() => { refresh(); }, [refresh]);
 
@@ -62,7 +69,7 @@ function WithdrawalsContent() {
     <>
       <h1 className="text-3xl font-extrabold text-text-primary mb-6">Withdrawals</h1>
       <div className="mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by requester, status, payout or amount..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by requester, status, payout or amount..."  />
       </div>
       <Table headers={['Requester', 'Type', 'Amount', 'Status', 'Payout', 'Date', '']} emptyMessage="No withdrawals found">
         {data.map((w: any) => (

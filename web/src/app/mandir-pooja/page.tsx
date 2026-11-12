@@ -5,8 +5,10 @@ import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
 import { SearchInput } from '@/components/SearchInput';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
+import { imageSrc } from '@/lib/media';
 
 export default function MandirPoojaPage() {
   const [poojas, setPoojas] = useState<any[]>([]);
@@ -20,15 +22,22 @@ export default function MandirPoojaPage() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
+  const [image, setImage] = useState('');
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Commit the query as the user types instead of requiring Enter.
+  const typedSearch = useDebouncedValue(search, 300);
+
+  // Reset to the first page whenever the query changes.
+  useEffect(() => {
+    setPage(1);
+  }, [typedSearch]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
   const query = `page=${page}&limit=${limit}${
-    debouncedSearch ? `&q=${encodeURIComponent(debouncedSearch)}` : ''
+    typedSearch ? `&q=${encodeURIComponent(typedSearch)}` : ''
   }`;
 
   const fetchPoojas = useCallback(async () => {
@@ -66,6 +75,7 @@ export default function MandirPoojaPage() {
     setName(p?.name || '');
     setDescription(p?.description || '');
     setPrice(p?.price || '');
+    setImage(p?.image || '');
   };
 
   const closeForm = () => {
@@ -75,7 +85,9 @@ export default function MandirPoojaPage() {
 
   const handleSave = async () => {
     if (!name.trim() || !price) return;
-    const payload = { name, description, price };
+    // `image` exists on the schema; without it a pooja could never be given
+    // a picture from the admin panel.
+    const payload = { name, description, price, image: image.trim() || null };
     try {
       if (selected?.id) {
         await api.put(`/mandir-pooja/${selected.id}`, payload);
@@ -119,7 +131,6 @@ export default function MandirPoojaPage() {
 
       <div className="mb-6">
         <SearchInput
-          onEnter={(v) => { setDebouncedSearch(v); setPage(1); }}
           value={search}
           onChange={setSearch}
           placeholder={tab === 'poojas' ? 'Search poojas by name or description...' : 'Search bookings by status...'}
@@ -129,9 +140,16 @@ export default function MandirPoojaPage() {
       {tab === 'poojas' ? (
         <>
           <div className="mb-4"><GradientButton onClick={() => openForm(null)}>Add Pooja</GradientButton></div>
-          <Table headers={['Name', 'Description', 'Price', 'Status', '']} emptyMessage="No poojas found">
+          <Table headers={['Image', 'Name', 'Description', 'Price', 'Status', '']} emptyMessage="No poojas found">
             {poojas.map((p: any) => (
               <tr key={p.id} className="border-b border-divider hover:bg-surface-light/50">
+                <td className="px-4 py-3">
+                  {p.image ? (
+                    <img src={imageSrc(p.image)} alt={p.name} className="w-10 h-10 object-cover rounded-lg border border-divider" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-lg bg-surface-light border border-divider flex items-center justify-center text-[10px] text-text-muted">—</div>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-text-primary font-bold">{p.name}</td>
                 <td className="px-4 py-3 text-text-secondary text-sm max-w-xs truncate">{p.description || '-'}</td>
                 <td className="px-4 py-3 text-text-primary">₹{p.price}</td>
@@ -204,6 +222,15 @@ export default function MandirPoojaPage() {
         <div className="space-y-4 text-text-secondary text-sm p-2">
           <div><label className="block text-text-primary font-medium mb-1">Name</label><input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input-field text-sm" placeholder="Pooja name" /></div>
           <div><label className="block text-text-primary font-medium mb-1">Description</label><textarea value={description} onChange={(e) => setDescription(e.target.value)} className="input-field h-20 text-sm" placeholder="Description" /></div>
+          <div>
+            <label className="block text-text-primary font-medium mb-1">Image URL</label>
+            <input type="url" value={image} onChange={(e) => setImage(e.target.value)} className="input-field text-sm" placeholder="https://example.com/pooja.jpg" />
+            <p className="text-[11px] text-text-muted mt-1">Leave empty to use the default icon. Shown on the mobile app and in this list.</p>
+            {image.trim() && (
+              <img src={imageSrc(image.trim())} alt="Preview" className="mt-2 w-20 h-20 object-cover rounded-lg border border-divider"
+                onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.35'; }} />
+            )}
+          </div>
           <div><label className="block text-text-primary font-medium mb-1">Price (₹)</label><input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="input-field text-sm" placeholder="Price" /></div>
           <div className="flex gap-3 pt-3 border-t border-divider">
             <GradientButton onClick={handleSave}>Save</GradientButton>

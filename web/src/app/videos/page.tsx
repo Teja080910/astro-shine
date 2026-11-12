@@ -5,6 +5,7 @@ import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
 import { SearchInput } from '@/components/SearchInput';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { ImageUpload } from '@/components/ImageUpload';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { imageSrc } from '@/lib/media';
@@ -36,7 +37,13 @@ export default function VideosPage() {
   const [uploadError, setUploadError] = useState('');
   const videoInputRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Commit the query as the user types instead of requiring Enter.
+  const typedSearch = useDebouncedValue(search, 300);
+
+  // Reset to the first page whenever the query changes.
+  useEffect(() => {
+    setPage(1);
+  }, [typedSearch]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
@@ -46,7 +53,7 @@ export default function VideosPage() {
   const fetchData = useCallback(() => {
     setLoading(true);
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (debouncedSearch) params.set('q', debouncedSearch);
+    if (typedSearch) params.set('q', typedSearch);
     api.get<any>(`/videos/admin?${params.toString()}`)
       .then((res) => {
         const list = unwrapList<any>(res);
@@ -56,7 +63,7 @@ export default function VideosPage() {
       })
       .catch((e) => setError(e.message || 'Failed to load videos'))
       .finally(() => setLoading(false));
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, typedSearch]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -130,7 +137,7 @@ export default function VideosPage() {
         <button onClick={() => openForm(null)} className="gradient-btn">Add Video</button>
       </div>
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by title or category..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by title or category..."  />
       </div>
 
       {loading ? (

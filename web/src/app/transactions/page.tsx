@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { SearchInput } from '@/components/SearchInput';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { Table, Badge } from '@/components/UIComponents';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
@@ -15,7 +16,13 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Commit the query as the user types instead of requiring Enter.
+  const typedSearch = useDebouncedValue(search, 300);
+
+  // Reset to the first page whenever the query changes.
+  useEffect(() => {
+    setPage(1);
+  }, [typedSearch]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
@@ -25,7 +32,7 @@ export default function TransactionsPage() {
     setLoading(true);
     setError('');
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (debouncedSearch) params.set('q', debouncedSearch);
+    if (typedSearch) params.set('q', typedSearch);
     api.get<any>(`/transactions?${params.toString()}`)
       .then((res) => {
         const { data: items, total, totalPages } = unwrapList<Transaction>(res);
@@ -35,7 +42,7 @@ export default function TransactionsPage() {
       })
       .catch((e) => setError(e.message || 'Failed to load transactions'))
       .finally(() => setLoading(false));
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, typedSearch]);
 
   return (
     <AdminLayout>
@@ -45,7 +52,7 @@ export default function TransactionsPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by type, category, description, status..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by type, category, description, status..." />
       </div>
 
       {loading ? (

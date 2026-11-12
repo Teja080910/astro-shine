@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, DatePicker } from '@/components/UIComponents';
 import { SearchInput } from '@/components/SearchInput';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 
@@ -23,7 +24,13 @@ export default function MuhuratPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Commit the query as the user types instead of requiring Enter.
+  const typedSearch = useDebouncedValue(search, 300);
+
+  // Reset to the first page whenever the query changes.
+  useEffect(() => {
+    setPage(1);
+  }, [typedSearch]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
@@ -45,7 +52,7 @@ export default function MuhuratPage() {
         limit: String(limit),
       });
       if (categoryFilter !== 'all') params.set('categoryId', categoryFilter);
-      if (debouncedSearch) params.set('q', debouncedSearch);
+      if (typedSearch) params.set('q', typedSearch);
       const res = await api.get<any>(`/muhurat?${params.toString()}`);
       const { data, total, totalPages } = unwrapList<any>(res);
       setData(data);
@@ -57,7 +64,7 @@ export default function MuhuratPage() {
     } finally {
       setLoading(false);
     }
-  }, [startDate, endDate, categoryFilter, debouncedSearch, page, limit]);
+  }, [startDate, endDate, categoryFilter, typedSearch, page, limit]);
 
   useEffect(() => {
     fetchMuhurat();
@@ -98,7 +105,7 @@ export default function MuhuratPage() {
               ))}
             </select>
           </div>
-          <SearchInput value={search} onChange={setSearch} placeholder="Search by name, date or status..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
+          <SearchInput value={search} onChange={setSearch} placeholder="Search by name, date or status..."  />
         </div>
       </div>
 

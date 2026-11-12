@@ -5,6 +5,7 @@ import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
 import { SearchInput } from '@/components/SearchInput';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 
@@ -21,7 +22,13 @@ export default function ReleasesPage() {
   const [downloadUrl, setDownloadUrl] = useState('');
   const [isMandatory, setIsMandatory] = useState(false);
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Commit the query as the user types instead of requiring Enter.
+  const typedSearch = useDebouncedValue(search, 300);
+
+  // Reset to the first page whenever the query changes.
+  useEffect(() => {
+    setPage(1);
+  }, [typedSearch]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
@@ -30,7 +37,7 @@ export default function ReleasesPage() {
   const fetchData = useCallback(() => {
     setLoading(true);
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (debouncedSearch) params.set('q', debouncedSearch);
+    if (typedSearch) params.set('q', typedSearch);
     api.get<any>(`/releases?${params.toString()}`)
       .then((res) => {
         const list = unwrapList<any>(res);
@@ -40,7 +47,7 @@ export default function ReleasesPage() {
       })
       .catch((e) => setError(e.message || 'Failed to load releases'))
       .finally(() => setLoading(false));
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, typedSearch]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -79,7 +86,7 @@ export default function ReleasesPage() {
         <button onClick={() => openForm(null)} className="gradient-btn">Add Release</button>
       </div>
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by app, platform or version..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by app, platform or version..." />
       </div>
 
       {loading ? (

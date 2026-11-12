@@ -6,6 +6,7 @@ import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { SearchInput } from '@/components/SearchInput';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { api } from '@/lib/api';
 import type { User } from '@astro-shine/shared-types';
 
@@ -15,7 +16,13 @@ export default function UsersPage() {
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<User | null>(null);
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Commit the query as the user types instead of requiring Enter.
+  const typedSearch = useDebouncedValue(search, 300);
+
+  // Reset to the first page whenever the query changes.
+  useEffect(() => {
+    setPage(1);
+  }, [typedSearch]);
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -25,7 +32,7 @@ export default function UsersPage() {
   useEffect(() => {
     setLoading(true);
     setError('');
-    const params = `?page=${page}&limit=${limit}${debouncedSearch ? `&q=${encodeURIComponent(debouncedSearch)}` : ''}`;
+    const params = `?page=${page}&limit=${limit}${typedSearch ? `&q=${encodeURIComponent(typedSearch)}` : ''}`;
     api.get<any>(`/users${params}`)
       .then((res) => {
         const result = unwrapList<User>(res);
@@ -35,7 +42,7 @@ export default function UsersPage() {
       })
       .catch((e) => setError(e.message || 'Failed to load users'))
       .finally(() => setLoading(false));
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, typedSearch]);
 
   const filtered = users.filter(u => {
     if (statusFilter !== 'all' && u.isActive !== (statusFilter === 'active')) return false;
@@ -59,7 +66,6 @@ export default function UsersPage() {
         <SearchInput
           value={search}
           onChange={setSearch}
-          onEnter={(v) => { setDebouncedSearch(v); setPage(1); }}
           placeholder="Search by name, email, or phone..."
         />
         <div className="flex gap-2">

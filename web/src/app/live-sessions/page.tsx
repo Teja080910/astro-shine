@@ -5,6 +5,7 @@ import { formatDate } from '@/lib/utils';
 import { AdminLayout } from '@/components/AdminLayout';
 import { Table, Badge, GradientButton, CustomModal } from '@/components/UIComponents';
 import { SearchInput } from '@/components/SearchInput';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { api } from '@/lib/api';
 
@@ -15,7 +16,13 @@ export default function LiveSessionsPage() {
   const [selected, setSelected] = useState<any>(null);
   const [status, setStatus] = useState('');
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Commit the query as the user types instead of requiring Enter.
+  const typedSearch = useDebouncedValue(search, 300);
+
+  // Reset to the first page whenever the query changes.
+  useEffect(() => {
+    setPage(1);
+  }, [typedSearch]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
@@ -23,7 +30,7 @@ export default function LiveSessionsPage() {
 
   const loadSessions = useCallback(async () => {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (debouncedSearch.trim()) params.set('q', debouncedSearch.trim());
+    if (typedSearch.trim()) params.set('q', typedSearch.trim());
     try {
       const res = await api.get<any>(`/live-sessions?${params.toString()}`);
       const { data, total, totalPages } = unwrapList<any>(res);
@@ -35,7 +42,7 @@ export default function LiveSessionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, typedSearch]);
 
   useEffect(() => { loadSessions(); }, [loadSessions]);
 
@@ -58,7 +65,7 @@ export default function LiveSessionsPage() {
         <span className="text-text-secondary">{total} total</span>
       </div>
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <SearchInput value={search} onChange={setSearch} placeholder="Search by title, astrologer or status..." onEnter={(v) => { setDebouncedSearch(v); setPage(1); }} />
+        <SearchInput value={search} onChange={setSearch} placeholder="Search by title, astrologer or status..." />
       </div>
 
       {loading ? (

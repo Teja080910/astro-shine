@@ -3,10 +3,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AdminLayout } from '@/components/AdminLayout';
 import { SearchInput } from '@/components/SearchInput';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { Pagination, unwrapList } from '@/components/Pagination';
 import { Table, GradientButton, CustomModal } from '@/components/UIComponents';
 import { api } from '@/lib/api';
-import { formatAmount, sumAmounts } from '@/lib/utils';
+import { formatAmount, formatDate, sumAmounts } from '@/lib/utils';
 
 export default function WalletPage() {
   const [data, setData] = useState<any[]>([]);
@@ -18,18 +19,36 @@ export default function WalletPage() {
   const [withdrawError, setWithdrawError] = useState('');
   const [adminWallet, setAdminWallet] = useState<any>(null);
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Commit the query as the user types instead of requiring Enter.
+  const typedSearch = useDebouncedValue(search, 300);
+
+  // Reset to the first page whenever the query changes.
+  useEffect(() => {
+    setPage(1);
+  }, [typedSearch]);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [summary, setSummary] = useState<{ balance: number; totalAdded: number; totalDeducted: number } | null>(null);
+  // Date range scoping, requested by admins. Filters wallets by created_at.
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [dateError, setDateError] = useState('');
 
   const fetchWallets = useCallback(() => {
     setLoading(true);
     setError('');
+    setDateError('');
+    if (fromDate && toDate && fromDate > toDate) {
+      setDateError('The start date must be on or before the end date.');
+      setLoading(false);
+      return;
+    }
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (debouncedSearch) params.set('q', debouncedSearch);
+    if (typedSearch) params.set('q', typedSearch);
+    if (fromDate) params.set('from', fromDate);
+    if (toDate) params.set('to', toDate);
     Promise.all([
       api.get<any>(`/wallet/all?${params.toString()}`),
       api.get<any>('/wallet').catch(() => null),
@@ -42,7 +61,7 @@ export default function WalletPage() {
       setAdminWallet(mine && mine.adminId ? mine : null);
     }).catch(() => { setError('Failed to load wallet data'); })
       .finally(() => setLoading(false));
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, typedSearch, fromDate, toDate]);
 
   useEffect(() => { fetchWallets(); }, [fetchWallets]);
 
@@ -78,14 +97,43 @@ export default function WalletPage() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
         <SearchInput
           value={search}
           onChange={setSearch}
           placeholder="Search by owner or type..."
-          onEnter={(v) => { setDebouncedSearch(v); setPage(1); }}
-        />
+          />
+        <div className="flex items-center gap-2">
+          <label htmlFor="wallet-from" className="text-xs font-bold text-text-muted uppercase tracking-wider">From</label>
+          <input
+            id="wallet-from"
+            type="date"
+            value={fromDate}
+            onChange={(e) => { setFromDate(e.target.value); setPage(1); }}
+            className="input-field text-sm py-2 w-auto"
+          />
+          <label htmlFor="wallet-to" className="text-xs font-bold text-text-muted uppercase tracking-wider">To</label>
+          <input
+            id="wallet-to"
+            type="date"
+            value={toDate}
+            onChange={(e) => { setToDate(e.target.value); setPage(1); }}
+            className="input-field text-sm py-2 w-auto"
+          />
+          {(fromDate || toDate) && (
+            <button
+              type="button"
+              onClick={() => { setFromDate(''); setToDate(''); setPage(1); }}
+              className="text-xs font-bold text-primary-light hover:underline px-2"
+            >
+              Clear
+            </button>
+          )}
+        </div>
       </div>
+      {dateError && (
+        <div className="mb-4 text-xs text-danger">{dateError}</div>
+      )}
 
       {loading ? (
         <div className="glass-card p-6 text-center text-text-secondary">Loading wallets...</div>
@@ -108,7 +156,7 @@ export default function WalletPage() {
         </div>
       </div>
 
-      <Table headers={['Owner', 'Type', 'Balance', 'Total Added', 'Total Deducted']} emptyMessage="No wallets found">
+      <Table headers={['Owner', 'Type', 'Balance', 'Total Added', 'Total Deducted', 'Created']} emptyMessage="No wallets found for this date range">
         {data.map((w: any) => (
           <tr key={w.id} className="border-b border-divider hover:bg-surface-light/50">
             <td className="px-4 py-3 text-text-primary font-medium">{w.ownerName}</td>
@@ -116,6 +164,7 @@ export default function WalletPage() {
             <td className="px-4 py-3 text-text-primary font-medium">₹{formatAmount(w.balance)}</td>
             <td className="px-4 py-3 text-success">+₹{formatAmount(w.totalAdded)}</td>
             <td className="px-4 py-3 text-danger">-₹{formatAmount(w.totalDeducted)}</td>
+            <td className="px-4 py-3 text-text-muted text-sm">{w.createdAt ? formatDate(w.createdAt) : '-'}</td>
           </tr>
         ))}
       </Table>
