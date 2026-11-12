@@ -9,7 +9,7 @@ interface Props {
   style?: ViewStyle;
   disabled?: boolean;
   small?: boolean;
-  variant?: 'primary' | 'secondary' | 'danger' | 'gold' | 'outline';
+  variant?: 'primary' | 'secondary' | 'danger' | 'gold' | 'outline' | 'solid';
 }
 
 export function GradientButton({ title, onPress, style, disabled, small, variant = 'primary' }: Props) {
@@ -20,6 +20,29 @@ export function GradientButton({ title, onPress, style, disabled, small, variant
     gold: [colors.accentGold, '#EE7B10'],
     outline: ['transparent', 'transparent'],
   };
+
+  // Flat brand orange, no gradient. Matches the Chat / Call / Video buttons on
+  // the astrologer cards so primary actions do not fade to amber on the right.
+  if (variant === 'solid') {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        disabled={disabled}
+        activeOpacity={0.8}
+        style={[
+          styles.wrapper,
+          small && styles.small,
+          styles.solidButton,
+          disabled && styles.disabled,
+          style,
+        ]}
+      >
+        <Text style={[styles.text, small && styles.smallText]} numberOfLines={1}>
+          {title}
+        </Text>
+      </TouchableOpacity>
+    );
+  }
 
   if (variant === 'outline') {
     return (
@@ -84,5 +107,18 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 16,
     fontWeight: '700',
+  },
+  solidButton: {
+    flex: 1,
+    borderRadius: radii.button,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    backgroundColor: colors.tabActive,
+    shadowColor: colors.tabActive,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 2,
   },
 });

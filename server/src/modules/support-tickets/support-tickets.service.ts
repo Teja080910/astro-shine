@@ -30,7 +30,7 @@ export class SupportTicketsService {
     const where = conditions.length ? and(...conditions) : undefined;
 
     if (!pagination?.enabled) {
-      return this.db.query.supportTickets.findMany({ where, orderBy: (t: any) => t.createdAt });
+      return this.db.query.supportTickets.findMany({ where, orderBy: (t: any) => desc(t.createdAt) });
     }
 
     const [data, countRows] = await Promise.all([
@@ -43,7 +43,7 @@ export class SupportTicketsService {
   }
 
   async findById(id: string) { return this.db.query.supportTickets.findFirst({ where: eq(schema.supportTickets.id, id) }); }
-  async findByUserId(userId: string) { return this.db.query.supportTickets.findMany({ where: eq(schema.supportTickets.userId, userId), orderBy: (t: any) => t.createdAt }); }
+  async findByUserId(userId: string) { return this.db.query.supportTickets.findMany({ where: eq(schema.supportTickets.userId, userId), orderBy: (t: any) => desc(t.createdAt) }); }
 
   /**
    * Subject helpers. The mobile app prefixes the subject with the chosen category, e.g.

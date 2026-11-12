@@ -75,7 +75,7 @@ export function DatePicker({ visible, value, onClose, onSelect, title = 'Select 
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <TouchableOpacity activeOpacity={1} onPress={onClose} style={styles.overlay}>
         <TouchableOpacity activeOpacity={1} style={[styles.dialog, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
-          <Text style={[typography.sectionTitle, { textAlign: 'center', marginBottom: 12, color: colors.accentGold }]}>{title}</Text>
+          <Text style={[typography.sectionTitle, { textAlign: 'center', marginBottom: 12, color: colors.heading }]}>{title}</Text>
 
           {view === 'years' ? (
             <>
@@ -83,14 +83,14 @@ export function DatePicker({ visible, value, onClose, onSelect, title = 'Select 
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center', paddingVertical: 8 }}>
                   {years.map(y => (
                     <TouchableOpacity key={y} onPress={() => { setYear(y); setView('calendar'); }}
-                      style={[styles.yearChip, { backgroundColor: y === year ? colors.primary : colors.surfaceLight, borderColor: y === year ? colors.primaryLight : colors.cardBorder }]}>
+                      style={[styles.yearChip, { backgroundColor: y === year ? colors.primary : colors.surfaceLight, borderColor: y === year ? colors.primary : colors.cardBorder }]}>
                       <Text style={{ color: y === year ? colors.white : colors.textPrimary, fontWeight: '600', fontSize: 13 }}>{y}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               </ScrollView>
               <TouchableOpacity onPress={() => setView('calendar')} style={{ alignSelf: 'center', marginTop: 8 }}>
-                <Text style={[typography.caption, { color: colors.primaryLight, fontWeight: '600' }]}>Back to Calendar</Text>
+                <Text style={[typography.caption, { color: colors.primary, fontWeight: '600' }]}>Back to Calendar</Text>
               </TouchableOpacity>
             </>
           ) : (
@@ -132,10 +132,10 @@ export function DatePicker({ visible, value, onClose, onSelect, title = 'Select 
               </ScrollView>
 
               <View style={styles.actions}>
-                <TouchableOpacity onPress={onClose} style={[styles.actionBtn, { borderColor: colors.cardBorder, borderWidth: 1 }]}>
-                  <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '600' }]}>Cancel</Text>
+                <TouchableOpacity onPress={onClose} style={[styles.actionBtn, { backgroundColor: colors.primary }]}>
+                  <Text style={[typography.caption, { color: colors.white, fontWeight: '700' }]}>Cancel</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={handleConfirm} style={[styles.actionBtn, { backgroundColor: colors.accentGold }]}>
+                <TouchableOpacity onPress={handleConfirm} style={[styles.actionBtn, { backgroundColor: colors.primary }]}>
                   <Text style={[typography.caption, { color: colors.white, fontWeight: '700' }]}>Select Date</Text>
                 </TouchableOpacity>
               </View>

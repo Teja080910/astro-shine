@@ -407,7 +407,7 @@ function AstrologerRowCard({
               style={{
                 fontSize: 11.5,
                 fontWeight: "800",
-                color: isDark ? "#F3F4F6" : "#1F2937",
+                color: colors.heading,
               }}
             >
               {item.rating ? parseFloat(String(item.rating)).toFixed(1) : "4.5"}
@@ -447,7 +447,7 @@ function AstrologerRowCard({
               </Text>
             </View>
 
-            <Text style={{ color: isDark ? "#4B5563" : "#D8D4CC", fontSize: 11 }}>|</Text>
+            <Text style={{ color: colors.rowBorder, fontSize: 11 }}>|</Text>
 
             <View
               style={{
@@ -520,7 +520,7 @@ function AstrologerRowCard({
                     style={{
                       fontSize: 9.5,
                       fontWeight: "600",
-                      color: colors.accentText,
+                      color: colors.heading,
                       lineHeight: 12,
                     }}
                     numberOfLines={1}
@@ -556,13 +556,13 @@ function AstrologerRowCard({
               flex: 1,
               height: 44,
               borderRadius: 14,
-              backgroundColor: item.isChatEnabled === false ? (colors.rowBorder) : "#EE7B10",
+              backgroundColor: item.isChatEnabled === false ? (colors.rowBorder) : colors.tabActive,
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
               gap: 5,
               paddingHorizontal: 4,
-              shadowColor: "#EE7B10",
+              shadowColor: colors.tabActive,
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: item.isChatEnabled === false ? 0 : 0.25,
               shadowRadius: 3,
@@ -608,13 +608,13 @@ function AstrologerRowCard({
               flex: 1,
               height: 44,
               borderRadius: 14,
-              backgroundColor: item.isAudioCallEnabled === false ? (colors.rowBorder) : "#EE7B10",
+              backgroundColor: item.isAudioCallEnabled === false ? (colors.rowBorder) : colors.tabActive,
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
               gap: 5,
               paddingHorizontal: 4,
-              shadowColor: "#EE7B10",
+              shadowColor: colors.tabActive,
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: item.isAudioCallEnabled === false ? 0 : 0.25,
               shadowRadius: 3,
@@ -660,13 +660,13 @@ function AstrologerRowCard({
               flex: 1,
               height: 44,
               borderRadius: 14,
-              backgroundColor: item.isVideoCallEnabled === false ? (colors.rowBorder) : "#EE7B10",
+              backgroundColor: item.isVideoCallEnabled === false ? (colors.rowBorder) : colors.tabActive,
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
               gap: 5,
               paddingHorizontal: 4,
-              shadowColor: "#EE7B10",
+              shadowColor: colors.tabActive,
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: item.isVideoCallEnabled === false ? 0 : 0.25,
               shadowRadius: 3,
@@ -743,14 +743,14 @@ function AstrologerRowCard({
           <TouchableOpacity
             onPress={() => onAction?.()}
             style={{
-              backgroundColor: "#EE7B10",
+              backgroundColor: colors.tabActive,
               borderRadius: 20,
               paddingHorizontal: 14,
               paddingVertical: 8,
               flexDirection: "row",
               alignItems: "center",
               gap: 4,
-              shadowColor: "#EE7B10",
+              shadowColor: colors.tabActive,
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.25,
               shadowRadius: 4,
@@ -1202,7 +1202,7 @@ export function UserHomeScreen({ navigation }: any) {
               paddingTop: 10,
               paddingBottom: 10,
               minHeight: isCompact ? 118 : 128,
-              shadowColor: "#EE7B10",
+              shadowColor: colors.tabActive,
               shadowOffset: { width: 0, height: 3 },
               shadowOpacity: isDark ? 0 : 0.08,
               shadowRadius: 8,
@@ -1281,7 +1281,7 @@ export function UserHomeScreen({ navigation }: any) {
                 <Text
                   style={{
                     fontSize: isCompact ? 12.5 : 14,
-                    color: "#C21415",
+                    color: colors.heading,
                     fontWeight: "800",
                     flexShrink: 1,
                   }}
@@ -1294,12 +1294,12 @@ export function UserHomeScreen({ navigation }: any) {
               <TouchableOpacity
                 onPress={() => navigation.navigate("Wallet")}
                 style={{
-                  backgroundColor: "#EE7B10",
+                  backgroundColor: colors.tabActive,
                   borderRadius: 14,
                   paddingHorizontal: isCompact ? 8 : 10,
                   paddingVertical: 3.5,
                   flexShrink: 0,
-                  shadowColor: "#EE7B10",
+                  shadowColor: colors.tabActive,
                   shadowOffset: { width: 0, height: 1 },
                   shadowOpacity: 0.2,
                   shadowRadius: 2,
@@ -1535,7 +1535,7 @@ export function UserHomeScreen({ navigation }: any) {
               borderRadius: 22,
               padding: 16,
               overflow: "hidden",
-              shadowColor: "#EE7B10",
+              shadowColor: colors.tabActive,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: isDark ? 0 : 0.06,
               shadowRadius: 10,
@@ -1597,7 +1597,7 @@ export function UserHomeScreen({ navigation }: any) {
                   style={{
                     fontSize: 11.5,
                     fontWeight: "600",
-                    color: colors.accentText,
+                    color: colors.heading,
                     flexShrink: 1,
                   }}
                   numberOfLines={2}
@@ -1628,7 +1628,15 @@ export function UserHomeScreen({ navigation }: any) {
             </View>
 
             <TouchableOpacity
-              onPress={() => navigation.navigate("Horoscope")}
+              onPress={() =>
+                // The Horoscope tab was removed; open today's reading directly.
+                navigation.navigate("HoroscopeDetail", {
+                  sign: selectedSign,
+                  label:
+                    ZODIAC_SIGNS.find((z) => z.sign === selectedSign)?.label ||
+                    "Aries",
+                })
+              }
               style={{
                 width: 32,
                 height: 32,
@@ -1662,153 +1670,51 @@ export function UserHomeScreen({ navigation }: any) {
                 paddingRight: 2,
               }}
             >
-            <TouchableOpacity
-              onPress={() => setActiveHoroscopeTab("love")}
-              style={[
-                styles.subTabItem,
-                {
-                  backgroundColor: isDark
-                    ? activeHoroscopeTab === "love" ? "rgba(225, 29, 72, 0.25)" : "rgba(225, 29, 72, 0.12)"
-                    : "#FFF1F2",
-                  borderColor: isDark
-                    ? activeHoroscopeTab === "love" ? "#E11D48" : "rgba(225, 29, 72, 0.3)"
-                    : activeHoroscopeTab === "love" ? "#E11D48" : "#FECDD3",
-                  borderWidth: 1,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 18,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 4,
-                },
-              ]}
-            >
-              <Ionicons
-                name="heart"
-                size={14}
-                color={isDark ? "#FDA4AF" : "#E11D48"}
-              />
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: activeHoroscopeTab === "love" ? "800" : "600",
-                  color: isDark ? "#FDA4AF" : "#BE123C",
-                }}
-              >
-                Love
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setActiveHoroscopeTab("career")}
-              style={[
-                styles.subTabItem,
-                {
-                  backgroundColor: isDark
-                    ? activeHoroscopeTab === "career" ? "rgba(220, 38, 38, 0.25)" : "rgba(220, 38, 38, 0.12)"
-                    : "#FEF2F2",
-                  borderColor: isDark
-                    ? activeHoroscopeTab === "career" ? "#C21415" : "rgba(220, 38, 38, 0.3)"
-                    : activeHoroscopeTab === "career" ? "#C21415" : "#FECACA",
-                  borderWidth: 1,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 18,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 4,
-                },
-              ]}
-            >
-              <Ionicons
-                name="briefcase"
-                size={14}
-                color={colors.danger}
-              />
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: activeHoroscopeTab === "career" ? "800" : "600",
-                  color: colors.danger,
-                }}
-              >
-                Career
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setActiveHoroscopeTab("finance")}
-              style={[
-                styles.subTabItem,
-                {
-                  backgroundColor: isDark
-                    ? activeHoroscopeTab === "finance" ? "rgba(217, 119, 6, 0.25)" : "rgba(217, 119, 6, 0.12)"
-                    : "#FEF9C3",
-                  borderColor: isDark
-                    ? activeHoroscopeTab === "finance" ? "#EE7B10" : "rgba(217, 119, 6, 0.3)"
-                    : activeHoroscopeTab === "finance" ? "#EE7B10" : "#FDE047",
-                  borderWidth: 1,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 18,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 4,
-                },
-              ]}
-            >
-              <Ionicons
-                name="wallet"
-                size={14}
-                color={colors.accentText}
-              />
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: activeHoroscopeTab === "finance" ? "800" : "600",
-                  color: colors.accentText,
-                }}
-              >
-                Finance
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setActiveHoroscopeTab("health")}
-              style={[
-                styles.subTabItem,
-                {
-                  backgroundColor: isDark
-                    ? activeHoroscopeTab === "health" ? "rgba(16, 185, 129, 0.25)" : "rgba(16, 185, 129, 0.12)"
-                    : "#ECFDF5",
-                  borderColor: isDark
-                    ? activeHoroscopeTab === "health" ? "#10B981" : "rgba(16, 185, 129, 0.3)"
-                    : activeHoroscopeTab === "health" ? "#10B981" : "#A7F3D0",
-                  borderWidth: 1,
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
-                  borderRadius: 18,
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 4,
-                },
-              ]}
-            >
-              <Ionicons
-                name="leaf"
-                size={14}
-                color={isDark ? "#34D399" : "#059669"}
-              />
-              <Text
-                style={{
-                  fontSize: 11,
-                  fontWeight: activeHoroscopeTab === "health" ? "800" : "600",
-                  color: isDark ? "#34D399" : "#065F46",
-                }}
-              >
-                Health
-              </Text>
-            </TouchableOpacity>
+            {[
+              { key: "love", label: "Love", icon: "heart" },
+              { key: "career", label: "Career", icon: "briefcase" },
+              { key: "finance", label: "Finance", icon: "wallet" },
+              { key: "health", label: "Health", icon: "leaf" },
+            ].map((tab) => {
+              const active = activeHoroscopeTab === tab.key;
+              return (
+                <TouchableOpacity
+                  key={tab.key}
+                  onPress={() => setActiveHoroscopeTab(tab.key as any)}
+                  style={[
+                    styles.subTabItem,
+                    {
+                      backgroundColor: active
+                        ? colors.primary + "20"
+                        : colors.chipBg,
+                      borderColor: active ? colors.primary : colors.chipBorder,
+                      borderWidth: 1,
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 18,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 4,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={tab.icon as any}
+                    size={14}
+                    color={active ? colors.primary : colors.accentText}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: active ? "800" : "600",
+                      color: active ? colors.primary : colors.textPrimary,
+                    }}
+                  >
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
             </ScrollView>
           </View>
         </View>
@@ -1822,7 +1728,7 @@ export function UserHomeScreen({ navigation }: any) {
               borderColor: cardBorderColor,
               borderRadius: 16,
               overflow: "hidden",
-              shadowColor: "#EE7B10",
+              shadowColor: colors.tabActive,
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: isDark ? 0 : 0.05,
               shadowRadius: 8,
@@ -1850,7 +1756,7 @@ export function UserHomeScreen({ navigation }: any) {
             </View>
             <TouchableOpacity onPress={() => navigation.navigate("Panchang")}>
               <Text
-                style={{ fontSize: 12, fontWeight: "700", color: colors.accentText }}
+                style={{ fontSize: 12, fontWeight: "700", color: colors.heading }}
               >
                 View All ›
               </Text>
@@ -2081,7 +1987,7 @@ export function UserHomeScreen({ navigation }: any) {
               <Text
                 style={[
                   styles.pastelCardText,
-                  { color: colors.accentText },
+                  { color: colors.heading },
                 ]}
                 numberOfLines={1}
               >
@@ -2323,7 +2229,7 @@ export function UserHomeScreen({ navigation }: any) {
               <Text
                 style={[
                   styles.pastelCardText,
-                  { color: colors.accentText },
+                  { color: colors.heading },
                 ]}
                 numberOfLines={1}
               >
@@ -2354,7 +2260,7 @@ export function UserHomeScreen({ navigation }: any) {
               padding: 12,
               marginHorizontal: 16,
               marginVertical: 12,
-              shadowColor: "#EE7B10",
+              shadowColor: colors.tabActive,
               shadowOffset: { width: 0, height: 3 },
               shadowOpacity: isDark ? 0 : 0.08,
               shadowRadius: 8,
@@ -2381,13 +2287,13 @@ export function UserHomeScreen({ navigation }: any) {
               style={[
                 styles.bookNowBtn,
                 {
-                  backgroundColor: "#EE7B10",
+                  backgroundColor: colors.tabActive,
                   alignSelf: "flex-start",
                   borderRadius: 20,
                   paddingHorizontal: 18,
                   paddingVertical: 7,
                   elevation: 2,
-                  shadowColor: "#EE7B10",
+                  shadowColor: colors.tabActive,
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: 0.25,
                   shadowRadius: 4,
@@ -2815,7 +2721,7 @@ export function UserHomeScreen({ navigation }: any) {
           </View>
           <GradientButton
             title="Donate Now"
-            variant="gold"
+            variant="solid"
             onPress={() => navigation.navigate("Donation")}
             style={{ width: "100%" }}
           />
@@ -3086,7 +2992,7 @@ export function AstrologerListScreen({ route, navigation }: any) {
           height: 48,
           marginHorizontal: 16,
           marginBottom: 10,
-          shadowColor: "#EE7B10",
+          shadowColor: colors.tabActive,
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: isDark ? 0 : 0.05,
           shadowRadius: 6,
@@ -3104,7 +3010,7 @@ export function AstrologerListScreen({ route, navigation }: any) {
           value={search}
           onChangeText={setSearch}
           placeholder="Search astrologers, skills, language..."
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholderText}
         />
         {search.length > 0 && (
           <TouchableOpacity onPress={() => setSearch("")} style={{ padding: 4 }}>
@@ -3837,7 +3743,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
                   <Text style={{ fontSize: 13, fontWeight: "600", color: titleColor }}>Chat Price</Text>
                 </View>
                 <Text style={{ fontSize: 13, fontWeight: "800", color: titleColor }}>
-                  ₹{astro.chatPricePerMin || 15}.00<Text style={{ fontSize: 11, color: mutedTextColor, fontWeight: "400" }}>/min</Text>
+                  ₹{formatAmount(astro.chatPricePerMin || "15")}<Text style={{ fontSize: 11, color: mutedTextColor, fontWeight: "400" }}>/min</Text>
                 </Text>
               </View>
             )}
@@ -3853,7 +3759,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
                   <Text style={{ fontSize: 13, fontWeight: "600", color: titleColor }}>Voice Call Price</Text>
                 </View>
                 <Text style={{ fontSize: 13, fontWeight: "800", color: titleColor }}>
-                  ₹{astro.audioCallPricePerMin || 22}.50<Text style={{ fontSize: 11, color: mutedTextColor, fontWeight: "400" }}>/min</Text>
+                  ₹{formatAmount(astro.audioCallPricePerMin || "22.50")}<Text style={{ fontSize: 11, color: mutedTextColor, fontWeight: "400" }}>/min</Text>
                 </Text>
               </View>
             )}
@@ -3869,7 +3775,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
                   <Text style={{ fontSize: 13, fontWeight: "600", color: titleColor }}>Video Call Price</Text>
                 </View>
                 <Text style={{ fontSize: 13, fontWeight: "800", color: titleColor }}>
-                  ₹{astro.videoCallPricePerMin || 20}.00<Text style={{ fontSize: 11, color: mutedTextColor, fontWeight: "400" }}>/min</Text>
+                  ₹{formatAmount(astro.videoCallPricePerMin || "20")}<Text style={{ fontSize: 11, color: mutedTextColor, fontWeight: "400" }}>/min</Text>
                 </Text>
               </View>
             )}
@@ -3889,12 +3795,12 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
                   flex: 1,
                   height: 48,
                   borderRadius: 16,
-                  backgroundColor: "#F59E0B",
+                  backgroundColor: colors.tabActive,
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 8,
-                  shadowColor: "#F59E0B",
+                  shadowColor: colors.tabActive,
                   shadowOpacity: 0.3,
                   shadowRadius: 6,
                   elevation: 3,
@@ -3916,12 +3822,12 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
                   flex: 1,
                   height: 48,
                   borderRadius: 16,
-                  backgroundColor: "#F59E0B",
+                  backgroundColor: colors.tabActive,
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 8,
-                  shadowColor: "#F59E0B",
+                  shadowColor: colors.tabActive,
                   shadowOpacity: 0.3,
                   shadowRadius: 6,
                   elevation: 3,
@@ -3943,12 +3849,12 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
                   flex: 1,
                   height: 48,
                   borderRadius: 16,
-                  backgroundColor: "#F59E0B",
+                  backgroundColor: colors.tabActive,
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 8,
-                  shadowColor: "#F59E0B",
+                  shadowColor: colors.tabActive,
                   shadowOpacity: 0.3,
                   shadowRadius: 6,
                   elevation: 3,
@@ -4016,7 +3922,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
               }}
             >
               <Ionicons name="gift" size={18} color="#E11D48" />
-              <Text style={{ fontSize: 12, fontWeight: "700", color: "#E11D48" }}>
+              <Text style={{ fontSize: 12, fontWeight: "700", color: colors.heading }}>
                 Send Gift
               </Text>
             </TouchableOpacity>
@@ -4255,7 +4161,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
             value={feedbackComment}
             onChangeText={setFeedbackComment}
             placeholder="Write your comments (optional)"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.placeholderText}
             multiline
           />
           <GradientButton
@@ -4323,7 +4229,7 @@ export function AstrologerDetailScreen({ route, navigation }: any) {
                 const isSelected = selectedGift?.id === item.id;
                 return (
                   <TouchableOpacity key={item.id} onPress={() => setSelectedGift(item)}
-                    style={{ width: '30%', backgroundColor: isSelected ? (colors.chipBg) : (colors.surface), borderRadius: 14, borderWidth: 1, borderColor: isSelected ? colors.accentGold : isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0', paddingVertical: 12, alignItems: 'center', gap: 4 }}>
+                    style={{ width: '30%', backgroundColor: isSelected ? (colors.chipBg) : (colors.surface), borderRadius: 14, borderWidth: 1, borderColor: isSelected ? colors.primary : isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0', paddingVertical: 12, alignItems: 'center', gap: 4 }}>
                     <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.surface, borderWidth: 1, borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#F1F5F9', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                       {item.image ? (
                         <Image source={{ uri: item.image }} style={{ width: 48, height: 48 }} resizeMode="cover" />
@@ -4471,6 +4377,9 @@ const walletTxnDuration = (t: Transaction): string | null => {
 
 export function WalletScreen() {
   const navigation = useNavigation<any>();
+  // Without this the screen never re-renders on theme change, so every colour
+  // stayed frozen at its light-mode value.
+  const { theme } = useAuth();
   const isFocused = useIsFocused();
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [txns, setTxns] = useState<Transaction[]>([]);
@@ -4545,13 +4454,15 @@ export function WalletScreen() {
       <View style={{ width: "100%", maxWidth: 600, alignSelf: "center", padding: 16 }}>
         <GlassCard style={styles.balanceCard}>
           <Text style={typography.caption}>Available Balance</Text>
-          <Text style={styles.balance}>₹{formatAmount(wallet?.balance)}</Text>
+          <Text style={[styles.balance, { color: colors.heading }]}>
+            ₹{formatAmount(wallet?.balance)}
+          </Text>
           <View style={{ flexDirection: "row", gap: 12, marginTop: 16 }}>
             <View style={{ flex: 1 }}>
               <GradientButton title="Add Funds" onPress={() => setShowAdd((v) => !v)} small />
             </View>
             <View style={{ flex: 1 }}>
-              <GradientButton title="Donate" variant="gold" onPress={handleDonate} small />
+              <GradientButton title="Donate" variant="solid" onPress={handleDonate} small />
             </View>
           </View>
         </GlassCard>
@@ -4584,7 +4495,7 @@ export function WalletScreen() {
               value={amount}
               onChangeText={setAmount}
               placeholder="Enter amount in ₹"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.placeholderText}
               keyboardType="decimal-pad"
             />
             <Text style={[typography.caption, { color: colors.textMuted, marginTop: 8 }]}>
@@ -4624,7 +4535,7 @@ export function WalletScreen() {
                 alignItems: "center",
                 gap: 6,
                 backgroundColor: colors.surfaceLight,
-                borderColor: txnFilter === "all" ? colors.cardBorder : colors.accentGold,
+                borderColor: txnFilter === "all" ? colors.cardBorder : colors.primary,
                 borderWidth: 1,
                 borderRadius: radii.input,
                 paddingHorizontal: 12,
@@ -4643,7 +4554,7 @@ export function WalletScreen() {
                 alignItems: "center",
                 gap: 6,
                 backgroundColor: colors.surfaceLight,
-                borderColor: dateRange === "all" ? colors.cardBorder : colors.accentGold,
+                borderColor: dateRange === "all" ? colors.cardBorder : colors.primary,
                 borderWidth: 1,
                 borderRadius: radii.input,
                 paddingHorizontal: 12,
@@ -4712,7 +4623,7 @@ export function WalletScreen() {
                     <Text style={{ fontSize: 15, fontWeight: "600", color: colors.textPrimary }}>
                       {f.label}
                     </Text>
-                    {active && <Ionicons name="checkmark-circle" size={20} color={colors.accentGold} />}
+                    {active && <Ionicons name="checkmark-circle" size={20} color={colors.primary} />}
                   </TouchableOpacity>
                 );
               })}
@@ -4773,7 +4684,7 @@ export function WalletScreen() {
                     <Text style={{ fontSize: 15, fontWeight: "600", color: colors.textPrimary }}>
                       {f.label}
                     </Text>
-                    {active && <Ionicons name="checkmark-circle" size={20} color={colors.accentGold} />}
+                    {active && <Ionicons name="checkmark-circle" size={20} color={colors.primary} />}
                   </TouchableOpacity>
                 );
               })}
@@ -4794,9 +4705,10 @@ export function WalletScreen() {
             const icon = transactionIcon(t);
             const duration = walletTxnDuration(t);
             const statusKey = (t.status || "").toLowerCase();
-            const statusColor =
-              statusKey === "success" ? colors.success :
-              statusKey === "pending" ? colors.warning : colors.danger;
+            // Client request: transaction rows should use the app's theme colour
+            // (maroon in light, gold in dark) instead of red/green per status, so
+            // a long list reads as one consistent palette.
+            const statusColor = colors.heading;
             return (
               <GlassCard key={t.id} style={{ marginTop: 8, padding: 12 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
@@ -4831,14 +4743,14 @@ export function WalletScreen() {
                       style={{
                         fontWeight: "800",
                         fontSize: 15,
-                        color: isCredit ? colors.success : colors.danger,
+                        color: colors.heading,
                       }}
                     >
                       {isCredit ? "+" : "-"}₹{formatAmount(t.amount)}
                     </Text>
                     <View
                       style={{
-                        backgroundColor: statusColor + "18",
+                        backgroundColor: colors.heading + "14",
                         borderRadius: 8,
                         paddingHorizontal: 7,
                         paddingVertical: 2,
@@ -4861,6 +4773,8 @@ export function WalletScreen() {
 
 // Chat
 export function ChatScreen() {
+  // subscribe to theme so colours re-resolve on toggle
+  useAuth();
   const [input, setInput] = useState("");
   return (
     <ScreenWrapper noPadding>
@@ -4904,7 +4818,7 @@ export function ChatScreen() {
             fontSize: 15,
           }}
           placeholder="Type a message..."
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholderText}
           value={input}
           onChangeText={setInput}
         />
@@ -5170,7 +5084,7 @@ function MatchmakingReport({ result }: { result: any }) {
     <View style={{ gap: 16, marginTop: 20 }}>
       <GlassCard style={{ padding: 20, alignItems: "center" }}>
         <Text style={[typography.sectionTitle]}>Guna Milan Score</Text>
-        <Text style={{ fontSize: 40, fontWeight: "800", color: colors.accentGold, marginTop: 8 }}>
+        <Text style={{ fontSize: 40, fontWeight: "800", color: colors.heading, marginTop: 8 }}>
           {score}
           <Text style={{ fontSize: 20, color: colors.textMuted }}> / {maxScore}</Text>
         </Text>
@@ -5962,7 +5876,7 @@ export function ShopScreen({ navigation }: any) {
                   paddingVertical: 4,
                 }}
               >
-                <Text style={{ fontSize: 11, fontWeight: "700", color: colors.accentGold }}>
+                <Text style={{ fontSize: 11, fontWeight: "700", color: colors.heading }}>
                   {selectedProduct.category}
                 </Text>
               </View>
@@ -6061,7 +5975,7 @@ function PasswordInput({
           value={value}
           onChangeText={onChange}
           placeholder={placeholder}
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholderText}
           secureTextEntry={!show}
         />
         <Ionicons
@@ -6370,7 +6284,7 @@ export function ProfileScreen({ navigation }: any) {
                 marginBottom: 8,
               }}
             >
-              <Text style={[styles.groupHeaderTitle, { color: colors.primaryLight, marginBottom: 0 }]}>
+              <Text style={[styles.groupHeaderTitle, { color: colors.heading, marginBottom: 0 }]}>
                 PROFILE DETAILS
               </Text>
               <TouchableOpacity
@@ -6442,7 +6356,7 @@ export function ProfileScreen({ navigation }: any) {
               { backgroundColor: cardBg, borderColor: cardBorderColor },
             ]}
           >
-            <Text style={[styles.groupHeaderTitle, { color: colors.primaryLight }]}>
+            <Text style={[styles.groupHeaderTitle, { color: colors.heading }]}>
               MY ACCOUNT
             </Text>
             {items
@@ -6486,7 +6400,7 @@ export function ProfileScreen({ navigation }: any) {
               { backgroundColor: cardBg, borderColor: cardBorderColor },
             ]}
           >
-            <Text style={[styles.groupHeaderTitle, { color: colors.primaryLight }]}>
+            <Text style={[styles.groupHeaderTitle, { color: colors.heading }]}>
               PREFERENCES & SECURITY
             </Text>
 
@@ -6600,7 +6514,7 @@ export function ProfileScreen({ navigation }: any) {
               >
                 <Ionicons name="trash-outline" size={20} color="#C21415" />
               </View>
-              <Text style={[styles.menuRowLabel, { color: "#C21415" }]}>
+              <Text style={[styles.menuRowLabel, { color: colors.heading }]}>
                 Delete Account
               </Text>
               <Ionicons name="chevron-forward" size={18} color="#FCA5A5" />
@@ -6626,7 +6540,7 @@ export function ProfileScreen({ navigation }: any) {
           />
           <Text
             style={{
-              color: colors.danger,
+              color: colors.heading,
               fontSize: 15,
               fontWeight: "700",
               marginLeft: 8,
@@ -6645,13 +6559,13 @@ export function ProfileScreen({ navigation }: any) {
         <View style={{ paddingHorizontal: 24, paddingBottom: 20 }}>
           {pwError ? (
             <Text
-              style={{ color: colors.danger, fontSize: 14, marginBottom: 10 }}
+              style={{ color: colors.heading, fontSize: 14, marginBottom: 10 }}
             >
               {pwError}
             </Text>
           ) : null}
           {pwSuccess ? (
-            <Text style={{ color: "#22c55e", fontSize: 14, marginBottom: 10 }}>
+            <Text style={{ color: colors.heading, fontSize: 14, marginBottom: 10 }}>
               {pwSuccess}
             </Text>
           ) : null}
@@ -6675,6 +6589,7 @@ export function ProfileScreen({ navigation }: any) {
           />
           <GradientButton
             title={pwLoading ? "Changing..." : "Change Password"}
+            variant="solid"
             onPress={handlePasswordChange}
             disabled={pwLoading}
             style={{ marginTop: 8 }}
@@ -6822,7 +6737,6 @@ const styles = StyleSheet.create({
   balance: {
     fontSize: 42,
     fontWeight: "800",
-    color: colors.accentGold,
     marginTop: 4,
   },
   menuItem: { flexDirection: "row", alignItems: "center", paddingVertical: 14 },
@@ -7209,7 +7123,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1.5,
     padding: 14,
-    shadowColor: "#EE7B10",
+    shadowColor: colors.tabActive,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.08,
     shadowRadius: 12,
@@ -7271,6 +7185,8 @@ const styles = StyleSheet.create({
 
 // All quick actions
 export function QuickActionsScreen({ navigation }: any) {
+  // subscribe to theme so colours re-resolve on toggle
+  useAuth();
   const cardBg = colors.card;
   const borderColor = colors.cardBorder;
   const titleColor = colors.heading;
@@ -7347,6 +7263,8 @@ export function QuickActionsScreen({ navigation }: any) {
 
 // Favourite astrologers
 export function FavouriteAstrologersScreen({ navigation }: any) {
+  // subscribe to theme so colours re-resolve on toggle
+  useAuth();
   const isFocused = useIsFocused();
   const [favourites, setFavourites] = useState<Astrologer[]>([]);
   const [loading, setLoading] = useState(true);

@@ -155,7 +155,7 @@ export function HoroscopeDetailScreen({ route, navigation }: any) {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 }}>
           <Text style={{ fontSize: 44 }}>{meta?.emoji || '✨'}</Text>
           <View style={{ flex: 1 }}>
-            <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>{label}</Text>
+            <Text style={[typography.sectionTitle, { color: colors.heading }]}>{label}</Text>
             <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>{meta?.range}</Text>
           </View>
         </View>
@@ -170,7 +170,7 @@ export function HoroscopeDetailScreen({ route, navigation }: any) {
                 paddingVertical: 10,
                 borderRadius: radii.md,
                 alignItems: 'center',
-                backgroundColor: period === p.key ? colors.accentGold : 'transparent',
+                backgroundColor: period === p.key ? colors.primary : 'transparent',
               }}
             >
               <Text style={{ color: period === p.key ? '#FFF' : colors.textPrimary, fontWeight: '700', fontSize: 13 }}>
@@ -195,9 +195,9 @@ export function HoroscopeDetailScreen({ route, navigation }: any) {
                   paddingHorizontal: 14,
                   paddingVertical: 7,
                   borderRadius: 16,
-                  backgroundColor: category === cat.key ? colors.accentGold : colors.surfaceLight,
+                  backgroundColor: category === cat.key ? colors.primary : colors.surfaceLight,
                   borderWidth: 1,
-                  borderColor: category === cat.key ? colors.accentGold : colors.cardBorder,
+                  borderColor: category === cat.key ? colors.primary : colors.cardBorder,
                 }}
               >
                 <Text style={{ color: category === cat.key ? '#FFF' : colors.textPrimary, fontWeight: '700', fontSize: 12 }}>
@@ -212,7 +212,7 @@ export function HoroscopeDetailScreen({ route, navigation }: any) {
           <GlassCard><Text style={[typography.body, { textAlign: 'center' }]}>Loading...</Text></GlassCard>
         ) : record?.prediction ? (
           <GlassCard style={{ padding: 16 }}>
-            <Text style={[typography.caption, { color: colors.accentGold, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8 }]}>
+            <Text style={[typography.caption, { color: colors.heading, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8 }]}>
               {period === 'daily' ? `${category} prediction` : `${period} prediction`}
             </Text>
             <Text style={[typography.body, { lineHeight: 23 }]}>{predictionText}</Text>
@@ -231,7 +231,7 @@ export function HoroscopeDetailScreen({ route, navigation }: any) {
                     <View key={s.label} style={{ flex: 1, minWidth: 0 }}>
                       <Text style={[typography.caption, { color: colors.textSecondary }]}>{s.label}</Text>
                       <Text
-                        style={{ fontSize: statFontSize, fontWeight: '700', color: colors.accentGold }}
+                        style={{ fontSize: statFontSize, fontWeight: '700', color: colors.heading }}
                         numberOfLines={1}
                       >
                         {s.value}
@@ -317,7 +317,7 @@ export function PanchangScreen() {
             </View>
 
             <GlassCard style={{ padding: 16, marginTop: 2 }}>
-              <Text style={[typography.caption, { color: colors.accentGold, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8 }]}>
+              <Text style={[typography.caption, { color: colors.heading, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8 }]}>
                 Sun & Moon
               </Text>
               <Row icon="sunny" label="Sunrise" value={data.sunrise ? to12h(data.sunrise) : undefined} />
@@ -327,7 +327,7 @@ export function PanchangScreen() {
             </GlassCard>
 
             <GlassCard style={{ padding: 16, marginTop: 12 }}>
-              <Text style={[typography.caption, { color: colors.accentGold, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8 }]}>
+              <Text style={[typography.caption, { color: colors.heading, fontWeight: '700', textTransform: 'uppercase', marginBottom: 8 }]}>
                 Muhurta
               </Text>
               {inauspicious && (
@@ -413,7 +413,7 @@ export function VideosScreen({ route }: any) {
                 <Text style={typography.cardTitle}>{v.title}</Text>
                 {v.description ? <Text style={[typography.body, { marginTop: 4 }]} numberOfLines={2}>{v.description}</Text> : null}
                 <View style={{ flexDirection: 'row', gap: 12, marginTop: 8 }}>
-                  {v.category && <Text style={[typography.caption, { color: colors.primaryLight }]}>{v.category}</Text>}
+                  {v.category && <Text style={[typography.caption, { color: colors.primary }]}>{v.category}</Text>}
                   {v.duration && <Text style={typography.caption}>{Math.floor(v.duration / 60)}:{String(v.duration % 60).padStart(2, '0')}</Text>}
                 </View>
               </View>
@@ -458,6 +458,7 @@ export function BlogsScreen({ navigation }: any) {
       {(role === 'astrologer' || role === 'admin') && (
         <GradientButton
           title="Create Blog"
+          variant="solid"
           onPress={() => navigation.navigate('CreateBlog')}
           style={{ marginBottom: 16 }}
         />
@@ -643,7 +644,7 @@ export function NotificationsScreen({ route }: any) {
               {unread} unread
             </Text>
             <TouchableOpacity onPress={handleMarkAllRead} disabled={markingAll}>
-              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primaryLight }}>
+              <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primary }}>
                 {markingAll ? 'Marking...' : 'Mark all as read'}
               </Text>
             </TouchableOpacity>
@@ -670,19 +671,19 @@ export function NotificationsScreen({ route }: any) {
                 <GlassCard style={{ marginBottom: 8, padding: 14, opacity: n.isRead ? 0.85 : 1 }}>
                   <View style={{ flexDirection: 'row', gap: 12 }}>
                     <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: n.isRead ? colors.surfaceLight : colors.primary + '20', alignItems: 'center', justifyContent: 'center' }}>
-                      <Ionicons name={iconName} size={20} color={n.isRead ? colors.textMuted : colors.primaryLight} />
+                      <Ionicons name={iconName} size={20} color={n.isRead ? colors.textMuted : colors.primary} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                         <View style={{ paddingHorizontal: 6, paddingVertical: 1, borderRadius: 4, backgroundColor: n.type === 'system' ? colors.primary + '20' : n.type === 'promotional' ? '#9333EA30' : n.type === 'transactional' ? '#10B98130' : '#F59E0B30' }}>
-                          <Text style={{ fontSize: 9, fontWeight: '700', color: n.type === 'system' ? colors.primaryLight : n.type === 'promotional' ? '#A855F7' : n.type === 'transactional' ? '#10B981' : '#F59E0B', textTransform: 'uppercase' }}>{n.type}</Text>
+                          <Text style={{ fontSize: 9, fontWeight: '700', color: n.type === 'system' ? colors.primary : n.type === 'promotional' ? '#A855F7' : n.type === 'transactional' ? '#10B981' : '#F59E0B', textTransform: 'uppercase' }}>{n.type}</Text>
                         </View>
                         <Text style={[typography.cardTitle, { fontSize: 14, flex: 1 }]}>{n.title}</Text>
                       </View>
                       <Text style={[typography.body, { fontSize: 13, marginTop: 2 }]}>{n.body}</Text>
                       <Text style={[typography.caption, { marginTop: 4 }]}>{new Date(n.createdAt).toLocaleDateString()}</Text>
                     </View>
-                    {!n.isRead && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primaryLight, marginTop: 4 }} />}
+                    {!n.isRead && <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.primary, marginTop: 4 }} />}
                   </View>
                 </GlassCard>
               </TouchableOpacity>
@@ -942,7 +943,7 @@ export function EditProfileScreen() {
               value={name}
               onChangeText={setName}
               placeholder="Your name"
-              placeholderTextColor={colors.textMuted}
+              placeholderTextColor={colors.placeholderText}
             />
           </View>
           
@@ -954,7 +955,7 @@ export function EditProfileScreen() {
                 value={phone}
                 onChangeText={setPhone}
                 placeholder="Phone number"
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={colors.placeholderText}
                 keyboardType="phone-pad"
               />
             </View>
@@ -978,7 +979,7 @@ export function EditProfileScreen() {
                       justifyContent: 'center',
                     }}
                   >
-                    <Text style={{ color: gender === 'male' ? colors.primaryLight : colors.textPrimary, fontWeight: '600' }}>Male</Text>
+                    <Text style={{ color: gender === 'male' ? colors.primary : colors.textPrimary, fontWeight: '600' }}>Male</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => setGender('female')}
@@ -993,7 +994,7 @@ export function EditProfileScreen() {
                       justifyContent: 'center',
                     }}
                   >
-                    <Text style={{ color: gender === 'female' ? colors.primaryLight : colors.textPrimary, fontWeight: '600' }}>Female</Text>
+                    <Text style={{ color: gender === 'female' ? colors.primary : colors.textPrimary, fontWeight: '600' }}>Female</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -1031,7 +1032,7 @@ export function EditProfileScreen() {
                   value={bio}
                   onChangeText={setBio}
                   placeholder="Tell clients about yourself"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholderText}
                   multiline
                   textAlignVertical="top"
                 />
@@ -1044,7 +1045,7 @@ export function EditProfileScreen() {
                   value={experience}
                   onChangeText={setExperience}
                   placeholder="e.g. 10"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholderText}
                   keyboardType="number-pad"
                 />
               </View>
@@ -1056,7 +1057,7 @@ export function EditProfileScreen() {
                   value={specialization}
                   onChangeText={setSpecialization}
                   placeholder="e.g. Vedic, Palmistry, Vastu"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholderText}
                 />
               </View>
 
@@ -1067,7 +1068,7 @@ export function EditProfileScreen() {
                   value={languages}
                   onChangeText={setLanguages}
                   placeholder="e.g. Hindi, English, Tamil"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholderText}
                 />
               </View>
 
@@ -1078,7 +1079,7 @@ export function EditProfileScreen() {
                   value={skills}
                   onChangeText={setSkills}
                   placeholder="e.g. Birth Chart, Predictions, Remedies"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholderText}
                   onFocus={() => {
                     setTimeout(() => {
                       scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -1094,7 +1095,7 @@ export function EditProfileScreen() {
                   value={chatPricePerMin}
                   onChangeText={setChatPricePerMin}
                   placeholder="e.g. 10"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholderText}
                   keyboardType="decimal-pad"
                   onFocus={() => {
                     setTimeout(() => {
@@ -1110,7 +1111,7 @@ export function EditProfileScreen() {
                   value={audioCallPricePerMin}
                   onChangeText={setAudioCallPricePerMin}
                   placeholder="e.g. 15"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholderText}
                   keyboardType="decimal-pad"
                   onFocus={() => {
                     setTimeout(() => {
@@ -1126,7 +1127,7 @@ export function EditProfileScreen() {
                   value={videoCallPricePerMin}
                   onChangeText={setVideoCallPricePerMin}
                   placeholder="e.g. 20"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholderText}
                   keyboardType="decimal-pad"
                   onFocus={() => {
                     setTimeout(() => {
@@ -1240,7 +1241,7 @@ export function DonationScreen() {
             value={amount}
             onChangeText={setAmount}
             placeholder="Custom amount"
-            placeholderTextColor={colors.textMuted}
+            placeholderTextColor={colors.placeholderText}
             keyboardType="decimal-pad"
           />
 
@@ -1252,8 +1253,8 @@ export function DonationScreen() {
             style={{
               flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14,
               borderRadius: radii.input, borderWidth: 1,
-              borderColor: method === 'wallet' ? colors.accentGold : colors.cardBorder,
-              backgroundColor: method === 'wallet' ? colors.accentGold + '12' : colors.surfaceLight,
+              borderColor: method === 'wallet' ? colors.primary : colors.cardBorder,
+              backgroundColor: method === 'wallet' ? colors.primary + '12' : colors.surfaceLight,
             }}
           >
             <Ionicons name="wallet" size={22} color={colors.accentGold} />
@@ -1261,7 +1262,7 @@ export function DonationScreen() {
               <Text style={{ fontWeight: '700', color: colors.textPrimary }}>Wallet Balance</Text>
               <Text style={[typography.caption, { color: colors.textMuted }]}>Available ₹{balance.toFixed(2)}</Text>
             </View>
-            <Ionicons name={method === 'wallet' ? 'radio-button-on' : 'radio-button-off'} size={20} color={colors.accentGold} />
+            <Ionicons name={method === 'wallet' ? 'radio-button-on' : 'radio-button-off'} size={20} color={colors.primary} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -1269,8 +1270,8 @@ export function DonationScreen() {
             style={{
               flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14,
               borderRadius: radii.input, borderWidth: 1, marginTop: 10,
-              borderColor: method === 'razorpay' ? colors.accentGold : colors.cardBorder,
-              backgroundColor: method === 'razorpay' ? colors.accentGold + '12' : colors.surfaceLight,
+              borderColor: method === 'razorpay' ? colors.primary : colors.cardBorder,
+              backgroundColor: method === 'razorpay' ? colors.primary + '12' : colors.surfaceLight,
             }}
           >
             <Ionicons name="card-outline" size={22} color={colors.textSecondary} />
@@ -1278,7 +1279,7 @@ export function DonationScreen() {
               <Text style={{ fontWeight: '700', color: colors.textPrimary }}>Pay Online</Text>
               <Text style={[typography.caption, { color: colors.textMuted }]}>UPI, card or netbanking via Razorpay</Text>
             </View>
-            <Ionicons name={method === 'razorpay' ? 'radio-button-on' : 'radio-button-off'} size={20} color={colors.accentGold} />
+            <Ionicons name={method === 'razorpay' ? 'radio-button-on' : 'radio-button-off'} size={20} color={colors.primary} />
           </TouchableOpacity>
 
           <GradientButton
@@ -1289,7 +1290,7 @@ export function DonationScreen() {
                   ? `Donate ₹${amount || '0'} from Wallet`
                   : `Donate ₹${amount || '0'} Online`
             }
-            variant="gold"
+            variant="solid"
             onPress={handleDonate}
             disabled={loading}
             style={{ marginTop: 16 }}
@@ -1347,7 +1348,7 @@ export function ReportScreen({ route, navigation }: any) {
           value={desc}
           onChangeText={setDesc}
           placeholder="Please describe the issue..."
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholderText}
           multiline
           textAlignVertical="top"
         />
@@ -1367,16 +1368,16 @@ export function ReportScreen({ route, navigation }: any) {
 
 /** Reports only ever move between these states; the API stores them as free text. */
 const REPORT_STATUS_META: Record<string, { label: string; color: string; backgroundColor: string }> = {
-  pending: { label: 'Pending', color: colors.warning, backgroundColor: 'rgba(245,158,11,0.15)' },
-  in_review: { label: 'In Review', color: colors.accentGold, backgroundColor: 'rgba(245,158,11,0.15)' },
-  under_review: { label: 'In Review', color: colors.accentGold, backgroundColor: 'rgba(245,158,11,0.15)' },
-  processing: { label: 'In Review', color: colors.accentGold, backgroundColor: 'rgba(245,158,11,0.15)' },
-  reviewed: { label: 'Reviewed', color: colors.success, backgroundColor: 'rgba(16,185,129,0.15)' },
-  approved: { label: 'Reviewed', color: colors.success, backgroundColor: 'rgba(16,185,129,0.15)' },
-  resolved: { label: 'Resolved', color: colors.success, backgroundColor: 'rgba(16,185,129,0.15)' },
-  closed: { label: 'Closed', color: colors.success, backgroundColor: 'rgba(16,185,129,0.15)' },
-  dismissed: { label: 'Dismissed', color: colors.danger, backgroundColor: 'rgba(194,20,21,0.12)' },
-  rejected: { label: 'Dismissed', color: colors.danger, backgroundColor: 'rgba(194,20,21,0.12)' },
+  pending: { label: 'Pending', color: colors.heading, backgroundColor: 'rgba(245,158,11,0.15)' },
+  in_review: { label: 'In Review', color: colors.heading, backgroundColor: 'rgba(245,158,11,0.15)' },
+  under_review: { label: 'In Review', color: colors.heading, backgroundColor: 'rgba(245,158,11,0.15)' },
+  processing: { label: 'In Review', color: colors.heading, backgroundColor: 'rgba(245,158,11,0.15)' },
+  reviewed: { label: 'Reviewed', color: colors.heading, backgroundColor: 'rgba(16,185,129,0.15)' },
+  approved: { label: 'Reviewed', color: colors.heading, backgroundColor: 'rgba(16,185,129,0.15)' },
+  resolved: { label: 'Resolved', color: colors.heading, backgroundColor: 'rgba(16,185,129,0.15)' },
+  closed: { label: 'Closed', color: colors.heading, backgroundColor: 'rgba(16,185,129,0.15)' },
+  dismissed: { label: 'Dismissed', color: colors.heading, backgroundColor: 'rgba(194,20,21,0.12)' },
+  rejected: { label: 'Dismissed', color: colors.heading, backgroundColor: 'rgba(194,20,21,0.12)' },
 };
 
 const REPORT_STATUS_HINT: Record<string, string> = {
@@ -1400,7 +1401,7 @@ function reportStatusMeta(status?: string, resolvedAt?: string | null) {
   if (!key) {
     return resolvedAt
       ? REPORT_STATUS_META.reviewed
-      : { label: 'Pending', color: colors.warning, backgroundColor: 'rgba(245,158,11,0.15)' };
+      : { label: 'Pending', color: colors.heading, backgroundColor: 'rgba(245,158,11,0.15)' };
   }
   const known = REPORT_STATUS_META[key];
   // A report the admin already acted on must never read "Pending", even when the
@@ -1799,7 +1800,7 @@ export function MandirPoojaScreen({ route, navigation }: any) {
                           Date: {new Date(b.bookingDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
                         </Text>
                       </View>
-                      <Text style={{ fontSize: 15, fontWeight: '800', color: colors.accentGold }}>
+                      <Text style={{ fontSize: 15, fontWeight: '800', color: colors.heading }}>
                         ₹{b.amount}
                       </Text>
                     </View>
@@ -1886,7 +1887,7 @@ export function MandirPoojaScreen({ route, navigation }: any) {
 
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                 <Text style={{ fontSize: 13, color: colors.textSecondary }}>Amount Paid</Text>
-                <Text style={{ fontSize: 14, fontWeight: "800", color: colors.accentGold }}>
+                <Text style={{ fontSize: 14, fontWeight: "800", color: colors.heading }}>
                   ₹{selectedBooking.amount}
                 </Text>
               </View>
@@ -1955,12 +1956,12 @@ export function MandirPoojaScreen({ route, navigation }: any) {
 
 // Order History
 const ORDER_STATUS_META: Record<string, { label: string; color: string; icon: string }> = {
-  pending: { label: 'Pending', color: colors.warning, icon: 'time-outline' },
-  confirmed: { label: 'Confirmed', color: colors.accentGold, icon: 'checkmark-circle-outline' },
-  processing: { label: 'Processing', color: colors.accentGold, icon: 'sync-outline' },
-  shipped: { label: 'Shipped', color: '#0EA5E9', icon: 'cube-outline' },
-  delivered: { label: 'Delivered', color: colors.success, icon: 'checkmark-done-outline' },
-  cancelled: { label: 'Cancelled', color: colors.danger, icon: 'close-circle-outline' },
+  pending: { label: 'Pending', color: colors.heading, icon: 'time-outline' },
+  confirmed: { label: 'Confirmed', color: colors.heading, icon: 'checkmark-circle-outline' },
+  processing: { label: 'Processing', color: colors.heading, icon: 'sync-outline' },
+  shipped: { label: 'Shipped', color: colors.heading, icon: 'cube-outline' },
+  delivered: { label: 'Delivered', color: colors.heading, icon: 'checkmark-done-outline' },
+  cancelled: { label: 'Cancelled', color: colors.heading, icon: 'close-circle-outline' },
 };
 
 function orderStatusMeta(status: string) {
@@ -1968,7 +1969,7 @@ function orderStatusMeta(status: string) {
   return (
     ORDER_STATUS_META[key] || {
       label: status || 'Unknown',
-      color: colors.textMuted,
+      color: colors.heading,
       icon: 'ellipse-outline',
     }
   );
@@ -2048,7 +2049,7 @@ export function OrderHistoryScreen() {
                     <Text
                       style={[
                         typography.caption,
-                        { marginTop: 2, color: order.transactionId ? colors.success : colors.warning, fontWeight: '700' },
+                        { marginTop: 2, color: colors.heading, fontWeight: '700' },
                       ]}
                     >
                       {order.transactionId ? 'Paid via Razorpay' : 'Payment pending'}
@@ -2373,7 +2374,7 @@ export function AstrologerScheduleScreen() {
                   <Toggle
                     value={isAvail}
                     onValueChange={(v) => updateDay(i, 'isAvailable', v)}
-                    trackColor={{ false: colors.textMuted, true: colors.success }}
+                    trackColor={{ false: colors.switchOff, true: colors.heading }}
                   />
                 </View>
 
@@ -2401,6 +2402,7 @@ export function AstrologerScheduleScreen() {
         })}
         <GradientButton
           title={loading ? 'Saving...' : isDirty ? 'Save Schedule' : 'Saved'}
+          variant="solid"
           onPress={saveAll}
           disabled={loading || !isDirty}
           style={{ marginTop: 16 }}
@@ -2487,7 +2489,7 @@ export function AstrologerDocumentsScreen() {
           <Text style={[typography.sectionTitle, { marginBottom: 8 }]}>Uploaded Documents</Text>
           {docs.map((doc, i) => (
             <View key={i} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.glassBg, borderColor: colors.cardBorder, borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 8 }}>
-              <Ionicons name="document-text-outline" size={20} color={colors.primaryLight} style={{ marginRight: 10 }} />
+              <Ionicons name="document-text-outline" size={20} color={colors.primary} style={{ marginRight: 10 }} />
               <Text style={[typography.body, { color: colors.textPrimary, flex: 1 }]} numberOfLines={2}>
                 {doc.split('/').pop()?.substring(14) || `Document ${i + 1}`}
               </Text>
@@ -2500,7 +2502,7 @@ export function AstrologerDocumentsScreen() {
       )}
 
       <GlassCard style={{ alignItems: 'center', padding: 24 }}>
-        <Ionicons name="cloud-upload-outline" size={48} color={colors.primaryLight} />
+        <Ionicons name="cloud-upload-outline" size={48} color={colors.primary} />
         <Text style={[typography.body, { textAlign: 'center', marginTop: 12, color: colors.textSecondary }]}>
           Upload ID proof, certificates, or degree documents for verification
         </Text>
@@ -2509,6 +2511,7 @@ export function AstrologerDocumentsScreen() {
         </Text>
         <GradientButton
           title={uploading ? 'Uploading...' : 'Upload Document'}
+          variant="solid"
           onPress={pickAndUpload}
           disabled={uploading}
         />
@@ -2555,17 +2558,17 @@ export function AstrologerCommissionScreen() {
 
         <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
           <GlassCard style={{ flex: 1, alignItems: 'center', padding: 14 }}>
-            <Text style={[typography.cardTitle, { color: colors.success }]}>₹{totalEarned.toFixed(2)}</Text>
+            <Text style={[typography.cardTitle, { color: colors.heading }]}>₹{totalEarned.toFixed(2)}</Text>
             <Text style={typography.caption}>Your Earnings</Text>
           </GlassCard>
           <GlassCard style={{ flex: 1, alignItems: 'center', padding: 14 }}>
-            <Text style={[typography.cardTitle, { color: colors.danger }]}>₹{totalFees.toFixed(2)}</Text>
+            <Text style={[typography.cardTitle, { color: colors.heading }]}>₹{totalFees.toFixed(2)}</Text>
             <Text style={typography.caption}>Platform Fees</Text>
           </GlassCard>
         </View>
 
         <GlassCard style={{ marginTop: 10, alignItems: 'center', padding: 14 }}>
-          <Text style={[typography.cardTitle, { color: colors.accentGold }]}>₹{totalRevenue.toFixed(2)}</Text>
+          <Text style={[typography.cardTitle, { color: colors.heading }]}>₹{totalRevenue.toFixed(2)}</Text>
           <Text style={typography.caption}>Total Revenue Generated</Text>
         </GlassCard>
 
@@ -2581,7 +2584,7 @@ export function AstrologerCommissionScreen() {
                   <Text style={typography.caption}>{new Date(l.createdAt).toLocaleDateString()}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={[typography.cardTitle, { fontSize: 14, color: colors.success }]}>+₹{l.totalEarned}</Text>
+                  <Text style={[typography.cardTitle, { fontSize: 14, color: colors.heading }]}>+₹{l.totalEarned}</Text>
                   <Text style={[typography.caption, { color: colors.textMuted }]}>Fee: ₹{l.platformFee}</Text>
                 </View>
               </View>
@@ -2641,9 +2644,9 @@ export function AstrologerGoLiveScreen({ navigation }: any) {
         </View>
         <TextInput
           style={{ backgroundColor: colors.surfaceLight, borderRadius: radii.input, borderWidth: 1, borderColor: colors.cardBorder, paddingHorizontal: 14, height: 48, color: colors.textPrimary, fontSize: 15, marginBottom: 12 }}
-          value={title} onChangeText={setTitle} placeholder="Session title" placeholderTextColor={colors.textMuted}
+          value={title} onChangeText={setTitle} placeholder="Session title" placeholderTextColor={colors.placeholderText}
         />
-        <GradientButton title={creating ? 'Starting...' : 'Go Live Now'} variant="gold" onPress={handleGoLive} disabled={creating} />
+        <GradientButton title={creating ? 'Starting...' : 'Go Live Now'} variant="solid" onPress={handleGoLive} disabled={creating} />
       </GlassCard>
 
       {sessions.length > 0 && (
@@ -2656,7 +2659,7 @@ export function AstrologerGoLiveScreen({ navigation }: any) {
                   <Text style={[typography.cardTitle, { fontSize: 14 }]}>{s.title || 'Live Session'}</Text>
                   <Text style={typography.caption}>{new Date(s.createdAt).toLocaleDateString()} · {s.viewerCount || 0} viewers</Text>
                 </View>
-                <Text style={[typography.caption, { color: s.status === 'live' ? colors.success : colors.textMuted, fontWeight: '600' }]}>{s.status.toUpperCase()}</Text>
+                <Text style={[typography.caption, { color: colors.heading, fontWeight: '600' }]}>{s.status.toUpperCase()}</Text>
               </View>
             </GlassCard>
           ))}
@@ -2672,34 +2675,34 @@ export function PrivacyPolicyScreen({ navigation }: any) {
     <ScreenWrapper scroll>
       <SectionTitle title="Privacy Policy" />
       <GlassCard style={{ marginBottom: 16 }}>
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>1. Overview & Commitment</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>1. Overview & Commitment</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
           Astroshine respects your privacy and is committed to protecting your personal data. This privacy policy explains how we collect, store, share, and protect your personal information when you use our website, mobile application, or online consultation services.
         </Text>
 
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>2. Information We Collect</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>2. Information We Collect</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
           • Personal Identification: Name, email address, telephone number, and gender.{'\n'}
           • Astrological Profile Details: Date, time, and precise city/country of birth. This data is strictly used to compile your natal chart, horoscope calculations, and matching reports.{'\n'}
           • Wallet & Billing: We record purchase transaction summaries and wallet ledger history. No full credit/debit card numbers or sensitive banking credentials are saved on our servers.
         </Text>
 
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>3. Use of Your Personal Data</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>3. Use of Your Personal Data</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
           We utilize the collected information to calculate accurate astronomical positions, pair you with suitable consulting astrologers, process your wallet additions, verify your identity during logins, and dispatch push alerts or horoscopes.
         </Text>
 
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>4. Consultation Confidentiality</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>4. Consultation Confidentiality</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
           Your private text chats and voice calls with astrologers are entirely confidential. They are encrypted and are not shared with any third-party marketing networks or external entities under any circumstances.
         </Text>
 
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>5. Cookies & Session Management</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>5. Cookies & Session Management</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
           We use temporary session identifiers and local browser storage to keep you logged in, save your layout settings, and track basic anonymous diagnostics to optimize application performance.
         </Text>
 
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>6. Data Deletion Rights</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>6. Data Deletion Rights</Text>
         <Text style={typography.body}>
           You have the right to request deletion of your account and related data at any time. Simply use the "Delete Account" button on your Profile page or email us at support@astroshine.com.
         </Text>
@@ -2716,27 +2719,27 @@ export function TermsConditionsScreen({ navigation }: any) {
     <ScreenWrapper scroll>
       <SectionTitle title="Terms & Conditions" />
       <GlassCard style={{ marginBottom: 16 }}>
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>1. Acceptance of Terms</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>1. Acceptance of Terms</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
           By registering an account, purchasing wallet credits, or using any feature on Astroshine, you agree to be bound by these Terms & Conditions. If you do not accept these terms, you must immediately deactivate your account and exit our services.
         </Text>
 
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>2. Nature of Astrological Advice</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>2. Nature of Astrological Advice</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
           Astroshine offers guidance tools based on traditional Vedic astrology, Numerology, and Tarot cards. Predictions, advice, and charts are provided for entertainment and self-reflection purposes only. They do not constitute certified medical, psychiatric, legal, or financial advice.
         </Text>
 
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>3. Wallet Recharge & Fees</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>3. Wallet Recharge & Fees</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
           Recharging your account wallet allows you to connect with astrologers. Rates are charged per-minute and are deducted in real-time. Recharge balances are non-refundable. Under rare technical dropouts, you may submit a support ticket within 24 hours to request a credit refund.
         </Text>
 
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>4. Professional Code of Conduct</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>4. Professional Code of Conduct</Text>
         <Text style={[typography.body, { marginBottom: 12 }]}>
           Any form of abusive language, harassment, threats, or sharing of personal phone numbers, emails, or payment links during a consultation is strictly forbidden. Violations will result in permanent suspension without a refund.
         </Text>
 
-        <Text style={[typography.cardTitle, { color: colors.accentGold, marginBottom: 8 }]}>5. Limitation of Liability</Text>
+        <Text style={[typography.cardTitle, { color: colors.heading, marginBottom: 8 }]}>5. Limitation of Liability</Text>
         <Text style={typography.body}>
           Astroshine is not liable for any direct, indirect, incidental, or consequential damages resulting from user actions taken based on advice or readings provided by astrologers on the platform.
         </Text>
@@ -2813,7 +2816,7 @@ export function CreateBlogScreen({ navigation, route }: any) {
           value={title}
           onChangeText={setTitle}
           placeholder="Blog title"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholderText}
         />
         <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Excerpt (optional)</Text>
         <TextInput
@@ -2821,7 +2824,7 @@ export function CreateBlogScreen({ navigation, route }: any) {
           value={excerpt}
           onChangeText={setExcerpt}
           placeholder="Short summary"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholderText}
         />
         <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Content</Text>
         <TextInput
@@ -2829,7 +2832,7 @@ export function CreateBlogScreen({ navigation, route }: any) {
           value={content}
           onChangeText={setContent}
           placeholder="Write your blog content..."
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholderText}
           multiline
         />
         <Text style={[typography.label, { marginBottom: 6, color: colors.textSecondary }]}>Tags (comma separated, optional)</Text>
@@ -2838,7 +2841,7 @@ export function CreateBlogScreen({ navigation, route }: any) {
           value={tags}
           onChangeText={setTags}
           placeholder="e.g. astrology, vedic, gemstones"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholderText}
         />
         <GradientButton
           title={loading ? 'Publishing...' : 'Publish Blog'}

@@ -94,7 +94,7 @@ export function TimePicker({ value, onChange, label }: Props) {
                     return (
                       <TouchableOpacity key={i} onPress={() => setSelectedHour(h24)}
                         style={[styles.option, selectedHour === h24 && { backgroundColor: colors.primary + '20' }]}>
-                        <Text style={[typography.body, { color: selectedHour === h24 ? colors.primaryLight : colors.textPrimary, fontWeight: selectedHour === h24 ? '700' : '400' }]}>
+                        <Text style={[typography.body, { color: selectedHour === h24 ? colors.primary : colors.textPrimary, fontWeight: selectedHour === h24 ? '700' : '400' }]}>
                           {h.display} {h.period}
                         </Text>
                       </TouchableOpacity>
@@ -111,7 +111,7 @@ export function TimePicker({ value, onChange, label }: Props) {
                   {mins.map(m => (
                     <TouchableOpacity key={m} onPress={() => setSelectedMin(m)}
                       style={[styles.option, selectedMin === m && { backgroundColor: colors.primary + '20' }]}>
-                      <Text style={[typography.body, { color: selectedMin === m ? colors.primaryLight : colors.textPrimary, fontWeight: selectedMin === m ? '700' : '400' }]}>
+                      <Text style={[typography.body, { color: selectedMin === m ? colors.primary : colors.textPrimary, fontWeight: selectedMin === m ? '700' : '400' }]}>
                         {String(m).padStart(2, '0')}
                       </Text>
                     </TouchableOpacity>
@@ -120,8 +120,8 @@ export function TimePicker({ value, onChange, label }: Props) {
               </View>
             </View>
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-              <TouchableOpacity onPress={() => setOpen(false)} style={[styles.actionBtn, { borderColor: colors.cardBorder, borderWidth: 1 }]}>
-                <Text style={[typography.caption, { color: colors.textSecondary, fontWeight: '600' }]}>Cancel</Text>
+              <TouchableOpacity onPress={() => setOpen(false)} style={[styles.actionBtn, { backgroundColor: colors.primary }]}>
+                <Text style={[typography.caption, { color: colors.white, fontWeight: '700' }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleConfirm} style={[styles.actionBtn, { backgroundColor: colors.primary }]}>
                 <Text style={[typography.caption, { color: colors.white, fontWeight: '700' }]}>Set</Text>

@@ -20,7 +20,7 @@ export function SearchBar({ value, onChangeText, placeholder = 'Search...', styl
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={colors.textMuted}
+        placeholderTextColor={colors.placeholderText}
       />
       {value.length > 0 && (
         <TouchableOpacity onPress={() => { onChangeText(''); onClear?.(); }}>

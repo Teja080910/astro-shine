@@ -19,7 +19,7 @@ export function OnboardingScreen({ navigation }: any) {
     <ScreenWrapper edges={['top', 'bottom']} noPadding>
       <View style={styles.container}>
         <View style={styles.slide}>
-          <Ionicons name={slides[step].icon as any} size={80} color={colors.accentGold} />
+          <Ionicons name={slides[step].icon as any} size={80} color={colors.primary} />
           <Text style={[typography.hero, { marginTop: 32, textAlign: 'center' }]}>{slides[step].title}</Text>
           <Text style={[typography.body, { marginTop: 16, textAlign: 'center', lineHeight: 22 }]}>{slides[step].sub}</Text>
         </View>
@@ -29,8 +29,8 @@ export function OnboardingScreen({ navigation }: any) {
               key={i} 
               style={[
                 styles.dot, 
-                { backgroundColor: colors.textMuted },
-                i === step && [styles.activeDot, { backgroundColor: colors.primaryLight }]
+                { backgroundColor: colors.switchOff },
+                i === step && [styles.activeDot, { backgroundColor: colors.primary }]
               ]} 
             />
           ))}

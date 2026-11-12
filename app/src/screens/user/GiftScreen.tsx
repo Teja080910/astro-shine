@@ -272,7 +272,7 @@ export function GiftScreen({ route, navigation }: any) {
                       </View>
                       <View style={{ alignItems: 'flex-end' }}>
                         <Text style={[typography.caption, { color: colors.textMuted }]}>Total Value</Text>
-                        <Text style={[typography.sectionTitle, { color: colors.accentGold }]}>₹{formatAmount(totalGiftValue)}</Text>
+                        <Text style={[typography.sectionTitle, { color: colors.heading }]}>₹{formatAmount(totalGiftValue)}</Text>
                       </View>
                     </View>
                   </GlassCard>
@@ -309,7 +309,7 @@ export function GiftScreen({ route, navigation }: any) {
                       </Text>
                     </View>
                     <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                      <Text style={[typography.price, { color: colors.accentGold }]}>₹{item.giftPrice || gift?.price || '0'}</Text>
+                      <Text style={[typography.price, { color: colors.heading }]}>₹{item.giftPrice || gift?.price || '0'}</Text>
                       <View
                         style={{
                           backgroundColor: item.isRedeemed ? colors.success + '18' : colors.accentGold + '18',
@@ -351,7 +351,7 @@ export function GiftScreen({ route, navigation }: any) {
                     style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
                   >
                     <Ionicons name="time-outline" size={15} color={colors.accentGold} />
-                    <Text style={{ fontSize: 13, fontWeight: '700', color: colors.accentGold }}>History</Text>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: colors.heading }}>History</Text>
                   </TouchableOpacity>
                 </View>
                 <Text style={[typography.body, { color: colors.textSecondary, marginBottom: 14 }]}>
@@ -436,7 +436,7 @@ export function GiftScreen({ route, navigation }: any) {
                 <Ionicons name="search" size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
                 <TextInput
                   placeholder="Search astrologer name..."
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholderText}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                   returnKeyType="done"

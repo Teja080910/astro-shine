@@ -33,18 +33,25 @@ export const colors = {
   get rowBorder() { return activeTheme === 'dark' ? 'rgba(255, 255, 255, 0.08)' : '#F3EAD6'; },
   get heading() { return activeTheme === 'dark' ? '#FBBF24' : '#8D0B0C'; },
   get textPrimary() { return activeTheme === 'dark' ? '#F9FAFB' : '#8D0B0C'; },
-  get textStrong() { return activeTheme === 'dark' ? '#F9FAFB' : '#1F2937'; },
-  get textBody() { return activeTheme === 'dark' ? '#E5E7EB' : '#45484F'; },
-  get textSecondary() { return activeTheme === 'dark' ? '#E5E7EB' : '#45484F'; },
-  get textMuted() { return activeTheme === 'dark' ? '#9CA3AF' : '#8B8B8D'; },
+  // Client request: all body copy on light surfaces reads in maroon, matching
+  // the astrologer name. Hierarchy still comes from size and weight.
+  get textStrong() { return activeTheme === 'dark' ? '#F9FAFB' : '#8D0B0C'; },
+  get textBody() { return activeTheme === 'dark' ? '#E5E7EB' : '#8D0B0C'; },
+  get textSecondary() { return activeTheme === 'dark' ? '#E5E7EB' : '#8D0B0C'; },
+  get textMuted() { return activeTheme === 'dark' ? '#9CA3AF' : '#8D0B0C'; },
+  // Input placeholders stay neutral: maroon would look like typed content.
+  get placeholderText() { return activeTheme === 'dark' ? '#6B7280' : '#A8A29A'; },
   get accentText() { return activeTheme === 'dark' ? '#FBBF24' : '#EE7B10'; },
   get iconBg() { return activeTheme === 'dark' ? 'rgba(245, 158, 11, 0.15)' : '#FEF3C7'; },
   get chipBg() { return activeTheme === 'dark' ? '#1F2937' : '#FEF8EA'; },
   get chipBorder() { return activeTheme === 'dark' ? 'rgba(255, 255, 255, 0.08)' : '#F2DFAE'; },
   get tabBarBg() { return activeTheme === 'dark' ? '#111827' : '#FFFCF5'; },
   get tabBarBorder() { return activeTheme === 'dark' ? 'rgba(255, 255, 255, 0.08)' : '#F6EDC4'; },
-  get tabActive() { return activeTheme === 'dark' ? '#F59E0B' : '#EE7B10'; },
-  get tabInactive() { return activeTheme === 'dark' ? '#9CA3AF' : '#8B8B8D'; },
+  // Client request: the tab colour is the brand orange #EE7B10 in BOTH themes,
+  // and every tab uses it - inactive ones no longer fall back to grey. The
+  // active tab is still distinguished by its filled icon and 700 font weight.
+  get tabActive() { return '#EE7B10'; },
+  get tabInactive() { return '#EE7B10'; },
   get switchOn() { return activeTheme === 'dark' ? '#F59E0B' : '#EE7B10'; },
   get switchOff() { return activeTheme === 'dark' ? '#4B5563' : '#D1D5DB'; },
   get divider() { return activeTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#F6EDC4'; },

@@ -126,7 +126,7 @@ export function ActiveCallScreen() {
                   {remoteUid && isRemoteMuted && (
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
                       <Ionicons name="mic-off" size={16} color={colors.danger} />
-                      <Text style={{ color: colors.danger, marginLeft: 4, fontSize: 14 }}>Muted</Text>
+                      <Text style={{ color: colors.heading, marginLeft: 4, fontSize: 14 }}>Muted</Text>
                     </View>
                   )}
                 </>
@@ -187,7 +187,7 @@ export function ActiveCallScreen() {
             {walletBalance !== null && (
               <View style={styles.balanceBadge}>
                 <Ionicons name="wallet-outline" size={14} color={colors.accentGold} />
-                <Text style={[styles.balanceText, walletBalance < 50 && { color: colors.danger }]}>
+                <Text style={[styles.balanceText, walletBalance < 50 && { color: colors.heading }]}>
                   ₹{formatAmount(walletBalance)}
                 </Text>
               </View>
@@ -293,5 +293,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)',
     paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, marginTop: 8,
   },
-  balanceText: { color: colors.accentGold, fontSize: 13, fontWeight: '600', marginLeft: 4 },
+  balanceText: { color: colors.heading, fontSize: 13, fontWeight: '600', marginLeft: 4 },
 });

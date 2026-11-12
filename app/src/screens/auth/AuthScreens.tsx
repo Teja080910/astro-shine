@@ -5,7 +5,6 @@ import { colors, radii, typography, shadows } from '../../shared/theme';
 import { useAuth } from '../../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../shared/api-client';
-import { LinearGradient } from 'expo-linear-gradient';
 
 function useKeyboard() {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -37,9 +36,32 @@ export function LoginScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) { setError('Please fill all fields'); return; }
+    const trimmedEmail = email.trim();
+    const trimmedPassword = password.trim();
+
+    // Validate before hitting the API so the user gets a precise message
+    // instead of a generic 401.
+    if (!trimmedEmail && !trimmedPassword) { setError('Please enter your email and password'); return; }
+    if (!trimmedEmail) { setError('Please enter your email address'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(trimmedEmail)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+    if (!trimmedPassword) { setError('Please enter your password'); return; }
+    if (trimmedPassword.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
     setLoading(true); setError('');
-    try { await loginAsUser(email, password); } catch (e: any) { setError(e?.response?.data?.message || 'Login failed'); setLoading(false); }
+    try {
+      await loginAsUser(trimmedEmail, trimmedPassword);
+    } catch (e: any) {
+      setError(e?.response?.data?.message || 'Login failed');
+      setLoading(false);
+    }
+    // On success this screen unmounts; do not clear `loading` so the button
+    // cannot be pressed twice while the navigator swaps.
   };
 
   const isDark = theme === 'dark';
@@ -82,7 +104,7 @@ export function LoginScreen({ navigation }: any) {
           </View>
 
           <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('Register')}>
-            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Don't have an account? <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>Register</Text></Text>
+            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Don't have an account? <Text style={{ color: colors.primary, fontWeight: '700' }}>Register</Text></Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('ForgotPassword')}>
@@ -229,7 +251,7 @@ export function RegisterScreen({ navigation }: any) {
                   onPress={() => { setSelectedRole('user'); setStep(1); setError(''); }}
                 >
                   <View style={[styles.roleCardIconContainer, { backgroundColor: colors.surfaceLight }]}>
-                    <Ionicons name="person-outline" size={32} color={colors.primaryLight} />
+                    <Ionicons name="person-outline" size={32} color={colors.primary} />
                   </View>
                   <Text style={[typography.cardTitle, styles.roleCardTitle, { color: colors.textPrimary }]}>Join as a User</Text>
                   <Text style={[typography.body, styles.roleCardDesc, { color: colors.textMuted }]}>Get personalized astrology insights and chat with verified experts</Text>
@@ -240,7 +262,7 @@ export function RegisterScreen({ navigation }: any) {
                   onPress={() => { setSelectedRole('astrologer'); setStep(1); setError(''); }}
                 >
                   <View style={[styles.roleCardIconContainer, { backgroundColor: colors.surfaceLight }]}>
-                    <Ionicons name="star-outline" size={32} color={colors.accentGold} />
+                    <Ionicons name="star-outline" size={32} color={colors.primary} />
                   </View>
                   <Text style={[typography.cardTitle, styles.roleCardTitle, { color: colors.textPrimary }]}>Join as an Astrologer</Text>
                   <Text style={[typography.body, styles.roleCardDesc, { color: colors.textMuted }]}>Share your wisdom, consult clients, and manage your consultations</Text>
@@ -308,7 +330,7 @@ export function RegisterScreen({ navigation }: any) {
           )}
 
           <TouchableOpacity style={styles.link} onPress={() => navigation.goBack()}>
-            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Already have an account? <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>Sign In</Text></Text>
+            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Already have an account? <Text style={{ color: colors.primary, fontWeight: '700' }}>Sign In</Text></Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -425,7 +447,7 @@ export function OtpLoginScreen({ navigation }: any) {
             {sent ? (
               <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', lineHeight: 22 }]}>
                 Enter code sent to{'\n'}
-                <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>{identifier}</Text>
+                <Text style={{ color: colors.primary, fontWeight: '700' }}>{identifier}</Text>
               </Text>
             ) : (
               <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>
@@ -444,16 +466,9 @@ export function OtpLoginScreen({ navigation }: any) {
                 disabled={sent}
               >
                 {verType === 'phone' ? (
-                  <View style={[{ flex: 1, width: '100%', height: '100%' }, shadows.button]}>
-                    <LinearGradient
-                      colors={[colors.gradientStart, colors.gradientMid]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={styles.roleButtonActiveGradient}
-                    >
-                      <Ionicons name="call-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
-                      <Text style={[styles.roleText, { color: '#FFFFFF' }]}>Phone</Text>
-                    </LinearGradient>
+                  <View style={[styles.roleButtonActive, styles.roleButtonInactive, shadows.button]}>
+                    <Ionicons name="call-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                    <Text style={[styles.roleText, { color: '#FFFFFF' }]}>Phone</Text>
                   </View>
                 ) : (
                   <View style={styles.roleButtonInactive}>
@@ -468,16 +483,9 @@ export function OtpLoginScreen({ navigation }: any) {
                 disabled={sent}
               >
                 {verType === 'email' ? (
-                  <View style={[{ flex: 1, width: '100%', height: '100%' }, shadows.button]}>
-                    <LinearGradient
-                      colors={[colors.gradientStart, colors.gradientMid]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={styles.roleButtonActiveGradient}
-                    >
-                      <Ionicons name="mail-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
-                      <Text style={[styles.roleText, { color: '#FFFFFF' }]}>Email</Text>
-                    </LinearGradient>
+                  <View style={[styles.roleButtonActive, styles.roleButtonInactive, shadows.button]}>
+                    <Ionicons name="mail-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+                    <Text style={[styles.roleText, { color: '#FFFFFF' }]}>Email</Text>
                   </View>
                 ) : (
                   <View style={styles.roleButtonInactive}>
@@ -522,7 +530,7 @@ export function OtpLoginScreen({ navigation }: any) {
           </View>
 
           <TouchableOpacity style={styles.link} onPress={() => navigation.navigate('Login')}>
-            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Back to <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>Login</Text></Text>
+            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Back to <Text style={{ color: colors.primary, fontWeight: '700' }}>Login</Text></Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -530,7 +538,7 @@ export function OtpLoginScreen({ navigation }: any) {
       <Modal visible={showRegisterPrompt} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.surface, borderColor: colors.cardBorder }]}>
-            <Ionicons name="person-outline" size={48} color={colors.primaryLight} />
+            <Ionicons name="person-outline" size={48} color={colors.primary} />
             <Text style={[typography.sectionTitle, { marginTop: 16, textAlign: 'center' }]}>User Not Found</Text>
             <Text style={[typography.body, { marginTop: 8, textAlign: 'center' }]}>No account found with this {verType === 'email' ? 'email' : 'number'}. Please register first.</Text>
             <GradientButton title="Go to Register" onPress={() => { setShowRegisterPrompt(false); navigation.navigate('Register'); }} />
@@ -609,7 +617,7 @@ export function ForgotPasswordScreen({ navigation }: any) {
           </View>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
-          {success ? <Text style={[styles.error, { color: colors.success }]}>{success}</Text> : null}
+          {success ? <Text style={[styles.error, { color: colors.heading }]}>{success}</Text> : null}
 
           <View style={[styles.formCard, { backgroundColor: colors.glassBg, borderColor: colors.inputBorder }, shadows.card]}>
             {step === 'id' && (
@@ -647,7 +655,7 @@ export function ForgotPasswordScreen({ navigation }: any) {
           </View>
 
           <TouchableOpacity style={styles.link} onPress={() => navigation.goBack()}>
-            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Back to <Text style={{ color: colors.primaryLight, fontWeight: '700' }}>Login</Text></Text>
+            <Text style={[styles.linkTextStatic, { color: colors.textSecondary }]}>Back to <Text style={{ color: colors.primary, fontWeight: '700' }}>Login</Text></Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -662,7 +670,7 @@ function Input({ icon, placeholder, value, onChange, secure, keyboardType, right
       <TextInput 
         style={[styles.input, { color: colors.textPrimary }]} 
         placeholder={placeholder} 
-        placeholderTextColor={colors.textMuted} 
+        placeholderTextColor={colors.placeholderText} 
         value={value} 
         onChangeText={onChange} 
         secureTextEntry={secure} 
@@ -692,22 +700,13 @@ const styles = StyleSheet.create({
   headerLogo: { width: '78%', maxWidth: 280, aspectRatio: 280 / 203, height: undefined, marginBottom: 8 },
   headerTitle: { color: '#FFFFFF' },
   headerSub: { color: '#B6B6C2' },
-  error: { color: colors.danger, textAlign: 'center', marginBottom: 16, fontSize: 14 },
+  error: { color: colors.heading, textAlign: 'center', marginBottom: 16, fontSize: 14 },
   formCard: {
     borderRadius: radii.card,
     borderWidth: 1,
     padding: 20,
     width: '100%',
     marginBottom: 20,
-  },
-  roleButtonActiveGradient: {
-    flex: 1,
-    flexDirection: 'row',
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: radii.input - 4,
   },
   roleButtonInactive: {
     flex: 1,
@@ -762,7 +761,7 @@ const styles = StyleSheet.create({
   input: { flex: 1, fontSize: 15 },
   link: { alignItems: 'center', marginTop: 16 },
   linkTextStatic: { fontSize: 14, color: '#B6B6C2' },
-  resend: { textAlign: 'center', marginTop: 12, color: colors.primaryLight, fontWeight: '600' },
+  resend: { textAlign: 'center', marginTop: 12, color: colors.primary, fontWeight: '600' },
   themeToggle: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 12 : 16,

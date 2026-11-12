@@ -49,7 +49,7 @@ export function MandirPoojaDetailScreen({ route, navigation }: any) {
           {pooja.description && (
             <Text style={[typography.body, { textAlign: 'center', marginTop: 12, color: colors.textSecondary, lineHeight: 20 }]}>{pooja.description}</Text>
           )}
-          <Text style={{ fontSize: 28, fontWeight: '800', color: colors.accentGold, marginTop: 16 }}>₹{pooja.price}</Text>
+          <Text style={{ fontSize: 28, fontWeight: '800', color: colors.heading, marginTop: 16 }}>₹{pooja.price}</Text>
         </GlassCard>
 
         <View style={{ marginTop: 20 }}>

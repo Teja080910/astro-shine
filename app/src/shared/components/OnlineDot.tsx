@@ -22,5 +22,5 @@ export function OnlineDot({ online, size = 10 }: Props) {
 const styles = StyleSheet.create({
   dot: { borderWidth: 2, borderColor: colors.background },
   online: { backgroundColor: '#22C55E' },
-  offline: { backgroundColor: colors.textMuted },
+  offline: { backgroundColor: colors.switchOff },
 });

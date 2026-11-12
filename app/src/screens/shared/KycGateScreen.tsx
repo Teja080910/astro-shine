@@ -287,6 +287,7 @@ export function KycGateScreen() {
               </View>
               <GradientButton
                 title={uploading ? 'Uploading...' : 'Upload Document'}
+                variant="solid"
                 onPress={pickAndUpload}
                 disabled={uploading}
               />
@@ -308,7 +309,7 @@ export function KycGateScreen() {
                 }}
               >
                 <Ionicons name="camera-outline" size={18} color={colors.accentGold} />
-                <Text style={{ fontWeight: '700', color: colors.accentGold }}>
+                <Text style={{ fontWeight: '700', color: colors.heading }}>
                   Take Live Selfie
                 </Text>
               </TouchableOpacity>

@@ -45,7 +45,7 @@ export function Avatar({ uri, size = 48, online, onPress, name }: Props) {
     <TouchableOpacity onPress={onPress} disabled={!onPress} style={{ position: 'relative' }}>
       {content}
       {online !== undefined && (
-        <View style={[styles.dot, { backgroundColor: online ? colors.success : colors.textMuted, borderColor: colors.background }]} />
+        <View style={[styles.dot, { backgroundColor: online ? colors.success : colors.switchOff, borderColor: colors.background }]} />
       )}
     </TouchableOpacity>
   );

@@ -36,7 +36,7 @@ export function BrandHeader({
 
   const iconColor = isDark ? '#F59E0B' : '#7F1D1D';
   const wordmarkColor = isDark ? '#FBBF24' : '#8B1E1E';
-  const taglineColor = isDark ? '#FBBF24' : '#D97706';
+  const taglineColor = isDark ? '#EE7B10' : '#8D0B0C';
 
   return (
     <View style={[styles.container, style]}>

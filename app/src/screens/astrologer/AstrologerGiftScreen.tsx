@@ -68,7 +68,7 @@ export function AstrologerGiftScreen() {
             <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
               <GlassCard style={{ flex: 1, alignItems: 'center', padding: 16 }}>
                 <Text
-                  style={{ fontSize: 28, fontWeight: '800', color: colors.accentGold, flexShrink: 1 }}
+                  style={{ fontSize: 28, fontWeight: '800', color: colors.heading, flexShrink: 1 }}
                   numberOfLines={1}
                   adjustsFontSizeToFit
                   minimumFontScale={0.6}
@@ -79,7 +79,7 @@ export function AstrologerGiftScreen() {
               </GlassCard>
               <GlassCard style={{ flex: 1, alignItems: 'center', padding: 16 }}>
                 <Text
-                  style={{ fontSize: 28, fontWeight: '800', color: colors.warning, flexShrink: 1 }}
+                  style={{ fontSize: 28, fontWeight: '800', color: colors.heading, flexShrink: 1 }}
                   numberOfLines={1}
                   adjustsFontSizeToFit
                   minimumFontScale={0.6}
@@ -90,7 +90,7 @@ export function AstrologerGiftScreen() {
               </GlassCard>
               <GlassCard style={{ flex: 1, alignItems: 'center', padding: 16 }}>
                 <Text
-                  style={{ fontSize: 28, fontWeight: '800', color: colors.success, flexShrink: 1 }}
+                  style={{ fontSize: 28, fontWeight: '800', color: colors.heading, flexShrink: 1 }}
                   numberOfLines={1}
                   adjustsFontSizeToFit
                   minimumFontScale={0.6}
@@ -126,7 +126,7 @@ export function AstrologerGiftScreen() {
                   {item.isRedeemed ? (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                       <Ionicons name="checkmark-circle" size={16} color={colors.success} />
-                      <Text style={[typography.caption, { color: colors.success, fontWeight: '600' }]}>Redeemed</Text>
+                      <Text style={[typography.caption, { color: colors.heading, fontWeight: '600' }]}>Redeemed</Text>
                     </View>
                   ) : (
                     <GradientButton

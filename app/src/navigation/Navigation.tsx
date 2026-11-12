@@ -32,7 +32,6 @@ import {
   NewsDetailScreen,
   NotificationsScreen,
   OrderHistoryScreen,
-  HoroscopeScreen,
   HoroscopeDetailScreen,
   MyReportsScreen,
   PanchangScreen,
@@ -77,7 +76,6 @@ function UserTabs() {
   const { theme } = useAuth();
   const tabs = [
     { key: 'Home', icon: 'home-outline', label: 'Home' },
-    { key: 'Horoscope', icon: 'moon-outline', label: 'Horoscope' },
     { key: 'Astrologers', icon: 'people-outline', label: 'Astrologers' },
     { key: 'Muhurat', icon: 'time-outline', label: 'Muhurat' },
     { key: 'Wallet', icon: 'wallet-outline', label: 'Wallet' },
@@ -98,7 +96,6 @@ function UserTabs() {
       tabBar={(props) => <FloatingBottomBar tabs={tabs} activeTab={props.state.routeNames[props.state.index]} onTabPress={(key) => props.navigation.navigate(key)} />}
     >
       <Tab.Screen name="Home" component={UserHomeScreen} />
-      <Tab.Screen name="Horoscope" component={HoroscopeScreen} />
       <Tab.Screen name="Astrologers" component={AstrologerListScreen} />
       <Tab.Screen name="Muhurat" component={MuhuratScreen} />
       <Tab.Screen name="Wallet" component={WalletScreen} />

@@ -110,7 +110,7 @@ export function CustomModal({
               contentContainerStyle={{ flexGrow: 0 }}
             >
               <Pressable onPress={(e) => e?.stopPropagation?.()}>
-                <View style={[styles.handle, { backgroundColor: colors.textMuted }]} />
+                <View style={[styles.handle, { backgroundColor: colors.rowBorder }]} />
                 {title ? (
                   <Text
                     style={[
@@ -126,7 +126,7 @@ export function CustomModal({
             </ScrollView>
           ) : (
             <Pressable onPress={(e) => e?.stopPropagation?.()} style={{ flexShrink: 1 }}>
-              <View style={[styles.handle, { backgroundColor: colors.textMuted }]} />
+              <View style={[styles.handle, { backgroundColor: colors.rowBorder }]} />
               {title ? (
                 <Text
                   style={[
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: colors.textMuted,
+    backgroundColor: colors.rowBorder,
     alignSelf: 'center',
     marginTop: 12,
     marginBottom: 16,

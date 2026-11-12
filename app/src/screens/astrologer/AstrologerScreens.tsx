@@ -310,7 +310,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
       label: "Today's Earnings",
       value: stats.todayEarnings,
       icon: "cash-outline",
-      color: colors.success,
+      color: colors.heading,
     },
     {
       label: "Total Calls",
@@ -322,7 +322,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
       label: "Rating",
       value: stats.rating,
       icon: "star-outline",
-      color: colors.accentGold,
+      color: colors.heading,
     },
     {
       label: "Total Earnings",
@@ -577,7 +577,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
             <Toggle
               value={isOnline}
               onValueChange={toggleOnline}
-              trackColor={{ false: mutedTextColor, true: "#10B981" }}
+              trackColor={{ false: colors.switchOff, true: colors.success }}
             />
           </View>
 
@@ -655,7 +655,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
               <Toggle
                 value={isChatEnabled && isAudioCallEnabled && isVideoCallEnabled}
                 onValueChange={toggleAllServices}
-                trackColor={{ false: "#D1D5DB", true: "#F59E0B" }}
+                trackColor={{ false: colors.switchOff, true: colors.accentGold }}
               />
             </View>
 
@@ -705,7 +705,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
               <Toggle
                 value={isChatEnabled}
                 onValueChange={toggleChat}
-                trackColor={{ false: "#D1D5DB", true: "#10B981" }}
+                trackColor={{ false: colors.switchOff, true: colors.success }}
               />
             </View>
 
@@ -755,7 +755,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
               <Toggle
                 value={isAudioCallEnabled}
                 onValueChange={toggleAudioCall}
-                trackColor={{ false: "#D1D5DB", true: "#3188FB" }}
+                trackColor={{ false: colors.switchOff, true: colors.info }}
               />
             </View>
 
@@ -803,7 +803,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
               <Toggle
                 value={isVideoCallEnabled}
                 onValueChange={toggleVideoCall}
-                trackColor={{ false: "#D1D5DB", true: "#EC4899" }}
+                trackColor={{ false: colors.switchOff, true: "#EC4899" }}
               />
             </View>
           </GlassCard>
@@ -846,13 +846,13 @@ export function AstrologerHomeScreen({ navigation }: any) {
               <Ionicons
                 name="time-outline"
                 size={22}
-                color={colors.primaryLight}
+                color={colors.heading}
               />
               <Text
                 style={[
                   typography.caption,
                   {
-                    color: colors.primaryLight,
+                    color: colors.heading,
                     fontWeight: "600",
                     marginTop: 4,
                   },
@@ -879,7 +879,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
               <Text
                 style={[
                   typography.caption,
-                  { color: colors.success, fontWeight: "600", marginTop: 4 },
+                  { color: colors.heading, fontWeight: "600", marginTop: 4 },
                 ]}
               >
                 Wallet
@@ -1014,8 +1014,7 @@ export function AstrologerHomeScreen({ navigation }: any) {
                     <Text
                       style={{
                         fontWeight: "700",
-                        color:
-                          t.type === "credit" ? colors.success : colors.danger,
+                        color: colors.heading,
                       }}
                     >
                       {t.type === "credit" ? "+" : "-"}₹{formatAmount(t.amount)}
@@ -1207,7 +1206,7 @@ export function AstrologerWalletScreen({ navigation }: any) {
             style={{
               fontSize: 42,
               fontWeight: "800",
-              color: colors.accentGold,
+              color: colors.heading,
               marginTop: 4,
             }}
           >
@@ -1224,7 +1223,7 @@ export function AstrologerWalletScreen({ navigation }: any) {
             <View style={{ flex: 1 }}>
               <GradientButton
                 title="Withdraw"
-                variant="gold"
+                variant="solid"
                 onPress={() => navigation.navigate("Withdrawals")}
                 small
               />
@@ -1234,13 +1233,13 @@ export function AstrologerWalletScreen({ navigation }: any) {
 
         <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
           <GlassCard style={{ flex: 1, alignItems: "center", padding: 14 }}>
-            <Text style={[typography.cardTitle, { color: colors.success }]}>
+            <Text style={[typography.cardTitle, { color: colors.heading }]}>
               +₹{formatAmount(totalCredits)}
             </Text>
             <Text style={typography.caption}>Total Credits</Text>
           </GlassCard>
           <GlassCard style={{ flex: 1, alignItems: "center", padding: 14 }}>
-            <Text style={[typography.cardTitle, { color: colors.danger }]}>
+            <Text style={[typography.cardTitle, { color: colors.heading }]}>
               -₹{formatAmount(totalDebits)}
             </Text>
             <Text style={typography.caption}>Total Debits</Text>
@@ -1305,7 +1304,7 @@ export function AstrologerWalletScreen({ navigation }: any) {
                 <Text
                   style={{
                     fontWeight: "700",
-                    color: t.type === "credit" ? colors.success : colors.danger,
+                    color: colors.heading,
                   }}
                 >
                   {t.type === "credit" ? "+" : "-"}₹{formatAmount(t.amount)}
@@ -1434,7 +1433,7 @@ export function AstrologerWithdrawalScreen() {
           </Text>
           <GradientButton
             title="New Withdrawal Request"
-            variant="gold"
+            variant="solid"
             onPress={() => setShowForm(true)}
             style={{ marginTop: 16 }}
           />
@@ -1471,7 +1470,7 @@ export function AstrologerWithdrawalScreen() {
                 value={amount}
                 onChangeText={setAmount}
                 placeholder="Enter amount"
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={colors.placeholderText}
                 keyboardType="decimal-pad"
               />
             </View>
@@ -1496,8 +1495,8 @@ export function AstrologerWithdrawalScreen() {
                         height: 44,
                         borderRadius: radii.button,
                         borderWidth: 1,
-                        borderColor: active ? colors.accentGold : colors.cardBorder,
-                        backgroundColor: active ? colors.accentGold + "22" : colors.surfaceLight,
+                        borderColor: active ? colors.primary : colors.cardBorder,
+                        backgroundColor: active ? colors.primary + "22" : colors.surfaceLight,
                         justifyContent: "center",
                         alignItems: "center",
                         flexDirection: "row",
@@ -1507,11 +1506,11 @@ export function AstrologerWithdrawalScreen() {
                       <Ionicons
                         name={m === "bank" ? "business-outline" : "phone-portrait-outline"}
                         size={16}
-                        color={active ? colors.accentGold : colors.textSecondary}
+                        color={active ? colors.primary : colors.textSecondary}
                       />
                       <Text
                         style={{
-                          color: active ? colors.accentGold : colors.textSecondary,
+                          color: active ? colors.primary : colors.textSecondary,
                           fontWeight: "700",
                           fontSize: 13,
                         }}
@@ -1546,7 +1545,7 @@ export function AstrologerWithdrawalScreen() {
                     value={bankAc}
                     onChangeText={setBankAc}
                     placeholder="Enter account number"
-                    placeholderTextColor={colors.textMuted}
+                    placeholderTextColor={colors.placeholderText}
                     keyboardType="number-pad"
                   />
                 </View>
@@ -1571,7 +1570,7 @@ export function AstrologerWithdrawalScreen() {
                     value={ifsc}
                     onChangeText={setIfsc}
                     placeholder="Enter IFSC code"
-                    placeholderTextColor={colors.textMuted}
+                    placeholderTextColor={colors.placeholderText}
                     autoCapitalize="characters"
                   />
                 </View>
@@ -1598,32 +1597,19 @@ export function AstrologerWithdrawalScreen() {
                   value={upiId}
                   onChangeText={setUpiId}
                   placeholder="e.g. name@okhdfcbank"
-                  placeholderTextColor={colors.textMuted}
+                  placeholderTextColor={colors.placeholderText}
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
               </View>
             )}
+            {/* Both actions use the same component so height, radius and
+                background always match; only the label differs. */}
             <View style={{ flexDirection: "row", gap: 10 }}>
-              <TouchableOpacity
-                onPress={() => setShowForm(false)}
-                style={{
-                  flex: 1,
-                  height: 48,
-                  borderRadius: radii.button,
-                  borderWidth: 1,
-                  borderColor: colors.cardBorder,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Text
-                  style={{ color: colors.textSecondary, fontWeight: "600" }}
-                >
-                  Cancel
-                </Text>
-              </TouchableOpacity>
+              <View style={{ flex: 1 }}>
+                <GradientButton title="Cancel" onPress={() => setShowForm(false)} />
+              </View>
               <View style={{ flex: 1 }}>
                 <GradientButton
                   title={loading ? "Submitting..." : "Submit"}
@@ -1768,7 +1754,7 @@ export function AstrologerReviewsScreen() {
             style={{
               fontSize: 48,
               fontWeight: "800",
-              color: colors.accentGold,
+              color: colors.heading,
             }}
           >
             {avgRating}
@@ -2799,7 +2785,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
               style={{
                 fontSize: 11,
                 fontWeight: "800",
-                color: colors.primaryLight,
+                color: colors.heading,
                 letterSpacing: 0.8,
                 marginBottom: 8,
                 marginLeft: 4,
@@ -2865,7 +2851,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
               style={{
                 fontSize: 11,
                 fontWeight: "800",
-                color: colors.primaryLight,
+                color: colors.heading,
                 letterSpacing: 0.8,
                 marginBottom: 8,
                 marginLeft: 4,
@@ -2931,7 +2917,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
               style={{
                 fontSize: 11,
                 fontWeight: "800",
-                color: colors.primaryLight,
+                color: colors.heading,
                 letterSpacing: 0.8,
                 marginBottom: 8,
                 marginLeft: 4,
@@ -2979,7 +2965,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
               <Toggle
                 value={theme === "dark"}
                 onValueChange={toggleTheme}
-                trackColor={{ false: "#D1D5DB", true: colors.primary }}
+                trackColor={{ false: colors.switchOff, true: colors.primary }}
               />
             </View>
 
@@ -3078,7 +3064,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
           <Ionicons name="log-out-outline" size={20} color="#C21415" />
           <Text
             style={{
-              color: "#C21415",
+              color: colors.heading,
               fontSize: 15,
               fontWeight: "700",
               marginLeft: 8,
@@ -3097,13 +3083,13 @@ export function AstrologerProfileScreen({ navigation }: any) {
         <View style={{ paddingHorizontal: 24, paddingBottom: 20 }}>
           {pwError ? (
             <Text
-              style={{ color: colors.danger, fontSize: 14, marginBottom: 10 }}
+              style={{ color: colors.heading, fontSize: 14, marginBottom: 10 }}
             >
               {pwError}
             </Text>
           ) : null}
           {pwSuccess ? (
-            <Text style={{ color: "#22c55e", fontSize: 14, marginBottom: 10 }}>
+            <Text style={{ color: colors.heading, fontSize: 14, marginBottom: 10 }}>
               {pwSuccess}
             </Text>
           ) : null}
@@ -3127,6 +3113,7 @@ export function AstrologerProfileScreen({ navigation }: any) {
           />
           <GradientButton
             title={pwLoading ? "Changing..." : "Change Password"}
+            variant="solid"
             onPress={handlePasswordChange}
             disabled={pwLoading}
             style={{ marginTop: 8 }}
@@ -3206,7 +3193,7 @@ function PasswordInput({
           value={value}
           onChangeText={onChange}
           placeholder={placeholder}
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={colors.placeholderText}
           secureTextEntry={!show}
         />
         <Ionicons
