@@ -13,7 +13,7 @@ export type WithdrawalStatus = 'pending' | 'approved' | 'rejected' | 'completed'
 export type CommissionType = 'percentage' | 'fixed';
 export type CallStatus = 'initiated' | 'ongoing' | 'completed' | 'missed' | 'cancelled';
 export type CallType = 'audio' | 'video';
-export type MessageType = 'text' | 'image' | 'voice' | 'file';
+export type MessageType = 'text' | 'image' | 'voice' | 'file' | 'kundli';
 export type BlogStatus = 'draft' | 'published' | 'archived';
 export type ReportReason = 'spam' | 'harassment' | 'fake_profile' | 'inappropriate' | 'other';
 export type NotificationType = 'system' | 'promotional' | 'transactional' | 'reminder';
@@ -372,6 +372,17 @@ export interface ConversationMessage {
   type: MessageType;
   content?: string;
   mediaUrl?: string;
+  /** Structured payload for rich messages (e.g. a generated Kundli chart). */
+  metadata?: {
+    kundliId?: string;
+    name?: string;
+    gender?: string;
+    dateOfBirth?: string;
+    timeOfBirth?: string;
+    placeOfBirth?: string;
+    chartData?: any;
+    [key: string]: any;
+  };
   isDelivered: boolean;
   isRead: boolean;
   readAt?: string;

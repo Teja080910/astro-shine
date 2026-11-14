@@ -136,6 +136,71 @@ export class AstrologyService {
     }
   }
 
+  /**
+   * Resolve a place name to coordinates and a timezone.
+   *
+   * The Kundli form only collects a place *name*, but the chart must be cast for
+   * the real location — without this every Kundli was computed for Delhi
+   * (the hardcoded fallback), so "Mumbai" returned a Delhi chart.
+   *
+   * Falls back to the Delhi defaults when the lookup fails or the API is down,
+   * so chart generation never breaks because of geocoding.
+   */
+  async geocodePlace(
+    place: string,
+  ): Promise<{ lat: number; lng: number; timezone: number; resolved: string }> {
+    const fallback = { lat: 28.6139, lng: 77.209, timezone: 5.5, resolved: place };
+    const query = (place || '').trim();
+    if (!query) return fallback;
+
+    try {
+      const res = await this.call<any>('geo_details', {
+        place: query,
+        maxRows: 1,
+      });
+      const hit = res?.geonames?.[0];
+      if (!hit) return fallback;
+
+      const lat = Number(hit.latitude);
+      const lng = Number(hit.longitude);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return fallback;
+
+      return {
+        lat,
+        lng,
+        timezone: this.timezoneOffsetFor(hit.timezone_id) ?? fallback.timezone,
+        resolved: hit.place_name || query,
+      };
+    } catch (e: any) {
+      this.logger.warn(
+        `Geocoding "${query}" failed, using default coordinates: ${e.message}`,
+      );
+      return fallback;
+    }
+  }
+
+  /** Convert an IANA zone id to a fixed offset in hours (IST = 5.5). */
+  private timezoneOffsetFor(zoneId?: string): number | null {
+    if (!zoneId) return null;
+    try {
+      const now = new Date();
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: zoneId,
+        timeZoneName: 'shortOffset',
+      }).formatToParts(now);
+      const label = parts.find((p) => p.type === 'timeZoneName')?.value || '';
+      // e.g. "GMT+5:30" -> 5.5
+      const m = label.match(/GMT([+-])(\d{1,2})(?::(\d{2}))?/);
+      if (!m) return zoneId === 'UTC' || label === 'GMT' ? 0 : null;
+      const sign = m[1] === '-' ? -1 : 1;
+      const hours = Number(m[2]);
+      const mins = Number(m[3] || 0);
+      return sign * (hours + mins / 60);
+    } catch {
+      return null;
+    }
+  }
+
   private birthParams(d: BirthDetails): BirthApiParams {
     const [h, m] = (d.timeString || '').split(':').map(Number);
     const { day, month, year } = parseDateStr(d.dateString);

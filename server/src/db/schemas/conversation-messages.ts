@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, boolean, timestamp, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, boolean, timestamp, index, jsonb } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { messageType, userRole } from '../enums';
 import { conversations } from './conversations';
@@ -11,6 +11,8 @@ export const conversationMessages = pgTable('conversation_messages', {
   type: messageType('type').notNull().default('text'),
   content: text('content'),
   mediaUrl: text('media_url'),
+  // Structured payload for rich messages (e.g. the generated Kundli chart).
+  metadata: jsonb('metadata'),
   isDelivered: boolean('is_delivered').notNull().default(false),
   isRead: boolean('is_read').notNull().default(false),
   readAt: timestamp('read_at'),

@@ -30,12 +30,26 @@ export class KundliService {
         : parts.length === 3
           ? data.timeOfBirth
           : '06:00:00';
+    // Use the caller's coordinates when supplied, otherwise geocode the place
+    // name. Previously this silently defaulted to Delhi, so a Mumbai birth
+    // produced a Delhi chart.
+    let lat = Number(data.latitude);
+    let lng = Number(data.longitude);
+    let timezone = Number(data.timezone);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      const geo = await this.astrology.geocodePlace(data.placeOfBirth || '');
+      lat = geo.lat;
+      lng = geo.lng;
+      if (!Number.isFinite(timezone)) timezone = geo.timezone;
+    }
+
     const details: BirthDetails = {
       dateString: data.dateOfBirth,
       timeString: timeStr,
-      lat: Number(data.latitude) || 28.6139,
-      lng: Number(data.longitude) || 77.209,
-      timezone: Number(data.timezone) || 5.5,
+      lat,
+      lng,
+      timezone: Number.isFinite(timezone) ? timezone : 5.5,
     };
     const result = await this.astrology.calculateKundli(details);
     const [r] = await this.db

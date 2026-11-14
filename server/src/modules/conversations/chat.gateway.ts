@@ -20,6 +20,7 @@ import { CommissionService } from '../commission/commission.service';
 import { UsersService } from '../users/users.service';
 import { WalletService } from '../wallet/wallet.service';
 import { ConversationsService } from './conversations.service';
+import { KundliService } from '../kundli/kundli.service';
 
 interface OnlineUserEntry {
   userId: string;
@@ -34,7 +35,24 @@ interface ChatSession {
   astrologerId: string;
   rate: number;
   astrologerShareRate: number;
+  /** When the session was created — used only for display. */
   startedAt: number;
+  /**
+   * Milliseconds both parties were actually connected. This is the only thing
+   * that is billed, so a paused session costs the user nothing.
+   */
+  billableMs: number;
+  /** Timestamp of the previous tick, used to measure elapsed connected time. */
+  lastTickAt: number;
+  /** True while both parties are online and the meter is running. */
+  isBillable: boolean;
+  /**
+   * The astrologer has replied at least once since the user's first message.
+   * Billing stays at zero until this is true.
+   */
+  astrologerHasReplied: boolean;
+  /** Why the meter is currently paused (either party offline, etc). */
+  pauseReason?: string;
   minutesCharged: number;
   totalCharged: number;
   totalEarned: number;
@@ -65,10 +83,21 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     private readonly astrologersService: AstrologersService,
     private readonly walletService: WalletService,
     private readonly commissionService: CommissionService,
+    private readonly kundliService: KundliService,
   ) {}
 
   afterInit() {
     this.realtime.setServer(this.server);
+
+    // Astrologers can toggle themselves offline while keeping their socket.
+    // Pause or resume billing the moment that happens.
+    this.realtime.onAvailabilityChange((userId) => {
+      for (const session of this.chatSessions.values()) {
+        if (session.userId === userId || session.astrologerId === userId) {
+          this.refreshChatSessionBilling(session);
+        }
+      }
+    });
   }
 
   async handleConnection(client: Socket) {
@@ -120,6 +149,9 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         this.logger.debug(`[WS] Joined room: conversation:${c.id}`);
       });
 
+      // A reconnecting party resumes any paused session they are part of.
+      this.resumeChatSessionsForUser(payload.userId);
+
       // Send online status of ALL currently active users to this newly connected client
       for (const [id, u] of this.onlineUsers.entries()) {
         if (id !== payload.userId && u.socketIds.size > 0 && !this.realtime.isManuallyOffline(id)) {
@@ -149,6 +181,10 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       return;
     }
 
+    // Stop the meter immediately rather than waiting for the grace period, so
+    // a closed app never bills a few extra seconds.
+    this.pauseChatSessionsForUser(userId);
+
     // No active sockets remaining. Set a 5-second grace period before declaring offline.
     // This absorbs fast reconnects, screen toggles, and network handoffs without flickering offline.
     if (entry.disconnectTimeout) {
@@ -162,6 +198,8 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         this.logger.debug(`[WS] Grace period expired. User ${userId} (${role}) marked offline`);
         this.server.emit('user:offline', { userId, role });
 
+        // They never came back — end the session rather than leaving it paused
+        // forever. A reconnect starts a fresh session.
         this.stopChatSessionsForUser(userId);
 
         if (role === 'astrologer') {
@@ -211,6 +249,12 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   // ─── Chat Billing Sessions ───
 
   private chatSessionPayload(session: ChatSession) {
+    // Elapsed time reflects billable (both-online) time, plus any partial
+    // segment accrued since the last tick so the counter moves smoothly.
+    const liveMs =
+      session.isBillable && session.lastTickAt
+        ? Date.now() - session.lastTickAt
+        : 0;
     return {
       conversationId: session.conversationId,
       userId: session.userId,
@@ -218,7 +262,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       startedAt: session.startedAt,
       elapsedSeconds: Math.max(
         0,
-        Math.floor((Date.now() - session.startedAt) / 1000),
+        Math.floor((session.billableMs + liveMs) / 1000),
       ),
       rate: session.rate,
       astrologerShareRate: session.astrologerShareRate,
@@ -226,20 +270,42 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       totalCharged: Number(session.totalCharged.toFixed(2)),
       totalEarned: Number(session.totalEarned.toFixed(2)),
       isActive: true,
+      // The client uses this to show "paused" instead of a running meter.
+      isBillable: session.isBillable,
+      astrologerHasReplied: session.astrologerHasReplied,
+      pauseReason: session.pauseReason,
     };
   }
 
-  private async startChatSession(conversationId: string, userId: string) {
+  private async startChatSession(conversationId: string, callerId?: string) {
     const existing = this.chatSessions.get(conversationId);
     if (existing) return existing;
 
     const conversation =
       await this.conversationsService.findById(conversationId);
+
+    // The payer is always the user participant, never the caller. The session
+    // can now be started from the astrologer's side (their first reply), so the
+    // id passed in must not be assumed to be the user.
     const astrologerId =
       conversation.participantOneRole === 'astrologer'
         ? conversation.participantOneId
-        : conversation.participantTwoId;
-    if (!astrologerId) return null;
+        : conversation.participantTwoRole === 'astrologer'
+          ? conversation.participantTwoId
+          : null;
+    const userId =
+      conversation.participantOneRole === 'user'
+        ? conversation.participantOneId
+        : conversation.participantTwoRole === 'user'
+          ? conversation.participantTwoId
+          : null;
+    if (!astrologerId || !userId) return null;
+    if (callerId && callerId !== userId && callerId !== astrologerId) {
+      this.logger.warn(
+        `[ChatBilling] Ignoring session start from non-participant ${callerId}`,
+      );
+      return null;
+    }
 
     const astrologer = await this.astrologersService.findById(astrologerId);
     const rate = parseFloat(
@@ -273,16 +339,29 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       rate,
       astrologerShareRate,
       startedAt: Date.now(),
+      billableMs: 0,
+      lastTickAt: Date.now(),
+      isBillable: false,
+      astrologerHasReplied: false,
+      pauseReason: 'waiting_for_astrologer',
       minutesCharged: 0,
       totalCharged: 0,
       totalEarned: 0,
+      // A short tick lets the meter start and stop close to the real moment a
+      // party goes offline, instead of billing a whole minute that never
+      // happened. Charges are still applied in full-minute units.
       interval: setInterval(() => {
-        void this.chargeChatMinute(conversationId);
-      }, 60000),
+        void this.tickChatSession(conversationId);
+      }, ChatGateway.CHAT_TICK_MS),
     };
     this.chatSessions.set(conversationId, session);
+
+    // Only bill when both parties are genuinely online right now.
+    this.refreshChatSessionBilling(session);
+
     this.logger.log(
-      `[ChatBilling] Started session ${conversationId} — ₹${rate.toFixed(2)}/min`,
+      `[ChatBilling] Started session ${conversationId} — ₹${rate.toFixed(2)}/min` +
+        ` (billable: ${session.isBillable})`,
     );
 
     const payload = this.chatSessionPayload(session);
@@ -291,76 +370,191 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     return session;
   }
 
-  private async chargeChatMinute(conversationId: string) {
+  /** How often the meter is sampled. Charges are billed per full minute. */
+  private static readonly CHAT_TICK_MS = 5000;
+
+  /**
+   * Is this user online *and* available for this chat?
+   * A socket alone is not enough — an astrologer who has toggled themselves
+   * offline keeps their socket, and must not be billed against.
+   */
+  private isUserOnlineAndAvailable(userId: string): boolean {
+    if (!this.isUserOnline(userId)) return false;
+    if (this.realtime.isManuallyOffline(userId)) return false;
+    return true;
+  }
+
+  /**
+   * Re-evaluate whether the meter should run. Returns true when the session
+   * was paused or resumed by this call, so callers can broadcast the change.
+   */
+  private refreshChatSessionBilling(session: ChatSession): boolean {
+    const userOnline = this.isUserOnlineAndAvailable(session.userId);
+    const astrologerOnline = this.isUserOnlineAndAvailable(session.astrologerId);
+
+    // Both presence AND an astrologer reply are required before billing.
+    const shouldBill =
+      userOnline && astrologerOnline && session.astrologerHasReplied;
+    const reason = shouldBill
+      ? undefined
+      : !session.astrologerHasReplied
+        ? 'waiting_for_astrologer'
+        : !userOnline && !astrologerOnline
+          ? 'both_offline'
+          : !astrologerOnline
+            ? 'astrologer_offline'
+            : 'user_offline';
+
+    if (shouldBill === session.isBillable && reason === session.pauseReason) {
+      return false;
+    }
+
+    // Close out the segment that was running before switching state.
+    if (session.isBillable && session.lastTickAt) {
+      session.billableMs += Math.max(0, Date.now() - session.lastTickAt);
+    }
+    session.lastTickAt = Date.now();
+    session.isBillable = shouldBill;
+    session.pauseReason = reason;
+
+    const payload = this.chatSessionPayload(session);
+    this.emitToUser(session.userId, 'chat:session', payload);
+    this.emitToUser(session.astrologerId, 'chat:session', payload);
+
+    this.logger.log(
+      shouldBill
+        ? `[ChatBilling] ${session.conversationId} resumed — both parties online`
+        : `[ChatBilling] ${session.conversationId} paused (${reason})`,
+    );
+    return true;
+  }
+
+  /**
+   * Sample the session every few seconds.
+   *
+   * Money only moves for the time both parties were actually connected:
+   *  1. freeze the segment that ran since the previous tick (if billable)
+   *  2. re-check presence and pause/resume the meter
+   *  3. charge for each whole minute of *billable* time not yet paid for
+   *
+   * This replaces the old fixed 60s timer which charged a full minute
+   * regardless of whether the astrologer (or user) had gone offline.
+   */
+  private async tickChatSession(conversationId: string) {
     const session = this.chatSessions.get(conversationId);
     if (!session) return;
 
     try {
-      const hasBalance = await this.walletService.checkSufficientBalance(
-        session.userId,
-        session.rate,
-      );
-      if (!hasBalance) {
-        this.logger.warn(
-          `[ChatBilling] Insufficient balance for ${session.userId} in ${conversationId}`,
+      // 0. Re-confirm the astrologer has replied. Cheap, and it means a missed
+      //    socket event can never leave the meter stuck at zero.
+      if (!session.astrologerHasReplied) {
+        const replied = await this.conversationsService.hasAstrologerReplied(
+          conversationId,
         );
-        this.emitToUser(session.userId, 'chat:blocked', {
-          message:
-            'Insufficient wallet balance. Please recharge to continue chatting.',
-          code: 'insufficient_balance',
-        });
-        this.stopChatSession(conversationId, 'insufficient_balance');
-        return;
+        if (replied) {
+          session.astrologerHasReplied = true;
+          this.logger.log(
+            `[ChatBilling] Astrologer reply detected on tick for ${conversationId}`,
+          );
+        }
       }
 
-      session.minutesCharged += 1;
-      const chargeReference = `chat-${session.conversationId}-${session.startedAt}-${session.minutesCharged}`;
+      // 1. Accrue elapsed time for the segment that just finished.
+      if (session.isBillable && session.lastTickAt) {
+        session.billableMs += Math.max(0, Date.now() - session.lastTickAt);
+      }
+      session.lastTickAt = Date.now();
 
-      await this.walletService.deductFundsAtomic({
-        userId: session.userId,
-        amount: session.rate,
-        description: `Chat with astrologer (${session.minutesCharged} min)`,
-        category: 'chat_charge',
-        referenceId: chargeReference,
-        metadata: {
-          durationSeconds: 60,
-          minutesCharged: session.minutesCharged,
-          rate: session.rate,
-          astrologerId: session.astrologerId,
-          conversationId: session.conversationId,
-        },
-      });
+      // 2. Pause or resume based on presence and whether the astrologer replied.
+      this.refreshChatSessionBilling(session);
 
-      await this.commissionService.distributeChatEarnings(
-        session.astrologerId,
-        session.conversationId,
-        chargeReference,
-        session.rate,
-      );
+      // 3. Charge only whole minutes of billable time.
+      const payableMinutes = Math.floor(session.billableMs / 60000);
+      while (session.minutesCharged < payableMinutes) {
+        const charged = await this.chargeNextMinute(session);
+        if (!charged) return;
+      }
 
-      session.totalCharged = Number(
-        (session.totalCharged + session.rate).toFixed(2),
-      );
-      session.totalEarned = Number(
-        (session.totalEarned + session.astrologerShareRate).toFixed(2),
-      );
-
-      this.logger.log(
-        `[ChatBilling] ${conversationId} minute ${session.minutesCharged}: ₹${session.rate.toFixed(2)} charged, ₹${session.astrologerShareRate.toFixed(2)} earned`,
-      );
-
-      const payload = this.chatSessionPayload(session);
-      this.emitToUser(session.userId, 'chat:billing', payload);
-      this.emitToUser(session.astrologerId, 'chat:billing', payload);
-      this.realtime.emitToUser(session.userId, 'wallet:updated', {});
-      this.realtime.broadcast('astrologer:stats-updated', {
-        astrologerId: session.astrologerId,
-      });
+      // Keep the client's clock in sync even when nothing is charged.
+      if (session.isBillable) {
+        const payload = this.chatSessionPayload(session);
+        this.emitToUser(session.userId, 'chat:tick', payload);
+        this.emitToUser(session.astrologerId, 'chat:tick', payload);
+      }
     } catch (e: any) {
       this.logger.error(
-        `[ChatBilling] Failed to charge ${conversationId}: ${e.message}`,
+        `[ChatBilling] Tick failed for ${conversationId}: ${e.message}`,
       );
     }
+  }
+
+  /**
+   * Charge the user for one more billable minute.
+   * Returns false when the session was stopped (e.g. insufficient balance).
+   */
+  private async chargeNextMinute(session: ChatSession): Promise<boolean> {
+    const hasBalance = await this.walletService.checkSufficientBalance(
+      session.userId,
+      session.rate,
+    );
+    if (!hasBalance) {
+      this.logger.warn(
+        `[ChatBilling] Insufficient balance for ${session.userId} in ${session.conversationId}`,
+      );
+      this.emitToUser(session.userId, 'chat:blocked', {
+        message:
+          'Insufficient wallet balance. Please recharge to continue chatting.',
+        code: 'insufficient_balance',
+      });
+      this.stopChatSession(session.conversationId, 'insufficient_balance');
+      return false;
+    }
+
+    session.minutesCharged += 1;
+    const chargeReference = `chat-${session.conversationId}-${session.startedAt}-${session.minutesCharged}`;
+
+    await this.walletService.deductFundsAtomic({
+      userId: session.userId,
+      amount: session.rate,
+      description: `Chat with astrologer (${session.minutesCharged} min)`,
+      category: 'chat_charge',
+      referenceId: chargeReference,
+      metadata: {
+        durationSeconds: 60,
+        minutesCharged: session.minutesCharged,
+        rate: session.rate,
+        astrologerId: session.astrologerId,
+        conversationId: session.conversationId,
+      },
+    });
+
+    await this.commissionService.distributeChatEarnings(
+      session.astrologerId,
+      session.conversationId,
+      chargeReference,
+      session.rate,
+    );
+
+    session.totalCharged = Number(
+      (session.totalCharged + session.rate).toFixed(2),
+    );
+    session.totalEarned = Number(
+      (session.totalEarned + session.astrologerShareRate).toFixed(2),
+    );
+
+    this.logger.log(
+      `[ChatBilling] ${session.conversationId} minute ${session.minutesCharged}: ` +
+        `₹${session.rate.toFixed(2)} charged, ₹${session.astrologerShareRate.toFixed(2)} earned`,
+    );
+
+    const payload = this.chatSessionPayload(session);
+    this.emitToUser(session.userId, 'chat:billing', payload);
+    this.emitToUser(session.astrologerId, 'chat:billing', payload);
+    this.realtime.emitToUser(session.userId, 'wallet:updated', {});
+    this.realtime.broadcast('astrologer:stats-updated', {
+      astrologerId: session.astrologerId,
+    });
+    return true;
   }
 
   private stopChatSession(conversationId: string, reason: string) {
@@ -385,6 +579,27 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     this.logger.log(
       `[ChatBilling] Stopped session ${conversationId} (${reason}) after ${session.minutesCharged} minute(s)`,
     );
+  }
+
+  /** Re-evaluate sessions after a reconnect so the meter resumes. */
+  private resumeChatSessionsForUser(userId: string) {
+    for (const session of this.chatSessions.values()) {
+      if (session.userId === userId || session.astrologerId === userId) {
+        this.refreshChatSessionBilling(session);
+      }
+    }
+  }
+
+  /**
+   * Pause any session involving this user without ending it. Used for brief
+   * socket loss so the meter stops but the conversation can resume.
+   */
+  private pauseChatSessionsForUser(userId: string) {
+    for (const session of this.chatSessions.values()) {
+      if (session.userId === userId || session.astrologerId === userId) {
+        this.refreshChatSessionBilling(session);
+      }
+    }
   }
 
   private stopChatSessionsForUser(userId: string) {
@@ -521,21 +736,54 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     this.logger.debug(`[WS] Message persisted - messageId: ${message.id}`);
 
     if (role === 'user') {
-      if (canStartBilling) {
-        try {
-          // The first message starts the live chat session; every full minute is
-          // then charged by the session interval so the timer and the money move
-          // together even when no new messages are sent.
-          await this.startChatSession(data.conversationId, userId);
-        } catch (e: any) {
-          this.logger.error(`[WS] Failed to start chat billing: ${e.message}`);
-        }
-      } else {
+      // The user's own message never starts the meter. Requirements: billing
+      // begins only once BOTH parties are online AND the astrologer has replied.
+      // Presence is enforced by the session tick; the reply is enforced here and
+      // on the astrologer's next message.
+      if (!canStartBilling) {
         this.emitToUser(userId, 'chat:kundli-required', {
           conversationId: data.conversationId,
           message:
             'Share your birth details or attach your Kundli so the astrologer can start the consultation. The timer starts once it is available.',
         });
+      } else {
+        // Tell the user the consultation is waiting for the astrologer, so the
+        // UI can show "waiting for astrologer" instead of a running timer.
+        this.emitToUser(userId, 'chat:awaiting-astrologer', {
+          conversationId: data.conversationId,
+          message: 'Waiting for the astrologer to reply. Billing starts when they do.',
+        });
+      }
+    }
+
+    // An astrologer's message is what officially starts a billable consultation.
+    if (role === 'astrologer') {
+      try {
+        // Confirm from the database rather than trusting the socket, so the
+        // flag is correct even after a reconnect or a server restart.
+        const replied = await this.conversationsService.hasAstrologerReplied(
+          data.conversationId,
+        );
+
+        let session: ChatSession | null | undefined =
+          this.chatSessions.get(data.conversationId);
+        if (!session) {
+          session = await this.startChatSession(data.conversationId, userId);
+        }
+
+        if (session && replied && !session.astrologerHasReplied) {
+          session.astrologerHasReplied = true;
+          // Re-evaluate now: if both parties are online the meter starts
+          // immediately instead of waiting for the next tick.
+          this.refreshChatSessionBilling(session);
+          this.logger.log(
+            `[ChatBilling] Astrologer replied in ${data.conversationId} — billing unlocked`,
+          );
+        }
+      } catch (e: any) {
+        this.logger.error(
+          `[WS] Failed to start chat session on astrologer reply: ${e.message}`,
+        );
       }
     }
 
@@ -583,6 +831,137 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
           this.logger.debug(`[WS] Emitted message:new directly to otherClient: ${otherClient.id} and joined room`);
         }
       }
+    }
+  }
+
+  /**
+   * Generate a Kundli with the third-party astrology API and post it into the
+   * conversation as a rich `kundli` message.
+   *
+   * Previously the client sent the birth details as plain text, so no chart was
+   * produced and the astrologer only saw a few lines. Now the server computes
+   * the chart and shares the full payload, which the client renders inline.
+   */
+  @SubscribeMessage('kundli:share')
+  async handleShareKundli(
+    @ConnectedSocket() client: Socket,
+    @MessageBody()
+    data: {
+      conversationId: string;
+      name: string;
+      dateOfBirth: string;
+      timeOfBirth: string;
+      placeOfBirth: string;
+      gender?: string;
+      latitude?: number;
+      longitude?: number;
+      timezone?: number;
+    },
+  ) {
+    const { userId, role } = client.data;
+
+    if (!data?.conversationId) return;
+    if (!data.dateOfBirth || !data.timeOfBirth || !data.placeOfBirth) {
+      client.emit('kundli:share-error', {
+        conversationId: data.conversationId,
+        message: 'Date of birth, time of birth and place are required.',
+      });
+      return;
+    }
+
+    try {
+      const chart = await this.kundliService.create({
+        userId,
+        name: data.name || 'Birth chart',
+        gender: (data.gender as any) || 'male',
+        dateOfBirth: data.dateOfBirth,
+        timeOfBirth: data.timeOfBirth,
+        placeOfBirth: data.placeOfBirth,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        timezone: data.timezone !== undefined ? String(data.timezone) : undefined,
+      } as any);
+
+      const chartData: any = (chart as any).chartData || {};
+      const lagnaRashi: string | undefined = chartData?.lagna?.rashi;
+      const summary = [
+        `Kundli – ${chart.name}`,
+        lagnaRashi ? `Lagna: ${lagnaRashi}` : null,
+        `DOB: ${chart.dateOfBirth}`,
+        `Time: ${chart.timeOfBirth}`,
+        `Place: ${chart.placeOfBirth}`,
+      ]
+        .filter(Boolean)
+        .join('\n');
+
+      const message = await this.conversationsService.createMessage(
+        data.conversationId,
+        userId,
+        role,
+        summary,
+        'kundli',
+        undefined,
+        {
+          kundliId: chart.id,
+          name: chart.name,
+          gender: chart.gender,
+          dateOfBirth: chart.dateOfBirth,
+          timeOfBirth: chart.timeOfBirth,
+          placeOfBirth: chart.placeOfBirth,
+          chartData: chart.chartData,
+        },
+      );
+
+      const room = `conversation:${data.conversationId}`;
+      client.emit('message:new', message);
+      client.to(room).emit('message:new', message);
+      client.to(room).emit('conversation:updated', {
+        conversationId: data.conversationId,
+        lastMessageAt: message.createdAt,
+        lastMessagePreview: message.content,
+      });
+
+      const otherSocket = this.findOtherSocket(data.conversationId, userId);
+      if (otherSocket) {
+        await this.conversationsService.markAsDelivered(data.conversationId, userId);
+        client.emit('message:delivered', {
+          messageId: message.id,
+          conversationId: data.conversationId,
+        });
+        client.to(room).emit('message:delivered', {
+          messageId: message.id,
+          conversationId: data.conversationId,
+        });
+      } else {
+        const otherUserId =
+          await this.conversationsService.getOtherParticipant(
+            data.conversationId,
+            userId,
+          );
+        if (otherUserId) {
+          const otherClient = this.findSocketByUserId(otherUserId);
+          if (otherClient) {
+            otherClient.emit('message:new', message);
+            otherClient.emit('conversation:new', {
+              conversationId: data.conversationId,
+            });
+            otherClient.join(room);
+          }
+        }
+      }
+
+      this.logger.log(
+        `[Chat] Kundli ${chart.id} shared in conversation ${data.conversationId}`,
+      );
+    } catch (e: any) {
+      this.logger.error(`[Chat] Kundli share failed: ${e.message}`);
+      client.emit('kundli:share-error', {
+        conversationId: data.conversationId,
+        message:
+          e?.response?.data?.message ||
+          e?.message ||
+          'Could not generate the Kundli. Please try again.',
+      });
     }
   }
 

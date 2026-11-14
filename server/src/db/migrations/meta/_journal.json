@@ -57,6 +57,13 @@
       "when": 1787400000000,
       "tag": "0007_commission_tds_split",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "8",
+      "when": 1787500000000,
+      "tag": "0008_chat_kundli_message_type",
+      "breakpoints": true
     }
   ]
 }

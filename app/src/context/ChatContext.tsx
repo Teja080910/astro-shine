@@ -16,6 +16,12 @@ export interface ChatBilling {
   totalCharged: number;
   totalEarned: number;
   isActive: boolean;
+  /** True only while both parties are online and the meter is running. */
+  isBillable?: boolean;
+  /** Billing stays at zero until the astrologer has replied. */
+  astrologerHasReplied?: boolean;
+  /** Why the meter is paused, e.g. 'astrologer_offline'. */
+  pauseReason?: string;
   reason?: string;
   endedAt?: number;
 }
@@ -58,6 +64,8 @@ interface ChatState {
   loadMessages: (conversationId: string) => Promise<void>;
   loadMoreMessages: () => Promise<void>;
   sendMessage: (conversationId: string, content: string, type?: string, mediaUrl?: string) => Promise<void>;
+  /** Ask the server to generate a Kundli and post it into the conversation. */
+  shareKundli: (conversationId: string, details: { name?: string; dateOfBirth: string; timeOfBirth: string; placeOfBirth: string; gender?: string; latitude?: number; longitude?: number; timezone?: number }) => void;
   startTyping: (conversationId: string) => void;
   stopTyping: (conversationId: string) => void;
   markAsRead: (conversationId: string) => void;
@@ -314,7 +322,20 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     };
     socket.on('chat:session', mergeChatBilling);
     socket.on('chat:billing', mergeChatBilling);
+    // Lightweight presence tick — keeps the timer in sync while paused/running.
+    socket.on('chat:tick', mergeChatBilling);
     socket.on('chat:session-end', mergeChatBilling);
+
+    socket.on(
+      'kundli:share-error',
+      (data: { conversationId?: string; message?: string }) => {
+        if (!data?.message) return;
+        // Reuse the blocked-dialog channel: it is already rendered on the chat
+        // screen and dismissible, so a failed Kundli generation is visible.
+        setChatBlockedMessage(data.message);
+        setChatBlockedCode('kundli_error');
+      },
+    );
 
     socket.on('support:ticket-updated', () => {
       setSupportVersion(v => v + 1);
@@ -522,6 +543,17 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentRole]);
 
+  const shareKundli = useCallback(
+    (conversationId: string, details: any) => {
+      const socket = socketRef.current;
+      if (!socket?.connected) {
+        throw new Error('Not connected. Please check your internet connection.');
+      }
+      socket.emit('kundli:share', { conversationId, ...details });
+    },
+    [],
+  );
+
   const startTyping = useCallback((conversationId: string) => {
     const socket = socketRef.current;
     if (!socket?.connected) return;
@@ -628,6 +660,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         loadMessages,
         loadMoreMessages,
         sendMessage,
+        shareKundli,
         startTyping,
         stopTyping,
         markAsRead,

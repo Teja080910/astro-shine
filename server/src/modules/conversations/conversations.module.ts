@@ -8,9 +8,10 @@ import { UsersModule } from '../users/users.module';
 import { AstrologersModule } from '../astrologers/astrologers.module';
 import { WalletModule } from '../wallet/wallet.module';
 import { CommissionModule } from '../commission/commission.module';
+import { KundliModule } from '../kundli/kundli.module';
 
 @Module({
-  imports: [AuthModule, CallsModule, UsersModule, AstrologersModule, WalletModule, CommissionModule],
+  imports: [AuthModule, CallsModule, UsersModule, AstrologersModule, WalletModule, CommissionModule, KundliModule],
   controllers: [ConversationsController],
   providers: [ConversationsService, ChatGateway],
   exports: [ConversationsService],

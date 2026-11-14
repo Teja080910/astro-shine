@@ -154,12 +154,19 @@ export class ConversationsService {
 
   /** True when the user attached a kundli/document in this conversation. */
   async hasKundliAttachment(conversationId: string): Promise<boolean> {
+    // Either an uploaded document (legacy) or a chart generated in-chat counts
+    // as "the astrologer has the birth details".
     const attachment = await this.db.query.conversationMessages.findFirst({
       where: and(
         eq(schema.conversationMessages.conversationId, conversationId),
         eq(schema.conversationMessages.senderRole, 'user'),
-        eq(schema.conversationMessages.type, 'file'),
-        sql`${schema.conversationMessages.mediaUrl} IS NOT NULL`,
+        or(
+          and(
+            eq(schema.conversationMessages.type, 'file'),
+            sql`${schema.conversationMessages.mediaUrl} IS NOT NULL`,
+          ),
+          eq(schema.conversationMessages.type, 'kundli'),
+        ),
       ),
     });
     return !!attachment;
@@ -184,6 +191,42 @@ export class ConversationsService {
       .limit(1);
     if (!conversation) throw new NotFoundException('Conversation not found');
     return conversation;
+  }
+
+  /**
+   * Has the astrologer sent at least one message after the user's first one?
+   *
+   * Billing must not begin until the astrologer actually replies — a user
+   * messaging an idle astrologer should not be charged. `afterUserId` scopes the
+   * check so a stale reply from an earlier session does not unlock a new one.
+   */
+  async hasAstrologerReplied(
+    conversationId: string,
+    afterUserId?: string,
+  ): Promise<boolean> {
+    const conditions: any[] = [
+      eq(schema.conversationMessages.conversationId, conversationId),
+      eq(schema.conversationMessages.senderRole, 'astrologer'),
+    ];
+
+    if (afterUserId) {
+      const firstUserMessage = await this.db.query.conversationMessages.findFirst({
+        where: and(
+          eq(schema.conversationMessages.conversationId, conversationId),
+          eq(schema.conversationMessages.senderRole, 'user'),
+          eq(schema.conversationMessages.senderId, afterUserId),
+        ),
+        orderBy: (m: any, { asc }: any) => [asc(m.createdAt)],
+      });
+      if (firstUserMessage) {
+        conditions.push(sql`${schema.conversationMessages.createdAt} > ${firstUserMessage.createdAt}`);
+      }
+    }
+
+    const reply = await this.db.query.conversationMessages.findFirst({
+      where: and(...conditions),
+    });
+    return !!reply;
   }
 
   async getMessages(conversationId: string, cursor?: string, limit = 20) {
@@ -222,6 +265,7 @@ export class ConversationsService {
     content: string,
     type = 'text',
     mediaUrl?: string,
+    metadata?: Record<string, any>,
   ) {
     const [message] = await this.db.insert(schema.conversationMessages).values({
       conversationId: conversationId as any,
@@ -230,12 +274,15 @@ export class ConversationsService {
       content,
       type: type as any,
       mediaUrl: mediaUrl || null,
+      ...(metadata ? { metadata: metadata as any } : {}),
     }).returning();
 
     const preview =
       type === 'file'
         ? `📎 ${content || 'Attachment'}`
-        : content;
+        : type === 'kundli'
+          ? `🔯 ${content || 'Kundli shared'}`
+          : content;
     await this.db.update(schema.conversations).set({
       lastMessageAt: new Date(),
       lastMessagePreview: preview.substring(0, 200),

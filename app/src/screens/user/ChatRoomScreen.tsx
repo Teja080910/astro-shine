@@ -53,7 +53,7 @@ function formatDuration(totalSeconds: number): string {
 
 export function ChatRoomScreen({ route, navigation }: any) {
   const { conversationId, participantId, participantRole, participantName, participantAvatar } = route.params;
-  const { messages, loadMessages, loadMoreMessages, sendMessage, startTyping, stopTyping, markAsRead, typingUsers, hasMore, loading, onlineUsers, connected, joinRoom, leaveRoom, resetChatBilling, setActiveConversation, astrologerStatuses, chatBlockedMessage, chatBlockedCode, clearChatBlocked, chatBilling, kundliRequiredMessages, clearKundliRequired } = useChat();
+  const { messages, loadMessages, loadMoreMessages, sendMessage, startTyping, stopTyping, markAsRead, typingUsers, hasMore, loading, onlineUsers, connected, joinRoom, leaveRoom, resetChatBilling, setActiveConversation, astrologerStatuses, chatBlockedMessage, chatBlockedCode, clearChatBlocked, chatBilling, kundliRequiredMessages, clearKundliRequired, shareKundli } = useChat();
   const { initiateCall } = useCall();
   const { user, astrologer: authAstrologer } = useAuth();
   const currentUserId = user?.id || authAstrologer?.userId || authAstrologer?.id || '';
@@ -290,24 +290,34 @@ export function ChatRoomScreen({ route, navigation }: any) {
 
   const handleSendSavedKundli = useCallback(async (record: KundliRecord) => {
     if (!record || uploadingKundli) return;
+    if (!record.dateOfBirth || !record.timeOfBirth || !record.placeOfBirth) {
+      Alert.alert(
+        'Incomplete details',
+        'This Kundli is missing a date, time or place of birth. Create a new one from the Kundli section.',
+      );
+      return;
+    }
     setUploadingKundli(true);
     try {
-      // A saved Kundli is computed data, not a file, so share the birth details
-      // the astrologer needs as a normal message they can read immediately.
-      const lines = [
-        `Kundli – ${record.name || 'Birth chart'}`,
-        record.dateOfBirth ? `DOB: ${record.dateOfBirth}` : null,
-        record.timeOfBirth ? `Time: ${record.timeOfBirth}` : null,
-        record.placeOfBirth ? `Place: ${record.placeOfBirth}` : null,
-      ].filter(Boolean);
-      await sendMessage(conversationId, lines.join('\n'), 'text');
+      // The server generates the chart with the astrology API and posts it as a
+      // rich message, so the astrologer sees the full Kundli, not just text.
+      shareKundli(conversationId, {
+        name: record.name,
+        dateOfBirth: record.dateOfBirth,
+        timeOfBirth: record.timeOfBirth,
+        placeOfBirth: record.placeOfBirth,
+        gender: record.gender,
+        latitude: record.latitude,
+        longitude: record.longitude,
+        timezone: record.timezone ? Number(record.timezone) : undefined,
+      });
       setAttachSheetOpen(false);
     } catch (e: any) {
-      Alert.alert('Could not share Kundli', e?.response?.data?.message || e?.message || 'Please try again.');
+      Alert.alert('Could not share Kundli', e?.message || 'Please try again.');
     } finally {
       setUploadingKundli(false);
     }
-  }, [uploadingKundli, conversationId, sendMessage]);
+  }, [uploadingKundli, conversationId, shareKundli]);
 
   const handleUploadKundliFile = useCallback(async () => {
     if (uploadingKundli) return;
@@ -387,7 +397,65 @@ export function ChatRoomScreen({ route, navigation }: any) {
             <Text style={[styles.dateHeaderText, { color: colors.textMuted, backgroundColor: colors.surfaceLight }]}>{formatDateHeader(item.createdAt)}</Text>
           </View>
         )}
-        {item.type === 'file' && item.mediaUrl ? (
+        {item.type === 'kundli' ? (
+          <View style={[styles.fileRow, { justifyContent: isOwn ? 'flex-end' : 'flex-start' }]}>
+            <View
+              style={[
+                styles.kundliCard,
+                {
+                  backgroundColor: isOwn ? colors.primary : colors.surfaceLight,
+                  borderColor: isOwn ? colors.primary : colors.cardBorder,
+                },
+              ]}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <View
+                  style={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: 15,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: isOwn ? 'rgba(255,255,255,0.2)' : colors.primary + '22',
+                  }}
+                >
+                  <Ionicons name="grid-outline" size={16} color={isOwn ? '#FFFFFF' : colors.primary} />
+                </View>
+                <Text style={{ flex: 1, fontWeight: '800', fontSize: 14, color: isOwn ? '#FFFFFF' : colors.heading }} numberOfLines={1}>
+                  {(item as any).metadata?.name || 'Kundli'}
+                </Text>
+                <Text style={{ fontSize: 10, fontWeight: '700', color: isOwn ? 'rgba(255,255,255,0.8)' : colors.primary }}>
+                  KUNDLI
+                </Text>
+              </View>
+
+              {/* Key chart facts, so the astrologer can read it inline. */}
+              {(item as any).metadata?.chartData?.lagna?.rashi && (
+                <Text style={{ fontSize: 12, color: isOwn ? 'rgba(255,255,255,0.92)' : colors.textPrimary, marginBottom: 2 }}>
+                  <Text style={{ fontWeight: '700' }}>Lagna: </Text>
+                  {(item as any).metadata.chartData.lagna.rashi}
+                </Text>
+              )}
+              {(item as any).metadata?.dateOfBirth && (
+                <Text style={{ fontSize: 12, color: isOwn ? 'rgba(255,255,255,0.92)' : colors.textPrimary, marginBottom: 2 }}>
+                  <Text style={{ fontWeight: '700' }}>DOB: </Text>
+                  {(item as any).metadata.dateOfBirth}
+                  {(item as any).metadata.timeOfBirth ? ` at ${(item as any).metadata.timeOfBirth}` : ''}
+                </Text>
+              )}
+              {(item as any).metadata?.placeOfBirth && (
+                <Text style={{ fontSize: 12, color: isOwn ? 'rgba(255,255,255,0.92)' : colors.textPrimary }}>
+                  <Text style={{ fontWeight: '700' }}>Place: </Text>
+                  {(item as any).metadata.placeOfBirth}
+                </Text>
+              )}
+
+              <Text style={{ fontSize: 11, marginTop: 8, color: isOwn ? 'rgba(255,255,255,0.75)' : colors.textMuted }}>
+                {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </Text>
+            </View>
+          </View>
+        ) : item.type === 'file' && item.mediaUrl ? (
           <View style={[styles.fileRow, { justifyContent: isOwn ? 'flex-end' : 'flex-start' }]}>
             <TouchableOpacity
               activeOpacity={0.8}
@@ -432,17 +500,44 @@ export function ChatRoomScreen({ route, navigation }: any) {
           <View style={styles.sessionTimerWrap}>
             <Ionicons name="stopwatch-outline" size={15} color={billing?.isActive ? colors.primaryLight : colors.textMuted} />
             <Text style={[styles.sessionTimer, { color: billing?.isActive ? colors.textPrimary : colors.textMuted }]}>{formatDuration(elapsedSeconds)}</Text>
-            {billing?.isActive && <View style={[styles.sessionLiveDot, { backgroundColor: colors.success }]} />}
+            {billing?.isActive && (
+              <View
+                style={[
+                  styles.sessionLiveDot,
+                  {
+                    backgroundColor:
+                      billing?.isBillable === false ||
+                      billing?.astrologerHasReplied === false
+                        ? colors.warning
+                        : colors.success,
+                  },
+                ]}
+              />
+            )}
           </View>
           <Text style={[styles.sessionAmount, { color: isUser ? colors.textSecondary : colors.accentGold }]}>
             {isUser ? `Spent ₹${(billing?.totalCharged ?? 0).toFixed(2)}` : `Earned ₹${(billing?.totalEarned ?? 0).toFixed(2)}`}
           </Text>
           <Text style={[styles.sessionRate, { color: colors.textMuted }]} numberOfLines={1}>
             {billing?.isActive
-              ? (sessionRate > 0 ? `₹${sessionRate.toFixed(2)}/min` : '')
+              ? billing?.astrologerHasReplied === false
+                ? // Billing has not started: the astrologer has not answered yet.
+                  isUser
+                  ? 'Waiting for astrologer to reply'
+                  : 'Reply to start the consultation'
+                : billing?.isBillable === false
+                  ? // Both conditions met but someone is offline — say which.
+                    billing?.pauseReason === 'astrologer_offline'
+                    ? 'Paused — astrologer offline'
+                    : billing?.pauseReason === 'user_offline'
+                      ? 'Paused — waiting for you'
+                      : 'Paused — waiting for both to be online'
+                  : sessionRate > 0
+                    ? `₹${sessionRate.toFixed(2)}/min`
+                    : ''
               : billing
                 ? 'Session ended'
-                : (isUser ? 'Starts once birth details are shared' : 'Waiting for user')}
+                : isUser ? 'Starts once birth details are shared' : 'Waiting for user'}
           </Text>
         </View>
         <FlatList
@@ -626,15 +721,17 @@ export function ChatRoomScreen({ route, navigation }: any) {
       </CustomModal>
       <ConfirmDialog
         visible={!!chatBlockedMessage}
-        title="Chat Blocked"
+        title={chatBlockedCode === 'kundli_error' ? 'Kundli Generation Failed' : 'Chat Blocked'}
         subtitle={chatBlockedMessage || ''}
         icon={
           chatBlockedCode === 'service_disabled'
             ? <Ionicons name="lock-closed-outline" size={48} color={colors.danger} />
-            : <Ionicons name="wallet-outline" size={48} color={colors.danger} />
+            : chatBlockedCode === 'kundli_error'
+              ? <Ionicons name="alert-circle-outline" size={48} color={colors.danger} />
+              : <Ionicons name="wallet-outline" size={48} color={colors.danger} />
         }
         actions={
-          chatBlockedCode === 'service_disabled'
+          chatBlockedCode === 'service_disabled' || chatBlockedCode === 'kundli_error'
             ? [{ label: 'Close', onPress: () => clearChatBlocked(), variant: 'secondary' }]
             : [
                 { label: 'Add Funds', onPress: () => { clearChatBlocked(); handleAddFunds(); }, variant: 'primary' },
@@ -809,6 +906,13 @@ const styles = StyleSheet.create({
     marginRight: 2,
   },
   fileRow: { flexDirection: 'row', marginVertical: 4 },
+  kundliCard: {
+    maxWidth: '82%',
+    borderRadius: radii.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
   fileCard: {
     flexDirection: 'row',
     alignItems: 'center',
